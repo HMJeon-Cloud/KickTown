@@ -424,6 +424,8 @@
      repeating-linear-gradient(90deg,transparent,transparent 22px,#dfe2e8 22px,#dfe2e8 23px);
      position:relative;}
   .map-pin{position:absolute;left:50%;top:46%;transform:translate(-50%,-100%);color:var(--red);font-size:34px;filter:drop-shadow(0 3px 3px rgba(0,0,0,.25));}
+  .venue-map{height:190px;width:100%;background:#e9ebef;}
+  .venue-map .map-fallback{display:flex;align-items:center;justify-content:center;height:100%;font-size:12.5px;color:var(--steel);padding:12px;text-align:center;}
   .map-info{padding:14px;}
   .map-info .mt{font-weight:700;font-size:15px;}
   .map-info .ma{font-size:12.5px;color:var(--steel);margin-top:3px;}
@@ -1011,7 +1013,7 @@ function render(){
   else if(state.screen==='att') c.innerHTML = viewAtt();
   else if(state.screen==='more') c.innerHTML = viewMore();
   else if(state.screen==='board') c.innerHTML = viewBoard();
-  else if(state.screen==='venue') c.innerHTML = viewVenue();
+  else if(state.screen==='venue'){ c.innerHTML = viewVenue(); setTimeout(initVenueDisplayMap, 60); }
   else if(state.screen==='poll') c.innerHTML = viewPoll();
   c.scrollTop = 0;
   renderTabs();
@@ -1929,15 +1931,48 @@ function viewVenue(){
   }
   var hasXY = (m.lat!=null && m.lat!=='' && m.lng!=null && m.lng!=='');
   var canShare = hasXY || m.venueUrl;
+  var mapArea = hasXY
+    ? '<div id="venue_map" class="venue-map"></div>'
+    : '<div class="map-fake"><div class="map-pin">📍</div></div>';
   return '<div class="eyebrow">다가오는 경기장</div>'
-  + '<div class="map-card"><div class="map-fake"><div class="map-pin">📍</div></div>'
+  + '<div class="map-card">'+mapArea
   +   '<div class="map-info"><div class="mt">'+(esc(m.venue)||'경기장 미지정')+'</div>'
   +     '<div class="ma">'+fmtMatchWhen(m)+' · vs '+esc(m.opponent||'상대 미정')+'</div>'
   +     (canShare
         ? '<div class="map-actions"><button class="m-open" onclick="openVenueShare(\''+m.id+'\')">지도 · 내비 · 공유</button></div>'
-        : '<div class="ma" style="color:var(--steel-soft);margin-top:8px;">경기 등록에서 지도로 위치를 지정하면 열기·내비·공유가 활성화됩니다.</div>')
+        : '<div class="ma" style="color:var(--steel-soft);margin-top:8px;">경기 등록에서 지도로 위치를 지정하면 지도·열기·내비·공유가 활성화됩니다.</div>')
   +   '</div></div>'
   + '<p class="hint">가장 가까운 예정 경기의 경기장이 표시됩니다. 링크를 팀 채팅방에 바로 공유할 수 있습니다.</p>';
+}
+function initVenueDisplayMap(){
+  var el = document.getElementById('venue_map'); if(!el) return;
+  var m = latestMatch(); if(!m) return;
+  var lat = Number(m.lat), lng = Number(m.lng);
+  if(isNaN(lat) || isNaN(lng)) return;
+  el.innerHTML = '<div class="map-fallback">지도 불러오는 중...</div>';
+  ensureKakao(function(okK){
+    var box = document.getElementById('venue_map'); if(!box) return;
+    if(okK){
+      box.innerHTML='';
+      var map = new kakao.maps.Map(box, {center:new kakao.maps.LatLng(lat,lng), level:4});
+      new kakao.maps.Marker({position:new kakao.maps.LatLng(lat,lng)}).setMap(map);
+      map.setZoomable(false);
+      [120,400,700].forEach(function(ms){ setTimeout(function(){ try{ map.relayout(); map.setCenter(new kakao.maps.LatLng(lat,lng)); }catch(e){} }, ms); });
+    } else {
+      ensureLeaflet(function(okL){
+        var b2 = document.getElementById('venue_map'); if(!b2) return;
+        if(okL){
+          b2.innerHTML='';
+          var lm = L.map(b2, {zoomControl:false, attributionControl:false, scrollWheelZoom:false}).setView([lat,lng], 15);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19, crossOrigin:true}).addTo(lm);
+          L.marker([lat,lng]).addTo(lm);
+          [120,400].forEach(function(ms){ setTimeout(function(){ lm.invalidateSize(); }, ms); });
+        } else {
+          b2.innerHTML = '<div class="map-fallback">지도를 불러오지 못했습니다. 아래 “지도 · 내비 · 공유”를 이용하세요.</div>';
+        }
+      });
+    }
+  });
 }
 
 /* ================= 팀원 폼 (동작) ================= */
