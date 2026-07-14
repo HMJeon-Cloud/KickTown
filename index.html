@@ -1463,7 +1463,7 @@ function doCheckin(matchId){
     toast('위치 권한이 필요합니다. 브라우저에서 위치 허용 후 다시 시도하세요.');
   }, {enableHighAccuracy:true, timeout:8000, maximumAge:0});
 }
-
+ 
 /* -------- 5/6. 더보기 -------- */
 function viewMore(){
   var who = state.auth ? (esc(state.auth.name)+' · '+state.auth.role) : '';
