@@ -367,6 +367,12 @@
   .cc-name .rg{font-size:11.5px;font-weight:600;color:var(--steel-soft);margin-left:2px;}
   .cc-own{font-size:9.5px;font-weight:600;letter-spacing:.08em;background:linear-gradient(150deg,var(--red),var(--red-deep));color:#fff;border-radius:5px;padding:2px 6px;margin-left:5px;vertical-align:2px;}
   .cc-note{font-size:12px;color:var(--steel);margin-top:3px;}
+  .club-star{flex:0 0 auto;background:none;border:none;font-size:20px;line-height:1;color:var(--line-strong);cursor:pointer;padding:2px 2px;}
+  .club-star.on{color:var(--gold);}
+  .club-filter{display:flex;gap:8px;margin:2px 0 12px;}
+  .club-filter select{flex:1;padding:9px 11px;border:1px solid var(--line-strong);border-radius:11px;font-family:inherit;font-size:13.5px;background:#fff;}
+  .fav-toggle{flex:0 0 auto;padding:9px 13px;border:1px solid var(--line-strong);border-radius:11px;background:#fff;font-size:13px;font-weight:700;color:var(--steel);cursor:pointer;}
+  .fav-toggle.on{background:var(--gold);color:#fff;border-color:var(--gold);}
 
   /* 로그인 이름 검색 */
   .au-list{max-height:180px;overflow-y:auto;border-radius:12px;background:rgba(255,255,255,.06);margin-top:-6px;margin-bottom:10px;display:none;}
@@ -645,7 +651,7 @@ function mockHandler(fn, a){
   // --- batch ---
   if(fn==='bootstrap'){ return {config:mockHandler('getConfig',[]), players:mockHandler('getPlayers',[]), matches:mockHandler('getMatches',[]), clubs:mockHandler('getClubs',[])}; }
   // --- clubs (팀) ---
-  if(fn==='getClubs'){ return DB.clubs.slice().sort(function(a2,b2){ return (b2.own?1:0)-(a2.own?1:0) || String(a2.createdAt).localeCompare(String(b2.createdAt)); }); }
+  if(fn==='getClubs'){ return DB.clubs.slice().sort(function(a2,b2){ return (b2.own?1:0)-(a2.own?1:0) || (b2.fav?1:0)-(a2.fav?1:0) || String(a2.createdAt).localeCompare(String(b2.createdAt)); }); }
   if(fn==='addClub'){
     var cd=a[0];
     var club={id:'c'+Date.now(), name:cd.name, region:cd.region||'', note:cd.note||'', emblem:cd.emblem||'', ownerId:cd.ownerId||'', own:DB.clubs.length===0, createdAt:new Date().toISOString()};
@@ -654,6 +660,7 @@ function mockHandler(fn, a){
     return mockHandler('getClubs',[]);
   }
   if(fn==='updateClub'){ DB.clubs.forEach(function(c){ if(c.id===a[0].id) Object.assign(c, {name:a[0].name, region:a[0].region, note:a[0].note, emblem:a[0].emblem}); }); return mockHandler('getClubs',[]); }
+  if(fn==='toggleClubFav'){ DB.clubs.forEach(function(c){ if(c.id===a[0]) c.fav=!c.fav; }); return mockHandler('getClubs',[]); }
   if(fn==='deleteClub'){ DB.clubs=DB.clubs.filter(function(c){return c.id!==a[0];}); if(DB.clubs.length && !DB.clubs.some(function(c){return c.own;})) DB.clubs[0].own=true; return mockHandler('getClubs',[]); }
   // --- 추가 참석 신청 (extras) ---
   if(fn==='requestExtra'){
@@ -1570,7 +1577,7 @@ function viewMore(){
   +   (isAdmin()?'<div class="list-row" style="cursor:pointer;" onclick="copyVenueLink(location.hostname)"><span class="nm" style="flex:1;">현재 도메인 <span style="font-size:10px;color:var(--steel-soft);">(카카오맵 등록용)</span></span><span class="val" style="font-size:11.5px;color:var(--steel);word-break:break-all;">'+esc(location.hostname)+'</span></div>':'')
   +   '<div class="list-row" style="cursor:pointer;" onclick="logout()"><span class="nm" style="flex:1;color:var(--red);">로그아웃</span><span class="val" style="color:var(--red);font-size:14px;">›</span></div>'
   + '</div>'
-  + '<p class="hint">FC JEMIRO 운영 · v0.11</p>';
+  + '<p class="hint">FC JEMIRO 운영 · v0.12</p>';
 }
 function moreItem(id,title,sub,icon){
   return '<div class="player" style="margin-bottom:9px;" onclick="go(\''+id+'\')">'
@@ -2124,7 +2131,17 @@ function fallbackCopy_(text){
 }
 
 /* ================= 팀 (Clubs) ================= */
-var REGIONS = ['서울','안산','수원','성남','용인','부천','안양','화성','김포','고양','남양주','평택','인천','부산','대구','대전','광주','울산','세종','강원','충북','충남','전북','전남','경북','경남','제주'];
+var REGIONS = [
+  '서울',
+  '수원','성남','고양','용인','부천','안산','안양','남양주','화성','평택','의정부','시흥','파주','김포','광명','광주(경기)','군포','하남','오산','양주','이천','구리','안성','포천','의왕','여주','동두천','과천',
+  '인천',
+  '춘천','원주','강릉','속초',
+  '청주','충주','천안','아산','당진','서산',
+  '전주','익산','군산','목포','여수','순천',
+  '포항','경주','구미','안동','창원','김해','진주','양산','거제',
+  '부산','대구','대전','광주','울산','세종','제주',
+  '강원','충북','충남','전북','전남','경북','경남','기타'
+];
 function ownClub(){ return (state.clubs||[]).filter(function(c){return c.own;})[0] || (state.clubs||[])[0] || null; }
 function applyClubHeader(){
   var c = ownClub(); if(!c) return;
@@ -2137,14 +2154,37 @@ function applyClubHeader(){
 }
 function viewClub(){
   var addBtn = state.auth ? '<button class="btn-add-match" onclick="openClubForm()">＋ 팀 등록</button>' : '';
-  var list = (state.clubs||[]);
+  var all = (state.clubs||[]);
+  // 필터 상태
+  if(state.clubRegionFilter===undefined) state.clubRegionFilter='';
+  if(state.clubFavOnly===undefined) state.clubFavOnly=false;
+  // 지역 옵션 (등록된 팀들의 지역)
+  var regs={}; all.forEach(function(c){ if(c.region) regs[c.region]=1; });
+  var regOpts = '<option value="">전체 지역</option>' + Object.keys(regs).sort().map(function(r){
+    return '<option value="'+esc(r)+'"'+(state.clubRegionFilter===r?' selected':'')+'>'+esc(r)+'</option>';
+  }).join('');
+  var filterBar = all.length ? '<div class="club-filter">'
+    + '<select onchange="setClubRegion(this.value)">'+regOpts+'</select>'
+    + '<button class="fav-toggle '+(state.clubFavOnly?'on':'')+'" onclick="toggleClubFavOnly()">★ 즐겨찾기</button>'
+    + '</div>' : '';
+  // 필터 적용
+  var list = all.filter(function(c){
+    if(state.clubRegionFilter && c.region!==state.clubRegionFilter) return false;
+    if(state.clubFavOnly && !c.fav) return false;
+    return true;
+  });
+
   var body;
-  if(!list.length){
+  if(!all.length){
     body = '<div class="empty"><div class="ei">🛡️</div>등록된 팀이 없습니다.<br>＋ 팀 등록으로 우리 팀을 만들어보세요.</div>';
+  } else if(!list.length){
+    body = '<div class="empty"><div class="ei">🔍</div>조건에 맞는 팀이 없습니다.</div>';
   } else {
     body = list.map(function(c){
       var em = c.emblem ? '<img src="'+c.emblem+'" class="club-emblem" alt="">' : '<div class="club-emblem club-emblem-empty">🛡️</div>';
+      var star = '<button class="club-star '+(c.fav?'on':'')+'" onclick="toggleClubFav(\''+c.id+'\')" aria-label="즐겨찾기">'+(c.fav?'★':'☆')+'</button>';
       return '<div class="club-card">'
+        + star
         + em
         + '<div style="flex:1;min-width:0;">'
         +   '<div class="cc-name">'+esc(c.name)+(c.region?' <span class="rg">'+esc(c.region)+'</span>':'')+(c.own?' <span class="cc-own oswald">우리 팀</span>':'')+'</div>'
@@ -2154,8 +2194,15 @@ function viewClub(){
         + '</div>';
     }).join('');
   }
-  return addBtn + '<div class="eyebrow">등록된 팀</div>' + body
-    + '<p class="hint">첫 번째로 등록한 팀이 앱 상단에 표시되는 우리 팀이 됩니다.<br>팀을 만든 사람은 자동으로 임원(관리자)이 됩니다.</p>';
+  return addBtn + '<div class="eyebrow">등록된 팀 · '+list.length+'</div>' + filterBar + body
+    + '<p class="hint">별(★)을 눌러 즐겨찾기할 수 있습니다.<br>첫 번째로 등록한 팀이 앱 상단에 표시되는 우리 팀이 됩니다.</p>';
+}
+function setClubRegion(v){ state.clubRegionFilter=v; render(); }
+function toggleClubFavOnly(){ state.clubFavOnly=!state.clubFavOnly; render(); }
+function toggleClubFav(id){
+  state.clubs=(state.clubs||[]).map(function(c){ return c.id===id ? Object.assign({}, c, {fav:!c.fav}) : c; });
+  render();
+  API.run('toggleClubFav', id).then(function(list){ if(list){ state.clubs=list; if(state.screen==='club') render(); } }).catch(function(){ toast('저장 실패 · 새로고침'); });
 }
 var clubEmblemData = '';
 function openClubForm(clubId){
@@ -2942,7 +2989,7 @@ var WRITE_TOUCH = {
   setMatchStats:['stats'], setMatchAttendance:['attendance'],
   createPoll:['polls'], closePoll:['polls'], deletePoll:['polls','votes'], castVote:['votes'],
   addPost:['posts'], togglePin:['posts'], deletePost:['posts'],
-  addClub:['clubs','players'], updateClub:['clubs'], deleteClub:['clubs'],
+  addClub:['clubs','players'], updateClub:['clubs'], deleteClub:['clubs'], toggleClubFav:['clubs'],
   requestExtra:['extras'], approveExtra:['extras','members','squads'], rejectExtra:['extras'],
   assignVotersToMatch:['members','squads']
 };
