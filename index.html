@@ -358,6 +358,22 @@
   .btn-mini{flex:0 0 auto;padding:8px 11px;border:none;border-radius:9px;background:var(--ink);color:#fff;font-size:11.5px;font-weight:700;font-family:inherit;cursor:pointer;margin-left:6px;}
   .btn-mini.ghost{background:var(--paper);color:var(--steel);border:1px solid var(--line-strong);}
 
+  /* Clubs */
+  .club .name .rg{font-family:'Pretendard';font-size:11px;font-weight:600;color:var(--gold-soft);letter-spacing:.02em;margin-left:2px;}
+  .club-card{display:flex;align-items:center;gap:13px;background:var(--card);border:1px solid var(--line);border-radius:17px;padding:13px 14px;box-shadow:var(--shadow-sm);margin-bottom:10px;}
+  .club-emblem{width:48px;height:48px;border-radius:12px;object-fit:contain;background:#fff;border:1px solid var(--line);flex:0 0 auto;}
+  .club-emblem-empty{display:flex;align-items:center;justify-content:center;font-size:22px;background:var(--paper);}
+  .cc-name{font-weight:800;font-size:15.5px;color:var(--ink);}
+  .cc-name .rg{font-size:11.5px;font-weight:600;color:var(--steel-soft);margin-left:2px;}
+  .cc-own{font-size:9.5px;font-weight:600;letter-spacing:.08em;background:linear-gradient(150deg,var(--red),var(--red-deep));color:#fff;border-radius:5px;padding:2px 6px;margin-left:5px;vertical-align:2px;}
+  .cc-note{font-size:12px;color:var(--steel);margin-top:3px;}
+
+  /* 로그인 이름 검색 */
+  .au-list{max-height:180px;overflow-y:auto;border-radius:12px;background:rgba(255,255,255,.06);margin-top:-6px;margin-bottom:10px;display:none;}
+  .au-item{padding:11px 14px;font-size:14.5px;color:#fff;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.07);display:flex;gap:10px;align-items:center;}
+  .au-item .num{font-family:'Oswald';color:var(--gold-soft);font-size:13px;width:22px;text-align:center;}
+  .au-item:active{background:rgba(255,255,255,.12);}
+
   /* Board posts */
   .post-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 15px;box-shadow:var(--shadow-sm);margin-bottom:10px;cursor:pointer;}
   .post-card:active{transform:scale(.99);}
@@ -600,7 +616,9 @@ var DB = {
     {id:'po1', type:'notice', title:'7월 정기전 일정 안내', body:'7/19, 7/26 정기전이 확정되었습니다. 스쿼드 확인 후 참석 여부를 남겨주세요.', author:'김도현', authorId:'m1', pinned:true, createdAt:'2025-07-08T09:00:00Z'},
     {id:'po2', type:'notice', title:'7월 회비 납부 안내', body:'7월 회비는 25일까지 납부 부탁드립니다. 미납 시 개별 연락드립니다.', author:'김도현', authorId:'m1', pinned:false, createdAt:'2025-07-05T09:00:00Z'},
     {id:'po3', type:'suggest', title:'경기 후 회식 장소 건의', body:'매화 축구장 근처에 새로 생긴 삼겹살집 어떨까요? 단체석도 있습니다.', author:'박민재', authorId:'m3', pinned:false, createdAt:'2025-07-07T12:00:00Z'}
-  ]
+  ],
+  clubs: [],
+  extras: []
 };
 /* ===== Firebase / Firestore ===== */
 var FIREBASE_CONFIG = {
@@ -625,7 +643,40 @@ var API = {
 function mockHandler(fn, a){
   var id;
   // --- batch ---
-  if(fn==='bootstrap'){ return {config:mockHandler('getConfig',[]), players:mockHandler('getPlayers',[]), matches:mockHandler('getMatches',[])}; }
+  if(fn==='bootstrap'){ return {config:mockHandler('getConfig',[]), players:mockHandler('getPlayers',[]), matches:mockHandler('getMatches',[]), clubs:mockHandler('getClubs',[])}; }
+  // --- clubs (팀) ---
+  if(fn==='getClubs'){ return DB.clubs.slice().sort(function(a2,b2){ return (b2.own?1:0)-(a2.own?1:0) || String(a2.createdAt).localeCompare(String(b2.createdAt)); }); }
+  if(fn==='addClub'){
+    var cd=a[0];
+    var club={id:'c'+Date.now(), name:cd.name, region:cd.region||'', note:cd.note||'', emblem:cd.emblem||'', ownerId:cd.ownerId||'', own:DB.clubs.length===0, createdAt:new Date().toISOString()};
+    DB.clubs.push(club);
+    if(cd.ownerId) DB.players.forEach(function(p){ if(p.id===cd.ownerId) p.role='임원'; });   // 팀 생성자는 임원
+    return mockHandler('getClubs',[]);
+  }
+  if(fn==='deleteClub'){ DB.clubs=DB.clubs.filter(function(c){return c.id!==a[0];}); if(DB.clubs.length && !DB.clubs.some(function(c){return c.own;})) DB.clubs[0].own=true; return mockHandler('getClubs',[]); }
+  // --- 추가 참석 신청 (extras) ---
+  if(fn==='requestExtra'){
+    var pl0=a[1];
+    if(!DB.extras.some(function(x){return x.pollId===a[0] && x.playerId===pl0 && x.status!=='rejected';}))
+      DB.extras.push({id:'x'+Date.now(), pollId:a[0], playerId:pl0, status:'pending', createdAt:new Date().toISOString()});
+    return buildPollDetail_(a[0], pl0);
+  }
+  if(fn==='approveExtra'){ // a: extraId, matchId|null, viewerId
+    var ex=DB.extras.filter(function(x){return x.id===a[0];})[0];
+    if(ex){ ex.status='approved'; if(a[1]) addPlayerToMatchSquad_(a[1], ex.playerId); }
+    return buildPollDetail_(ex?ex.pollId:'', a[2]);
+  }
+  if(fn==='rejectExtra'){
+    var ex2=DB.extras.filter(function(x){return x.id===a[0];})[0];
+    if(ex2) ex2.status='rejected';
+    return buildPollDetail_(ex2?ex2.pollId:'', a[1]);
+  }
+  // --- 투표 인원 경기 편성 ---
+  if(fn==='assignVotersToMatch'){ // a: pollId, option, matchId
+    var vpids={}; DB.votes.filter(function(v){return v.pollId===a[0] && v.choice===a[1];}).forEach(function(v){ vpids[v.playerId]=1; });
+    var cnt=0; Object.keys(vpids).forEach(function(pl){ if(addPlayerToMatchSquad_(a[2], pl)) cnt++; });
+    return {ok:true, count:cnt};
+  }
   if(fn==='getSquadScreen'){
     var matches=mockHandler('getMatches',[]);
     var mid=a[0]; if(!matches.some(function(m){return m.id===mid;})) mid=matches.length?matches[0].id:null;
@@ -784,6 +835,19 @@ function pollStatus_(p){
   if(p.startAt && new Date(p.startAt) > now) return 'scheduled';
   return 'open';
 }
+/* 경기의 1번째 쿼터에 선수 편성 (선호 포지션 1순위, 없으면 DF). 이미 편성돼 있으면 건너뜀 */
+function addPlayerToMatchSquad_(matchId, playerId){
+  var sqs = DB.squads.filter(function(s){return s.matchId===matchId;});
+  if(!sqs.length){ DB.squads.push({id:'s'+Date.now()+Math.floor(Math.random()*999), matchId:matchId, name:'1쿼터'}); sqs=DB.squads.filter(function(s){return s.matchId===matchId;}); }
+  var sid = sqs[0].id;
+  if(DB.members.some(function(x){return x.squadId===sid && x.playerId===playerId;})) return false;
+  var pl = DB.players.filter(function(p){return p.id===playerId;})[0];
+  var pos = (pl && pl.positions && pl.positions.length) ? pl.positions[0] : 'DF';
+  var nInLine = DB.members.filter(function(x){return x.squadId===sid && x.position===pos;}).length;
+  var dd = posDefaultXY(pos, nInLine);
+  DB.members.push({squadId:sid, playerId:playerId, position:pos, x:dd.x, y:dd.y});
+  return true;
+}
 function buildPollDetail_(pollId, viewerId){
   var p = DB.polls.filter(function(x){return x.id===pollId;})[0] || null;
   if(!p) return {poll:null};
@@ -796,10 +860,14 @@ function buildPollDetail_(pollId, viewerId){
   });
   var nonVoters = DB.players.filter(function(pl){return !voterSet[pl.id];}).map(function(pl){return pl.name;});
   var myChoices = viewerId ? votes.filter(function(v){return v.playerId===viewerId;}).map(function(v){return v.choice;}) : [];
+  var extras = DB.extras.filter(function(x){return x.pollId===pollId;}).map(function(x){
+    return {id:x.id, playerId:x.playerId, name:nm(x.playerId), status:x.status, createdAt:x.createdAt};
+  });
+  var myExtra = viewerId ? (extras.filter(function(x){return x.playerId===viewerId && x.status!=='rejected';})[0]||null) : null;
   return {
     poll:{id:p.id, title:p.title, options:p.options.slice(), startAt:p.startAt, endAt:p.endAt, status:pollStatus_(p), multi:!!p.multi, anon:!!p.anon, createdAt:p.createdAt},
     results:results, totalVotes:Object.keys(voterSet).length, totalMembers:DB.players.length,
-    nonVoters:nonVoters, myChoices:myChoices
+    nonVoters:nonVoters, myChoices:myChoices, extras:extras, myExtra:myExtra
   };
 }
 function buildMatchReport_(matchId){
@@ -965,6 +1033,7 @@ function deleteQuarterConfirm(){
 
 /* ================= Tabs ================= */
 var TABS = [
+  {id:'club',  kr:'팀',       en:'CLUBS',    label:'팀',    icon:'M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-3z'},
   {id:'team',  kr:'팀원 관리', en:'SQUAD',    label:'팀원',  icon:'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14c-4 0-7 2-7 5v1h14v-1c0-3-3-5-7-5z'},
   {id:'squad', kr:'경기 등록', en:'MATCHDAY', label:'경기등록', icon:'M4 5h16M4 5v14M4 5l6 5-6 5M20 5v14M12 5v14'},
   {id:'record',kr:'기록 관리', en:'STATS',    label:'기록',  icon:'M5 20V10M12 20V4M19 20v-7'},
@@ -999,7 +1068,8 @@ function render(){
   document.getElementById('fab').style.display = (state.screen==='team' && isAdmin()) ? 'flex':'none';
 
   var c = document.getElementById('content');
-  if(state.screen==='team')   c.innerHTML = viewTeam();
+  if(state.screen==='club')   c.innerHTML = viewClub();
+  else if(state.screen==='team')   c.innerHTML = viewTeam();
   else if(state.screen==='squad') c.innerHTML = viewSquad();
   else if(state.screen==='record') c.innerHTML = viewRecord();
   else if(state.screen==='att') c.innerHTML = viewAtt();
@@ -1498,7 +1568,7 @@ function viewMore(){
   +   (isAdmin()?'<div class="list-row" style="cursor:pointer;" onclick="copyVenueLink(location.hostname)"><span class="nm" style="flex:1;">현재 도메인 <span style="font-size:10px;color:var(--steel-soft);">(카카오맵 등록용)</span></span><span class="val" style="font-size:11.5px;color:var(--steel);word-break:break-all;">'+esc(location.hostname)+'</span></div>':'')
   +   '<div class="list-row" style="cursor:pointer;" onclick="logout()"><span class="nm" style="flex:1;color:var(--red);">로그아웃</span><span class="val" style="color:var(--red);font-size:14px;">›</span></div>'
   + '</div>'
-  + '<p class="hint">FC JEMIRO 운영 · v0.8</p>';
+  + '<p class="hint">FC JEMIRO 운영 · v0.10</p>';
 }
 function moreItem(id,title,sub,icon){
   return '<div class="player" style="margin-bottom:9px;" onclick="go(\''+id+'\')">'
@@ -1773,7 +1843,36 @@ function renderPollDetail(d){
     voteArea = '<p class="hint" style="margin-top:14px;">아직 시작 전인 투표입니다.</p>';
   } else {
     voteArea = '<p class="hint" style="margin-top:14px;">마감된 투표입니다.</p>';
+    // 마감 후 추가 참석 신청 (요청 2)
+    if(state.auth){
+      if(d.myExtra){
+        var stTxt = d.myExtra.status==='approved' ? '✓ 추가 참석 승인됨' : '추가 참석 승인 대기 중';
+        voteArea += '<div class="card" style="padding:12px 14px;margin-top:8px;font-size:13.5px;font-weight:700;color:'+(d.myExtra.status==='approved'?'var(--ok)':'var(--warn)')+';">'+stTxt+'</div>';
+      } else {
+        voteArea += '<button class="btn-ghost" style="margin-top:8px;" onclick="requestExtraJoin(\''+p.id+'\')">🙋 추가 참석 신청</button>';
+      }
+    }
   }
+  // 추가 참석 신청 현황 (임원: 승인/거절)
+  var extraSec='';
+  var exs=(d.extras||[]);
+  if(exs.length){
+    var rows=exs.map(function(x){
+      var badge = x.status==='approved' ? '<span class="poll-flag" style="background:var(--ok);">승인</span>'
+                : x.status==='rejected' ? '<span class="poll-flag" style="background:var(--steel-soft);">거절</span>'
+                : '<span class="poll-flag" style="background:var(--warn);">대기</span>';
+      var btns = (isAdmin() && x.status==='pending')
+        ? '<button class="btn-mini" onclick="openApproveExtra(\''+x.id+'\',\''+esc(x.name).replace(/'/g,'')+'\',\''+p.id+'\')">승인</button>'
+          + '<button class="btn-mini ghost" onclick="rejectExtraGo(\''+x.id+'\')">거절</button>'
+        : '';
+      return '<div class="tg-row" style="cursor:default;"><div style="flex:1;font-weight:700;font-size:14px;">'+esc(x.name)+'</div>'+badge+btns+'</div>';
+    }).join('');
+    extraSec = '<div class="field" style="margin-top:14px;"><label>추가 참석 신청 · '+exs.length+'명</label>'+rows+'</div>';
+  }
+  // 투표 인원 경기 편성 (요청 1, 임원)
+  var assignBtn = (isAdmin() && d.totalVotes>0)
+    ? '<button class="btn-ghost" style="margin-top:14px;" onclick="openAssignVoters(\''+p.id+'\')">⚽ 투표 인원 경기에 편성</button>'
+    : '';
 
   var adminBtns = isAdmin() ? '<div style="display:flex;gap:9px;margin-top:14px;">'
     +     (p.status==='open'?'<button class="btn-ghost" style="flex:1;margin:0;" onclick="closePollConfirm(\''+p.id+'\')">투표 마감</button>':'')
@@ -1789,7 +1888,7 @@ function renderPollDetail(d){
    +     '<span style="margin-left:auto;font-size:12px;color:var(--steel);">'+d.totalVotes+'/'+d.totalMembers+'명 참여</span></div>'
    +   '<div class="field"><label>결과'+(p.anon?' <span style="color:var(--steel-soft);font-weight:600;">(익명)</span>':'')+'</label>'+bars+'</div>'
    +   '<div class="field"><label>미투표자 · '+d.nonVoters.length+'명</label>'+nonV+'</div>'
-   +   voteArea + adminBtns
+   +   voteArea + extraSec + assignBtn + adminBtns
    + '</div>';
   showSheet(html);
 }
@@ -1804,6 +1903,85 @@ function pickVoteOpt(btn, multi){
     Array.prototype.forEach.call(document.querySelectorAll('.vote-opt'), function(b){ b.classList.toggle('on', b===btn); });
   }
 }
+/* ---- 투표 인원 경기 편성 (요청 1) ---- */
+var assignPollId=null, assignOpt=null, assignMatchId=null;
+function openAssignVoters(pollId){
+  if(!requireAdmin()) return;
+  assignPollId=pollId; assignOpt=null; assignMatchId=null;
+  API.run('getPollDetail', pollId, authId()).then(function(d){
+    if(!d||!d.poll){ toast('투표를 찾을 수 없습니다'); return; }
+    var opts=d.results.map(function(r){
+      return '<div class="chip" data-as-opt="'+esc(r.option).replace(/"/g,'')+'" onclick="pickAssignOpt(this)">'+esc(r.option)+' ('+r.count+'명)</div>';
+    }).join('');
+    var today=new Date().toISOString().slice(0,10);
+    var ms=(state.matches||[]).slice().sort(function(a,b){return a.date.localeCompare(b.date);});
+    var up=ms.filter(function(m){return m.date>=today;});
+    var list=(up.length?up:ms).slice(0,10);
+    var mopts=list.map(function(m){ return '<option value="'+m.id+'">'+fmtDateDot(m.date)+' vs '+esc(m.opponent||'상대 미정')+'</option>'; }).join('');
+    var html='<div class="grabber"></div>'
+     + '<div class="sheet-head"><h3>투표 인원 경기 편성</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+     + '<div class="sheet-body">'
+     +   '<p style="font-size:13px;color:var(--steel);margin:0 0 12px;line-height:1.55;">선택한 항목에 투표한 인원을 경기 1쿼터에 편성합니다.<br>포지션은 선호 포지션 1순위(없으면 DF)로 배치됩니다.</p>'
+     +   '<div class="field"><label>참석으로 볼 항목<span class="req">*</span></label><div class="chips">'+opts+'</div></div>'
+     +   '<div class="field"><label>편성할 경기<span class="req">*</span></label><select id="as_match">'+(mopts||'<option value="">등록된 경기 없음</option>')+'</select></div>'
+     +   '<button class="btn-primary" onclick="runAssignVoters()">편성하기</button>'
+     + '</div>';
+    showSheet(html);
+  }).catch(function(){ toast('불러오기 실패'); });
+}
+function pickAssignOpt(el){
+  assignOpt = el.getAttribute('data-as-opt');
+  Array.prototype.forEach.call(document.querySelectorAll('#sheet .chip'), function(c){ c.classList.toggle('on', c===el); });
+}
+function runAssignVoters(){
+  if(!assignOpt){ toast('참석 항목을 선택하세요'); return; }
+  var mid=(document.getElementById('as_match')||{}).value;
+  if(!mid){ toast('경기를 선택하세요'); return; }
+  API.run('assignVotersToMatch', assignPollId, assignOpt, mid).then(function(r){
+    SQUAD_CACHE={}; state.squadLoaded=false;
+    closeSheet(); toast((r&&r.count||0)+'명을 경기에 편성했습니다');
+  }).catch(function(){ toast('편성 실패'); });
+}
+
+/* ---- 추가 참석 신청/승인 (요청 2) ---- */
+function requestExtraJoin(pollId){
+  if(!state.auth){ toast('로그인이 필요합니다'); return; }
+  API.run('requestExtra', pollId, state.auth.playerId).then(function(d){
+    renderPollDetail(d); toast('추가 참석을 신청했습니다 · 임원 승인 대기');
+  }).catch(function(){ toast('신청 실패'); });
+}
+var approveExtraId=null, approvePollId=null;
+function openApproveExtra(extraId, name, pollId){
+  if(!requireAdmin()) return;
+  approveExtraId=extraId; approvePollId=pollId;
+  var today=new Date().toISOString().slice(0,10);
+  var ms=(state.matches||[]).slice().sort(function(a,b){return a.date.localeCompare(b.date);});
+  var up=ms.filter(function(m){return m.date>=today;});
+  var list=(up.length?up:ms).slice(0,10);
+  var mopts='<option value="">경기에 편성 안 함</option>'+list.map(function(m){ return '<option value="'+m.id+'">'+fmtDateDot(m.date)+' vs '+esc(m.opponent||'상대 미정')+'</option>'; }).join('');
+  var html='<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>'+esc(name)+' · 추가 참석 승인</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<p style="font-size:13px;color:var(--steel);margin:0 0 12px;line-height:1.55;">승인하면서 경기에 바로 편성할지 선택할 수 있습니다.<br>편성 시 포지션은 선호 포지션 1순위(없으면 DF)입니다.</p>'
+   +   '<div class="field"><label>경기 편성</label><select id="ae_match">'+mopts+'</select></div>'
+   +   '<button class="btn-primary" onclick="runApproveExtra()">승인하기</button>'
+   + '</div>';
+  showSheet(html);
+}
+function runApproveExtra(){
+  var mid=(document.getElementById('ae_match')||{}).value||null;
+  API.run('approveExtra', approveExtraId, mid, authId()).then(function(d){
+    if(mid){ SQUAD_CACHE={}; state.squadLoaded=false; }
+    renderPollDetail(d); toast('승인했습니다'+(mid?' · 경기에 편성됨':''));
+  }).catch(function(){ toast('승인 실패'); });
+}
+function rejectExtraGo(extraId){
+  if(!requireAdmin()) return;
+  API.run('rejectExtra', extraId, authId()).then(function(d){
+    renderPollDetail(d); toast('거절했습니다');
+  }).catch(function(){ toast('실패했습니다'); });
+}
+
 function submitVote(pollId){
   if(!state.auth){ toast('로그인이 필요합니다'); return; }
   if(!state.voteChoices || !state.voteChoices.length){ toast('항목을 선택하세요'); return; }
@@ -1909,6 +2087,7 @@ function openVenueShare(matchId){
    +   '<div class="field"><label>지도에서 열기</label>'
    +     linkBtn('카카오맵', kUrl, '웹·앱')
    +     linkBtn('구글 지도', gUrl, '웹·앱')
+   +     (name ? linkBtn('네이버 지도', 'https://map.naver.com/p/search/'+encodeURIComponent(name), '웹·앱') : '')
    +   '</div>'
    +   (hasXY ? '<div class="field"><label>내비 앱으로 안내</label>'
    +     linkBtn('카카오내비', kNavi, '앱 설치 시')
@@ -1940,6 +2119,100 @@ function fallbackCopy_(text){
   var ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta);
   ta.select(); try{ document.execCommand('copy'); toast('링크가 복사되었습니다'); }catch(e){ toast('복사 실패'); }
   document.body.removeChild(ta);
+}
+
+/* ================= 팀 (Clubs) ================= */
+var REGIONS = ['서울','경기','인천','부산','대구','광주','대전','울산','세종','강원','충북','충남','전북','전남','경북','경남','제주'];
+function ownClub(){ return (state.clubs||[]).filter(function(c){return c.own;})[0] || (state.clubs||[])[0] || null; }
+function applyClubHeader(){
+  var c = ownClub(); if(!c) return;
+  var img = document.querySelector('.crest-img');
+  if(img && c.emblem){ img.src = c.emblem; LOGO_URI = c.emblem; }
+  var nameEl = document.querySelector('.club .name');
+  if(nameEl) nameEl.innerHTML = esc(c.name) + (c.region ? ' <span class="rg">'+esc(c.region)+'</span>' : '');
+  var tagEl = document.querySelector('.club .tag');
+  if(tagEl && c.note) tagEl.textContent = c.note;
+}
+function viewClub(){
+  var addBtn = state.auth ? '<button class="btn-add-match" onclick="openClubForm()">＋ 팀 등록</button>' : '';
+  var list = (state.clubs||[]);
+  var body;
+  if(!list.length){
+    body = '<div class="empty"><div class="ei">🛡️</div>등록된 팀이 없습니다.<br>＋ 팀 등록으로 우리 팀을 만들어보세요.</div>';
+  } else {
+    body = list.map(function(c){
+      var em = c.emblem ? '<img src="'+c.emblem+'" class="club-emblem" alt="">' : '<div class="club-emblem club-emblem-empty">🛡️</div>';
+      return '<div class="club-card">'
+        + em
+        + '<div style="flex:1;min-width:0;">'
+        +   '<div class="cc-name">'+esc(c.name)+(c.region?' <span class="rg">'+esc(c.region)+'</span>':'')+(c.own?' <span class="cc-own oswald">우리 팀</span>':'')+'</div>'
+        +   (c.note?'<div class="cc-note">'+esc(c.note)+'</div>':'')
+        + '</div>'
+        + (isAdmin()?'<button class="btn-mini ghost" onclick="deleteClubConfirm(\''+c.id+'\',\''+esc(c.name).replace(/'/g,'')+'\')">삭제</button>':'')
+        + '</div>';
+    }).join('');
+  }
+  return addBtn + '<div class="eyebrow">등록된 팀</div>' + body
+    + '<p class="hint">첫 번째로 등록한 팀이 앱 상단에 표시되는 우리 팀이 됩니다.<br>팀을 만든 사람은 자동으로 임원(관리자)이 됩니다.</p>';
+}
+var clubEmblemData = '';
+function openClubForm(){
+  if(!state.auth){ toast('로그인이 필요합니다'); return; }
+  clubEmblemData = '';
+  var regOpts = '<option value="">지역 선택</option>' + REGIONS.map(function(r){ return '<option value="'+r+'">'+r+'</option>'; }).join('');
+  var html = '<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>팀 등록</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<div class="field"><label>엠블럼</label>'
+   +     '<div style="display:flex;align-items:center;gap:12px;">'
+   +       '<div id="cb_prev" class="club-emblem club-emblem-empty" style="width:56px;height:56px;">🛡️</div>'
+   +       '<label class="btn-ghost" style="flex:1;margin:0;text-align:center;cursor:pointer;">이미지 선택<input id="cb_file" type="file" accept="image/*" style="display:none;" onchange="pickEmblem(this)"></label>'
+   +     '</div></div>'
+   +   '<div class="field"><label>팀명<span class="req">*</span></label><input id="cb_name" type="text" placeholder="FC JEMIRO"></div>'
+   +   '<div class="field"><label>지역</label><select id="cb_region">'+regOpts+'</select></div>'
+   +   '<div class="field"><label>비고</label><input id="cb_note" type="text" placeholder="SINCE 2014 · 12TH SEASON"></div>'
+   +   '<button class="btn-primary" onclick="saveClub()">등록하기</button>'
+   + '</div>';
+  showSheet(html);
+}
+function pickEmblem(input){
+  var file = input.files && input.files[0]; if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e){
+    var img = new Image();
+    img.onload = function(){
+      var c=document.createElement('canvas'); var sz=96; c.width=sz; c.height=sz;
+      var ctx=c.getContext('2d');
+      var r=Math.min(sz/img.width, sz/img.height);
+      var w=img.width*r, h=img.height*r;
+      ctx.drawImage(img,(sz-w)/2,(sz-h)/2,w,h);
+      clubEmblemData = c.toDataURL('image/png');
+      var pv=document.getElementById('cb_prev'); if(pv){ pv.innerHTML='<img src="'+clubEmblemData+'" style="width:100%;height:100%;object-fit:contain;border-radius:12px;">'; pv.classList.remove('club-emblem-empty'); }
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+function saveClub(){
+  var name=(document.getElementById('cb_name')||{}).value||'';
+  if(!name.trim()){ toast('팀명을 입력하세요'); return; }
+  var data={ name:name.trim(), region:(document.getElementById('cb_region')||{}).value||'', note:((document.getElementById('cb_note')||{}).value||'').trim(), emblem:clubEmblemData||'', ownerId:state.auth?state.auth.playerId:'' };
+  var tmp=Object.assign({id:'tmp'+Date.now(), own:(state.clubs||[]).length===0, createdAt:new Date().toISOString()}, data);
+  state.clubs=(state.clubs||[]).concat([tmp]);
+  // 팀 생성자는 임원으로 (요청 7)
+  if(state.auth && state.auth.role!=='임원'){
+    state.auth.role='임원'; saveSession(state.auth);
+    state.players=(state.players||[]).map(function(p){ return p.id===state.auth.playerId ? Object.assign({},p,{role:'임원'}) : p; });
+  }
+  closeSheet(); applyClubHeader(); render(); toast('팀을 등록했습니다'+(tmp.own?' · 우리 팀으로 설정':''));
+  API.run('addClub', data).then(function(list){ if(list){ state.clubs=list; applyClubHeader(); if(state.screen==='club') render(); } }).catch(function(){ toast('저장 실패 · 새로고침'); });
+}
+function deleteClubConfirm(id, name){
+  if(!requireAdmin()) return;
+  state.clubs=(state.clubs||[]).filter(function(c){return c.id!==id;});
+  if(state.clubs.length && !state.clubs.some(function(c){return c.own;})) state.clubs[0].own=true;
+  render(); applyClubHeader(); toast(name+' 팀을 삭제했습니다');
+  API.run('deleteClub', id).then(function(list){ if(list){ state.clubs=list; applyClubHeader(); } }).catch(function(){ toast('삭제 저장 실패 · 새로고침'); });
 }
 
 function viewVenue(){
@@ -2116,8 +2389,6 @@ function openMatchForm(id){
    +     '<div id="g_map_results" class="map-results"></div>'
    +     '<div id="g_map" class="map-box"></div>'
    +     '<div id="g_map_status" class="map-status">'+(venuePick?'📍 위치 지정됨 · 마커를 끌어 조정하세요':'지도를 탭하거나 마커를 끌어 위치를 지정하세요')+'</div>'
-   +     '<div id="g_url_wrap" style="margin-top:10px;'+(venuePick?'':'')+'"><label style="display:block;font-size:12px;font-weight:700;margin-bottom:5px;">또는 지도 링크 직접 입력 (선택)</label>'
-   +       '<input id="g_url" type="url" placeholder="https://maps.google.com/..." value="'+(m&&m.venueUrl&&(!m.lat||m.lat==='')?esc(m.venueUrl):'')+'" style="width:100%;padding:11px 12px;border:1.5px solid var(--line-strong);border-radius:11px;font-family:inherit;font-size:14px;"></div>'
    +   '</div>'
    +   '<button class="btn-primary" onclick="saveMatch(\''+(id||'')+'\')">'+(id?'수정 완료':'등록하기')+'</button>'
    +   (id?'<button class="btn-ghost btn-danger" onclick="deleteMatchConfirm(\''+id+'\')">이 경기 삭제</button>':'')
@@ -2294,10 +2565,10 @@ function saveMatch(id){
   var date = document.getElementById('g_date').value;
   var opp = document.getElementById('g_opp').value.trim();
   if(!date || !opp){ toast('날짜와 상대팀은 필수입니다'); return; }
-  var lat = venuePick ? venuePick.lat : '';
-  var lng = venuePick ? venuePick.lng : '';
-  var manual = (document.getElementById('g_url')||{}).value || '';
-  var url = venuePick ? ('https://www.google.com/maps?q='+lat+','+lng) : (manual.trim());
+  var prev = id ? (state.matches.filter(function(x){return x.id===id;})[0]||{}) : {};
+  var lat = venuePick ? venuePick.lat : (prev.lat!=null?prev.lat:'');
+  var lng = venuePick ? venuePick.lng : (prev.lng!=null?prev.lng:'');
+  var url = venuePick ? ('https://www.google.com/maps?q='+venuePick.lat+','+venuePick.lng) : (prev.venueUrl||'');
   var data = {
     date: date,
     time: document.getElementById('g_time').value,
@@ -2546,19 +2817,21 @@ function saveSession(a){ try{ localStorage.setItem('kj_auth', JSON.stringify(a))
 function loadSession(){ try{ var s=localStorage.getItem('kj_auth'); return s?JSON.parse(s):null; }catch(e){ return null; } }
 function clearSession(){ try{ localStorage.removeItem('kj_auth'); }catch(e){} }
 
+var loginPid = null;
 function showLogin(){
   var sel = document.getElementById('authScreen');
-  var players = state.players.slice().sort(function(a,b){return a.num-b.num;});
-  var opts = '<option value="">이름을 선택하세요</option>' + players.map(function(p){
-    return '<option value="'+p.id+'">'+p.num+'. '+esc(p.name)+'</option>';
-  }).join('');
+  loginPid = null;
+  var c = ownClub();
+  var logo = (c && c.emblem) ? c.emblem : LOGO_URI;
+  var title = c ? c.name : 'FC JEMIRO';
   sel.innerHTML = ''
     + '<div class="auth-inner">'
-    + '<img class="auth-logo" src="'+LOGO_URI+'" alt="FC JEMIRO">'
-    + '<div class="auth-title">FC JEMIRO</div>'
+    + '<img class="auth-logo" src="'+logo+'" alt="'+esc(title)+'">'
+    + '<div class="auth-title">'+esc(title)+'</div>'
     + '<div class="auth-sub">팀 운영 · 로그인</div>'
     + '<div class="auth-form">'
-    +   '<select id="au_name">'+opts+'</select>'
+    +   '<input id="au_search" type="text" placeholder="이름 입력 (예: 김)" autocomplete="off" oninput="filterLoginList()" onfocus="filterLoginList()">'
+    +   '<div id="au_list" class="au-list"></div>'
     +   '<input id="au_pw" type="password" placeholder="비밀번호" onkeydown="if(event.key===\'Enter\')doLogin()">'
     +   '<button class="auth-btn" onclick="doLogin()">로그인</button>'
     +   '<p class="auth-hint">처음이신가요? 초기 비밀번호는 <b>jemiro</b> 입니다.<br>로그인 후 나만의 비밀번호로 변경하세요.</p>'
@@ -2567,10 +2840,38 @@ function showLogin(){
   document.getElementById('tabbar').style.display = 'none';
   document.getElementById('fab').style.display = 'none';
 }
+function filterLoginList(){
+  var q = ((document.getElementById('au_search')||{}).value||'').trim().toLowerCase();
+  var box = document.getElementById('au_list'); if(!box) return;
+  loginPid = null;
+  var list = state.players.slice().sort(function(a,b){return a.num-b.num;})
+    .filter(function(p){ return !q || String(p.name).toLowerCase().indexOf(q)>=0; })
+    .slice(0, 8);
+  if(!list.length){ box.innerHTML='<div class="au-item" style="color:rgba(255,255,255,.5);cursor:default;">일치하는 이름이 없습니다</div>'; box.style.display='block'; return; }
+  // 정확히 1명 남고 이름이 완전 일치하면 자동 선택
+  var exact = list.filter(function(p){ return String(p.name).toLowerCase()===q; });
+  if(exact.length===1) loginPid = exact[0].id;
+  box.innerHTML = list.map(function(p){
+    return '<div class="au-item" onclick="pickLoginUser(\''+p.id+'\',\''+esc(p.name).replace(/'/g,'')+'\')"><span class="num">'+p.num+'</span>'+esc(p.name)+'</div>';
+  }).join('');
+  box.style.display='block';
+}
+function pickLoginUser(pid, name){
+  loginPid = pid;
+  var inp = document.getElementById('au_search'); if(inp) inp.value = name;
+  var box = document.getElementById('au_list'); if(box) box.style.display='none';
+  var pw = document.getElementById('au_pw'); if(pw) pw.focus();
+}
 function doLogin(){
-  var pid = (document.getElementById('au_name')||{}).value;
+  var pid = loginPid;
+  if(!pid){
+    // 입력한 이름이 정확히 1명과 일치하면 그 사람으로
+    var q = ((document.getElementById('au_search')||{}).value||'').trim().toLowerCase();
+    var hit = state.players.filter(function(p){ return String(p.name).toLowerCase()===q; });
+    if(hit.length===1) pid = hit[0].id;
+  }
   var pw = (document.getElementById('au_pw')||{}).value;
-  if(!pid){ toast('이름을 선택하세요'); return; }
+  if(!pid){ toast('이름을 입력 후 목록에서 선택하세요'); return; }
   if(!pw){ toast('비밀번호를 입력하세요'); return; }
   var btn=document.querySelector('.auth-btn'); if(btn){btn.textContent='확인 중...';btn.disabled=true;}
   API.run('login', pid, pw).then(function(r){
@@ -2609,7 +2910,9 @@ var FS_MAP = {
   attendance: {coll:'attendance',   id:function(x){return x.matchId+'__'+x.playerId;}},
   polls:      {coll:'polls',        id:function(x){return x.id;}},
   votes:      {coll:'votes',        id:function(x){return x.id;}},
-  posts:      {coll:'posts',        id:function(x){return x.id;}}
+  posts:      {coll:'posts',        id:function(x){return x.id;}},
+  clubs:      {coll:'clubs',        id:function(x){return x.id;}},
+  extras:     {coll:'extraRequests',id:function(x){return x.id;}}
 };
 var WRITE_TOUCH = {
   addPlayer:['players'], updatePlayer:['players'], deletePlayer:['players','members'], setMemberRole:['players'],
@@ -2619,7 +2922,10 @@ var WRITE_TOUCH = {
   addNote:['notes'], deleteNote:['notes'],
   setMatchStats:['stats'], setMatchAttendance:['attendance'],
   createPoll:['polls'], closePoll:['polls'], deletePoll:['polls','votes'], castVote:['votes'],
-  addPost:['posts'], togglePin:['posts'], deletePost:['posts']
+  addPost:['posts'], togglePin:['posts'], deletePost:['posts'],
+  addClub:['clubs','players'], deleteClub:['clubs'],
+  requestExtra:['extras'], approveExtra:['extras','members','squads'], rejectExtra:['extras'],
+  assignVotersToMatch:['members','squads']
 };
 function fsClean(x){ var c={}; for(var k in x){ if(k==='pw'||k==='pwHash'||k==='_row') continue; c[k]=x[k]; } return c; }
 function fsSnapshot(keys){
@@ -2681,11 +2987,12 @@ function fsLoadAll(){
   return Promise.all([
     fsColl('members'), fsColl('matches'), fsColl('squads'), fsColl('squadMembers'),
     fsColl('squadNotes'), fsColl('playerStats'), fsColl('attendance'), fsColl('polls'),
-    fsColl('votes'), fsColl('posts'), db.collection('config').doc('app').get()
+    fsColl('votes'), fsColl('posts'), db.collection('config').doc('app').get(),
+    fsColl('clubs'), fsColl('extraRequests')
   ]).then(function(r){
     DB.players=r[0]; DB.matches=r[1]; DB.squads=r[2]; DB.members=r[3];
     DB.notes=r[4]; DB.stats=r[5]; DB.attendance=r[6]; DB.polls=r[7];
-    DB.votes=r[8]; DB.posts=r[9];
+    DB.votes=r[8]; DB.posts=r[9]; DB.clubs=r[11]||[]; DB.extras=r[12]||[];
     var cfg = (r[10] && r[10].exists) ? r[10].data() : {};
     DB.config = { checkinRadiusM: (cfg.checkinRadiusM!=null?cfg.checkinRadiusM:100), lateThresholdMin: (cfg.lateThresholdMin!=null?cfg.lateThresholdMin:0) };
     for(var k in cfg){ if(k!=='staffPw'&&k!=='memberPw') DB.config[k]=cfg[k]; }
@@ -2709,6 +3016,14 @@ FS.run = function(fn, args){
     return mockHandler(fn, args);   // 읽기 (메모리 즉시)
   });
 };
+/* 팀이 하나도 없으면 FC JEMIRO 기본 팀을 1회 자동 등록 */
+function fsSeedClub_(){
+  if(DB.clubs && DB.clubs.length) return Promise.resolve();
+  var crest = (document.querySelector('.crest-img')||{}).src || '';
+  var club = { id:'c_jemiro', name:'FC JEMIRO', region:'안산', note:'SINCE 2014 · 12TH SEASON', emblem:crest, ownerId:'', own:true, createdAt:new Date().toISOString() };
+  DB.clubs = [club];
+  return db.collection('clubs').doc(club.id).set(fsClean(club), {merge:true}).catch(function(){});
+}
 FS.init = function(){
   if(!window.firebase){ return; }
   try{ firebase.initializeApp(FIREBASE_CONFIG); }catch(e){}
@@ -2716,6 +3031,7 @@ FS.init = function(){
   FS.enabled = true;
   var authP = firebase.auth ? firebase.auth().signInAnonymously().catch(function(){}) : Promise.resolve();
   authP.then(function(){ return fsLoadAll(); })
+    .then(function(){ return fsSeedClub_(); })
     .then(function(){ FS._resolve(); })
     .catch(function(e){ if(window.console)console.warn('FS init', e); FS.loadFailed=true; FS._resolve(); });
 };
@@ -2724,7 +3040,7 @@ FS.init = function(){
 var LOGO_URI = (document.querySelector('.crest-img')||{}).src || '';
 FS.init();
 API.run('bootstrap').then(function(b){
-  if(b){ if(b.config) state.cfg=b.config; state.players=b.players||[]; state.matches=b.matches||[]; state.matchesLoaded=true; }
+  if(b){ if(b.config) state.cfg=b.config; state.players=b.players||[]; state.matches=b.matches||[]; state.clubs=b.clubs||[]; state.matchesLoaded=true; applyClubHeader(); }
   var sess = loadSession();
   if(sess && sess.playerId){ state.auth = sess; loadTeam(); }
   else showLogin();
