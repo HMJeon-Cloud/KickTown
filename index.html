@@ -1479,7 +1479,7 @@ function viewMore(){
   +   (isAdmin()?'<div class="list-row" style="cursor:pointer;" onclick="copyVenueLink(location.hostname)"><span class="nm" style="flex:1;">현재 도메인 <span style="font-size:10px;color:var(--steel-soft);">(카카오맵 등록용)</span></span><span class="val" style="font-size:11.5px;color:var(--steel);word-break:break-all;">'+esc(location.hostname)+'</span></div>':'')
   +   '<div class="list-row" style="cursor:pointer;" onclick="logout()"><span class="nm" style="flex:1;color:var(--red);">로그아웃</span><span class="val" style="color:var(--red);font-size:14px;">›</span></div>'
   + '</div>'
-  + '<p class="hint">FC JEMIRO 운영 · v0.2</p>';
+  + '<p class="hint">FC JEMIRO 운영 · v0.4 (지도표시)</p>';
 }
 function moreItem(id,title,sub,icon){
   return '<div class="player" style="margin-bottom:9px;" onclick="go(\''+id+'\')">'
@@ -1938,6 +1938,7 @@ function viewVenue(){
   + '<div class="map-card">'+mapArea
   +   '<div class="map-info"><div class="mt">'+(esc(m.venue)||'경기장 미지정')+'</div>'
   +     '<div class="ma">'+fmtMatchWhen(m)+' · vs '+esc(m.opponent||'상대 미정')+'</div>'
+  +     (hasXY ? '<div class="ma" style="font-size:11px;color:var(--steel-soft);margin-top:2px;">좌표 '+Number(m.lat).toFixed(5)+', '+Number(m.lng).toFixed(5)+'</div>' : '')
   +     (canShare
         ? '<div class="map-actions"><button class="m-open" onclick="openVenueShare(\''+m.id+'\')">지도 · 내비 · 공유</button></div>'
         : '<div class="ma" style="color:var(--steel-soft);margin-top:8px;">경기 등록에서 지도로 위치를 지정하면 지도·열기·내비·공유가 활성화됩니다.</div>')
@@ -1952,21 +1953,28 @@ function initVenueDisplayMap(){
   el.innerHTML = '<div class="map-fallback">지도 불러오는 중...</div>';
   ensureKakao(function(okK){
     var box = document.getElementById('venue_map'); if(!box) return;
+    var builtKakao = false;
     if(okK){
-      box.innerHTML='';
-      var map = new kakao.maps.Map(box, {center:new kakao.maps.LatLng(lat,lng), level:4});
-      new kakao.maps.Marker({position:new kakao.maps.LatLng(lat,lng)}).setMap(map);
-      map.setZoomable(false);
-      [120,400,700].forEach(function(ms){ setTimeout(function(){ try{ map.relayout(); map.setCenter(new kakao.maps.LatLng(lat,lng)); }catch(e){} }, ms); });
-    } else {
+      try{
+        box.innerHTML='';
+        var map = new kakao.maps.Map(box, {center:new kakao.maps.LatLng(lat,lng), level:4});
+        new kakao.maps.Marker({position:new kakao.maps.LatLng(lat,lng)}).setMap(map);
+        map.setZoomable(false);
+        [120,400,700].forEach(function(ms){ setTimeout(function(){ try{ map.relayout(); map.setCenter(new kakao.maps.LatLng(lat,lng)); }catch(e){} }, ms); });
+        builtKakao = true;
+      }catch(e){ builtKakao = false; }
+    }
+    if(!builtKakao){
       ensureLeaflet(function(okL){
         var b2 = document.getElementById('venue_map'); if(!b2) return;
         if(okL){
-          b2.innerHTML='';
-          var lm = L.map(b2, {zoomControl:false, attributionControl:false, scrollWheelZoom:false}).setView([lat,lng], 15);
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19, crossOrigin:true}).addTo(lm);
-          L.marker([lat,lng]).addTo(lm);
-          [120,400].forEach(function(ms){ setTimeout(function(){ lm.invalidateSize(); }, ms); });
+          try{
+            b2.innerHTML='';
+            var lm = L.map(b2, {zoomControl:false, attributionControl:false, scrollWheelZoom:false}).setView([lat,lng], 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19, crossOrigin:true}).addTo(lm);
+            L.marker([lat,lng]).addTo(lm);
+            [120,400].forEach(function(ms){ setTimeout(function(){ lm.invalidateSize(); }, ms); });
+          }catch(e){ b2.innerHTML = '<div class="map-fallback">지도를 불러오지 못했습니다. 아래 “지도 · 내비 · 공유”를 이용하세요.</div>'; }
         } else {
           b2.innerHTML = '<div class="map-fallback">지도를 불러오지 못했습니다. 아래 “지도 · 내비 · 공유”를 이용하세요.</div>';
         }
