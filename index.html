@@ -246,9 +246,30 @@
   }
   .token.drag .t-num{transform:scale(1.12);}
   .pos-GK .t-num{background:#E0A400;}
-  .pos-DF .t-num{background:#2563C9;}
-  .pos-MF .t-num{background:#1E9E6A;}
-  .pos-FW .t-num{background:var(--red);}
+  .pos-DF .t-num,.pos-CB .t-num,.pos-LB .t-num,.pos-RB .t-num,.pos-LWB .t-num,.pos-RWB .t-num{background:#2563C9;}
+  .pos-MF .t-num,.pos-DM .t-num,.pos-CM .t-num,.pos-AM .t-num{background:#1E9E6A;}
+  .pos-FW .t-num,.pos-ST .t-num,.pos-CF .t-num,.pos-LW .t-num,.pos-RW .t-num{background:var(--red);}
+  .pos-guest .t-num{background:#6B7280;}
+  .rst-list{margin-top:4px;}
+  .rst-row{display:flex;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px solid var(--line);}
+  .rst-num{font-weight:700;font-size:16px;width:34px;text-align:center;color:var(--ink);}
+  .rst-num.guest{color:#6B7280;font-size:14px;}
+  .rst-name{flex:1;font-weight:600;font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .rst-g{font-size:10px;color:#6B7280;font-weight:600;}
+  .rst-pos{width:82px;padding:7px 8px;border:1.5px solid var(--line-strong);border-radius:9px;font-family:inherit;font-size:13px;}
+  .rst-postag{font-size:13px;color:var(--steel);width:82px;text-align:center;}
+  .rst-x{background:none;border:none;color:var(--steel-soft);font-size:20px;cursor:pointer;padding:0 2px;line-height:1;}
+  .rst-search{width:100%;padding:9px 12px;border:1.5px solid var(--line-strong);border-radius:10px;font-family:inherit;font-size:14px;margin:2px 0 6px;}
+  .att-list{margin-top:2px;}
+  .att-row{display:flex;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px solid var(--line);}
+  .att-num{font-weight:700;font-size:15px;width:30px;text-align:center;color:var(--ink);}
+  .att-name{flex:1;font-weight:600;font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .att-ctrls{display:flex;gap:5px;}
+  .att-b{padding:6px 10px;border:1.5px solid var(--line-strong);border-radius:9px;background:#fff;font-family:inherit;font-size:12.5px;font-weight:700;color:var(--steel);cursor:pointer;}
+  .att-b:disabled{opacity:.55;cursor:default;}
+  .att-b.p.on{background:var(--ok);color:#fff;border-color:var(--ok);}
+  .att-b.l.on{background:#E0A400;color:#fff;border-color:#E0A400;}
+  .att-b.a.on{background:var(--red);color:#fff;border-color:var(--red);}
 
   .match{padding:14px;border-radius:15px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow-sm);margin-bottom:10px;}
   .match-top{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--steel);font-weight:600;}
@@ -397,6 +418,7 @@
   .auth-inner{width:100%;max-width:320px;text-align:center;}
   .auth-logo{width:96px;height:96px;object-fit:contain;background:#fff;border-radius:24px;padding:9px;box-shadow:0 14px 38px rgba(0,0,0,.5);border:1px solid rgba(199,162,75,.5);}
   .auth-title{font-family:'Oswald';font-weight:700;font-size:30px;letter-spacing:.1em;color:#fff;margin-top:18px;}
+  .auth-name2{font-size:16px;font-weight:700;color:#fff;letter-spacing:.02em;margin-top:8px;}
   .auth-sub{font-size:11.5px;color:var(--gold-soft);letter-spacing:.24em;margin-top:6px;font-weight:600;}
   .auth-form{margin-top:26px;display:flex;flex-direction:column;gap:11px;text-align:left;}
   .auth-form select,.auth-form input{width:100%;padding:14px;border:none;border-radius:13px;font-family:inherit;font-size:15px;background:rgba(255,255,255,.96);}
@@ -627,7 +649,8 @@ var DB = {
     {id:'po3', type:'suggest', title:'경기 후 회식 장소 건의', body:'매화 축구장 근처에 새로 생긴 삼겹살집 어떨까요? 단체석도 있습니다.', author:'박민재', authorId:'m3', pinned:false, createdAt:'2025-07-07T12:00:00Z'}
   ],
   clubs: [],
-  extras: []
+  extras: [],
+  matchRoster: []
 };
 /* ===== Firebase / Firestore ===== */
 var FIREBASE_CONFIG = {
@@ -671,7 +694,7 @@ function mockHandler(fn, a){
     if(cd.owner && cd.owner.name){
       var opid='m'+Date.now();
       var existPw=(DB.players.filter(function(x){return x.name===cd.owner.name && x.pw;})[0]||{}).pw||'';
-      DB.players.push({id:opid, clubId:cid, name:cd.owner.name, num:cd.owner.num||1, size:cd.owner.size||'L', positions:cd.owner.positions||[], birth:cd.owner.birth||'', height:cd.owner.height||null, weight:cd.owner.weight||null, region:cd.owner.region||'', role:'임원', pw:existPw});
+      DB.players.push({id:opid, clubId:cid, name:cd.owner.name, num:(cd.owner.num!=null&&cd.owner.num!==''?cd.owner.num:''), size:cd.owner.size||'L', positions:cd.owner.positions||[], birth:cd.owner.birth||'', height:cd.owner.height||null, weight:cd.owner.weight||null, region:cd.owner.region||'', role:'임원', pw:existPw});
       membership={clubId:cid, playerId:opid, role:'임원'};
     }
     return {clubs:mockHandler('getClubs',[]), membership:membership};
@@ -708,11 +731,11 @@ function mockHandler(fn, a){
   }
   if(fn==='loadAllToSquad'){ // a: squadId — 전체 팀원 불러오기(기존 지우고 채움)
     var sid=a[0]; DB.members=DB.members.filter(function(x){return x.squadId!==sid;});
-    var cnt=0; DB.players.filter(inClub).slice().sort(function(x,y){return x.num-y.num;}).forEach(function(p){ if(addPlayerToSquad_(sid,p.id)) cnt++; });
+    var cnt=0; DB.players.filter(inClub).slice().sort(numSort).forEach(function(p){ if(addPlayerToSquad_(sid,p.id)) cnt++; });
     return {ok:true, count:cnt, detail:buildSquadDetail_(sid)};
   }
   // --- players ---
-  if(fn==='getPlayers') return DB.players.filter(inClub).slice().sort(function(x,y){return x.num-y.num;}).map(function(p){ var c={}; for(var k in p){ if(k!=='pw' && k!=='pwHash') c[k]=p[k]; } return c; });
+  if(fn==='getPlayers') return DB.players.filter(inClub).slice().sort(numSort).map(function(p){ var c={}; for(var k in p){ if(k!=='pw' && k!=='pwHash') c[k]=p[k]; } return c; });
   if(fn==='addPlayer'){ a[0].id='m'+Date.now(); a[0].clubId=AC; if(!a[0].role) a[0].role='팀원'; DB.players.push(a[0]); return mockHandler('getPlayers',[]); }
   if(fn==='updatePlayer'){ DB.players.forEach(function(x){ if(x.id===a[0].id) Object.assign(x,a[0]); }); return mockHandler('getPlayers',[]); }
   if(fn==='deletePlayer'){ DB.players=DB.players.filter(function(x){return x.id!==a[0];}); DB.members=DB.members.filter(function(x){return x.playerId!==a[0];}); return mockHandler('getPlayers',[]); }
@@ -747,8 +770,20 @@ function mockHandler(fn, a){
     }
     return buildSquadDetail_(sid2);
   }
-  if(fn==='setSquadMemberPos'){
-    DB.members.forEach(function(x){ if(x.squadId===a[0] && x.playerId===a[1]){ x.x=a[2]; x.y=a[3]; } });
+  if(fn==='setSquadMemberPos'){ // squadId, playerId, x, y, [pos]
+    DB.members.forEach(function(x){ if(x.squadId===a[0] && x.playerId===a[1]){ x.x=a[2]; x.y=a[3]; if(a[4]) x.position=a[4]; } });
+    return buildSquadDetail_(a[0]);
+  }
+  if(fn==='setSquadPos'){ // 위치 유지, 포지션명만 변경
+    DB.members.forEach(function(x){ if(x.squadId===a[0] && x.playerId===a[1]) x.position=a[2]; });
+    return buildSquadDetail_(a[0]);
+  }
+  if(fn==='addGuest'){ // squadId, name, pos
+    var gid='guest_'+Date.now()+Math.floor(Math.random()*999);
+    var gpos=a[2]||'FW';
+    var n=DB.members.filter(function(x){return x.squadId===a[0] && x.position===gpos;}).length;
+    var dd=posDefaultXY(gpos, n);
+    DB.members.push({squadId:a[0], playerId:gid, guest:true, gname:(a[1]||''), position:gpos, x:dd.x, y:dd.y});
     return buildSquadDetail_(a[0]);
   }
   if(fn==='removeSquadMember'){ DB.members=DB.members.filter(function(x){return !(x.squadId===a[0] && x.playerId===a[1]);}); return buildSquadDetail_(a[0]); }
@@ -761,7 +796,8 @@ function mockHandler(fn, a){
     return {
       matches: cms.slice().sort(function(x,y){return (y.date).localeCompare(x.date);}),
       stats: DB.stats.filter(function(s){return mids[s.matchId];}).slice(),
-      attendance: DB.attendance.filter(function(x){return mids[x.matchId];}).slice()
+      attendance: DB.attendance.filter(function(x){return mids[x.matchId];}).slice(),
+      rosters: DB.matchRoster.filter(function(x){return mids[x.matchId];}).slice()
     };
   }
   if(fn==='recordMatchResult'){
@@ -775,6 +811,13 @@ function mockHandler(fn, a){
     arr.forEach(function(s){ if((s.goals||0)>0 || (s.assists||0)>0) DB.stats.push({matchId:mid4, playerId:s.playerId, goals:s.goals||0, assists:s.assists||0}); });
     return mockHandler('getRecordBundle',[]);
   }
+  if(fn==='applyVotersToMatch'){ // pollId, option, matchId — 경기 참석자 명단 설정(덮어씀)
+    var mid=a[2]; DB.matchRoster=DB.matchRoster.filter(function(x){return x.matchId!==mid;});
+    var vp={}; DB.votes.filter(function(v){return v.pollId===a[0] && v.choice===a[1];}).forEach(function(v){ vp[v.playerId]=1; });
+    Object.keys(vp).forEach(function(pl){ DB.matchRoster.push({clubId:AC, matchId:mid, playerId:pl}); });
+    return {ok:true, count:Object.keys(vp).length};
+  }
+  if(fn==='clearMatchRoster'){ DB.matchRoster=DB.matchRoster.filter(function(x){return x.matchId!==a[0];}); return {ok:true}; }
   if(fn==='setMatchAttendance'){
     var mid5=a[0], list=a[1]||[];
     DB.attendance=DB.attendance.filter(function(x){return x.matchId!==mid5;});
@@ -846,10 +889,30 @@ function buildMatchDetail_(matchId){
   if(!squads.length && match){ var ns={id:'s'+Date.now(), matchId:matchId, name:'1쿼터'}; DB.squads.push(ns); squads=[{id:ns.id, name:ns.name}]; }
   return {match:match, squads:squads};
 }
+var POS_XY = {
+  GK:[0.50,0.92],
+  DF:[0.50,0.74], CB:[0.50,0.74], LB:[0.15,0.73], RB:[0.85,0.73], LWB:[0.13,0.62], RWB:[0.87,0.62],
+  MF:[0.50,0.50], DM:[0.50,0.61], CM:[0.50,0.50], AM:[0.50,0.38],
+  FW:[0.50,0.24], ST:[0.50,0.22], CF:[0.50,0.24], LW:[0.17,0.27], RW:[0.83,0.27]
+};
 function posDefaultXY(pos, idx){
-  var yline = {GK:0.90, DF:0.72, MF:0.50, FW:0.28}[pos] || 0.5;
-  var offs = [0.5, 0.28, 0.72, 0.14, 0.86, 0.4, 0.6];
-  return {x: offs[idx % offs.length], y: yline};
+  var base = POS_XY[pos] || [0.5,0.5];
+  var offs = [0, -0.16, 0.16, -0.30, 0.30, -0.44, 0.44];
+  var x = base[0] + (offs[idx % offs.length]||0);
+  if(base[0]<0.25 || base[0]>0.75){ x = base[0] + (idx? (base[0]<0.5?0.04:-0.04)*idx : 0); } // 측면은 세로로 약간 분산
+  x = Math.max(0.06, Math.min(0.94, x));
+  var y = base[1] + (base[0]<0.25||base[0]>0.75 ? (idx%2? 0.05:-0.05)*Math.ceil(idx/2) : 0);
+  y = Math.max(0.04, Math.min(0.96, y));
+  return {x:x, y:y};
+}
+/* #11 스쿼드 맵 위치 → 포지션 자동 판정 (y: 1=우리 골, 0=상대 골) */
+function posFromXY(x, y){
+  if(y>=0.85) return 'GK';
+  if(y>=0.66){ if(x<0.18) return 'LB'; if(x>0.82) return 'RB'; return 'CB'; }
+  if(y>=0.56){ if(x<0.16) return 'LWB'; if(x>0.84) return 'RWB'; return 'DM'; }
+  if(y>=0.42){ return 'CM'; }
+  if(y>=0.32){ if(x<0.20) return 'LW'; if(x>0.80) return 'RW'; return 'AM'; }
+  if(x<0.20) return 'LW'; if(x>0.80) return 'RW'; return 'ST';
 }
 function pollStatus_(p){
   if(p.status==='closed') return 'closed';
@@ -906,18 +969,23 @@ function buildMatchReport_(matchId){
     else absent.push(p.name); // 기록 없으면 불참으로 간주
   });
   var quarters = DB.squads.filter(function(s){return s.matchId===matchId;}).map(function(sq){
-    var mem = DB.members.filter(function(x){return x.squadId===sq.id;}).map(function(x){var p=nm(x.playerId);return {num:p.num,name:p.name,position:x.position};}).sort(function(a,b){return a.num-b.num;});
+    var mem = DB.members.filter(function(x){return x.squadId===sq.id;}).map(function(x){var p=nm(x.playerId);return {num:p.num,name:p.name,position:x.position};}).sort(numSort);
     return {name:sq.name, members:mem};
   });
   return {match:match, scorers:scorers, assisters:assisters, attendance:{present:present,late:late,absent:absent}, quarters:quarters};
 }
 function buildSquadDetail_(squadId){
   var squad = DB.squads.filter(function(x){return x.id===squadId;})[0] || null;
-  var members = DB.members.filter(function(x){return x.squadId===squadId;}).map(function(sm){
-    var p = DB.players.filter(function(x){return x.id===sm.playerId;})[0] || {num:'?',name:'(삭제됨)'};
+  var raw = DB.members.filter(function(x){return x.squadId===squadId;});
+  var gi=0;
+  var members = raw.map(function(sm){
     var d = (sm.x==null||sm.y==null) ? posDefaultXY(sm.position,0) : {x:sm.x, y:sm.y};
+    if(sm.guest){ gi++; return {playerId:sm.playerId, guest:true, num:'G'+gi, gnum:gi, name:(sm.gname||('Guest'+gi)), position:sm.position, x:d.x, y:d.y}; }
+    var p = DB.players.filter(function(x){return x.id===sm.playerId;})[0] || {num:'?',name:'(삭제됨)'};
     return {playerId:sm.playerId, num:p.num, name:p.name, position:sm.position, x:d.x, y:d.y};
-  }).sort(function(x,y){return x.num-y.num;});
+  });
+  // 정렬: 일반 선수(번호순, 미정 아래) → 게스트
+  members.sort(function(a,b){ if(a.guest!==b.guest) return a.guest?1:-1; if(a.guest) return a.gnum-b.gnum; return numSort(a,b); });
   var notes = DB.notes.filter(function(x){return x.squadId===squadId;});
   return {squad:squad, members:members, notes:notes};
 }
@@ -1078,6 +1146,7 @@ function go(id){
   state.screen = id;
   applyHeaderFor(id);
   if(id==='form'){ loadForms(); return; }
+  if(id==='att' && !state.attLoaded){ state.attLoaded=true; loadAtt(); return; }
   if(id==='record' && !state.recLoaded){ state.recLoaded = true; loadRecord(); return; }
   if(id==='poll' && !state.pollLoaded){ state.pollLoaded = true; loadPolls(); return; }
   if(id==='board' && !state.boardLoaded){ state.boardLoaded = true; loadBoard(); return; }
@@ -1136,8 +1205,12 @@ function initPitchDrag(){
       if(!dragging) return;
       dragging=false; tok.classList.remove('drag');
       if(moved && tok._x!=null){
-        if(state.squadDetail){ state.squadDetail.members.forEach(function(mm){ if(mm.playerId===pid){ mm.x=tok._x; mm.y=tok._y; } }); cacheSquad_(state.squadDetail); }
-        API.run('setSquadMemberPos', state.currentSquadId, pid, tok._x, tok._y)
+        var newPos = posFromXY(tok._x, tok._y);
+        var isGuest=false;
+        if(state.squadDetail){ state.squadDetail.members.forEach(function(mm){ if(mm.playerId===pid){ mm.x=tok._x; mm.y=tok._y; if(!mm.guest) mm.position=newPos; isGuest=mm.guest; } }); cacheSquad_(state.squadDetail); }
+        var savePos = isGuest ? null : newPos;
+        API.run('setSquadMemberPos', state.currentSquadId, pid, tok._x, tok._y, savePos)
+          .then(function(res){ if(res&&res.squad){ cacheSquad_(res); if(state.screen==='form') render(); } })
           .catch(function(){ toast('위치 저장 실패'); });
       }
     };
@@ -1151,7 +1224,7 @@ function viewTeam(){
   if(state.loading){
     return '<div class="empty"><div class="ei">⚽</div>불러오는 중...</div>';
   }
-  var players = state.players.slice().sort(function(a,b){return a.num-b.num;});
+  var players = state.players.slice().sort(numSort);
   var body = players.length ? players.map(playerCard).join('') :
     '<div class="empty"><div class="ei">⚽</div>등록된 팀원이 없습니다.<br>우측 하단 + 버튼으로 추가하세요.</div>';
   return '<div class="eyebrow">등록 선수 '+players.length+'명</div>'
@@ -1170,13 +1243,17 @@ function playerCard(p){
     ? '<div class="pos-tags">'+p.positions.map(function(pp){return '<span class="pos-tag">'+pp+'</span>';}).join('')+'</div>'
     : '';
   return '<div class="player" onclick="openPlayerForm(\''+p.id+'\')">'
-    + '<div class="num oswald">'+p.num+'</div>'
+    + '<div class="num oswald">'+numLabel(p.num)+'</div>'
     + '<div class="meta"><div class="pname">'+p.name+posHtml+'</div><div class="sub">'+(subHtml||'추가 정보 없음')+'</div></div>'
     + '<div class="size-badge">'+p.size+'</div></div>';
 }
 
 /* -------- 2. 경기 + 스쿼드 관리 (동작) -------- */
-var POS = [['GK','골키퍼'],['DF','수비수'],['MF','미드필더'],['FW','공격수']];
+var POS = [
+  ['GK','골키퍼'],['DF','수비수'],['CB','센터백'],['LB','left back'],['RB','right back'],['LWB','left wing back'],['RWB','right wing back'],
+  ['MF','미드필더'],['DM','수비형 미드필더'],['CM','중앙 미드필더'],['AM','공격형 미드필더'],
+  ['FW','공격수'],['ST','스트라이커'],['CF','센터 포워드'],['LW','left wing'],['RW','right wing']
+];
 var SCOPES = ['전체','GK','DF','MF','FW'];
 var DOW = ['일','월','화','수','목','금','토'];
 
@@ -1259,22 +1336,24 @@ function viewForm(){
 
   var d = state.squadDetail;
   if(!d || !d.squad){ return addBtn + tabs + '<div class="empty">스쿼드를 선택하세요.</div>'; }
+  var sid = d.squad.id;
 
-  var applyBtns = isAdmin() ? '<div style="display:flex;gap:9px;margin-bottom:12px;">'
-    + '<button class="btn-ghost" style="flex:1;margin:0;" onclick="openApplyVoters(\''+d.squad.id+'\')">🗳️ 투표 인원 적용</button>'
-    + '<button class="btn-ghost" style="flex:1;margin:0;" onclick="loadAllToSquadGo(\''+d.squad.id+'\')">👥 전체 팀원 불러오기</button>'
+  var applyBtns = isAdmin() ? '<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">'
+    + '<button class="btn-ghost" style="flex:1;min-width:30%;margin:0;" onclick="openApplyVoters(\''+sid+'\')">🗳️ 투표 인원 적용</button>'
+    + '<button class="btn-ghost" style="flex:1;min-width:30%;margin:0;" onclick="loadAllToSquadGo(\''+sid+'\')">👥 전체 팀원</button>'
+    + '<button class="btn-ghost" style="flex:1;min-width:30%;margin:0;" onclick="openGuestForm(\''+sid+'\')">➕ 게스트</button>'
     + '</div>' : '';
 
   var tokens = d.members.map(function(mem){
-    return '<div class="token pos-'+mem.position+'" data-pid="'+mem.playerId+'" style="left:'+(mem.x*100)+'%;top:'+(mem.y*100)+'%;">'
-      + '<span class="t-num oswald">'+mem.num+'</span><span class="t-name">'+esc(mem.name)+'</span></div>';
+    return '<div class="token pos-'+(mem.guest?'guest':mem.position)+'" data-pid="'+mem.playerId+'" style="left:'+(mem.x*100)+'%;top:'+(mem.y*100)+'%;">'
+      + '<span class="t-num oswald">'+(mem.guest?mem.num:numTok(mem.num))+'</span><span class="t-name">'+esc(mem.name)+'</span></div>';
   }).join('');
 
   var head = '<div class="eyebrow" style="display:flex;justify-content:space-between;align-items:center;">'
     + '<span>'+esc(d.squad.name)+' · '+d.members.length+'명</span>'
     + (isAdmin()?'<span style="font-size:11px;letter-spacing:0;">'
-        + '<a style="color:var(--steel-soft);cursor:pointer;" onclick="openSquadForm(\''+d.squad.id+'\')">이름수정</a>'
-        + ' · <a style="color:var(--red);cursor:pointer;" onclick="deleteSquadConfirm(\''+d.squad.id+'\',\''+esc(d.squad.name).replace(/'/g,'')+'\')">삭제</a></span>':'')
+        + '<a style="color:var(--steel-soft);cursor:pointer;" onclick="openSquadForm(\''+sid+'\')">이름수정</a>'
+        + ' · <a style="color:var(--red);cursor:pointer;" onclick="deleteSquadConfirm(\''+sid+'\',\''+esc(d.squad.name).replace(/'/g,'')+'\')">삭제</a></span>':'')
     + '</div>';
 
   var pitch = '<div class="pitch" id="pitch">'
@@ -1284,11 +1363,100 @@ function viewForm(){
     +   '<rect x="28" y="2" width="44" height="15"/><rect x="40" y="2" width="20" height="6"/>'
     +   '<rect x="28" y="115" width="44" height="15"/><rect x="40" y="124" width="20" height="6"/>'
     +   '</g><circle cx="50" cy="66" r="1" fill="rgba(255,255,255,0.6)"/></svg>'
-    + '<div class="pitch-label">우리 진영 ↓</div>' + tokens + '</div>'
-    + (isAdmin()?'<button class="btn-ghost" style="margin-top:10px;" onclick="openMemberPicker()">＋ 선수 편성 · 포지션</button>':'');
+    + '<div class="pitch-label">우리 진영 ↓</div>' + tokens + '</div>';
 
-  return addBtn + tabs + applyBtns + '<div class="section">' + head + pitch + '</div>'
-    + '<p class="hint">'+(isAdmin()?'선수를 끌어 원하는 위치에 배치하세요.<br>「투표 인원 적용」은 참석 투표자를, 「전체 팀원 불러오기」는 모든 팀원을 이 스쿼드에 채웁니다(기존 배치는 지워집니다).':'스쿼드 포메이션입니다.')+'</p>';
+  // #6 인라인 명단 + 검색
+  var q = (state.formRosterQ||'').trim().toLowerCase();
+  var rows = d.members.filter(function(mem){ return !q || String(mem.name).toLowerCase().indexOf(q)>=0 || String(mem.num).toLowerCase().indexOf(q)>=0; }).map(function(mem){
+    var opts = POS.map(function(ps){ return '<option value="'+ps[0]+'"'+(mem.position===ps[0]?' selected':'')+'>'+ps[0]+'</option>'; }).join('');
+    var sel = isAdmin() ? '<select class="rst-pos" onchange="setMemberPosOnly(\''+mem.playerId+'\',this.value)">'+opts+'</select>' : '<span class="rst-postag">'+esc(mem.position)+'</span>';
+    var rm = isAdmin() ? '<button class="rst-x" onclick="removeMemberConfirm(\''+mem.playerId+'\',\''+esc(mem.name).replace(/'/g,'')+'\')">×</button>' : '';
+    return '<div class="rst-row">'
+      + '<span class="rst-num oswald'+(mem.guest?' guest':'')+'">'+(mem.guest?mem.num:numLabel(mem.num))+'</span>'
+      + '<span class="rst-name">'+esc(mem.name)+(mem.guest?' <span class="rst-g">게스트</span>':'')+'</span>'
+      + sel + rm + '</div>';
+  }).join('');
+  var rosterPanel = '<div class="section"><div class="eyebrow">편성 명단 · '+d.members.length+'명</div>'
+    + (d.members.length>6 ? '<input class="rst-search" type="text" placeholder="이름·번호 검색" value="'+esc(state.formRosterQ||'')+'" oninput="setFormRosterQ(this.value)">' : '')
+    + (d.members.length? '<div class="rst-list">'+rows+'</div>' : '<p style="font-size:12.5px;color:var(--steel-soft);margin:6px 0;">편성된 인원이 없습니다. 위 버튼으로 인원을 채우세요.</p>')
+    + '</div>';
+
+  // #5 요청사항 (전체 + 선수별)
+  var reqPanel = squadReqSection(d);
+
+  return addBtn + tabs + applyBtns + '<div class="section">' + head + pitch + '</div>' + rosterPanel + reqPanel
+    + '<p class="hint">'+(isAdmin()?'선수를 끌어 위치를 옮기면 구역에 따라 포지션이 자동 지정됩니다. 명단의 포지션 선택은 위치를 유지한 채 이름만 바뀝니다.':'스쿼드 포메이션입니다.')+'</p>';
+}
+function setFormRosterQ(v){ state.formRosterQ=v; var box=document.querySelector('.rst-list'); /* 부분 갱신 */ render(); var el=document.querySelector('.rst-search'); if(el){ el.focus(); el.setSelectionRange(el.value.length,el.value.length); } }
+function setMemberPosOnly(pid, pos){
+  if(!isAdmin()) return;
+  var d=state.squadDetail; if(!d) return;
+  d.members.forEach(function(m){ if(m.playerId===pid) m.position=pos; }); cacheSquad_(d);
+  API.run('setSquadPos', state.currentSquadId, pid, pos).then(function(res){ cacheSquad_(res); if(res.squad && state.currentSquadId===res.squad.id && state.screen==='form') render(); }).catch(function(){ toast('저장 실패'); });
+}
+function openGuestForm(sid){
+  if(!requireAdmin()) return;
+  var opts=POS.map(function(ps){ return '<option value="'+ps[0]+'"'+(ps[0]==='FW'?' selected':'')+'>'+ps[0]+' · '+ps[1]+'</option>'; }).join('');
+  var html='<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>게스트(용병) 추가</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<div class="field"><label>이름 (선택)</label><input id="g_name" type="text" placeholder="미입력 시 Guest1, Guest2..."></div>'
+   +   '<div class="field"><label>포지션</label><select id="g_pos">'+opts+'</select></div>'
+   +   '<button class="btn-primary" onclick="addGuestGo(\''+sid+'\')">추가하기</button>'
+   + '</div>';
+  showSheet(html);
+}
+function addGuestGo(sid){
+  var name=((document.getElementById('g_name')||{}).value||'').trim();
+  var pos=(document.getElementById('g_pos')||{}).value||'FW';
+  closeSheet();
+  API.run('addGuest', sid, name, pos).then(function(res){
+    if(res && res.squad){ SQUAD_CACHE[sid]=res; state.squadDetail=res; }
+    state.squadList=(state.squadList||[]).map(function(s){ return s.id===sid?Object.assign({},s,{count:res.members?res.members.length:s.count}):s; });
+    render(); toast('게스트를 추가했습니다');
+  }).catch(function(){ toast('추가 실패'); });
+}
+/* #5 스쿼드 요청사항 (전체 + 선수별) */
+function squadReqSection(d){
+  var notes=(d.notes||[]);
+  var rows=notes.length ? notes.map(function(n){
+    var who = n.scope==='전체' ? '전체' : n.scope;
+    return '<div class="note-card" '+(isAdmin()?'onclick="deleteNoteConfirm(\''+n.id+'\')"':'')+'><div class="nh">'+esc(who)+'</div><p>'+esc(n.body)+'</p></div>';
+  }).join('') : '<p style="font-size:12.5px;color:var(--steel-soft);margin:0 0 8px;">등록된 요청사항이 없습니다.</p>';
+  return '<div class="section"><div class="eyebrow">요청사항</div>'+rows
+    + (isAdmin()?'<button class="btn-ghost" onclick="openSquadNoteForm()">＋ 요청사항 추가</button>':'')+'</div>';
+}
+function openSquadNoteForm(){
+  if(!requireAdmin()) return;
+  var d=state.squadDetail; if(!d||!d.squad){ toast('스쿼드를 선택하세요'); return; }
+  var mem=(d.members||[]);
+  var sopts='<option value="전체">전체 공지</option>'+mem.map(function(m){ return '<option value="'+esc(m.name)+'">'+esc(m.name)+(m.guest?'(게스트)':'')+'</option>'; }).join('');
+  var html='<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>요청사항 추가</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<div class="field"><label>대상</label><select id="nt_scope">'+sopts+'</select></div>'
+   +   '<div class="field"><label>내용<span class="req">*</span></label><textarea id="nt_body" rows="3" placeholder="예: 전반 강한 압박 / OO님 왼쪽 측면 부탁"></textarea></div>'
+   +   '<button class="btn-primary" onclick="saveSquadNote()">등록</button>'
+   + '</div>';
+  showSheet(html);
+}
+function saveSquadNote(){
+  var scope=(document.getElementById('nt_scope')||{}).value||'전체';
+  var body=((document.getElementById('nt_body')||{}).value||'').trim();
+  if(!body){ toast('내용을 입력하세요'); return; }
+  var sid=state.currentSquadId;
+  closeSheet();
+  API.run('addNote', sid, 'req', scope, body).then(function(res){
+    if(res && res.squad){ SQUAD_CACHE[sid]=res; state.squadDetail=res; render(); }
+    toast('요청사항을 등록했습니다');
+  }).catch(function(){ toast('저장 실패'); });
+}
+function deleteNoteConfirm(nid){
+  if(!requireAdmin()) return;
+  var sid=state.currentSquadId;
+  API.run('deleteNote', nid).then(function(res){
+    if(res && res.squad){ SQUAD_CACHE[res.squad.id]=res; if(state.currentSquadId===res.squad.id){ state.squadDetail=res; render(); } }
+  }).catch(function(){ toast('삭제 실패'); });
 }
 function openSquadForm(id){
   if(!requireAdmin()) return;
@@ -1337,7 +1505,7 @@ function posGroup(en,kr,arr){
   var chips = arr.length
     ? arr.map(function(a){
         return '<div class="pchip" onclick="removeMemberConfirm(\''+a.playerId+'\',\''+a.name+'\')">'
-          + '<span class="n oswald">'+a.num+'</span><span class="nm">'+a.name+'</span>'
+          + '<span class="n oswald">'+numLabel(a.num)+'</span><span class="nm">'+a.name+'</span>'
           + '<span style="color:var(--steel-soft);font-size:15px;margin-left:2px;">×</span></div>';
       }).join('')
     : '<span style="font-size:12.5px;color:var(--steel-soft);">편성된 선수 없음</span>';
@@ -1353,6 +1521,11 @@ function noteSection(phase, title, notes){
     + (isAdmin()?'<button class="btn-ghost" onclick="openNoteForm(\''+phase+'\')">＋ '+(phase==='pre'?'요청사항':'피드백')+' 추가</button>':'')+'</div>';
 }
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+/* 등번호 정렬/표기 (미정=맨 아래) */
+function numOf(p){ var n=(p&&p.num); if(n===''||n==null||n==='미정') return Infinity; var v=Number(n); return isNaN(v)?Infinity:v; }
+function numSort(a,b){ return numOf(a)-numOf(b); }
+function numLabel(n){ if(n&&typeof n==='object') n=n.num; return (n===''||n==null||n==='미정')?'미정':n; }
+function numTok(n){ if(n&&typeof n==='object') n=n.num; return (n===''||n==null||n==='미정')?'–':n; }
 
 /* -------- 3. 기록 관리 (동작) -------- */
 function pname_(pid){ var p=(state.players||[]).filter(function(x){return x.id===pid;})[0]; return p?p:{num:'?',name:'(선수)'}; }
@@ -1492,7 +1665,7 @@ function openMatchReport(matchId){
     var asLine = r.assisters.length ? r.assisters.map(function(s){return s.name+(s.assists>1?' '+s.assists:'');}).join(', ') : '없음';
     var att=r.attendance;
     var quarters = r.quarters.map(function(q){
-      var mem = q.members.length ? q.members.map(function(x){return '<span class="pchip" style="cursor:default;"><span class="n oswald">'+x.num+'</span><span class="nm">'+x.name+'</span></span>';}).join('') : '<span style="font-size:12px;color:var(--steel-soft);">편성 없음</span>';
+      var mem = q.members.length ? q.members.map(function(x){return '<span class="pchip" style="cursor:default;"><span class="n oswald">'+numLabel(x.num)+'</span><span class="nm">'+x.name+'</span></span>';}).join('') : '<span style="font-size:12px;color:var(--steel-soft);">편성 없음</span>';
       return '<div style="margin-bottom:10px;"><div class="pos-head" style="margin-bottom:6px;">'+q.name+'</div><div class="pos-players">'+mem+'</div></div>';
     }).join('');
 
@@ -1555,6 +1728,7 @@ function viewAtt(){
 
   var lateLabel = (lateMin===0) ? '경기 시작 시각' : ('경기 시작 '+lateMin+'분 전');
   return card
+  + attMarkingSection(m)
   + '<div class="section"><div class="eyebrow">출석 설정</div>'
   +   '<div class="card" style="padding:4px 0;">'
   +     cfgRow('체크인 반경', radius+' m', 'editRadius')
@@ -1562,7 +1736,46 @@ function viewAtt(){
   +   '</div>'
   +   '<p style="font-size:11.5px;color:var(--steel-soft);margin:8px 2px 0;">'+lateLabel+'까지 체크인하지 않으면 지각으로 기록됩니다.</p>'
   + '</div>'
-  + '<p class="hint">체크인 시 휴대폰 위치로 경기장까지의 거리를 계산합니다.<br>서버 자동 기록(전체 현황)은 준비 중입니다.</p>';
+  + '<p class="hint">체크인 시 휴대폰 위치로 경기장까지의 거리를 계산합니다.</p>';
+}
+function loadAtt(){
+  API.run('getRecordBundle').then(function(b){ state.attData=b||{attendance:[],rosters:[]}; if(state.screen==='att') render(); }).catch(function(){ state.attData={attendance:[],rosters:[]}; if(state.screen==='att') render(); });
+}
+function attMarkingSection(m){
+  if(!m) return '';
+  var data = state.attData||{attendance:[],rosters:[]};
+  var roster = (data.rosters||[]).filter(function(x){return x.matchId===m.id;}).map(function(x){return x.playerId;});
+  var attMap={}; (data.attendance||[]).forEach(function(x){ if(x.matchId===m.id) attMap[x.playerId]=x.status; });
+  var full = roster.length>0;   // 경기별 참석자 지정됨 → 출석/지각/불참
+  var players = full ? (state.players||[]).filter(function(p){ return roster.indexOf(p.id)>=0; }) : (state.players||[]);
+  players = players.slice().sort(numSort);
+  if(!players.length){
+    return '<div class="section"><div class="eyebrow">출석 체크</div><p style="font-size:12.5px;color:var(--steel-soft);margin:4px 0;">'+(full?'참석 명단 인원이 없습니다.':'등록된 팀원이 없습니다.')+'</p></div>';
+  }
+  var rows = players.map(function(p){
+    var st = attMap[p.id] || 'none';
+    var btn = function(val,label,cls){ return '<button class="att-b '+cls+(st===val?' on':'')+'" '+(isAdmin()?('onclick="markAtt(\''+p.id+'\',\''+val+'\')"'):'disabled')+'>'+label+'</button>'; };
+    var ctrls = full
+      ? btn('present','출석','p')+btn('late','지각','l')+btn('absent','불참','a')
+      : btn('present','출석','p');
+    return '<div class="att-row"><span class="att-num oswald">'+numLabel(p.num)+'</span><span class="att-name">'+esc(p.name)+'</span><span class="att-ctrls">'+ctrls+'</span></div>';
+  }).join('');
+  var head = full
+    ? '<div class="eyebrow">출석 체크 · 참석 명단 '+players.length+'명</div><p style="font-size:11.5px;color:var(--steel-soft);margin:0 0 6px;">경기별 참석자가 지정되어 출석·지각·불참을 기록합니다.</p>'
+    : '<div class="eyebrow">출석 체크</div><p style="font-size:11.5px;color:var(--steel-soft);margin:0 0 6px;">참석 명단 미지정 · 출석만 기록합니다. (투표에서 “경기별 참석자 인원 적용” 시 지각·불참 기록 가능)</p>';
+  return '<div class="section">'+head+'<div class="att-list">'+rows+'</div></div>';
+}
+function markAtt(pid, status){
+  if(!isAdmin()) return;
+  var m=latestMatch(); if(!m) return;
+  state.attData=state.attData||{attendance:[],rosters:[]};
+  var cur={}; (state.attData.attendance||[]).forEach(function(x){ if(x.matchId===m.id) cur[x.playerId]=x.status; });
+  if(cur[pid]===status) delete cur[pid]; else cur[pid]=status;   // 같은 값 다시 누르면 해제
+  var others=(state.attData.attendance||[]).filter(function(x){return x.matchId!==m.id;});
+  var mine=Object.keys(cur).map(function(p){ return {matchId:m.id, playerId:p, status:cur[p]}; });
+  state.attData.attendance=others.concat(mine); render();
+  var payload=Object.keys(cur).map(function(p){ return {playerId:p, status:cur[p]}; });
+  API.run('setMatchAttendance', m.id, payload).then(function(b){ if(b){ state.attData=b; } }).catch(function(){ toast('저장 실패 · 새로고침'); });
 }
 function cfgRow(label, val, action){
   return '<div class="list-row" style="cursor:pointer;" onclick="'+action+'()">'
@@ -1649,7 +1862,7 @@ function viewMore(){
   +   (isAdmin()?'<div class="list-row" style="cursor:pointer;" onclick="copyVenueLink(location.hostname)"><span class="nm" style="flex:1;">현재 도메인 <span style="font-size:10px;color:var(--steel-soft);">(카카오맵 등록용)</span></span><span class="val" style="font-size:11.5px;color:var(--steel);word-break:break-all;">'+esc(location.hostname)+'</span></div>':'')
   +   '<div class="list-row" style="cursor:pointer;" onclick="logout()"><span class="nm" style="flex:1;color:var(--red);">로그아웃</span><span class="val" style="color:var(--red);font-size:14px;">›</span></div>'
   + '</div>'
-  + '<p class="hint">우리동네 축구왕 · v0.15</p>';
+  + '<p class="hint">우리동네 축구왕 · v0.17</p>';
 }
 function moreItem(id,title,sub,icon){
   return '<div class="player" style="margin-bottom:9px;" onclick="go(\''+id+'\')">'
@@ -1950,9 +2163,10 @@ function renderPollDetail(d){
     }).join('');
     extraSec = '<div class="field" style="margin-top:14px;"><label>추가 참석 신청 · '+exs.length+'명</label>'+rows+'</div>';
   }
-  // 투표 인원 경기 편성 (요청 1, 임원)
+  // 투표 인원 스쿼드/경기 적용 (임원)
   var assignBtn = (isAdmin() && d.totalVotes>0)
     ? '<button class="btn-ghost" style="margin-top:14px;" onclick="openApplyToSquad(\''+p.id+'\')">⚽ 투표 인원 스쿼드 적용</button>'
+      + '<button class="btn-ghost" style="margin-top:9px;" onclick="openApplyToMatch(\''+p.id+'\')">📋 경기별 참석자 인원 적용</button>'
     : '';
 
   var adminBtns = isAdmin() ? '<div style="display:flex;gap:9px;margin-top:14px;">'
@@ -1989,21 +2203,29 @@ var assignPollId=null, assignOpt=null, applyTargetSquad=null;
 /* 스쿼드 탭에서: 스쿼드 고정 → 투표+항목 선택 */
 function openApplyVoters(sid){
   if(!requireAdmin()) return;
-  applyTargetSquad=sid; assignPollId=null; assignOpt=null;
+  applyTargetSquad=sid; assignPollId=null; assignOpt=null; state.applyShowAll=false;
   API.run('getPolls').then(function(polls){
     state.polls=polls||[];
     if(!polls || !polls.length){ toast('작성된 투표가 없습니다'); return; }
-    var popts='<option value="">투표 선택</option>'+polls.map(function(p){ return '<option value="'+p.id+'">'+esc(p.title)+'</option>'; }).join('');
+    var recent = polls.slice(0,5);
+    var popts='<option value="">투표 선택</option>'+recent.map(function(p){ return '<option value="'+p.id+'">'+esc(p.title)+'</option>'; }).join('');
+    var moreLink = polls.length>5 ? '<div id="ap_more" style="margin-top:6px;"><a style="font-size:12.5px;color:var(--red);cursor:pointer;" onclick="expandApplyPolls()">지난 투표 보기 ('+(polls.length-5)+'개 더) ›</a></div>' : '';
     var html='<div class="grabber"></div>'
      + '<div class="sheet-head"><h3>투표 인원 스쿼드 적용</h3><button class="x" onclick="closeSheet()">✕</button></div>'
      + '<div class="sheet-body">'
      +   '<p style="font-size:13px;color:var(--steel);margin:0 0 12px;line-height:1.55;">선택한 항목에 투표한 인원을 이 스쿼드에 배치합니다(기존 배치는 지워집니다).<br>포지션은 선호 1순위(없으면 DF)입니다.</p>'
-     +   '<div class="field"><label>투표<span class="req">*</span></label><select id="ap_poll" onchange="fillApplyOpts()">'+popts+'</select></div>'
+     +   '<div class="field"><label>투표<span class="req">*</span></label><select id="ap_poll" onchange="fillApplyOpts()">'+popts+'</select>'+moreLink+'</div>'
      +   '<div class="field"><label>참석으로 볼 항목<span class="req">*</span></label><div id="ap_opts" class="chips"><span style="font-size:12.5px;color:var(--steel-soft);">투표를 먼저 선택하세요</span></div></div>'
      +   '<button class="btn-primary" onclick="runApplyVoters()">스쿼드에 적용</button>'
      + '</div>';
     showSheet(html);
   }).catch(function(){ toast('불러오기 실패'); });
+}
+function expandApplyPolls(){
+  var sel=document.getElementById('ap_poll'); if(!sel) return;
+  var cur=sel.value;
+  sel.innerHTML='<option value="">투표 선택</option>'+(state.polls||[]).map(function(p){ return '<option value="'+p.id+'"'+(p.id===cur?' selected':'')+'>'+esc(p.title)+'</option>'; }).join('');
+  var more=document.getElementById('ap_more'); if(more) more.style.display='none';
 }
 function fillApplyOpts(){
   var pid=(document.getElementById('ap_poll')||{}).value; assignPollId=pid; assignOpt=null;
@@ -2027,6 +2249,40 @@ function runApplyVoters(){
   }).catch(function(){ toast('적용 실패'); });
 }
 /* 투표 상세에서: 투표 고정 → 스쿼드+항목 선택 */
+function openApplyToMatch(pollId){
+  if(!requireAdmin()) return;
+  assignPollId=pollId; assignOpt=null;
+  var p=(state.polls||[]).filter(function(x){return x.id===pollId;})[0];
+  var doIt=function(){
+    var today=new Date().toISOString().slice(0,10);
+    var ms=(state.matches||[]).slice().sort(function(a,b){return a.date.localeCompare(b.date);});
+    var up=ms.filter(function(m){return m.date>=today;});
+    var mlist=(up.length?up:ms).slice(0,12);
+    if(!mlist.length){ toast('등록된 경기가 없습니다'); return; }
+    var mopts=mlist.map(function(m){ return '<option value="'+m.id+'">'+fmtDateDot(m.date)+' vs '+esc(m.opponent||'상대 미정')+'</option>'; }).join('');
+    var oopts=((p&&p.options)||[]).map(function(o){ return '<div class="chip" data-as-opt="'+esc(o).replace(/"/g,'')+'" onclick="pickAssignOpt(this)">'+esc(o)+'</div>'; }).join('');
+    var html='<div class="grabber"></div>'
+     + '<div class="sheet-head"><h3>경기별 참석자 인원 적용</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+     + '<div class="sheet-body">'
+     +   '<p style="font-size:13px;color:var(--steel);margin:0 0 12px;line-height:1.55;">선택한 항목 투표자를 <b>그 경기의 참석 명단</b>으로 지정합니다.<br>지정하면 출석 탭에서 이 인원만 <b>출석·지각·불참</b>을 기록합니다.</p>'
+     +   '<div class="field"><label>경기<span class="req">*</span></label><select id="am_match">'+mopts+'</select></div>'
+     +   '<div class="field"><label>참석으로 볼 항목<span class="req">*</span></label><div id="ap_opts" class="chips">'+oopts+'</div></div>'
+     +   '<button class="btn-primary" onclick="runApplyToMatch()">참석 명단 지정</button>'
+     + '</div>';
+    showSheet(html);
+  };
+  if(p && p.options){ doIt(); }
+  else { API.run('getPolls').then(function(pl){ state.polls=pl||[]; p=(pl||[]).filter(function(x){return x.id===pollId;})[0]; doIt(); }); }
+}
+function runApplyToMatch(){
+  if(!assignOpt){ toast('참석 항목을 선택하세요'); return; }
+  var mid=(document.getElementById('am_match')||{}).value;
+  if(!mid){ toast('경기를 선택하세요'); return; }
+  API.run('applyVotersToMatch', assignPollId, assignOpt, mid).then(function(r){
+    state.attLoaded=false;  // 출석 탭 갱신 유도
+    closeSheet(); toast((r&&r.count||0)+'명을 경기 참석 명단으로 지정했습니다');
+  }).catch(function(){ toast('적용 실패'); });
+}
 function openApplyToSquad(pollId){
   if(!requireAdmin()) return;
   assignPollId=pollId; assignOpt=null;
@@ -2142,10 +2398,10 @@ function saveMyPw(){
 /* ================= 권한 관리 (임원 전용) ================= */
 function openRoleManage(){
   if(!requireAdmin()) return;
-  var rows = state.players.slice().sort(function(a,b){return a.num-b.num;}).map(function(p){
+  var rows = state.players.slice().sort(numSort).map(function(p){
     var admin = (p.role==='임원');
     return '<div class="tg-row" style="cursor:default;">'
-      + '<span class="oswald" style="font-weight:700;font-size:17px;width:30px;text-align:center;">'+p.num+'</span>'
+      + '<span class="oswald" style="font-weight:700;font-size:17px;width:30px;text-align:center;">'+numLabel(p.num)+'</span>'
       + '<div style="flex:1;"><div style="font-weight:700;font-size:14.5px;">'+esc(p.name)+'</div>'
       +   '<div style="font-size:11px;color:'+(admin?'var(--gold)':'var(--steel-soft)')+';font-weight:700;margin-top:2px;">'+(admin?'임원 · 관리자':'팀원')+'</div></div>'
       + '<button class="btn-mini" onclick="toggleRole(\''+p.id+'\',\''+(admin?'팀원':'임원')+'\')">'+(admin?'팀원으로':'임원으로')+'</button>'
@@ -2269,6 +2525,7 @@ function viewClub(){
   // 필터 상태
   if(state.clubRegionFilter===undefined) state.clubRegionFilter='';
   if(state.clubFavOnly===undefined) state.clubFavOnly=false;
+  if(state.clubMineOnly===undefined) state.clubMineOnly=false;
   // 지역 옵션 (등록된 팀들의 지역)
   var regs={}; all.forEach(function(c){ if(c.region) regs[c.region]=1; });
   var regOpts = '<option value="">전체 지역</option>' + Object.keys(regs).sort().map(function(r){
@@ -2276,12 +2533,14 @@ function viewClub(){
   }).join('');
   var filterBar = all.length ? '<div class="club-filter">'
     + '<select onchange="setClubRegion(this.value)">'+regOpts+'</select>'
-    + '<button class="fav-toggle '+(state.clubFavOnly?'on':'')+'" onclick="toggleClubFavOnly()">★ 즐겨찾기</button>'
+    + '<button class="fav-toggle '+(state.clubMineOnly?'on':'')+'" onclick="toggleClubMineOnly()">내 팀</button>'
+    + '<button class="fav-toggle '+(state.clubFavOnly?'on':'')+'" onclick="toggleClubFavOnly()">★</button>'
     + '</div>' : '';
   // 필터 적용
   var list = all.filter(function(c){
     if(state.clubRegionFilter && c.region!==state.clubRegionFilter) return false;
     if(state.clubFavOnly && !c.fav) return false;
+    if(state.clubMineOnly && !canEnterClub(c.id)) return false;
     return true;
   });
 
@@ -2297,10 +2556,10 @@ function viewClub(){
       var joined = canEnterClub(c.id);
       var isActive = (c.id===state.activeClubId);
       var right = isActive ? '<span class="cc-cur oswald">현재</span>'
-                : joined ? '<button class="btn-mini" onclick="enterClub(\''+c.id+'\')">입장</button>'
+                : joined ? '<button class="btn-mini" onclick="enterClubConfirm(\''+c.id+'\')">입장</button>'
                 : '<span class="cc-lock">미가입</span>';
       var del = (isAdmin() && joined) ? '<button class="btn-mini ghost" style="margin-left:6px;" onclick="deleteClubConfirm(\''+c.id+'\',\''+esc(c.name).replace(/'/g,'')+'\')">삭제</button>' : '';
-      return '<div class="club-card'+(isActive?' on':'')+'"'+(joined&&!isActive?' onclick="enterClub(\''+c.id+'\')" style="cursor:pointer;"':'')+'>'
+      return '<div class="club-card'+(isActive?' on':'')+'"'+(joined&&!isActive?' onclick="enterClubConfirm(\''+c.id+'\')" style="cursor:pointer;"':'')+'>'
         + star
         + em
         + '<div style="flex:1;min-width:0;">'
@@ -2316,6 +2575,23 @@ function viewClub(){
 }
 function setClubRegion(v){ state.clubRegionFilter=v; render(); }
 function toggleClubFavOnly(){ state.clubFavOnly=!state.clubFavOnly; render(); }
+function toggleClubMineOnly(){ state.clubMineOnly=!state.clubMineOnly; render(); }
+/* #4 입장 확인 */
+function enterClubConfirm(id){
+  if(id===state.activeClubId) return;
+  if(!canEnterClub(id)){ toast('가입되지 않은 팀입니다'); return; }
+  var c=(state.clubs||[]).filter(function(x){return x.id===id;})[0]||{};
+  var html='<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>팀 이동</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<p style="font-size:14px;color:var(--steel);margin:0 0 16px;line-height:1.6;"><b>'+esc(c.name)+'</b> 팀으로 이동하시겠습니까?</p>'
+   +   '<div style="display:flex;gap:9px;">'
+   +     '<button class="btn-ghost" style="flex:1;margin:0;" onclick="closeSheet()">아니오</button>'
+   +     '<button class="btn-primary" style="flex:1;" onclick="closeSheet();enterClub(\''+id+'\')">예</button>'
+   +   '</div>'
+   + '</div>';
+  showSheet(html);
+}
 function toggleClubFav(id){
   state.clubs=(state.clubs||[]).map(function(c){ return c.id===id ? Object.assign({}, c, {fav:!c.fav}) : c; });
   render();
@@ -2382,7 +2658,7 @@ function saveClub(){
   // 신규 등록: 생성자 프로필 전송 → 서버가 임원 멤버십 생성
   if(!state.auth){ toast('로그인이 필요합니다'); return; }
   var me=(state.players||[]).filter(function(p){return p.id===authId();})[0]||{};
-  data.owner = { name:state.auth.name, num:me.num||1, size:me.size||'L', positions:me.positions||[], birth:me.birth||'', height:me.height||null, weight:me.weight||null, region:me.region||'' };
+  data.owner = { name:state.auth.name, num:'', size:me.size||'L', positions:me.positions||[], birth:me.birth||'', height:me.height||null, weight:me.weight||null, region:me.region||'' };
   closeSheet(); toast('팀을 등록하는 중...');
   API.run('addClub', data).then(function(res){
     if(!res){ toast('저장 실패 · 새로고침'); return; }
@@ -2396,6 +2672,19 @@ function saveClub(){
 }
 function deleteClubConfirm(id, name){
   if(!requireAdmin()) return;
+  var html='<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>팀 삭제</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<p style="font-size:13.5px;color:var(--steel);margin:0 0 6px;line-height:1.6;"><b style="color:var(--red);">'+esc(name)+'</b> 팀과 해당 팀의 모든 데이터가 삭제됩니다.<br>실수 방지를 위해 아래에 <b>팀삭제</b> 를 입력하세요.</p>'
+   +   '<div class="field"><input id="del_confirm" type="text" placeholder="팀삭제" autocomplete="off"></div>'
+   +   '<button class="btn-primary btn-danger" onclick="doDeleteClub(\''+id+'\',\''+esc(name).replace(/'/g,'')+'\')">삭제하기</button>'
+   + '</div>';
+  showSheet(html);
+}
+function doDeleteClub(id, name){
+  var v=((document.getElementById('del_confirm')||{}).value||'').trim();
+  if(v!=='팀삭제'){ toast('“팀삭제”를 정확히 입력하세요'); return; }
+  closeSheet();
   state.clubs=(state.clubs||[]).filter(function(c){return c.id!==id;});
   if(id===state.activeClubId){ state.activeClubId=null; ACTIVE_CLUB=null; window.ACTIVE_CLUB=null; state.screen='club'; applyAppHeader(); }
   render(); toast(name+' 팀을 삭제했습니다');
@@ -2476,7 +2765,7 @@ function openPlayerForm(id){
    + '<div class="sheet-head"><h3>'+title+'</h3><button class="x" onclick="closeSheet()">✕</button></div>'
    + '<div class="sheet-body">'
    +   '<div class="grid2">'
-   +     '<div class="field"><label>등번호<span class="req">*</span></label><input id="f_num" type="number" inputmode="numeric" placeholder="10" value="'+(p?p.num:'')+'"></div>'
+   +     '<div class="field"><label>등번호</label><input id="f_num" type="number" inputmode="numeric" placeholder="미정 (나중에 입력)" value="'+(p&&p.num!=null&&p.num!==''&&p.num!=='미정'?p.num:'')+'"></div>'
    +     '<div class="field"><label>이름<span class="req">*</span></label><input id="f_name" type="text" placeholder="홍길동" value="'+(p?p.name:'')+'"></div>'
    +   '</div>'
    +   '<div class="field"><label>유니폼 사이즈<span class="req">*</span></label><div class="sizes" id="f_sizes">'
@@ -2513,12 +2802,12 @@ function togglePos(pos){
 function savePlayer(){
   var num = document.getElementById('f_num').value.trim();
   var name = document.getElementById('f_name').value.trim();
-  if(!num || !name || !state.formSize){
-    toast('등번호·이름·사이즈는 필수입니다');
+  if(!name || !state.formSize){
+    toast('이름·사이즈는 필수입니다');
     return;
   }
   var data = {
-    num: parseInt(num),
+    num: (num===''?'':parseInt(num)),
     name: name,
     size: state.formSize,
     positions: state.formPositions.slice(),
@@ -2793,13 +3082,13 @@ function openMemberPicker(){
   var d = state.squadDetail;
   var assigned = {};
   d.members.forEach(function(x){ assigned[x.playerId] = x.position; });
-  var rows = state.players.slice().sort(function(a,b){return a.num-b.num;}).map(function(p){
+  var rows = state.players.slice().sort(numSort).map(function(p){
     var cur = assigned[p.id] || '';
     var opts = ['<option value="">미편성</option>'].concat(POS.map(function(ps){
       return '<option value="'+ps[0]+'"'+(cur===ps[0]?' selected':'')+'>'+ps[0]+'</option>';
     })).join('');
     return '<div style="display:flex;align-items:center;gap:11px;padding:9px 2px;border-bottom:1px solid var(--line);">'
-      + '<span class="oswald" style="font-weight:700;font-size:19px;width:34px;text-align:center;">'+p.num+'</span>'
+      + '<span class="oswald" style="font-weight:700;font-size:19px;width:34px;text-align:center;">'+numLabel(p.num)+'</span>'
       + '<span style="flex:1;font-weight:600;font-size:14.5px;">'+p.name+'</span>'
       + '<select style="width:104px;padding:9px 10px;border:1.5px solid var(--line-strong);border-radius:10px;font-family:inherit;font-size:14px;" onchange="assignMember(\''+p.id+'\',this.value)">'+opts+'</select>'
       + '</div>';
@@ -2818,7 +3107,7 @@ function assignMember(playerId, pos){
   d.members = d.members.filter(function(m){return m.playerId!==playerId;});
   var dd = posDefaultXY(pos, d.members.filter(function(m){return m.position===pos;}).length);
   d.members.push({playerId:playerId, num:p.num, name:p.name, position:pos, x:dd.x, y:dd.y});
-  d.members.sort(function(a,b){return a.num-b.num;});
+  d.members.sort(numSort);
   cacheSquad_(d); render();
   API.run('setSquadMember', state.currentSquadId, playerId, pos).then(function(res){
     cacheSquad_(res); if(res.squad && state.currentSquadId===res.squad.id && state.screen==='form') render();
@@ -2908,13 +3197,13 @@ function openResultForm(matchId){
   (state.recAtt||[]).filter(function(x){return x.matchId===matchId;}).forEach(function(x){ state.formAtt[x.playerId]=x.status||'present'; });
 
   var lateMin = (state.cfg.lateThresholdMin != null) ? state.cfg.lateThresholdMin : 0;
-  var players = state.players.slice().sort(function(a,b){return a.num-b.num;});
+  var players = state.players.slice().sort(numSort);
   var statRows = players.map(function(p){
     var st = stats[p.id] || {g:0,a:0};
     var cur = state.formAtt[p.id] || 'present';
     return '<div class="res-row" data-pid="'+p.id+'">'
       + '<div style="display:flex;align-items:center;gap:8px;">'
-      +   '<span class="oswald" style="font-weight:700;font-size:16px;width:26px;text-align:center;">'+p.num+'</span>'
+      +   '<span class="oswald" style="font-weight:700;font-size:16px;width:26px;text-align:center;">'+numLabel(p.num)+'</span>'
       +   '<span style="flex:1;font-weight:600;font-size:14px;">'+p.name+'</span>'
       +   '<span style="font-size:11px;color:var(--steel);">골</span>'
       +   '<input id="st_g_'+p.id+'" type="number" inputmode="numeric" min="0" value="'+(st.g||0)+'" style="width:40px;padding:7px 3px;border:1.5px solid var(--line-strong);border-radius:9px;text-align:center;font-family:inherit;font-size:14px;">'
@@ -3014,8 +3303,9 @@ function showLogin(){
   sel.innerHTML = ''
     + '<div class="auth-inner">'
     + '<img class="auth-logo" src="'+APP_LOGO+'" alt="'+esc(APP_NAME)+'">'
-    + '<div class="auth-title">'+esc(APP_NAME)+'</div>'
-    + '<div class="auth-sub">'+esc(APP_SUB)+'</div>'
+    + '<div class="auth-title">우축</div>'
+    + '<div class="auth-name2">우리동네 축구왕</div>'
+    + '<div class="auth-sub">KICKTOWN</div>'
     + '<div class="auth-form">'
     +   '<input id="au_search" type="text" placeholder="이름 입력 (예: 김)" autocomplete="off" oninput="filterLoginList()" onfocus="filterLoginList()">'
     +   '<div id="au_list" class="au-list"></div>'
@@ -3032,7 +3322,7 @@ function showLogin(){
 function loginPeople_(){
   var src = state.loginNames || state.players || [];
   var seen={}, out=[];
-  src.slice().sort(function(a,b){return (a.num||0)-(b.num||0);}).forEach(function(p){ if(!seen[p.name]){ seen[p.name]=1; out.push(p); } });
+  src.slice().sort(numSort).forEach(function(p){ if(!seen[p.name]){ seen[p.name]=1; out.push(p); } });
   return out;
 }
 function filterLoginList(){
@@ -3106,20 +3396,22 @@ var FS_MAP = {
   votes:      {coll:'votes',        id:function(x){return x.id;}},
   posts:      {coll:'posts',        id:function(x){return x.id;}},
   clubs:      {coll:'clubs',        id:function(x){return x.id;}},
-  extras:     {coll:'extraRequests',id:function(x){return x.id;}}
+  extras:     {coll:'extraRequests',id:function(x){return x.id;}},
+  matchRoster:{coll:'matchRoster',  id:function(x){return x.matchId+'__'+x.playerId;}}
 };
 var WRITE_TOUCH = {
   addPlayer:['players'], updatePlayer:['players'], deletePlayer:['players','members'], setMemberRole:['players'],
   addMatch:['matches'], updateMatch:['matches'], deleteMatch:['matches','squads','members','notes'], recordMatchResult:['matches'],
   createSquad:['squads'], deleteSquad:['squads','members','notes'], renameSquad:['squads'],
   setSquadMember:['members'], setSquadMemberPos:['members'], removeSquadMember:['members'],
-  applyVotersToSquad:['members'], loadAllToSquad:['members'],
+  applyVotersToSquad:['members'], loadAllToSquad:['members'], setSquadPos:['members'], addGuest:['members'],
   addNote:['notes'], deleteNote:['notes'],
   setMatchStats:['stats'], setMatchAttendance:['attendance'],
   createPoll:['polls'], closePoll:['polls'], deletePoll:['polls','votes'], castVote:['votes'],
   addPost:['posts'], togglePin:['posts'], deletePost:['posts'],
   addClub:['clubs','players'], updateClub:['clubs'], deleteClub:['clubs'], toggleClubFav:['clubs'],
-  requestExtra:['extras'], approveExtra:['extras','members'], rejectExtra:['extras']
+  requestExtra:['extras'], approveExtra:['extras','members'], rejectExtra:['extras'],
+  applyVotersToMatch:['matchRoster'], clearMatchRoster:['matchRoster']
 };
 function fsClean(x){ var c={}; for(var k in x){ if(k==='pw'||k==='pwHash'||k==='_row') continue; c[k]=x[k]; } return c; }
 function fsSnapshot(keys){
@@ -3192,11 +3484,11 @@ function fsLoadAll(){
     fsColl('members'), fsColl('matches'), fsColl('squads'), fsColl('squadMembers'),
     fsColl('squadNotes'), fsColl('playerStats'), fsColl('attendance'), fsColl('polls'),
     fsColl('votes'), fsColl('posts'), db.collection('config').doc('app').get(),
-    fsColl('clubs'), fsColl('extraRequests')
+    fsColl('clubs'), fsColl('extraRequests'), fsColl('matchRoster')
   ]).then(function(r){
     DB.players=r[0]; DB.matches=r[1]; DB.squads=r[2]; DB.members=r[3];
     DB.notes=r[4]; DB.stats=r[5]; DB.attendance=r[6]; DB.polls=r[7];
-    DB.votes=r[8]; DB.posts=r[9]; DB.clubs=r[11]||[]; DB.extras=r[12]||[];
+    DB.votes=r[8]; DB.posts=r[9]; DB.clubs=r[11]||[]; DB.extras=r[12]||[]; DB.matchRoster=r[13]||[];
     var cfg = (r[10] && r[10].exists) ? r[10].data() : {};
     DB.config = { checkinRadiusM: (cfg.checkinRadiusM!=null?cfg.checkinRadiusM:100), lateThresholdMin: (cfg.lateThresholdMin!=null?cfg.lateThresholdMin:0) };
     for(var k in cfg){ if(k!=='staffPw'&&k!=='memberPw') DB.config[k]=cfg[k]; }
