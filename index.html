@@ -165,6 +165,19 @@
   .tab.active svg{transform:translateY(-1px);stroke-width:2.2;}
   .tab.active .lbl{color:var(--ink);font-weight:700;}
 
+  /* 앱 확인 모달 */
+  .cfm-wrap{position:absolute;inset:0;z-index:60;display:none;align-items:center;justify-content:center;padding:34px;}
+  .cfm-wrap.open{display:flex;}
+  .cfm-scrim{position:absolute;inset:0;background:rgba(15,14,20,.55);backdrop-filter:blur(2px);}
+  .cfm-card{position:relative;width:100%;max-width:300px;background:#fff;border-radius:18px;padding:22px 20px 16px;box-shadow:0 18px 50px rgba(0,0,0,.35);animation:cfmIn .2s cubic-bezier(.22,1,.36,1);}
+  @keyframes cfmIn{from{transform:scale(.94);opacity:0;}to{transform:scale(1);opacity:1;}}
+  .cfm-msg{font-size:14.5px;font-weight:600;color:var(--ink);line-height:1.6;text-align:center;white-space:pre-line;}
+  .cfm-btns{display:flex;gap:8px;margin-top:18px;}
+  .cfm-btns button{flex:1;padding:12px 0;border-radius:12px;font-size:14.5px;font-weight:700;cursor:pointer;border:none;}
+  .cfm-cancel{background:var(--paper,#F4F3F6);color:var(--steel,#6b6b76);border:1px solid var(--line-strong,#e5e4ea) !important;}
+  .cfm-ok{background:var(--red);color:#fff;box-shadow:0 6px 16px rgba(200,32,44,.28);}
+  .cfm-cancel:active,.cfm-ok:active{transform:scale(.97);}
+
   /* Bottom sheet */
   .sheet-wrap{position:absolute;inset:0;z-index:40;display:none;}
   .sheet-wrap.open{display:block;}
@@ -573,6 +586,16 @@
 
   <!-- Toast -->
   <div class="toast" id="toast"></div>
+  <div class="cfm-wrap" id="cfmWrap">
+    <div class="cfm-scrim" onclick="closeConfirm_(false)"></div>
+    <div class="cfm-card">
+      <div class="cfm-msg" id="cfmMsg"></div>
+      <div class="cfm-btns">
+        <button class="cfm-cancel" onclick="closeConfirm_(false)">취소</button>
+        <button class="cfm-ok" onclick="closeConfirm_(true)">확인</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Bottom sheet -->
   <div class="sheet-wrap" id="sheetWrap">
@@ -2117,7 +2140,7 @@ function viewMore(){
   +   (state.auth && state.auth.provider!=='kakao' ? '<div class="list-row" style="cursor:pointer;" onclick="openChangePw()"><span class="nm" style="flex:1;">비밀번호 변경</span><span class="val" style="color:var(--red);font-size:14px;">›</span></div>' : '')
   +   '<div class="list-row" style="cursor:pointer;" onclick="logout()"><span class="nm" style="flex:1;color:var(--red);">로그아웃</span><span class="val" style="color:var(--red);font-size:14px;">›</span></div>'
   + '</div>'
-  + '<p class="hint">동네 축구왕 · v0.37</p>';
+  + '<p class="hint">동네 축구왕 · v0.38</p>';
 }
 function importSection_(){
   return '<div class="eyebrow" style="margin-top:22px;">엑셀 가져오기 <span style="font-size:10px;color:var(--steel-soft);">(구단주 전용)</span></div>'
@@ -3958,14 +3981,24 @@ function copyMemberInvite(pid){
     navigator.clipboard.writeText(url).then(function(){ toast('팀원 초대 링크를 복사했어요'); }, function(){ prompt('아래 링크를 이 팀원에게 보내세요', url); });
   } else { prompt('아래 링크를 이 팀원에게 보내세요', url); }
 }
+/* 앱 스타일 확인 모달 */
+var _cfmCb=null;
+function appConfirm_(msg, onOk){
+  var w=document.getElementById('cfmWrap'), m=document.getElementById('cfmMsg');
+  if(!w||!m){ if(confirm(msg)) onOk&&onOk(); return; }
+  m.textContent=msg; _cfmCb=onOk||null; w.classList.add('open');
+}
+function closeConfirm_(ok){
+  var w=document.getElementById('cfmWrap'); if(w) w.classList.remove('open');
+  var cb=_cfmCb; _cfmCb=null;
+  if(ok && cb) cb();
+}
 function guestToLogin(msg){
-  var base = msg || '이 기능은 로그인 후 이용할 수 있어요.';
-  if(!confirm(base + '\n\n로그인 화면으로 이동할까요?')) return;
-  logout();
+  appConfirm_(msg || '이 기능은 로그인 후 이용할 수 있습니다.\n로그인 화면으로 이동합니다.', function(){ logout(); });
 }
 /* 게스트 가입신청 안내 */
 function guestJoinNotice(){
-  guestToLogin('가입 신청은 로그인이 필요해요.\n계정으로 로그인(또는 회원가입)하면 이 팀에 가입 신청을 보낼 수 있어요.');
+  guestToLogin('가입신청은 로그인 후 가능합니다.\n로그인 화면으로 이동합니다.');
 }
 function logout(){
   clearSession(); state.auth=null;
