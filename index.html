@@ -2117,7 +2117,7 @@ function viewMore(){
   +   (state.auth && state.auth.provider!=='kakao' ? '<div class="list-row" style="cursor:pointer;" onclick="openChangePw()"><span class="nm" style="flex:1;">비밀번호 변경</span><span class="val" style="color:var(--red);font-size:14px;">›</span></div>' : '')
   +   '<div class="list-row" style="cursor:pointer;" onclick="logout()"><span class="nm" style="flex:1;color:var(--red);">로그아웃</span><span class="val" style="color:var(--red);font-size:14px;">›</span></div>'
   + '</div>'
-  + '<p class="hint">동네 축구왕 · v0.36</p>';
+  + '<p class="hint">동네 축구왕 · v0.37</p>';
 }
 function importSection_(){
   return '<div class="eyebrow" style="margin-top:22px;">엑셀 가져오기 <span style="font-size:10px;color:var(--steel-soft);">(구단주 전용)</span></div>'
@@ -2924,7 +2924,7 @@ function applyHeaderFor(screen){
 }
 function viewClub(){
   var addBtn = isGuest()
-    ? '<button class="btn-add-match" onclick="guestToLogin()">🔑 로그인 / 회원가입</button>'
+    ? '<button class="btn-add-match" onclick="logout()">🔑 로그인 / 회원가입</button>'
     : (state.auth ? '<button class="btn-add-match" onclick="openClubForm()">＋ 팀 등록</button>' : '');
   var all = (state.clubs||[]);
   // 필터 상태
@@ -2963,7 +2963,7 @@ function viewClub(){
       var pendingJ = (state.myPendingJoins||[]).indexOf(c.id)>=0;
       var right = isActive ? '<span class="cc-cur oswald">현재</span>'
                 : joined ? '<button class="btn-mini" onclick="enterClubConfirm(\''+c.id+'\')">입장</button>'
-                : isGuest() ? '<button class="btn-mini ghost" onclick="guestToLogin()">가입 신청</button>'
+                : isGuest() ? '<button class="btn-mini ghost" onclick="guestJoinNotice()">가입 신청</button>'
                 : pendingJ ? '<button class="btn-mini ghost" onclick="cancelJoinReq(\''+c.id+'\')">신청 대기중</button>'
                 : (state.auth ? '<button class="btn-mini" onclick="requestJoinClub(\''+c.id+'\')">가입 신청</button>' : '<span class="cc-lock">미가입</span>');
       var del = (isAdmin() && joined) ? '<button class="btn-mini ghost" style="margin-left:6px;" onclick="deleteClubConfirm(\''+c.id+'\',\''+esc(c.name).replace(/'/g,'')+'\')">삭제</button>' : '';
@@ -3848,7 +3848,7 @@ function refreshMyJoins_(){
   }).catch(function(){});
 }
 function requestJoinClub(cid){
-  if(isGuest()){ guestToLogin(); return; }
+  if(isGuest()){ guestJoinNotice(); return; }
   if(!state.auth || !state.auth.ownerId){ toast('로그인이 필요합니다'); return; }
   API.run('requestJoin', cid, state.auth.ownerId, state.auth.name).then(function(r){
     if(r && r.ok){ toast('가입 신청을 보냈어요. 승인되면 팀에 소속됩니다'); }
@@ -3958,9 +3958,14 @@ function copyMemberInvite(pid){
     navigator.clipboard.writeText(url).then(function(){ toast('팀원 초대 링크를 복사했어요'); }, function(){ prompt('아래 링크를 이 팀원에게 보내세요', url); });
   } else { prompt('아래 링크를 이 팀원에게 보내세요', url); }
 }
-function guestToLogin(){
-  toast('로그인 화면으로 이동합니다');
+function guestToLogin(msg){
+  var base = msg || '이 기능은 로그인 후 이용할 수 있어요.';
+  if(!confirm(base + '\n\n로그인 화면으로 이동할까요?')) return;
   logout();
+}
+/* 게스트 가입신청 안내 */
+function guestJoinNotice(){
+  guestToLogin('가입 신청은 로그인이 필요해요.\n계정으로 로그인(또는 회원가입)하면 이 팀에 가입 신청을 보낼 수 있어요.');
 }
 function logout(){
   clearSession(); state.auth=null;
