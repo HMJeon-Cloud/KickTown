@@ -2090,7 +2090,7 @@ function viewMore(){
   +   (state.auth && state.auth.provider!=='kakao' ? '<div class="list-row" style="cursor:pointer;" onclick="openChangePw()"><span class="nm" style="flex:1;">비밀번호 변경</span><span class="val" style="color:var(--red);font-size:14px;">›</span></div>' : '')
   +   '<div class="list-row" style="cursor:pointer;" onclick="logout()"><span class="nm" style="flex:1;color:var(--red);">로그아웃</span><span class="val" style="color:var(--red);font-size:14px;">›</span></div>'
   + '</div>'
-  + '<p class="hint">동네 축구왕 · v0.32</p>';
+  + '<p class="hint">동네 축구왕 · v0.33</p>';
 }
 function importSection_(){
   return '<div class="eyebrow" style="margin-top:22px;">엑셀 가져오기 <span style="font-size:10px;color:var(--steel-soft);">(구단주 전용)</span></div>'
@@ -3892,12 +3892,15 @@ function handleKakaoReturn_(){
   fetch(base + '/api/kakao/session', {
     method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ks:ks})
   }).then(function(r){ return r.json(); }).then(function(res){
-    if(!res || !res.ok){ toast((res&&res.error)||'카카오 로그인에 실패했어요'); applyAppHeader(); showLogin(); hideSplash_(); return; }
+    try{ console.log('kakao session 응답:', res); }catch(e){}
+    if(!res || !res.ok){ toast('카카오 인증 실패: '+((res&&res.error)||'세션 확인 불가')); applyAppHeader(); showLogin(); hideSplash_(); return; }
+    if(!res.kakaoId){ toast('카카오 프로필(kakaoId)을 받지 못했어요'); applyAppHeader(); showLogin(); hideSplash_(); return; }
     return API.run('ownerKakao', String(res.kakaoId), res.name||'카카오사용자').then(function(r){
+      try{ console.log('ownerKakao 결과:', r); }catch(e){}
       if(r && r.ok){ toast(r.name+'님 환영합니다'); finishAuth_(r); hideSplash_(); }
-      else { toast((r&&r.error)||'로그인 실패'); applyAppHeader(); showLogin(); hideSplash_(); }
+      else { toast('로그인 처리 실패: '+((r&&r.error)||'알 수 없음')); applyAppHeader(); showLogin(); hideSplash_(); }
     });
-  }).catch(function(){ toast('카카오 로그인에 실패했어요'); applyAppHeader(); showLogin(); hideSplash_(); });
+  }).catch(function(e){ try{ console.error('kakao return 오류:', e); }catch(_){} toast('카카오 로그인 오류: '+((e&&e.message)||'네트워크')); applyAppHeader(); showLogin(); hideSplash_(); });
   return true;
 }
 function copyInviteLink(){
@@ -4138,7 +4141,7 @@ function fsOwnerKakao(kid, knm){
   var id=uid_('ownk_');
   var od={id:id, ownerId:'kakao_'+kid, name:knm, provider:'kakao', kakaoId:kid, createdAt:new Date().toISOString()};
   DB.owners.push(od);
-  return db.collection('owners').doc(id).set(od, {merge:true}).then(function(){
+  return db.collection('owners').doc(id).set(od, {merge:true}).catch(function(e){ try{ console.warn('owners 저장 지연:', e&&e.message); }catch(_){} }).then(function(){
     return {ok:true, type:'owner', ownerId:id, name:knm, provider:'kakao', memberships:ownerMemberships_(id), token:'fs.own.'+id};
   });
 }
