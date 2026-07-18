@@ -999,6 +999,12 @@ function mockHandler(fn, a){
     list.forEach(function(s){ if(s.status && s.status!=='none') DB.attendance.push({matchId:mid5, playerId:s.playerId, status:s.status}); });
     return mockHandler('getRecordBundle',[]);
   }
+  if(fn==='checkinAtt'){   // 본인 GPS 체크인: 한 명의 출석 1건만 upsert (다른 사람 기록 보존)
+    var mid_c=a[0], pid_c=a[1], stt_c=a[2]||'present';
+    var ex_c=DB.attendance.filter(function(x){return x.matchId===mid_c && x.playerId===pid_c;})[0];
+    if(ex_c){ ex_c.status=stt_c; } else { DB.attendance.push({matchId:mid_c, playerId:pid_c, status:stt_c}); }
+    return {ok:true, matchId:mid_c, playerId:pid_c, status:stt_c};
+  }
   // --- config ---
   if(fn==='getConfig'){ var c=JSON.parse(JSON.stringify(DB.config)); delete c.staffPw; delete c.memberPw; return c; }
   if(fn==='setConfig'){ DB.config[a[0]]=a[1]; return JSON.parse(JSON.stringify(DB.config)); }
@@ -1985,7 +1991,9 @@ function viewAtt(){
   var m = latestMatch();
   var radius = state.cfg.checkinRadiusM || 100;
   var lateMin = (state.cfg.lateThresholdMin != null) ? state.cfg.lateThresholdMin : 0;
-  var done = state.checkedIn;
+  var myPid = authId();
+  var myRec = (m && state.attData && state.attData.attendance) ? state.attData.attendance.filter(function(x){return x.matchId===m.id && x.playerId===myPid;})[0] : null;
+  var done = state.checkedIn || !!(myRec && (myRec.status==='present' || myRec.status==='late'));
 
   var card;
   if(!m){
@@ -2116,17 +2124,43 @@ function haversine_(lat1,lng1,lat2,lng2){
   var a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(toR(lat1))*Math.cos(toR(lat2))*Math.sin(dLng/2)*Math.sin(dLng/2);
   return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
+// 지각 판정: 경기 시작 (지각기준 분 전)까지 체크인 안 하면 '지각', 아니면 '출석'
+function checkinStatus_(m){
+  var lateMin = (state.cfg.lateThresholdMin!=null) ? state.cfg.lateThresholdMin : 0;
+  var t = cleanTime(m.time);
+  if(!m.date || !t){ return 'present'; }   // 시작 시각을 모르면 출석 처리
+  var hm = t.match(/(\d{1,2}):(\d{2})/);
+  if(!hm){ return 'present'; }
+  var start = new Date(m.date+'T'+('0'+hm[1]).slice(-2)+':'+hm[2]+':00');
+  if(isNaN(start.getTime())){ return 'present'; }
+  var deadline = new Date(start.getTime() - lateMin*60000);
+  return (new Date() > deadline) ? 'late' : 'present';
+}
+// 체크인 저장: 본인 출석 1건 upsert + 로컬 즉시 반영
+function saveCheckin_(m, pid, status, okMsg){
+  state.checkedIn = true;
+  state.attData = state.attData || {attendance:[], rosters:[]};
+  var hit = false;
+  (state.attData.attendance||[]).forEach(function(x){ if(x.matchId===m.id && x.playerId===pid){ x.status=status; hit=true; } });
+  if(!hit){ state.attData.attendance = (state.attData.attendance||[]).concat([{matchId:m.id, playerId:pid, status:status}]); }
+  render();
+  API.run('checkinAtt', m.id, pid, status).then(function(){
+    toast(okMsg + (status==='late' ? ' · 지각으로 기록' : ''));
+  }).catch(function(){ toast('체크인은 됐지만 저장에 실패했어요 · 다시 시도해주세요'); });
+}
 function doCheckin(matchId){
   var m = (state.matches||[]).filter(function(x){return x.id===matchId;})[0] || latestMatch();
   if(!m){ toast('경기 정보가 없습니다'); return; }
+  var pid = authId();
+  if(!pid){ toast('내 팀원 정보를 찾을 수 없어요. 팀에 소속된 계정으로 로그인해주세요.'); return; }
   var radius = state.cfg.checkinRadiusM || 100;
   var hasXY = (m.lat!=null && m.lat!=='' && m.lng!=null && m.lng!=='');
   if(!navigator.geolocation){ toast('이 기기에서 위치를 사용할 수 없습니다'); return; }
   toast('위치 확인 중...');
   navigator.geolocation.getCurrentPosition(function(pos){
-    if(!hasXY){ state.checkedIn=true; render(); toast('체크인 완료 (경기장 좌표 없음 · 거리 미측정)'); return; }
+    if(!hasXY){ saveCheckin_(m, pid, checkinStatus_(m), '체크인 완료 (경기장 좌표 없음 · 거리 미측정)'); return; }
     var dist = haversine_(pos.coords.latitude, pos.coords.longitude, Number(m.lat), Number(m.lng));
-    if(dist<=radius){ state.checkedIn=true; render(); toast('출석 체크인 완료 · 경기장 '+Math.round(dist)+'m'); }
+    if(dist<=radius){ saveCheckin_(m, pid, checkinStatus_(m), '출석 체크인 완료 · 경기장 '+Math.round(dist)+'m'); }
     else { toast('경기장에서 약 '+Math.round(dist)+'m 떨어져 있어요 (반경 '+radius+'m 밖)'); }
   }, function(err){
     toast('위치 권한이 필요합니다. 브라우저에서 위치 허용 후 다시 시도하세요.');
@@ -2155,7 +2189,7 @@ function viewMore(){
   +   (state.auth && state.auth.provider!=='kakao' ? '<div class="list-row" style="cursor:pointer;" onclick="openChangePw()"><span class="nm" style="flex:1;">비밀번호 변경</span><span class="val" style="color:var(--red);font-size:14px;">›</span></div>' : '')
   +   '<div class="list-row" style="cursor:pointer;" onclick="logout()"><span class="nm" style="flex:1;color:var(--red);">로그아웃</span><span class="val" style="color:var(--red);font-size:14px;">›</span></div>'
   + '</div>'
-  + '<p class="hint">동네 축구왕 · v0.44</p>';
+  + '<p class="hint">동네 축구왕 · v0.45</p>';
 }
 function importSection_(){
   return '<div class="eyebrow" style="margin-top:22px;">엑셀 가져오기 <span style="font-size:10px;color:var(--steel-soft);">(구단주 전용)</span></div>'
@@ -4068,7 +4102,7 @@ var WRITE_TOUCH = {
   setSquadMember:['members'], setSquadMemberPos:['members'], removeSquadMember:['members'],
   applyVotersToSquad:['members'], loadAllToSquad:['members'], setSquadPos:['members'], addGuest:['members'],
   addNote:['notes'], deleteNote:['notes'],
-  setMatchStats:['stats'], setMatchAttendance:['attendance'],
+  setMatchStats:['stats'], setMatchAttendance:['attendance'], checkinAtt:['attendance'],
   createPoll:['polls'], closePoll:['polls'], deletePoll:['polls','votes'], castVote:['votes'],
   addPost:['posts'], togglePin:['posts'], deletePost:['posts'],
   addClub:['clubs','players'], updateClub:['clubs'], deleteClub:['clubs'], toggleClubFav:['clubs'],
