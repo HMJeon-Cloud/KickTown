@@ -314,8 +314,10 @@
   .att-list{margin-top:2px;}
   .att-row{display:flex;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px solid var(--line);}
   .att-num{font-weight:700;font-size:15px;width:30px;text-align:center;color:var(--ink);}
-  .att-name{flex:1;font-weight:600;font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .att-ctrls{display:flex;gap:5px;}
+  .att-name{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:2px;}
+  .att-name .an-nm{font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .att-when{font-size:10px;color:var(--steel-soft);font-weight:600;white-space:nowrap;letter-spacing:-.01em;}
+  .att-ctrls{display:flex;gap:5px;flex:0 0 auto;}
   .att-b{padding:6px 10px;border:1.5px solid var(--line-strong);border-radius:9px;background:#fff;font-family:inherit;font-size:12.5px;font-weight:700;color:var(--steel);cursor:pointer;}
   .att-b:disabled{opacity:.55;cursor:default;}
   .att-b.p.on{background:var(--ok);color:#fff;border-color:var(--ok);}
@@ -1024,14 +1026,15 @@ function mockHandler(fn, a){
   if(fn==='setMatchAttendance'){
     var mid5=a[0], list=a[1]||[];
     DB.attendance=DB.attendance.filter(function(x){return x.matchId!==mid5;});
-    list.forEach(function(s){ if(s.status && s.status!=='none') DB.attendance.push({matchId:mid5, playerId:s.playerId, status:s.status}); });
+    list.forEach(function(s){ if(s.status && s.status!=='none') DB.attendance.push({matchId:mid5, playerId:s.playerId, status:s.status, checkedAt:s.checkedAt||null}); });
     return mockHandler('getRecordBundle',[]);
   }
   if(fn==='checkinAtt'){   // 본인 GPS 체크인: 한 명의 출석 1건만 upsert (다른 사람 기록 보존)
-    var mid_c=a[0], pid_c=a[1], stt_c=a[2]||'present';
+    var mid_c=a[0], pid_c=a[1], stt_c=a[2]||'present', at_c=a[3]||null;
     var ex_c=DB.attendance.filter(function(x){return x.matchId===mid_c && x.playerId===pid_c;})[0];
-    if(ex_c){ ex_c.status=stt_c; } else { DB.attendance.push({matchId:mid_c, playerId:pid_c, status:stt_c}); }
-    return {ok:true, matchId:mid_c, playerId:pid_c, status:stt_c};
+    if(ex_c){ ex_c.status=stt_c; if(at_c) ex_c.checkedAt=at_c; }
+    else { DB.attendance.push({matchId:mid_c, playerId:pid_c, status:stt_c, checkedAt:at_c}); }
+    return {ok:true, matchId:mid_c, playerId:pid_c, status:stt_c, checkedAt:at_c};
   }
   // --- config ---
   if(fn==='getConfig'){ var c=JSON.parse(JSON.stringify(DB.config)); delete c.staffPw; delete c.memberPw; return c; }
@@ -2072,11 +2075,16 @@ function viewAtt(){
 function loadAtt(){
   API.run('getRecordBundle').then(function(b){ state.attData=b||{attendance:[],rosters:[]}; if(state.screen==='att') render(); }).catch(function(){ state.attData={attendance:[],rosters:[]}; if(state.screen==='att') render(); });
 }
+function fmtCheckin_(iso){
+  if(!iso) return '';
+  var d=new Date(iso); if(isNaN(d.getTime())) return '';
+  return (d.getMonth()+1)+'/'+d.getDate()+' '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
+}
 function attMarkingSection(m){
   if(!m) return '';
   var data = state.attData||{attendance:[],rosters:[]};
   var roster = (data.rosters||[]).filter(function(x){return x.matchId===m.id;}).map(function(x){return x.playerId;});
-  var attMap={}; (data.attendance||[]).forEach(function(x){ if(x.matchId===m.id) attMap[x.playerId]=x.status; });
+  var attMap={}; (data.attendance||[]).forEach(function(x){ if(x.matchId===m.id) attMap[x.playerId]=x; });
   var full = roster.length>0;   // 경기별 참석자 지정됨 → 출석/지각/불참
   var players = full ? (state.players||[]).filter(function(p){ return roster.indexOf(p.id)>=0; }) : (state.players||[]);
   players = players.slice().sort(numSort);
@@ -2084,15 +2092,17 @@ function attMarkingSection(m){
     return '<div class="section"><div class="eyebrow">출석 체크</div><p style="font-size:12.5px;color:var(--steel-soft);margin:4px 0;">'+(full?'참석 명단 인원이 없습니다.':'등록된 팀원이 없습니다.')+'</p></div>';
   }
   var rows = players.map(function(p){
-    var st = attMap[p.id] || 'none';
+    var rec = attMap[p.id]; var st = (rec && rec.status) || 'none';
+    var when = (rec && rec.checkedAt) ? '<span class="att-when">📍 '+fmtCheckin_(rec.checkedAt)+' 체크인</span>' : '';
+    var nameCell = '<span class="att-name"><span class="an-nm">'+esc(p.name)+'</span>'+when+'</span>';
     if(isAdmin()){
       var btn = function(val,label,cls){ return '<button class="att-b '+cls+(st===val?' on':'')+'" onclick="markAtt(\''+p.id+'\',\''+val+'\')">'+label+'</button>'; };
       var ctrls = btn('present','출석','p')+btn('late','지각','l')+btn('absent','불참','a');
-      return '<div class="att-row"><span class="att-num oswald">'+numDisp(p.num)+'</span><span class="att-name">'+esc(p.name)+'</span><span class="att-ctrls">'+ctrls+'</span></div>';
+      return '<div class="att-row"><span class="att-num oswald">'+numDisp(p.num)+'</span>'+nameCell+'<span class="att-ctrls">'+ctrls+'</span></div>';
     }
     // 팀원: 상태 표시만 (선택 불가)
     var tag = st==='present'?'<span class="att-tag p">출석</span>' : st==='late'?'<span class="att-tag l">지각</span>' : st==='absent'?'<span class="att-tag a">불참</span>' : '<span class="att-tag n">미정</span>';
-    return '<div class="att-row"><span class="att-num oswald">'+numDisp(p.num)+'</span><span class="att-name">'+esc(p.name)+'</span>'+tag+'</div>';
+    return '<div class="att-row"><span class="att-num oswald">'+numDisp(p.num)+'</span>'+nameCell+tag+'</div>';
   }).join('');
   var head = full
     ? '<div class="eyebrow">출석 체크 · 참석 명단 '+players.length+'명</div><p style="font-size:11.5px;color:var(--steel-soft);margin:0 0 6px;">참석 명단 인원의 출석·지각·불참을 기록합니다.</p>'
@@ -2103,12 +2113,13 @@ function markAtt(pid, status){
   if(!isAdmin()) return;
   var m=latestMatch(); if(!m) return;
   state.attData=state.attData||{attendance:[],rosters:[]};
-  var cur={}; (state.attData.attendance||[]).forEach(function(x){ if(x.matchId===m.id) cur[x.playerId]=x.status; });
-  if(cur[pid]===status) delete cur[pid]; else cur[pid]=status;   // 같은 값 다시 누르면 해제
+  // status + checkedAt(체크인 시각)을 함께 관리해 관리자 마킹 시 체크인 시각이 지워지지 않게 함
+  var cur={}; (state.attData.attendance||[]).forEach(function(x){ if(x.matchId===m.id) cur[x.playerId]={status:x.status, checkedAt:x.checkedAt||null}; });
+  if(cur[pid] && cur[pid].status===status) delete cur[pid]; else cur[pid]={status:status, checkedAt:(cur[pid]&&cur[pid].checkedAt)||null};   // 같은 값 다시 누르면 해제
   var others=(state.attData.attendance||[]).filter(function(x){return x.matchId!==m.id;});
-  var mine=Object.keys(cur).map(function(p){ return {matchId:m.id, playerId:p, status:cur[p]}; });
+  var mine=Object.keys(cur).map(function(p){ return {matchId:m.id, playerId:p, status:cur[p].status, checkedAt:cur[p].checkedAt}; });
   state.attData.attendance=others.concat(mine); render();
-  var payload=Object.keys(cur).map(function(p){ return {playerId:p, status:cur[p]}; });
+  var payload=Object.keys(cur).map(function(p){ return {playerId:p, status:cur[p].status, checkedAt:cur[p].checkedAt}; });
   API.run('setMatchAttendance', m.id, payload).then(function(b){ if(b){ state.attData=b; } }).catch(function(){ toast('저장 실패 · 새로고침'); });
 }
 function cfgRow(label, val, action){
@@ -2179,12 +2190,13 @@ function checkinStatus_(m){
 // 체크인 저장: 본인 출석 1건 upsert + 로컬 즉시 반영
 function saveCheckin_(m, pid, status, okMsg){
   state.checkedIn = true;
+  var at = new Date().toISOString();   // 체크인 시각
   state.attData = state.attData || {attendance:[], rosters:[]};
   var hit = false;
-  (state.attData.attendance||[]).forEach(function(x){ if(x.matchId===m.id && x.playerId===pid){ x.status=status; hit=true; } });
-  if(!hit){ state.attData.attendance = (state.attData.attendance||[]).concat([{matchId:m.id, playerId:pid, status:status}]); }
+  (state.attData.attendance||[]).forEach(function(x){ if(x.matchId===m.id && x.playerId===pid){ x.status=status; x.checkedAt=at; hit=true; } });
+  if(!hit){ state.attData.attendance = (state.attData.attendance||[]).concat([{matchId:m.id, playerId:pid, status:status, checkedAt:at}]); }
   render();
-  API.run('checkinAtt', m.id, pid, status).then(function(){
+  API.run('checkinAtt', m.id, pid, status, at).then(function(){
     toast(okMsg + (status==='late' ? ' · 지각으로 기록' : ''));
   }).catch(function(){ toast('체크인은 됐지만 저장에 실패했어요 · 다시 시도해주세요'); });
 }
@@ -2229,7 +2241,7 @@ function viewMore(){
   +   (state.auth && state.auth.provider!=='kakao' ? '<div class="list-row" style="cursor:pointer;" onclick="openChangePw()"><span class="nm" style="flex:1;">비밀번호 변경</span><span class="val" style="color:var(--red);font-size:14px;">›</span></div>' : '')
   +   '<div class="list-row" style="cursor:pointer;" onclick="logout()"><span class="nm" style="flex:1;color:var(--red);">로그아웃</span><span class="val" style="color:var(--red);font-size:14px;">›</span></div>'
   + '</div>'
-  + '<p class="hint">동네 축구왕 · v0.54</p>';
+  + '<p class="hint">동네 축구왕 · v0.55</p>';
 }
 function importSection_(){
   return '<div class="eyebrow" style="margin-top:22px;">엑셀 가져오기 <span style="font-size:10px;color:var(--steel-soft);">(구단주 전용)</span></div>'
