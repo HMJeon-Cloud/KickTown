@@ -1335,14 +1335,15 @@ function deleteQuarterConfirm(){
 }
 
 /* ================= Tabs ================= */
+/* 탭 아이콘: 라인(stroke) 스타일 · viewBox 0 0 24 24 · 활성 시 빨강 틴트 */
 var TABS = [
-  {id:'club',  kr:'팀',       en:'CLUBS',    label:'팀',    icon:'M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-3z'},
-  {id:'team',  kr:'팀원 관리', en:'SQUAD',    label:'팀원',  icon:'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14c-4 0-7 2-7 5v1h14v-1c0-3-3-5-7-5z'},
-  {id:'squad', kr:'경기 등록', en:'MATCHDAY', label:'경기등록', icon:'M4 5h16M4 5v14M4 5l6 5-6 5M20 5v14M12 5v14'},
-  {id:'form',  kr:'스쿼드',    en:'FORMATION', label:'스쿼드', icon:'M12 3l2.5 5 5.5.8-4 3.9 1 5.5L12 21l-5-2.9 1-5.5-4-3.9 5.5-.8z'},
-  {id:'record',kr:'기록 관리', en:'STATS',    label:'기록',  icon:'M5 20V10M12 20V4M19 20v-7'},
-  {id:'att',   kr:'출석 관리', en:'ATTENDANCE',label:'출석', icon:'M12 21s-7-5-7-11a7 7 0 1114 0c0 6-7 11-7 11zM12 8a2 2 0 100 4 2 2 0 000-4z'},
-  {id:'more',  kr:'내정보',    en:'MY PAGE',  label:'내정보', icon:'M12 12a4 4 0 100-8 4 4 0 000 8zM4 20c0-3.3 3.6-5 8-5s8 1.7 8 5v1H4v-1z'}
+  {id:'club',  kr:'팀',       en:'CLUBS',    label:'팀',    icon:'<path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-3z"/>'},
+  {id:'team',  kr:'팀원 관리', en:'SQUAD',    label:'팀원',  icon:'<circle cx="9" cy="8.5" r="2.6"/><path d="M4 18.6c0-2.8 2.2-4.7 5-4.7s5 1.9 5 4.7"/><path d="M15.6 6.4a2.6 2.6 0 010 4.9"/><path d="M16.9 14.2c1.9.5 3.1 2 3.1 4.4"/>'},
+  {id:'squad', kr:'경기 등록', en:'MATCHDAY', label:'경기등록', icon:'<rect x="4" y="5" width="16" height="15" rx="2.2"/><path d="M8 3.2v3.6M16 3.2v3.6M4 10h16"/><path d="M9.3 14.9l1.9 1.9 3.5-3.6"/>'},
+  {id:'form',  kr:'스쿼드',    en:'FORMATION', label:'스쿼드', icon:'<rect x="4" y="3.5" width="16" height="17" rx="2"/><path d="M4 12h16"/><circle cx="12" cy="12" r="2.1"/><circle cx="8" cy="7.6" r="1.05" fill="currentColor" stroke="none"/><circle cx="16" cy="7.6" r="1.05" fill="currentColor" stroke="none"/><circle cx="8" cy="16.4" r="1.05" fill="currentColor" stroke="none"/><circle cx="16" cy="16.4" r="1.05" fill="currentColor" stroke="none"/>'},
+  {id:'record',kr:'기록 관리', en:'STATS',    label:'기록',  icon:'<path d="M4.5 20.5h15"/><path d="M7.5 20v-5.5M12 20v-10M16.5 20v-7.5"/>'},
+  {id:'att',   kr:'출석 관리', en:'ATTENDANCE',label:'출석', icon:'<rect x="5" y="5" width="14" height="16" rx="2.2"/><rect x="9" y="3" width="6" height="3.4" rx="1.2"/><path d="M8.7 13.3l2.1 2.1 4.3-4.4"/>'},
+  {id:'more',  kr:'메뉴',      en:'MENU',     label:'메뉴', icon:'<rect x="4" y="4" width="6.6" height="6.6" rx="1.7"/><rect x="13.4" y="4" width="6.6" height="6.6" rx="1.7"/><rect x="4" y="13.4" width="6.6" height="6.6" rx="1.7"/><rect x="13.4" y="13.4" width="6.6" height="6.6" rx="1.7"/>'}
 ];
 
 function renderTabs(){
@@ -1352,7 +1353,7 @@ function renderTabs(){
     : (state.activeClubId ? TABS : TABS.filter(function(t){return t.id==='club'||t.id==='more';}));
   el.innerHTML = TABLIST.map(function(t){
     return '<button class="tab '+(state.screen===t.id||((state.screen==='board'||state.screen==='venue'||state.screen==='poll')&&t.id==='more')?'active':'')+'" onclick="go(\''+t.id+'\')">'
-      + '<svg viewBox="0 0 24 24"><path d="'+t.icon+'"/></svg>'
+      + '<svg viewBox="0 0 24 24">'+t.icon+'</svg>'
       + '<span class="lbl">'+t.label+'</span></button>';
   }).join('');
 }
@@ -2206,7 +2207,7 @@ function viewMore(){
   +   (state.auth && state.auth.provider!=='kakao' ? '<div class="list-row" style="cursor:pointer;" onclick="openChangePw()"><span class="nm" style="flex:1;">비밀번호 변경</span><span class="val" style="color:var(--red);font-size:14px;">›</span></div>' : '')
   +   '<div class="list-row" style="cursor:pointer;" onclick="logout()"><span class="nm" style="flex:1;color:var(--red);">로그아웃</span><span class="val" style="color:var(--red);font-size:14px;">›</span></div>'
   + '</div>'
-  + '<p class="hint">동네 축구왕 · v0.51</p>';
+  + '<p class="hint">동네 축구왕 · v0.52</p>';
 }
 function importSection_(){
   return '<div class="eyebrow" style="margin-top:22px;">엑셀 가져오기 <span style="font-size:10px;color:var(--steel-soft);">(구단주 전용)</span></div>'
