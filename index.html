@@ -2346,7 +2346,7 @@ function viewMore(){
   +   (state.auth && state.auth.provider!=='kakao' ? '<div class="list-row" style="cursor:pointer;" onclick="openChangePw()"><span class="nm" style="flex:1;">비밀번호 변경</span><span class="val" style="color:var(--red);font-size:14px;">›</span></div>' : '')
   +   '<div class="list-row" style="cursor:pointer;" onclick="logout()"><span class="nm" style="flex:1;color:var(--red);">로그아웃</span><span class="val" style="color:var(--red);font-size:14px;">›</span></div>'
   + '</div>'
-  + '<p class="hint">동네 축구왕 · v0.70</p>';
+  + '<p class="hint">동네 축구왕 · v0.71</p>';
 }
 function importSection_(){
   return '<div class="eyebrow" style="margin-top:22px;">엑셀 가져오기 <span style="font-size:10px;color:var(--steel-soft);">(구단주 전용)</span></div>'
@@ -4254,6 +4254,14 @@ function pendingVote_(){
   return null;
 }
 function clearVote_(){ try{ localStorage.removeItem('kj_vote'); }catch(e){} try{ history.replaceState(null,'',location.pathname); }catch(e){} }
+/* 초대 링크 대상 저장/복원 — 카카오 로그인 리다이렉트로 ?t=&p= 쿼리가 사라져도 유지 (팀/팀원 초대 연결 보장) */
+function stashInvite_(){ var cid=inviteClubId(); if(cid){ try{ localStorage.setItem('kj_invite', JSON.stringify({t:cid, p:invitePid()||'', ts:Date.now()})); }catch(e){} } }
+function pendingInvite_(){
+  var cid=inviteClubId(); if(cid) return {t:cid, p:invitePid()||''};
+  try{ var s=localStorage.getItem('kj_invite'); if(s){ var o=JSON.parse(s); if(o && o.t && (Date.now()-(o.ts||0) < 3600000)) return {t:o.t, p:o.p||''}; } }catch(e){}
+  return null;
+}
+function clearInvite_(){ try{ localStorage.removeItem('kj_invite'); }catch(e){} }
 /* 카카오 공유 카드 이미지: 팀 엠블럼(공개 URL만) → 없으면 앱 로고. 카카오는 data-URI 불가 */
 function pollCardImage_(){
   // 카카오 공유 카드 썸네일 = 로그인 화면의 앱 로고(동축 크레스트, logo.png)
@@ -4320,7 +4328,7 @@ function authBody_(){
   return homeView_();
 }
 function homeView_(){
-  var inviteBanner = inviteClubId()
+  var inviteBanner = pendingInvite_()
     ? '<div class="auth-team-name">🔗 초대 링크로 접속했어요<br><span style="font-size:12px;font-weight:400;color:rgba(255,255,255,.75);">로그인하면 팀에 바로 합류합니다</span></div>'
     : (pendingVote_()
       ? '<div class="auth-team-name">🗳️ 투표 링크로 접속했어요<br><span style="font-size:12px;font-weight:400;color:rgba(255,255,255,.75);">로그인하면 해당 투표로 바로 이동합니다</span></div>'
@@ -4393,15 +4401,18 @@ function finishAuth_(r){
   if(!r || !r.ok){ authBtnBusy_(false); toast((r&&r.error)||'실패했습니다'); return; }
   state.auth = { type:r.type, name:r.name, ownerId:r.ownerId||null, provider:r.provider||'app', memberships:r.memberships||[], token:r.token };
   saveSession(state.auth);
-  if(inviteClubId() && !isGuest()){ processInvite_(); } else { afterLogin_(); }
+  // 카카오 로그인은 리다이렉트로 URL의 ?t=&p=가 사라지므로 stash(pendingInvite_)로 초대 대상 복원
+  if(pendingInvite_() && !isGuest()){ processInvite_(); } else { afterLogin_(); }
 }
 /* 초대 링크 합류: 로그인 직후 팀에 즉시 연결 (t=팀초대→새 팀원 / t+p=팀원초대→해당 명단에 연결) */
 function processInvite_(){
-  var cid = inviteClubId();
-  var pid = invitePid();
+  var inv = pendingInvite_() || {};
+  var cid = inv.t || '';
+  var pid = inv.p || '';
   var accId = state.auth && state.auth.ownerId;
-  if(!cid || !accId){ afterLogin_(); return; }
+  if(!cid || !accId){ clearInvite_(); afterLogin_(); return; }
   API.run('joinClub', cid, accId, state.auth.name, pid).then(function(r){
+    clearInvite_();
     try{ history.replaceState(null,'',location.pathname); }catch(e){}
     if(r && r.ok){
       state.auth.memberships = r.memberships || state.auth.memberships;
@@ -4414,7 +4425,7 @@ function processInvite_(){
       toast((r&&r.error)||'팀 합류에 실패했어요');
     }
     afterLogin_();
-  }).catch(function(){ try{ history.replaceState(null,'',location.pathname); }catch(e){} afterLogin_(); });
+  }).catch(function(){ clearInvite_(); try{ history.replaceState(null,'',location.pathname); }catch(e){} afterLogin_(); });
 }
 /* 내 가입 신청 대기 목록 갱신 */
 function refreshMyJoins_(){
@@ -5088,6 +5099,7 @@ function fitPhone_(){
   try{ initPTR_(); }catch(e){}
   try{ initBackButton_(); }catch(e){}
   stashVote_();   // 투표 링크 대상 저장 (로그인/리다이렉트로 URL 사라져도 유지)
+  stashInvite_(); // 초대 링크(?t=&p=) 대상 저장 (카카오 로그인 리다이렉트로 URL 사라져도 연결 유지)
   var hash = location.hash || '';
   var hasKs = /[#&]ks=/.test(hash);
   var sess = loadSession();
