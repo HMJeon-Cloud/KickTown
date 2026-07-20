@@ -2307,7 +2307,7 @@ function viewMore(){
   +   (state.auth && state.auth.provider!=='kakao' ? '<div class="list-row" style="cursor:pointer;" onclick="openChangePw()"><span class="nm" style="flex:1;">비밀번호 변경</span><span class="val" style="color:var(--red);font-size:14px;">›</span></div>' : '')
   +   '<div class="list-row" style="cursor:pointer;" onclick="logout()"><span class="nm" style="flex:1;color:var(--red);">로그아웃</span><span class="val" style="color:var(--red);font-size:14px;">›</span></div>'
   + '</div>'
-  + '<p class="hint">동네 축구왕 · v0.63</p>';
+  + '<p class="hint">동네 축구왕 · v0.64</p>';
 }
 function importSection_(){
   return '<div class="eyebrow" style="margin-top:22px;">엑셀 가져오기 <span style="font-size:10px;color:var(--steel-soft);">(구단주 전용)</span></div>'
@@ -2324,6 +2324,7 @@ function importSection_(){
   +     '<button class="btn-ghost" style="flex:1;" onclick="dlTemplate(\'matches\')">📄 양식 받기</button>'
   +     '<button class="btn-ghost" style="flex:1;" onclick="pickImport(\'matches\')">⬆️ 가져오기</button>'
   +   '</div>'
+  +   '<div class="hint" style="margin:10px 0 0;padding-top:10px;border-top:1px dashed var(--line-strong);">📊 <b>선수 출석·선수 기록·경기 기록</b> 3개 탭으로 된 시즌 기록 파일도 위 “경기 기록 가져오기”에 그대로 올리면 <b>자동 인식</b>돼요. (경기·득점·도움·출석 한 번에 등록)</div>'
   + '</div>';
 }
 /* SheetJS 온디맨드 로드 */
@@ -2367,6 +2368,7 @@ function handleImportFile_(file, type){
     r.onload=function(e){
       try{
         var wb=XLSX.read(new Uint8Array(e.target.result), {type:'array', cellDates:true});
+        if(has3TabFormat_(wb)){ import3Tab_(wb); return; }   // 3탭 기록 양식(선수 출석/선수 기록/경기 기록) 자동 감지
         var ws=wb.Sheets[wb.SheetNames[0]];
         var rows=XLSX.utils.sheet_to_json(ws, {defval:''});
         if(!rows.length){ toast('데이터가 없어요'); return; }
@@ -2447,6 +2449,73 @@ function importPlayers_(rows){
     toast('팀원 '+players.length+'명을 등록했어요');
     if(state.screen==='team'||state.screen==='more') render();
   });
+}
+/* ===== 3탭 기록 양식 (선수 출석 / 선수 기록 / 경기 기록) ===== */
+function has3TabFormat_(wb){
+  var n=(wb&&wb.SheetNames)||[];
+  return n.indexOf('경기 기록')>-1 && (n.indexOf('선수 기록')>-1 || n.indexOf('선수 출석')>-1);
+}
+function aoa_(wb, name){
+  var ws=wb.Sheets[name]; if(!ws) return [];
+  return XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+}
+/* 반환: {matches, stats, attendance, unmatched} — 이름은 기존 팀원과 매칭 */
+function parse3Tab_(wb, cid, players){
+  var byName={}; players.forEach(function(p){ byName[p.name]=p.id; });
+  var unmatched={}, t=Date.now();
+  // 1) 경기 기록 → 경기 (일자/구장/상대팀/득점/실점)
+  var gm=aoa_(wb,'경기 기록'), matches=[], dateToMid={};
+  for(var i=1;i<gm.length;i++){ var r=gm[i]||[]; var date=d_(r[0]); if(!date) continue;
+    var os=n_(r[3]), ps=n_(r[4]); var mid='g'+t+'_'+i;
+    var mo={id:mid, clubId:cid, date:date, time:'', opponent:s_(r[2]), venue:s_(r[1]), venueUrl:'', useAtt:true};
+    if(os!=null && ps!=null){ mo.ourScore=os; mo.oppScore=ps; mo.result=(os>ps?'W':(os<ps?'L':'D')); }
+    matches.push(mo); dateToMid[date]=mid;
+  }
+  // 2) 선수 기록 → 골/도움 (선수마다 2행[골/어시], 날짜마다 2열[라벨/값])
+  var stats=[], agg={}, ps2=aoa_(wb,'선수 기록');
+  if(ps2.length){
+    var hdr=ps2[0]||[], dcols=[]; for(var j=0;(1+2*j)<hdr.length;j++){ dcols.push(d_(hdr[1+2*j])); }
+    for(var pp=0;(1+2*pp)<ps2.length;pp++){ var gRow=ps2[1+2*pp]||[], aRow=ps2[2+2*pp]||[]; var nm=s_(gRow[0]); if(!nm) continue;
+      var pid=byName[nm];
+      for(var k=0;k<dcols.length;k++){ var dt=dcols[k]; if(!dt || !dateToMid[dt]) continue;
+        var g=n_(gRow[2+2*k])||0, a=n_(aRow[2+2*k])||0; if(g<=0 && a<=0) continue;
+        if(!pid){ unmatched[nm]=1; continue; }
+        var key=dateToMid[dt]+'__'+pid; if(!agg[key]) agg[key]={mid:dateToMid[dt], pid:pid, g:0, a:0}; agg[key].g+=g; agg[key].a+=a;
+      }
+    }
+    Object.keys(agg).forEach(function(kk){ var x=agg[kk]; stats.push({matchId:x.mid, playerId:x.pid, goals:x.g, assists:x.a}); });
+  }
+  // 3) 선수 출석 → 출석(1) / 불참(-1). 빈칸=기록 없음(미정)
+  var att=[], at=aoa_(wb,'선수 출석');
+  if(at.length){
+    var ah=at[0]||[], acols=[]; for(var c=2;c<ah.length;c++){ acols.push(d_(ah[c])); }
+    for(var rr=1;rr<at.length;rr++){ var row=at[rr]||[]; var nm2=s_(row[1]); if(!nm2) continue; var pid2=byName[nm2];
+      for(var q=0;q<acols.length;q++){ var dt2=acols[q]; if(!dt2 || !dateToMid[dt2]) continue;
+        var v=row[2+q], status=null; if(v===1||v==='1') status='present'; else if(v===-1||v==='-1') status='absent'; else continue;
+        if(!pid2){ unmatched[nm2]=1; continue; }
+        att.push({matchId:dateToMid[dt2], playerId:pid2, status:status, checkedAt:null});
+      }
+    }
+  }
+  return {matches:matches, stats:stats, attendance:att, unmatched:Object.keys(unmatched)};
+}
+function import3Tab_(wb){
+  var cid=state.activeClubId;
+  if(!cid){ toast('팀을 먼저 선택하세요'); return; }
+  var players=(DB.players||[]).filter(function(p){return p.clubId===cid;});
+  var res=parse3Tab_(wb, cid, players);
+  if(!res.matches.length){ toast('“경기 기록” 탭에서 경기를 찾지 못했어요 (일자 확인)'); return; }
+  var msg='기록 양식(3탭)을 가져올까요?\n\n· 경기 '+res.matches.length+'건\n· 득점/도움 '+res.stats.length+'건\n· 출석 '+res.attendance.length+'건';
+  if(res.unmatched.length) msg+='\n\n※ 팀원 명단에 없는 이름은 제외됩니다:\n'+res.unmatched.join(', ')+'\n\n(먼저 팀원을 등록한 뒤 다시 가져오면 이 인원도 반영돼요)';
+  if(!confirm(msg)) return;
+  bulkWrite_('matches', res.matches)
+    .then(function(){ return bulkWrite_('stats', res.stats); })
+    .then(function(){ return bulkWrite_('attendance', res.attendance); })
+    .then(function(){
+      state.recLoaded=false; state.attLoaded=false; state.matchesLoaded=false;
+      toast('가져오기 완료 · 경기 '+res.matches.length+' · 기록 '+res.stats.length+' · 출석 '+res.attendance.length);
+      if(['form','record','att','more','squad'].indexOf(state.screen)>-1) render();
+    }).catch(function(){ toast('저장 중 일부 실패 · 새로고침 후 확인해주세요'); });
 }
 function importMatches_(rows){
   var cid=state.activeClubId;
