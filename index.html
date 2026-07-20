@@ -2346,7 +2346,7 @@ function viewMore(){
   +   (state.auth && state.auth.provider!=='kakao' ? '<div class="list-row" style="cursor:pointer;" onclick="openChangePw()"><span class="nm" style="flex:1;">비밀번호 변경</span><span class="val" style="color:var(--red);font-size:14px;">›</span></div>' : '')
   +   '<div class="list-row" style="cursor:pointer;" onclick="logout()"><span class="nm" style="flex:1;color:var(--red);">로그아웃</span><span class="val" style="color:var(--red);font-size:14px;">›</span></div>'
   + '</div>'
-  + '<p class="hint">동네 축구왕 · v0.72</p>';
+  + '<p class="hint">동네 축구왕 · v0.73</p>';
 }
 function importSection_(){
   return '<div class="eyebrow" style="margin-top:22px;">엑셀 가져오기 <span style="font-size:10px;color:var(--steel-soft);">(구단주 전용)</span></div>'
@@ -2508,9 +2508,16 @@ function rowsToMatches_(rows, cid, players){
 /* Firestore 일괄 쓰기 + 메모리 반영 */
 function bulkWrite_(key, arr){
   if(!arr.length) return Promise.resolve();
-  DB[key]=(DB[key]||[]).concat(arr);
+  var m=FS_MAP[key];
+  // 메모리 upsert: 같은 문서 id가 있으면 교체(중복 방지) — 재업로드·기존 경기 수정 시 중복 생성 안 됨
+  if(m){
+    var inc={}; arr.forEach(function(x){ inc[String(m.id(x))]=1; });
+    DB[key]=(DB[key]||[]).filter(function(x){ return !inc[String(m.id(x))]; }).concat(arr);
+  } else {
+    DB[key]=(DB[key]||[]).concat(arr);
+  }
   if(!window.db || !FS.enabled) return Promise.resolve();
-  var m=FS_MAP[key], b=db.batch();
+  var b=db.batch();
   arr.forEach(function(x){ b.set(db.collection(m.coll).doc(String(m.id(x))), fsClean(x), {merge:true}); });
   return b.commit().catch(function(){});
 }
@@ -2534,12 +2541,28 @@ function aoa_(wb, name){
   var ws=wb.Sheets[name]; if(!ws) return [];
   return XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
 }
-/* 반환: {matches, stats, attendance, unmatched} — 이름은 기존 팀원과 매칭 */
-function parse3Tab_(wb, cid, players){
+/* 반환: {matches, stats, attendance, unmatched, autoMatches, updatedMatches}
+   existing: 기존 경기 배열 → 일자·시간·상대팀으로 매칭해 기존 경기에 반영(수정), 없으면 신규 */
+function parse3Tab_(wb, cid, players, existing){
   var byName={}; players.forEach(function(p){ byName[p.name]=p.id; });
   var unmatched={}, t=Date.now();
+  existing = existing || [];
+  var exByDate={}; existing.forEach(function(m){ if(m&&m.date){ (exByDate[m.date]=exByDate[m.date]||[]).push(m); } });
+  var usedEx={};
+  // 기존 경기 찾기: 일자+상대팀(+시간) 우선, 상대팀 없으면 일자만
+  function findExisting_(date, time, opp){
+    var cands=(exByDate[date]||[]).filter(function(m){ return !usedEx[m.id]; });
+    if(!cands.length) return null;
+    if(opp){
+      var byOpp=cands.filter(function(m){ return (m.opponent||'')===opp; });
+      if(!byOpp.length) return null;   // 같은 날 다른 상대 → 다른 경기 → 신규
+      if(time){ var bt=byOpp.filter(function(m){ return (m.time||'')===time; }); if(bt.length) return bt[0]; }
+      return byOpp[0];
+    }
+    return cands[0];   // 일자만(선수 데이터 기반) → 그 날짜 기존 경기에 연결
+  }
   // 1) 경기 기록 → 경기 (헤더 기준: 일자/시간/상대팀/경기장/출석 체크(Y/N)/득점/실점)
-  var gm=aoa_(wb,'경기 기록'), matches=[], dateToMid={};
+  var gm=aoa_(wb,'경기 기록'), matches=[], dateToMid={}, updatedMatches=0;
   var gh=(gm[0]||[]).map(function(x){ return s_(x); });
   function gcol_(names){ for(var a=0;a<gh.length;a++){ for(var b=0;b<names.length;b++){ if(gh[a].indexOf(names[b])>-1) return a; } } return -1; }
   var ci_date=gcol_(['일자','날짜']), ci_time=gcol_(['시간']), ci_opp=gcol_(['상대팀','상대']),
@@ -2548,14 +2571,23 @@ function parse3Tab_(wb, cid, players){
   if(ci_date<0) ci_date=0;
   if(ci_os<0) ci_os=3; if(ci_ps<0) ci_ps=4;
   for(var i=1;i<gm.length;i++){ var r=gm[i]||[]; var date=d_(r[ci_date]); if(!date) continue;
-    var os=n_(r[ci_os]), ps=n_(r[ci_ps]); var mid='g'+t+'_'+i;
+    var os=n_(r[ci_os]), ps=n_(r[ci_ps]);
+    var time=(ci_time>-1?t_(r[ci_time]):''), opp=s_(r[ci_opp>-1?ci_opp:2]), venue=s_(r[ci_venue>-1?ci_venue:1]);
     var useAtt=true; if(ci_att>-1){ var av=s_(r[ci_att]).toUpperCase(); if(av==='N'||av==='NO'||av==='FALSE'||av==='X') useAtt=false; }
-    var mo={id:mid, clubId:cid, date:date, time:(ci_time>-1?t_(r[ci_time]):''), opponent:s_(r[ci_opp>-1?ci_opp:2]), venue:s_(r[ci_venue>-1?ci_venue:1]), venueUrl:'', useAtt:useAtt};
+    var ex=findExisting_(date, time, opp), mid, mo;
+    if(ex){   // 기존 경기 수정 (기존 필드 보존 + 업로드 값 반영)
+      usedEx[ex.id]=1; updatedMatches++;
+      mid=ex.id; mo=JSON.parse(JSON.stringify(ex));
+      mo.clubId=cid; mo.date=date; if(time) mo.time=time; if(opp) mo.opponent=opp; if(venue) mo.venue=venue; mo.useAtt=useAtt;
+    } else {  // 신규 경기
+      mid='g'+t+'_'+i;
+      mo={id:mid, clubId:cid, date:date, time:time, opponent:opp, venue:venue, venueUrl:'', useAtt:useAtt};
+    }
     if(os!=null && ps!=null){ mo.ourScore=os; mo.oppScore=ps; mo.result=(os>ps?'W':(os<ps?'L':'D')); }
     matches.push(mo); dateToMid[date]=mid;
   }
-  // 1.5) 경기 기록이 비어 있으면, 선수 기록·선수 출석 헤더의 날짜로 '일자만 있는 경기'를 자동 생성
-  //      → 경기 기록 없이 선수 기록/출석만 업로드해도 등록됨. (경기 기록이 있으면 기존대로 그 날짜만 사용)
+  // 1.5) 경기 기록이 비어 있으면, 선수 기록·선수 출석 헤더의 날짜로 처리
+  //      → 그 날짜에 기존 경기가 있으면 거기에 연결, 없으면 '일자만 있는 경기' 자동 생성
   var autoCount=0;
   if(matches.length===0){
     var headerDates={};
@@ -2565,6 +2597,8 @@ function parse3Tab_(wb, cid, players){
     for(var hc=2;hc<ahdr.length;hc++){ var hd2=d_(ahdr[hc]); if(hd2) headerDates[hd2]=1; }
     Object.keys(headerDates).sort().forEach(function(hdt){
       if(dateToMid[hdt]) return;
+      var exm=findExisting_(hdt, '', '');
+      if(exm){ usedEx[exm.id]=1; dateToMid[hdt]=exm.id; return; }   // 기존 경기에 연결(신규 생성 안 함)
       var amid='g'+t+'_a'+autoCount; autoCount++;
       matches.push({id:amid, clubId:cid, date:hdt, time:'', opponent:'', venue:'', venueUrl:'', useAtt:true});
       dateToMid[hdt]=amid;
@@ -2599,17 +2633,19 @@ function parse3Tab_(wb, cid, players){
       }
     }
   }
-  return {matches:matches, stats:stats, attendance:att, unmatched:Object.keys(unmatched), autoMatches:autoCount};
+  return {matches:matches, stats:stats, attendance:att, unmatched:Object.keys(unmatched), autoMatches:autoCount, updatedMatches:updatedMatches};
 }
 function import3Tab_(wb){
   var cid=state.activeClubId;
   if(!cid){ toast('팀을 먼저 선택하세요'); return; }
   var players=(DB.players||[]).filter(function(p){return p.clubId===cid;});
-  var res=parse3Tab_(wb, cid, players);
-  if(!res.matches.length){ toast('경기 기록·선수 기록·선수 출석 어디에도 일자가 없어요 (날짜 확인)'); return; }
-  var realMatches = res.matches.length - (res.autoMatches||0);
-  var msg='기록 양식(3탭)을 가져올까요?\n\n· 경기 '+realMatches+'건'
-    + ((res.autoMatches>0)?'\n· 일자만 자동 등록 '+res.autoMatches+'건 (선수 기록·출석 날짜)':'')
+  var existing=(DB.matches||[]).filter(function(m){return m.clubId===cid;});
+  var res=parse3Tab_(wb, cid, players, existing);
+  if(!res.matches.length && !res.stats.length && !res.attendance.length){ toast('경기 기록·선수 기록·선수 출석 어디에도 일자가 없어요 (날짜 확인)'); return; }
+  var upd=res.updatedMatches||0, auto=res.autoMatches||0;
+  var msg='기록 양식(3탭)을 가져올까요?\n\n· 경기 '+res.matches.length+'건'
+    + ((upd>0)?' (기존 '+upd+'건 반영)':'')
+    + ((auto>0)?'\n· 일자만 자동 등록 '+auto+'건 (선수 기록·출석 날짜)':'')
     + '\n· 득점/도움 '+res.stats.length+'건\n· 출석 '+res.attendance.length+'건';
   if(res.unmatched.length) msg+='\n\n※ 팀원 명단에 없는 이름은 제외됩니다:\n'+res.unmatched.join(', ')+'\n\n(먼저 팀원을 등록한 뒤 다시 가져오면 이 인원도 반영돼요)';
   appConfirm_(msg, function(){
