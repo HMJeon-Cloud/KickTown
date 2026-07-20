@@ -2244,7 +2244,7 @@ function viewMore(){
   +   (state.auth && state.auth.provider!=='kakao' ? '<div class="list-row" style="cursor:pointer;" onclick="openChangePw()"><span class="nm" style="flex:1;">비밀번호 변경</span><span class="val" style="color:var(--red);font-size:14px;">›</span></div>' : '')
   +   '<div class="list-row" style="cursor:pointer;" onclick="logout()"><span class="nm" style="flex:1;color:var(--red);">로그아웃</span><span class="val" style="color:var(--red);font-size:14px;">›</span></div>'
   + '</div>'
-  + '<p class="hint">동네 축구왕 · v0.56</p>';
+  + '<p class="hint">동네 축구왕 · v0.57</p>';
 }
 function importSection_(){
   return '<div class="eyebrow" style="margin-top:22px;">엑셀 가져오기 <span style="font-size:10px;color:var(--steel-soft);">(구단주 전용)</span></div>'
@@ -2303,7 +2303,7 @@ function handleImportFile_(file, type){
     var r=new FileReader();
     r.onload=function(e){
       try{
-        var wb=XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+        var wb=XLSX.read(new Uint8Array(e.target.result), {type:'array', cellDates:true});
         var ws=wb.Sheets[wb.SheetNames[0]];
         var rows=XLSX.utils.sheet_to_json(ws, {defval:''});
         if(!rows.length){ toast('데이터가 없어요'); return; }
@@ -2316,6 +2316,16 @@ function handleImportFile_(file, type){
 }
 function s_(v){ return (v===undefined||v===null)?'':String(v).trim(); }
 function n_(v){ var x=parseInt(s_(v),10); return isNaN(x)?null:x; }
+/* 날짜 정규화 → 'YYYY-MM-DD' (엑셀 일련번호·Date 객체·다양한 텍스트 형식 모두 처리) */
+function d_(v){
+  if(v===undefined||v===null||v==='') return '';
+  if(Object.prototype.toString.call(v)==='[object Date]'){ if(isNaN(v.getTime())) return ''; return v.getUTCFullYear()+'-'+('0'+(v.getUTCMonth()+1)).slice(-2)+'-'+('0'+v.getUTCDate()).slice(-2); }
+  if(typeof v==='number' && isFinite(v)){ var d=new Date(Math.round((v-25569)*86400*1000)); if(!isNaN(d.getTime())) return d.getUTCFullYear()+'-'+('0'+(d.getUTCMonth()+1)).slice(-2)+'-'+('0'+d.getUTCDate()).slice(-2); }
+  var s=String(v).trim();
+  var m=s.match(/(\d{4})[.\-\/\s]+(\d{1,2})[.\-\/\s]+(\d{1,2})/);   // YYYY-MM-DD / YYYY.M.D / YYYY/M/D
+  if(m) return m[1]+'-'+('0'+m[2]).slice(-2)+'-'+('0'+m[3]).slice(-2);
+  return s;
+}
 /* 행 → 팀원 객체 배열 */
 function rowsToPlayers_(rows, cid){
   var out=[], t=Date.now();
@@ -2324,7 +2334,7 @@ function rowsToPlayers_(rows, cid){
     var pos=s_(r['포지션']).split(/[,\s/]+/).filter(function(x){return x;});
     var role=s_(r['역할']); if(role!=='임원') role='팀원';
     out.push({ id:'m'+t+'_'+i, clubId:cid, name:name, num:n_(r['등번호']),
-      positions:pos, role:role, birth:s_(r['생년월일']), height:n_(r['키']),
+      positions:pos, role:role, birth:d_(r['생년월일']), height:n_(r['키']),
       weight:n_(r['몸무게']), region:s_(r['지역']), size:s_(r['사이즈']) });
   }
   return out;
@@ -2342,7 +2352,7 @@ function rowsToMatches_(rows, cid, players){
   var byName={}; players.forEach(function(p){ byName[p.name]=p.id; });
   var matches=[], stats=[], unmatched={}, t=Date.now();
   for(var i=0;i<rows.length;i++){
-    var r=rows[i]; var opp=s_(r['상대팀']); var date=s_(r['날짜']);
+    var r=rows[i]; var opp=s_(r['상대팀']); var date=d_(r['날짜']);
     if(!opp && !date) continue;
     var mid='g'+t+'_'+i;
     var os=n_(r['우리점수']), ps=n_(r['상대점수']);
