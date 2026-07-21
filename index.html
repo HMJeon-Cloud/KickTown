@@ -397,6 +397,26 @@
   .rk-name{flex:1;font-weight:600;font-size:14.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .rk-val{font-weight:700;font-size:15px;color:var(--red);flex:0 0 auto;}
   .rk-val small{font-family:'Pretendard';color:var(--steel);font-size:11px;margin-left:2px;}
+  /* 개인 선수 페이지 */
+  .pp-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+  .pp-tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 6px;text-align:center;}
+  .pp-tile .k{font-size:10.5px;color:var(--steel);font-weight:700;letter-spacing:.04em;}
+  .pp-tile .v{font-size:21px;font-weight:700;color:var(--ink);margin-top:2px;}
+  .pp-tile .v small{font-size:11px;color:var(--steel);font-family:'Pretendard';}
+  .pp-list{border:1px solid var(--line);border-radius:14px;overflow:hidden;}
+  .pp-row{display:flex;align-items:center;gap:8px;padding:11px 13px;border-bottom:1px solid var(--line);font-size:12.5px;}
+  .pp-row:last-child{border-bottom:none;}
+  .pp-y{font-weight:700;font-size:14px;width:44px;flex:0 0 auto;}
+  .pp-c{flex:1;color:var(--steel);font-weight:600;white-space:nowrap;}
+  /* 시즌 결산 어워드 */
+  .aw-list{border:1px solid var(--line);border-radius:14px;overflow:hidden;}
+  .aw-row{display:flex;align-items:center;gap:10px;padding:12px 13px;border-bottom:1px solid var(--line);}
+  .aw-row:last-child{border-bottom:none;}
+  .aw-i{font-size:17px;flex:0 0 auto;}
+  .aw-k{font-size:12px;font-weight:700;color:var(--steel);width:64px;flex:0 0 auto;}
+  .aw-n{flex:1;font-weight:700;font-size:13.5px;text-align:right;}
+  .aw-v{color:var(--red);margin-left:4px;font-size:14px;}
+  .aw-v small{font-family:'Pretendard';color:var(--steel);font-size:10.5px;margin-left:1px;}
 
   /* Result form attendance segments */
   .res-row{padding:9px 2px;border-bottom:1px solid var(--line);}
@@ -810,7 +830,7 @@ var FIREBASE_CONFIG = {
 var APP_NAME = '동네 축구왕';
 var APP_SUB = 'KICKTOWN';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '0.84';
+var APP_VERSION = '0.86';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -1102,15 +1122,56 @@ function mockHandler(fn, a){
   if(fn==='setConfig'){ DB.config[a[0]]=a[1]; return JSON.parse(JSON.stringify(DB.config)); }
   // --- match full report (상대 전적 상세) ---
   if(fn==='getMatchReport'){ return buildMatchReport_(a[0]); }
+  // --- 개인 선수 커리어: 연도별 골·도움·출석·MOM ---
+  if(fn==='getPlayerCareer'){
+    var cpid=a[0];
+    var cp=DB.players.filter(function(x){return x.id===cpid;})[0]||null;
+    var cname=cp?cp.name:null;
+    if(!cname){ var cc0=(DB.clubs||[]).filter(function(x){return x.id===AC;})[0]; var cex=(cc0&&cc0.exPlayers)||{}; if(cex[cpid]&&cex[cpid].name) cname=cex[cpid].name+'(탈퇴)'; }
+    var cmById={}; DB.matches.filter(inClub).forEach(function(m){ cmById[m.id]=m; });
+    var yrs={};
+    function ybk(y){ if(!yrs[y]) yrs[y]={year:y,g:0,a:0,present:0,late:0,absent:0,excused:0,mom:0}; return yrs[y]; }
+    DB.stats.forEach(function(s){ if(s.playerId!==cpid) return; var m=cmById[s.matchId]; if(!m||!m.date) return; var y=m.date.slice(0,4); var b=ybk(y); b.g+=Number(s.goals)||0; b.a+=Number(s.assists)||0; });
+    DB.attendance.forEach(function(x){ if(x.playerId!==cpid) return; var m=cmById[x.matchId]; if(!m||!m.date) return; var y2=m.date.slice(0,4); var b2=ybk(y2);
+      if(x.status==='present') b2.present++; else if(x.status==='late') b2.late++; else if(x.status==='absent') b2.absent++; else if(x.status==='excused') b2.excused++;
+    });
+    mockHandler('getMomList',[]).forEach(function(mm){ if(mm.pids.indexOf(cpid)<0) return; var y3=String(mm.date||'').slice(0,4); if(y3) ybk(y3).mom++; });
+    var yearArr=Object.keys(yrs).sort().reverse().map(function(y){ return yrs[y]; });
+    var tot={g:0,a:0,present:0,late:0,absent:0,excused:0,mom:0};
+    yearArr.forEach(function(b){ tot.g+=b.g; tot.a+=b.a; tot.present+=b.present; tot.late+=b.late; tot.absent+=b.absent; tot.excused+=b.excused; tot.mom+=b.mom; });
+    return {player:{id:cpid, name:cname||'(탈퇴)', num:cp?cp.num:'', positions:(cp&&cp.positions)||[], role:cp?cp.role:'', left:!cp}, years:yearArr, total:tot};
+  }
   // --- polls ---
   if(fn==='getPolls'){ return DB.polls.filter(inClub).slice().sort(function(x,y){return String(y.createdAt).localeCompare(String(x.createdAt));}).map(function(p){
     var voters={}; DB.votes.filter(function(v){return v.pollId===p.id;}).forEach(function(v){ voters[v.playerId]=1; });
-    return {id:p.id, title:p.title, options:p.options.slice(), startAt:p.startAt, endAt:p.endAt, status:pollStatus_(p), multi:!!p.multi, anon:!!p.anon, createdBy:p.createdBy||'', voteCount:Object.keys(voters).length, totalMembers:DB.players.filter(inClub).length};
+    return {id:p.id, title:p.title, options:p.options.slice(), startAt:p.startAt, endAt:p.endAt, status:pollStatus_(p), multi:!!p.multi, anon:!!p.anon, createdBy:p.createdBy||'', kind:p.kind||'', matchId:p.matchId||'', voteCount:Object.keys(voters).length, totalMembers:DB.players.filter(inClub).length};
   }); }
+  // --- MOM: 마감된 MOM 투표의 우승자 목록 [{pollId, matchId, date, pids}] ---
+  if(fn==='getMomList'){
+    var momOut=[];
+    DB.polls.filter(inClub).forEach(function(p){
+      if(p.kind!=='mom') return;
+      if(pollStatus_(p)!=='closed') return;
+      var cnt={}; DB.votes.filter(function(v){return v.pollId===p.id;}).forEach(function(v){ cnt[v.choice]=(cnt[v.choice]||0)+1; });
+      var mx=0; Object.keys(cnt).forEach(function(k){ if(cnt[k]>mx) mx=cnt[k]; });
+      if(mx<=0) return;
+      var wins=[];
+      (p.options||[]).forEach(function(opt,oi){
+        if(cnt[opt]!==mx) return;
+        var wpid=(p.optionPids||[])[oi];
+        if(!wpid){ var wp=DB.players.filter(function(x){return x.name===opt;})[0]; wpid=wp?wp.id:null; }
+        if(wpid && wins.indexOf(wpid)<0) wins.push(wpid);
+      });
+      if(!wins.length) return;
+      var pm=DB.matches.filter(function(x){return x.id===p.matchId;})[0];
+      momOut.push({pollId:p.id, matchId:p.matchId||'', date:(pm&&pm.date)||p.matchDate||String(p.createdAt||'').slice(0,10), pids:wins});
+    });
+    return momOut;
+  }
   if(fn==='getPollDetail'){ return buildPollDetail_(a[0], a[1]); }
   if(fn==='createPoll'){
     var d=a[0];
-    DB.polls.push({id:'v'+Date.now(), clubId:AC, title:d.title, options:d.options.slice(), startAt:d.startAt||'', endAt:d.endAt||'', status:'', multi:!!d.multi, anon:!!d.anon, createdBy:d.createdBy||'', createdByName:d.createdByName||'', createdAt:new Date().toISOString()});
+    DB.polls.push({id:'v'+Date.now(), clubId:AC, title:d.title, options:d.options.slice(), startAt:d.startAt||'', endAt:d.endAt||'', status:'', multi:!!d.multi, anon:!!d.anon, createdBy:d.createdBy||'', createdByName:d.createdByName||'', kind:d.kind||'', matchId:d.matchId||'', matchDate:d.matchDate||'', optionPids:(d.optionPids||[]).slice(), createdAt:new Date().toISOString()});
     return mockHandler('getPolls',[]);
   }
   if(fn==='castVote'){
@@ -1315,6 +1376,7 @@ function ensureRecordPeriod(p){
     state.recAtt = (b && b.attendance) || [];
     state.recLoading = false; render();
   }).catch(function(){ state.recLoading=false; render(); toast('기록을 불러오지 못했습니다'); });
+  API.run('getMomList').then(function(l){ state.recMom = l||[]; if(state.screen==='record') render(); }).catch(function(){});
 }
 /* 기간 칩 목록은 전체 경기(state.matches) 기준으로 계산 — 특정 월을 골라도 다른 연·월 칩이 사라지지 않도록 */
 function recPeriodSource_(){ return (state.matches && state.matches.length) ? state.matches : state.recMatches; }
@@ -1459,6 +1521,7 @@ function go(id){
     if(state._backStack[state._backStack.length-1] !== state.screen){ state._backStack.push(state.screen); if(state._backStack.length>40) state._backStack.shift(); }
   }
   state.screen = id;
+  state.matchShow = REC_PAGE; state.recShow = REC_PAGE;   // 탭 이동 시 목록 표시 개수 초기화
   if(state.auth && !isGuest()){ state.auth.lastScreen = id; saveSession(state.auth); }   // 새로고침 복원용
   applyHeaderFor(id);
   if(id==='form'){ loadForms(); return; }
@@ -1649,7 +1712,10 @@ function viewSquad(){
   if(!state.matches.length){
     return addBtn + '<div class="empty"><div class="ei">📋</div>등록된 경기가 없습니다.<br>위 버튼으로 첫 경기를 등록하세요.</div>';
   }
-  var cards = state.matches.slice().sort(function(a,b){ return b.date.localeCompare(a.date); }).map(function(m){
+  var sorted = state.matches.slice().sort(function(a,b){ return b.date.localeCompare(a.date); });
+  var mCap = state.matchShow || REC_PAGE;
+  var shownM = sorted.slice(0, mCap);
+  var cards = shownM.map(function(m){
     var venueBtn = (m.venueUrl || (m.lat!=null&&m.lat!==''))
       ? '<button class="btn-ghost" style="margin:10px 0 0;" onclick="event.stopPropagation();openVenueShare(\''+m.id+'\')">🗺️ 경기장 지도 · 내비 · 공유</button>' : '';
     var edit = isAdmin() ? ' onclick="openMatchForm(\''+m.id+'\')" style="cursor:pointer;"' : '';
@@ -1662,10 +1728,12 @@ function viewSquad(){
       + venueBtn
       + '</div>';
   }).join('');
+  var restM = sorted.length - shownM.length;
+  var moreM = (restM>0) ? '<button class="rec-more" onclick="matchShowMore_()">경기 더 보기 · '+Math.min(REC_PAGE, restM)+'개 (남은 '+restM+')</button>' : '';
   var emptyN = isAdmin() ? emptyMatchCount_() : 0;
   var cleanBtn = emptyN>0 ? '<button class="btn-ghost btn-danger" style="width:100%;margin:8px 0 0;" onclick="cleanupEmptyMatches_()">🧹 빈 경기 정리 ('+emptyN+'건)</button>'
     + '<p class="hint" style="margin:6px 2px 0;">상대팀·결과가 없는 잘못 생성된 경기를 한 번에 삭제해요.</p>' : '';
-  return addBtn + '<div class="eyebrow" style="margin-top:14px;">등록된 경기 · '+state.matches.length+'</div>' + cards + cleanBtn
+  return addBtn + '<div class="eyebrow" style="margin-top:14px;">등록된 경기 · '+state.matches.length+'</div>' + cards + moreM + cleanBtn
     + '<p class="hint">'+(isAdmin()?'경기를 탭하면 수정할 수 있습니다.<br>':'')+'스쿼드(포메이션) 작성은 스쿼드 탭에서 관리합니다.</p>';
 }
 
@@ -2030,22 +2098,44 @@ function viewRecord(){
     var rank=0; for(var i=0;i<ranked.length;i++){ if(ranked[i].pid===myPid){ rank=i+1; break; } }
     return {v:v, rank:rank};
   }
+  var momRows = recRank_('mom', 0);
+  function myStatMom(){
+    if(!myPid) return null;
+    var rk=0, vv=0;
+    for(var mi=0;mi<momRows.length;mi++){ if(momRows[mi].pid===myPid){ rk=mi+1; vv=momRows[mi].v; break; } }
+    if(!rk) return null;
+    return {v:vv, rank:rk};
+  }
   var boardsHtml = '<div class="boards">'
     + leaderBoard('득점', 'g', rankArr_('g'), '골', myStat('g'))
     + leaderBoard('도움', 'a', rankArr_('a'), '도움', myStat('a'))
     + leaderBoard('출석', 'att', rankArr_('att'), '점', myStat('att'))
+    + (momRows.length ? leaderBoard('MOM', 'mom', momRows, '회', myStatMom()) : '')
     + '</div>';
+
+  // 시즌 결산 (연도 선택 시)
+  var seasonBtn = (curYear && matches.length) ? '<button class="btn-ghost" style="width:100%;margin:10px 0 0;" onclick="openSeasonReport_(\''+curYear+'\')">🏆 '+curYear+' 시즌 결산 보기</button>' : '';
 
   var recSec = '<div class="section"><div class="eyebrow">선수 기록 · TOP 3</div>'+boardsHtml+'</div>';
   var matchSec = '<div class="section"><div class="eyebrow">경기 기록</div>'+mlist+'</div>';
-  return seg + chips + summary
+  return seg + chips + summary + seasonBtn
     + recSec + matchSec   // 선수 기록(위) → 경기 기록(아래)
     + '<p class="hint">경기를 탭하면 스코어와 선수별 득점·도움·출석을 입력할 수 있습니다.</p>';
 }
 var MEDAL = ['①','②','③'];
 var REC_PAGE = 20;
 function recShowMore_(){ state.recShow = (state.recShow || REC_PAGE) + REC_PAGE; render(); }
-var REC_CATS = { g:{title:'득점', unit:'골'}, a:{title:'도움', unit:'도움'}, att:{title:'출석', unit:'점'} };
+function matchShowMore_(){ state.matchShow = (state.matchShow || REC_PAGE) + REC_PAGE; render(); }
+var REC_CATS = { g:{title:'득점', unit:'골'}, a:{title:'도움', unit:'도움'}, att:{title:'출석', unit:'점'}, mom:{title:'MOM', unit:'회'} };
+/* 현재 기간 MOM 횟수 집계 {pid:count} */
+function momCounts_(){
+  var out={};
+  (state.recMom||[]).forEach(function(m){
+    if(!inPeriod(m.date)) return;
+    (m.pids||[]).forEach(function(pid){ out[pid]=(out[pid]||0)+1; });
+  });
+  return out;
+}
 /* 현재 기간의 선수별 집계 {pid:{g,a,att}} — 뷰/시트 공용 */
 function recBuildAgg_(){
   var matches=(state.recMatches||[]).filter(function(m){ return inPeriod(m.date); });
@@ -2064,15 +2154,17 @@ function recBuildAgg_(){
 }
 /* 카테고리(key) 정렬 순위 (v>0), limit>0이면 상위 limit명 */
 function recRank_(key, limit){
-  var agg=recBuildAgg_();
-  var arr=Object.keys(agg).map(function(pid){ var p=pname_(pid); return {pid:pid, name:p.name, v:Math.round(agg[pid][key]*10)/10}; })
+  var src = (key==='mom') ? momCounts_() : null;
+  var agg = src ? null : recBuildAgg_();
+  var keys = Object.keys(src||agg);
+  var arr=keys.map(function(pid){ var p=pname_(pid); var v = src ? src[pid] : Math.round(agg[pid][key]*10)/10; return {pid:pid, name:p.name, v:v}; })
     .filter(function(r){ return r.v>0; }).sort(function(x,y){ return y.v-x.v; });
   return (limit>0) ? arr.slice(0, limit) : arr;
 }
 function leaderBoard(title, key, rows, unit, mine){
   var top = rows.slice(0,3);
   var body = top.length ? top.map(function(r,i){
-    return '<div class="lb-row"><span class="lb-rank r'+(i+1)+'">'+MEDAL[i]+'</span>'
+    return '<div class="lb-row" onclick="openPlayerPage_(\''+r.pid+'\')" style="cursor:pointer;"><span class="lb-rank r'+(i+1)+'">'+MEDAL[i]+'</span>'
       + '<span class="lb-name">'+esc(r.name)+'</span>'
       + '<span class="lb-val oswald">'+r.v+'<small>'+unit+'</small></span></div>';
   }).join('') : '<div class="lb-empty">기록 없음</div>';
@@ -2100,7 +2192,7 @@ function openRankSheet_(key){
   var body = rows.length ? rows.map(function(r,i){
     var me = (r.pid===myPid);
     var medal = (i<3) ? MEDAL[i] : (i+1);
-    return '<div class="rk-row'+(me?' rk-me':'')+'">'
+    return '<div class="rk-row'+(me?' rk-me':'')+'" onclick="openPlayerPage_(\''+r.pid+'\')" style="cursor:pointer;">'
       + '<span class="rk-rank'+(i<3?(' r'+(i+1)):'')+'">'+medal+'</span>'
       + '<span class="rk-name">'+esc(r.name)+(me?' <span style="font-size:10px;color:var(--gold,#C7A24B);font-weight:800;">나</span>':'')+'</span>'
       + '<span class="rk-val oswald">'+r.v+'<small>'+cat.unit+'</small></span></div>';
@@ -2112,8 +2204,137 @@ function openRankSheet_(key){
    +   '<div class="rk-list">'+body+'</div>'
    + '</div>');
 }
+/* ── 개인 선수 페이지: 연도별 골·도움·출석·MOM ── */
+function openPlayerPage_(pid){
+  if(!pid) return;
+  API.run('getPlayerCareer', pid).then(function(d){
+    if(!d || !d.player){ toast('선수 정보를 불러오지 못했습니다'); return; }
+    var p=d.player, tt=d.total||{};
+    var attTot=(tt.present||0)+(tt.late||0), attAll=attTot+(tt.absent||0)+(tt.excused||0);
+    var rate=attAll? Math.round(attTot/attAll*100) : 0;
+    var posTxt=(p.positions&&p.positions.length)?p.positions.join(' · '):'';
+    var sub=[(p.num!=null&&p.num!==''&&p.num!=='미정')?('No.'+p.num):'', posTxt, p.role||''].filter(function(x){return x;}).join(' · ');
+    var tiles = '<div class="pp-tiles">'
+      + '<div class="pp-tile"><div class="k">골</div><div class="v oswald">'+(tt.g||0)+'</div></div>'
+      + '<div class="pp-tile"><div class="k">도움</div><div class="v oswald">'+(tt.a||0)+'</div></div>'
+      + '<div class="pp-tile"><div class="k">출석률</div><div class="v oswald">'+rate+'<small>%</small></div></div>'
+      + '<div class="pp-tile"><div class="k">MOM</div><div class="v oswald">'+(tt.mom||0)+'</div></div>'
+      + '</div>';
+    var yrRows = (d.years||[]).map(function(y){
+      var ya=(y.present||0)+(y.late||0);
+      return '<div class="pp-row"><span class="pp-y oswald">'+y.year+'</span>'
+        + '<span class="pp-c">'+y.g+'골</span><span class="pp-c">'+y.a+'도움</span>'
+        + '<span class="pp-c">출석 '+ya+(y.late?(' (지각'+y.late+')'):'')+'</span>'
+        + '<span class="pp-c">'+(y.mom?('MOM '+y.mom):'-')+'</span></div>';
+    }).join('');
+    var body = yrRows ? '<div class="pp-list">'+yrRows+'</div>' : '<div class="empty" style="padding:20px;">기록이 없습니다.</div>';
+    showSheet('<div class="grabber"></div>'
+     + '<div class="sheet-head"><h3>'+esc(p.name)+'</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+     + '<div class="sheet-body">'
+     +   (sub?'<p style="font-size:12.5px;color:var(--steel);margin:0 0 12px;font-weight:600;">'+esc(sub)+'</p>':'')
+     +   tiles
+     +   '<div class="eyebrow" style="margin:16px 0 8px;">연도별 기록</div>'
+     +   body
+     +   '<p class="hint" style="margin-top:10px;">출석률 = (출석+지각) ÷ 출석 기록이 있는 경기 · 전체 기간 기준</p>'
+     + '</div>');
+  }).catch(function(){ toast('선수 정보를 불러오지 못했습니다'); });
+}
 function setRecTab(t){ state.recTab=t; state.recShow=REC_PAGE; render(); }
 function setH2hOpp(o){ state.h2hOpp=o; render(); }
+
+/* ── 시즌 결산 리포트 ── */
+function seasonData_(year, srcM, srcS, srcA){
+  var ms=(srcM||state.recMatches||[]).filter(function(m){ return m.date && m.date.slice(0,4)===year; });
+  var played=ms.filter(function(m){ return m.result==='W'||m.result==='D'||m.result==='L'; });
+  var w=0,d=0,l=0,gf=0,ga=0,best=null;
+  played.forEach(function(m){
+    if(m.result==='W')w++; else if(m.result==='D')d++; else l++;
+    var os=Number(m.ourScore)||0, ps=Number(m.oppScore)||0;
+    gf+=os; ga+=ps;
+    if(m.result==='W'){ var diff=os-ps; if(!best || diff>best.diff || (diff===best.diff && os>best.os)) best={diff:diff, os:os, ps:ps, opp:m.opponent, date:m.date}; }
+  });
+  var midSet={}; ms.forEach(function(m){ midSet[m.id]=1; });
+  var agg={};
+  function bk(pid){ if(!agg[pid]) agg[pid]={g:0,a:0,att:0}; return agg[pid]; }
+  (srcS||state.recStats||[]).forEach(function(s){ if(!midSet[s.matchId]) return; var b=bk(s.playerId); b.g+=Number(s.goals)||0; b.a+=Number(s.assists)||0; });
+  (srcA||state.recAtt||[]).forEach(function(x){ if(!midSet[x.matchId]) return; if(x.status==='present'||x.status==='late') bk(x.playerId).att++; });
+  function top(key){
+    var arr=Object.keys(agg).map(function(pid){ return {pid:pid, name:pname_(pid).name, v:agg[pid][key]}; }).filter(function(r){return r.v>0;}).sort(function(x,y){return y.v-x.v;});
+    if(!arr.length) return null;
+    var mx=arr[0].v;
+    return {v:mx, names:arr.filter(function(r){return r.v===mx;}).map(function(r){return r.name;})};
+  }
+  var momC={};
+  (state.recMom||[]).forEach(function(mm){ if(String(mm.date||'').slice(0,4)!==year) return; (mm.pids||[]).forEach(function(pid){ momC[pid]=(momC[pid]||0)+1; }); });
+  var momArr=Object.keys(momC).map(function(pid){ return {name:pname_(pid).name, v:momC[pid]}; }).sort(function(x,y){return y.v-x.v;});
+  var momTop=momArr.length?{v:momArr[0].v, names:momArr.filter(function(r){return r.v===momArr[0].v;}).map(function(r){return r.name;})}:null;
+  return {year:year, games:played.length, w:w, d:d, l:l, gf:gf, ga:ga,
+    winRate:played.length?Math.round(w/played.length*100):0,
+    scorer:top('g'), assister:top('a'), attKing:top('att'), momKing:momTop, best:best};
+}
+function awardRow_(icon, title, t, unit){
+  var val = t ? (esc(t.names.join(' · '))+' <span class="aw-v oswald">'+t.v+'<small>'+unit+'</small></span>') : '<span style="color:var(--steel-soft);">기록 없음</span>';
+  return '<div class="aw-row"><span class="aw-i">'+icon+'</span><span class="aw-k">'+title+'</span><span class="aw-n">'+val+'</span></div>';
+}
+function openSeasonReport_(year){
+  // 월 필터 중에도 연간 전체 데이터로 결산 (연도 번들을 직접 조회)
+  API.run('getRecordBundle', year).then(function(b){
+    var s=seasonData_(year, (b&&b.matches)||[], (b&&b.stats)||[], (b&&b.attendance)||[]);
+    state._season=s;
+    renderSeasonReport_(s);
+  }).catch(function(){ toast('결산을 불러오지 못했습니다'); });
+}
+function renderSeasonReport_(s){
+  var year=s.year;
+  if(!s.games && !s.scorer && !s.attKing){ toast('아직 '+year+'년 기록이 없습니다'); return; }
+  var bestTxt = s.best ? (String(s.best.date).slice(5).replace('-','.')+' vs '+(s.best.opp||'상대')+' '+s.best.os+':'+s.best.ps+' 승') : null;
+  var html = '<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>🏆 '+year+' 시즌 결산</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<p style="font-size:12.5px;color:var(--steel);margin:0 0 10px;font-weight:600;">'+esc(ourTeamName_())+'</p>'
+   +   '<div class="stat-strip" style="margin-bottom:10px;">'
+   +     '<div class="stat"><div class="k">경기</div><div class="v oswald">'+s.games+'</div></div>'
+   +     '<div class="stat"><div class="k">승 · 무 · 패</div><div class="v oswald">'+s.w+'·'+s.d+'·'+s.l+'</div></div>'
+   +     '<div class="stat"><div class="k">승률</div><div class="v oswald">'+s.winRate+'<small>%</small></div></div>'
+   +   '</div>'
+   +   '<div class="stat-strip" style="margin-bottom:14px;">'
+   +     '<div class="stat"><div class="k">득점</div><div class="v oswald">'+s.gf+'</div></div>'
+   +     '<div class="stat"><div class="k">실점</div><div class="v oswald">'+s.ga+'</div></div>'
+   +     '<div class="stat"><div class="k">득실차</div><div class="v oswald">'+(s.gf-s.ga>0?'+':'')+(s.gf-s.ga)+'</div></div>'
+   +   '</div>'
+   +   '<div class="eyebrow" style="margin:0 0 8px;">시즌 어워드</div>'
+   +   '<div class="aw-list">'
+   +     awardRow_('⚽', '득점왕', s.scorer, '골')
+   +     awardRow_('🎯', '도움왕', s.assister, '도움')
+   +     awardRow_('📅', '개근왕', s.attKing, '회')
+   +     awardRow_('🏅', 'MOM왕', s.momKing, '회')
+   +     (bestTxt?'<div class="aw-row"><span class="aw-i">🔥</span><span class="aw-k">최고의 승리</span><span class="aw-n">'+esc(bestTxt)+'</span></div>':'')
+   +   '</div>'
+   +   '<button class="btn-primary" style="margin-top:14px;" onclick="shareSeasonReport_(\''+year+'\')">📤 결산 공유하기</button>'
+   + '</div>';
+  showSheet(html);
+}
+function seasonText_(year){
+  var s=(state._season && state._season.year===year) ? state._season : seasonData_(year);
+  var lines=['🏆 '+esc0_(ourTeamName_())+' · '+year+' 시즌 결산','',
+    '경기 '+s.games+' · '+s.w+'승 '+s.d+'무 '+s.l+'패 (승률 '+s.winRate+'%)',
+    '득점 '+s.gf+' · 실점 '+s.ga+' · 득실차 '+(s.gf-s.ga>0?'+':'')+(s.gf-s.ga),''];
+  if(s.scorer) lines.push('⚽ 득점왕: '+s.scorer.names.join('·')+' ('+s.scorer.v+'골)');
+  if(s.assister) lines.push('🎯 도움왕: '+s.assister.names.join('·')+' ('+s.assister.v+'도움)');
+  if(s.attKing) lines.push('📅 개근왕: '+s.attKing.names.join('·')+' ('+s.attKing.v+'회)');
+  if(s.momKing) lines.push('🏅 MOM왕: '+s.momKing.names.join('·')+' ('+s.momKing.v+'회)');
+  if(s.best) lines.push('🔥 최고의 승리: '+String(s.best.date).slice(5).replace('-','.')+' vs '+(s.best.opp||'상대')+' '+s.best.os+':'+s.best.ps);
+  lines.push('', '동네 축구왕에서 확인 → '+location.origin+location.pathname);
+  return lines.join('\n');
+}
+function esc0_(s){ return String(s||''); }
+function shareSeasonReport_(year){
+  var txt=seasonText_(year);
+  if(navigator.share){ navigator.share({text:txt}).catch(function(){}); return; }
+  try{
+    navigator.clipboard.writeText(txt).then(function(){ toast('결산이 복사되었습니다 · 카톡에 붙여넣으세요'); }, function(){ toast('복사에 실패했습니다'); });
+  }catch(e){ toast('복사에 실패했습니다'); }
+}
 
 function viewH2H(){
   // 상대팀 목록
@@ -3791,6 +4012,7 @@ function openPlayerForm(id){
                 +'<button class="btn-ghost" style="flex:1;" onclick="copyMemberInvite(\''+id+'\')">🔗 링크 복사</button>'
                 +'</div>'
                 +'<p class="hint" style="margin:6px 2px 0;">이 링크로 로그인하면 <b>이 팀원 정보에 계정이 연결</b>돼요.</p>') : '')
+   +   (id?'<button class="btn-ghost" onclick="openPlayerPage_(\''+id+'\')">📊 개인 기록 보기</button>':'')
    +   ((id && isAdmin())?'<button class="btn-ghost btn-danger" onclick="deletePlayer(\''+id+'\')">이 팀원 삭제</button>':'')
    + '</div>';
 
@@ -4396,8 +4618,35 @@ function openResultForm(matchId){
    +     '<p style="font-size:11px;color:var(--steel-soft);margin:0 0 8px;">지각 기준: 경기 시작 '+lateMin+'분 전</p>'
    +     '<div>'+statRows+'</div></div>'
    +   '<button class="btn-primary" onclick="saveResult(\''+matchId+'\')">저장하기</button>'
+   +   '<button class="btn-ghost" style="margin-top:8px;" onclick="createMomPoll_(\''+matchId+'\')">🏆 MOM 투표 만들기</button>'
+   +   '<p class="hint" style="margin:6px 2px 0;">참석·지각한 선수들을 후보로 익명 MOM 투표를 만들어요. (마감 시 MOM 순위에 자동 반영)</p>'
    + '</div>';
   showSheet(html);
+}
+/* MOM 투표 생성 — 후보: 이 경기의 참석·지각 선수 (없으면 전체 팀원) */
+function createMomPoll_(matchId){
+  if(!requireAdmin()) return;
+  var m = state.recMatches.filter(function(x){return x.id===matchId;})[0];
+  if(!m) return;
+  API.run('getPolls').then(function(list){
+    var dup=(list||[]).filter(function(p){ return p.kind==='mom' && p.matchId===matchId; })[0];
+    if(dup){ toast('이미 이 경기의 MOM 투표가 있어요'); closeSheet(); go('poll'); return; }
+    var cand={};
+    (state.formAtt ? Object.keys(state.formAtt) : []).forEach(function(pid){ var s=state.formAtt[pid]; if(s==='present'||s==='late') cand[pid]=1; });
+    if(!Object.keys(cand).length){
+      (state.recAtt||[]).forEach(function(x){ if(x.matchId===matchId && (x.status==='present'||x.status==='late')) cand[x.playerId]=1; });
+    }
+    var pids=Object.keys(cand);
+    if(!pids.length) pids=(state.players||[]).map(function(p){return p.id;});
+    pids=pids.filter(function(pid){ return (state.players||[]).some(function(p){return p.id===pid;}); });
+    if(pids.length<2){ toast('후보가 2명 이상 필요해요 · 출석을 먼저 저장하세요'); return; }
+    var names=pids.map(function(pid){ return pname_(pid).name; });
+    var end=new Date(); end.setDate(end.getDate()+1); end.setHours(23,59,0,0);
+    var title='MOM · '+String(m.date).slice(5).replace('-','.')+(m.opponent?' vs '+m.opponent:'');
+    return API.run('createPoll', {title:title, options:names, optionPids:pids, kind:'mom', matchId:matchId, matchDate:m.date,
+      startAt:dtLocal(new Date()), endAt:dtLocal(end), multi:false, anon:true, createdBy:authId(), createdByName:(state.auth?state.auth.name:'')})
+      .then(function(l2){ state.polls=l2||state.polls; closeSheet(); toast('MOM 투표를 만들었습니다 · 내일 자정 마감'); go('poll'); });
+  }).catch(function(){ toast('MOM 투표 생성에 실패했습니다'); });
 }
 function attSeg(pid, val, label, cur){
   return '<button class="att-opt '+(cur===val?('on '+val):'')+'" data-pid="'+pid+'" data-val="'+val+'" onclick="pickAtt(\''+pid+'\',\''+val+'\')">'+label+'</button>';
@@ -5326,7 +5575,8 @@ FS.run = function(fn, args){
     else if(fn==='getJoinRequests'){ pre = fsQ2('joinRequests','clubId',args[0],'status','pending').then(function(r){ fsMerge('joins',r); return fsLoadTeam(args[0]); }); }
     else if(fn==='decideJoin'){ pre = db.collection('joinRequests').doc(String(args[0])).get().then(function(d){ if(d&&d.exists) fsMerge('joins',[d.data()]); var jr=(DB.joins||[]).filter(function(j){return j.id===args[0];})[0]; return jr?fsLoadTeam(jr.clubId):null; }).catch(function(){}); }
     else if(fn==='getRecordBundle'){ pre = fsLoadMatchKids(cid, args[0]); }
-    else if(fn==='getPolls'||fn==='getPollDetail'){ pre = fsLoadPollKids(cid); }
+    else if(fn==='getPolls'||fn==='getPollDetail'||fn==='getMomList'){ pre = fsLoadPollKids(cid); }
+    else if(fn==='getPlayerCareer'){ pre = Promise.all([fsLoadMatchKids(cid,'전체'), fsLoadPollKids(cid)]); }
     else if(fn==='getSquadDetail'){ pre = fsLoadSquadKids(args[0]); }
     else if(cid){ pre = fsLoadTeam(cid); var t=WRITE_TOUCH[fn]||[];
       if(t.indexOf('stats')>-1||t.indexOf('attendance')>-1||t.indexOf('matchRoster')>-1) pre=pre.then(function(){return fsLoadMatchKids(cid);});
