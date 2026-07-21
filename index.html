@@ -385,6 +385,8 @@
   .lb-mine-r{flex:1;font-size:12px;color:var(--steel);font-weight:600;}
   .lb-more{width:100%;border:none;background:rgba(17,16,21,.03);border-top:1px solid var(--line);color:var(--steel);font-size:12px;font-weight:700;padding:9px;cursor:pointer;font-family:inherit;}
   .lb-more:active{background:rgba(17,16,21,.07);}
+  .rec-more{width:100%;margin-top:10px;padding:12px;border:1px solid var(--line-strong);border-radius:12px;background:#fff;color:var(--steel);font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;}
+  .rec-more:active{background:rgba(17,16,21,.05);}
   /* 전체 순위 시트 (TOP 10) */
   .rk-list{border:1px solid var(--line);border-radius:14px;overflow:hidden;}
   .rk-row{display:flex;align-items:center;gap:11px;padding:11px 14px;border-bottom:1px solid var(--line);}
@@ -808,7 +810,7 @@ var FIREBASE_CONFIG = {
 var APP_NAME = '동네 축구왕';
 var APP_SUB = 'KICKTOWN';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '0.83';
+var APP_VERSION = '0.84';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -1326,7 +1328,7 @@ function recMonths(){
   recPeriodSource_().forEach(function(m){ if(m.date) ms[m.date.slice(0,7)] = true; });
   return Object.keys(ms).sort().reverse();
 }
-function setPeriod(p){ state.recPeriod = p; ensureRecordPeriod(p); }
+function setPeriod(p){ state.recPeriod = p; state.recShow = REC_PAGE; ensureRecordPeriod(p); }
 function inPeriod(dateStr){
   if(!dateStr) return false;
   if(state.recPeriod==='전체') return true;
@@ -1941,6 +1943,8 @@ function numTok(n){ if(n&&typeof n==='object') n=n.num; return (n===''||n==null|
 
 /* -------- 3. 기록 관리 (동작) -------- */
 function exPlayerName_(pid){ var c=(typeof activeClub==='function')?activeClub():null; var m=(c&&c.exPlayers)||{}; return (m[pid]&&m[pid].name)?m[pid].name:null; }
+/* 탈퇴 선수 이름→id 매핑 (엑셀 업로드 시 이름 매칭에 사용) */
+function exByName_(){ var c=(typeof activeClub==='function')?activeClub():null; var m=(c&&c.exPlayers)||{}; var o={}; Object.keys(m).forEach(function(pid){ if(m[pid]&&m[pid].name) o[m[pid].name]=pid; }); return o; }
 function pname_(pid){
   var p=(state.players||[]).filter(function(x){return x.id===pid;})[0];
   if(p) return p;
@@ -1991,8 +1995,10 @@ function viewRecord(){
     + '<div class="stat"><div class="k">득 · 실</div><div class="v oswald">'+gf+'·'+ga+'</div></div>'
     + '</div>';
 
-  // 경기 기록
-  var mlist = matches.length ? matches.map(function(m){
+  // 경기 기록 (기본 20개 표시 + 더 보기)
+  var recCap = state.recShow || REC_PAGE;
+  var shown = matches.slice(0, recCap);
+  var mrows = shown.map(function(m){
     var has = (m.result==='W'||m.result==='D'||m.result==='L');
     var cls = m.result==='W'?'r-w':(m.result==='L'?'r-l':'r-d');
     var right = has ? '<span class="result '+cls+'">'+m.result+'</span>' : '<span style="font-size:11px;color:var(--red);font-weight:700;">결과 입력 ›</span>';
@@ -2003,7 +2009,10 @@ function viewRecord(){
       + '<div class="match-top"><span>'+m.date.replace(/-/g,'.')+'</span>'+right+'</div>'
       + '<div class="match-mid"><div class="team-side"><span class="cn">'+esc(ourTeamName_())+'</span></div>'+mid
       + '<div class="team-side"><span class="cn">'+esc(m.opponent)+'</span></div></div></div>';
-  }).join('') : '<div class="empty" style="padding:24px;">해당 기간 경기가 없습니다.</div>';
+  }).join('');
+  var rest = matches.length - shown.length;
+  var moreBtn = (rest>0) ? '<button class="rec-more" onclick="recShowMore_()">경기 더 보기 · '+Math.min(REC_PAGE, rest)+'개 (남은 '+rest+')</button>' : '';
+  var mlist = matches.length ? (mrows + moreBtn) : '<div class="empty" style="padding:24px;">해당 기간 경기가 없습니다.</div>';
 
   // 선수 기록 (기간 내 집계) — 득점 / 도움 / 출석  (상위 3 표시 + 전체 순위 시트)
   var agg = recBuildAgg_();
@@ -2034,6 +2043,8 @@ function viewRecord(){
     + '<p class="hint">경기를 탭하면 스코어와 선수별 득점·도움·출석을 입력할 수 있습니다.</p>';
 }
 var MEDAL = ['①','②','③'];
+var REC_PAGE = 20;
+function recShowMore_(){ state.recShow = (state.recShow || REC_PAGE) + REC_PAGE; render(); }
 var REC_CATS = { g:{title:'득점', unit:'골'}, a:{title:'도움', unit:'도움'}, att:{title:'출석', unit:'점'} };
 /* 현재 기간의 선수별 집계 {pid:{g,a,att}} — 뷰/시트 공용 */
 function recBuildAgg_(){
@@ -2101,7 +2112,7 @@ function openRankSheet_(key){
    +   '<div class="rk-list">'+body+'</div>'
    + '</div>');
 }
-function setRecTab(t){ state.recTab=t; render(); }
+function setRecTab(t){ state.recTab=t; state.recShow=REC_PAGE; render(); }
 function setH2hOpp(o){ state.h2hOpp=o; render(); }
 
 function viewH2H(){
@@ -2591,7 +2602,7 @@ function parseStatCell_(cell){
 }
 /* 행 → {matches, stats, unmatched} */
 function rowsToMatches_(rows, cid, players){
-  var byName={}; players.forEach(function(p){ byName[p.name]=p.id; });
+  var byName={}; var ex=exByName_(); Object.keys(ex).forEach(function(n){ byName[n]=ex[n]; }); players.forEach(function(p){ byName[p.name]=p.id; });
   var matches=[], stats=[], unmatched={}, t=Date.now();
   for(var i=0;i<rows.length;i++){
     var r=rows[i]; var opp=s_(r['상대팀']); var date=d_(r['날짜']);
@@ -2647,7 +2658,7 @@ function aoa_(wb, name){
 /* 반환: {matches, stats, attendance, unmatched, autoMatches, updatedMatches}
    existing: 기존 경기 배열 → 일자·시간·상대팀으로 매칭해 기존 경기에 반영(수정), 없으면 신규 */
 function parse3Tab_(wb, cid, players, existing){
-  var byName={}; players.forEach(function(p){ byName[p.name]=p.id; });
+  var byName={}; var exN=exByName_(); Object.keys(exN).forEach(function(n){ byName[n]=exN[n]; }); players.forEach(function(p){ byName[p.name]=p.id; });
   var unmatched={}, t=Date.now();
   existing = existing || [];
   var exByDate={}; existing.forEach(function(m){ if(m&&m.date){ (exByDate[m.date]=exByDate[m.date]||[]).push(m); } });
