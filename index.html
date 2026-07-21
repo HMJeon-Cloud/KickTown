@@ -383,6 +383,18 @@
   .lb-mine{display:flex;align-items:center;gap:10px;padding:9px 13px;background:rgba(199,162,75,.10);border-top:1px dashed rgba(199,162,75,.45);}
   .lb-mine-k{font-size:12px;font-weight:800;color:var(--gold,#C7A24B);flex:0 0 auto;}
   .lb-mine-r{flex:1;font-size:12px;color:var(--steel);font-weight:600;}
+  .lb-more{width:100%;border:none;background:rgba(17,16,21,.03);border-top:1px solid var(--line);color:var(--steel);font-size:12px;font-weight:700;padding:9px;cursor:pointer;font-family:inherit;}
+  .lb-more:active{background:rgba(17,16,21,.07);}
+  /* 전체 순위 시트 (TOP 10) */
+  .rk-list{border:1px solid var(--line);border-radius:14px;overflow:hidden;}
+  .rk-row{display:flex;align-items:center;gap:11px;padding:11px 14px;border-bottom:1px solid var(--line);}
+  .rk-row:last-child{border-bottom:none;}
+  .rk-row.rk-me{background:rgba(199,162,75,.12);}
+  .rk-rank{width:26px;text-align:center;font-size:15px;font-weight:700;color:var(--steel);flex:0 0 auto;font-family:'Oswald';}
+  .rk-rank.r1{color:#E0A400;} .rk-rank.r2{color:#9AA0A8;} .rk-rank.r3{color:#C08457;}
+  .rk-name{flex:1;font-weight:600;font-size:14.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .rk-val{font-weight:700;font-size:15px;color:var(--red);flex:0 0 auto;}
+  .rk-val small{font-family:'Pretendard';color:var(--steel);font-size:11px;margin-left:2px;}
 
   /* Result form attendance segments */
   .res-row{padding:9px 2px;border-bottom:1px solid var(--line);}
@@ -796,7 +808,7 @@ var FIREBASE_CONFIG = {
 var APP_NAME = '동네 축구왕';
 var APP_SUB = 'KICKTOWN';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '0.81';
+var APP_VERSION = '0.82';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -1984,44 +1996,26 @@ function viewRecord(){
       + '<div class="team-side"><span class="cn">'+esc(m.opponent)+'</span></div></div></div>';
   }).join('') : '<div class="empty" style="padding:24px;">해당 기간 경기가 없습니다.</div>';
 
-  // 선수 기록 (기간 내 집계) — 득점 / 도움 / 출석 각 3위까지
-  var midSet = {}; matches.forEach(function(m){ midSet[m.id]=true; });
-  var agg = {};
-  function bucket(pid){ if(!agg[pid]) agg[pid]={g:0,a:0,att:0}; return agg[pid]; }
-  state.recStats.forEach(function(s){
-    if(!midSet[s.matchId]) return;
-    var b=bucket(s.playerId); b.g+=Number(s.goals)||0; b.a+=Number(s.assists)||0;
-  });
-  // 출석 점수제: 출석=1, 지각=설정값(기본 0.5), 불참=설정값(기본 -1), 미참석=0
-  var lateScore = (state.cfg.lateScore!=null) ? Number(state.cfg.lateScore) : 0.5;
-  var absentScore = (state.cfg.absentScore!=null) ? Number(state.cfg.absentScore) : -1;
-  (state.recAtt||[]).forEach(function(x){
-    if(!midSet[x.matchId]) return;
-    if(x.status==='present') bucket(x.playerId).att += 1;
-    else if(x.status==='late') bucket(x.playerId).att += lateScore;
-    else if(x.status==='absent') bucket(x.playerId).att += absentScore;
-    // 미참석(excused) = 0 (집계 제외)
-  });
-  function top3(key){
-    return Object.keys(agg).map(function(pid){ var p=pname_(pid); return {name:p.name, v:Math.round(agg[pid][key]*10)/10}; })
+  // 선수 기록 (기간 내 집계) — 득점 / 도움 / 출석  (상위 3 표시 + 전체 순위 시트)
+  var agg = recBuildAgg_();
+  function rankArr_(key){
+    return Object.keys(agg).map(function(pid){ var p=pname_(pid); return {pid:pid, name:p.name, v:Math.round(agg[pid][key]*10)/10}; })
       .filter(function(r){ return r.v>0; })
-      .sort(function(x,y){ return y.v-x.v; })
-      .slice(0,3);
+      .sort(function(x,y){ return y.v-x.v; });
   }
   // 로그인한 본인(현재 팀 소속)의 개인 기록 + 순위
   var myPid = authId();
   function myStat(key){
     if(!myPid || !agg[myPid]) return null;
     var v = Math.round(agg[myPid][key]*10)/10;
-    var ranked = Object.keys(agg).map(function(pid){ return {pid:pid, v:Math.round(agg[pid][key]*10)/10}; })
-      .filter(function(r){ return r.v>0; }).sort(function(a,b){ return b.v-a.v; });
+    var ranked = rankArr_(key);
     var rank=0; for(var i=0;i<ranked.length;i++){ if(ranked[i].pid===myPid){ rank=i+1; break; } }
     return {v:v, rank:rank};
   }
   var boardsHtml = '<div class="boards">'
-    + leaderBoard('득점', top3('g'), '골', myStat('g'))
-    + leaderBoard('도움', top3('a'), '도움', myStat('a'))
-    + leaderBoard('출석', top3('att'), '점', myStat('att'))
+    + leaderBoard('득점', 'g', rankArr_('g'), '골', myStat('g'))
+    + leaderBoard('도움', 'a', rankArr_('a'), '도움', myStat('a'))
+    + leaderBoard('출석', 'att', rankArr_('att'), '점', myStat('att'))
     + '</div>';
 
   var recSec = '<div class="section"><div class="eyebrow">선수 기록 · TOP 3</div>'+boardsHtml+'</div>';
@@ -2031,10 +2025,35 @@ function viewRecord(){
     + '<p class="hint">경기를 탭하면 스코어와 선수별 득점·도움·출석을 입력할 수 있습니다.</p>';
 }
 var MEDAL = ['①','②','③'];
-function leaderBoard(title, rows, unit, mine){
-  var body = rows.length ? rows.map(function(r,i){
+var REC_CATS = { g:{title:'득점', unit:'골'}, a:{title:'도움', unit:'도움'}, att:{title:'출석', unit:'점'} };
+/* 현재 기간의 선수별 집계 {pid:{g,a,att}} — 뷰/시트 공용 */
+function recBuildAgg_(){
+  var matches=(state.recMatches||[]).filter(function(m){ return inPeriod(m.date); });
+  var midSet={}; matches.forEach(function(m){ midSet[m.id]=true; });
+  var agg={};
+  function bk(pid){ if(!agg[pid]) agg[pid]={g:0,a:0,att:0}; return agg[pid]; }
+  (state.recStats||[]).forEach(function(s){ if(!midSet[s.matchId]) return; var b=bk(s.playerId); b.g+=Number(s.goals)||0; b.a+=Number(s.assists)||0; });
+  var lateScore=(state.cfg.lateScore!=null)?Number(state.cfg.lateScore):0.5;
+  var absentScore=(state.cfg.absentScore!=null)?Number(state.cfg.absentScore):-1;
+  (state.recAtt||[]).forEach(function(x){ if(!midSet[x.matchId]) return;
+    if(x.status==='present') bk(x.playerId).att+=1;
+    else if(x.status==='late') bk(x.playerId).att+=lateScore;
+    else if(x.status==='absent') bk(x.playerId).att+=absentScore;
+  });
+  return agg;
+}
+/* 카테고리(key) 정렬 순위 (v>0), limit>0이면 상위 limit명 */
+function recRank_(key, limit){
+  var agg=recBuildAgg_();
+  var arr=Object.keys(agg).map(function(pid){ var p=pname_(pid); return {pid:pid, name:p.name, v:Math.round(agg[pid][key]*10)/10}; })
+    .filter(function(r){ return r.v>0; }).sort(function(x,y){ return y.v-x.v; });
+  return (limit>0) ? arr.slice(0, limit) : arr;
+}
+function leaderBoard(title, key, rows, unit, mine){
+  var top = rows.slice(0,3);
+  var body = top.length ? top.map(function(r,i){
     return '<div class="lb-row"><span class="lb-rank r'+(i+1)+'">'+MEDAL[i]+'</span>'
-      + '<span class="lb-name">'+r.name+'</span>'
+      + '<span class="lb-name">'+esc(r.name)+'</span>'
       + '<span class="lb-val oswald">'+r.v+'<small>'+unit+'</small></span></div>';
   }).join('') : '<div class="lb-empty">기록 없음</div>';
   var mineRow = '';
@@ -2044,7 +2063,34 @@ function leaderBoard(title, rows, unit, mine){
       + '<span class="lb-mine-r">'+rankTxt+'</span>'
       + '<span class="lb-val oswald">'+mine.v+'<small>'+unit+'</small></span></div>';
   }
-  return '<div class="lb-card"><div class="lb-title">'+title+'</div>'+body+mineRow+'</div>';
+  var more = (rows.length>3) ? '<button class="lb-more" onclick="openRankSheet_(\''+key+'\')">전체 순위 보기 · '+rows.length+'명 ›</button>' : '';
+  return '<div class="lb-card"><div class="lb-title">'+title+'</div>'+body+mineRow+more+'</div>';
+}
+/* 전체 순위 시트 — 상위 10명까지 */
+function recPeriodLabel_(){
+  var p=state.recPeriod;
+  if(!p || p==='전체') return '전체 기간';
+  if(p.length===4) return p+'년';
+  return p.slice(0,4)+'년 '+(p.slice(5,7)*1)+'월';
+}
+function openRankSheet_(key){
+  var cat=REC_CATS[key]||{title:'기록', unit:''};
+  var rows=recRank_(key, 10);
+  var myPid=authId();
+  var body = rows.length ? rows.map(function(r,i){
+    var me = (r.pid===myPid);
+    var medal = (i<3) ? MEDAL[i] : (i+1);
+    return '<div class="rk-row'+(me?' rk-me':'')+'">'
+      + '<span class="rk-rank'+(i<3?(' r'+(i+1)):'')+'">'+medal+'</span>'
+      + '<span class="rk-name">'+esc(r.name)+(me?' <span style="font-size:10px;color:var(--gold,#C7A24B);font-weight:800;">나</span>':'')+'</span>'
+      + '<span class="rk-val oswald">'+r.v+'<small>'+cat.unit+'</small></span></div>';
+  }).join('') : '<div class="empty" style="padding:24px;">해당 기간 기록이 없습니다.</div>';
+  showSheet('<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>'+cat.title+' 순위</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<p style="font-size:12px;color:var(--steel-soft);margin:0 0 12px;">'+recPeriodLabel_()+' · 상위 '+rows.length+'명'+(key==='att'?' · 출석 점수제(출석 1·지각 0.5·불참 -1)':'')+'</p>'
+   +   '<div class="rk-list">'+body+'</div>'
+   + '</div>');
 }
 function setRecTab(t){ state.recTab=t; render(); }
 function setH2hOpp(o){ state.h2hOpp=o; render(); }
