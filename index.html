@@ -830,7 +830,7 @@ var FIREBASE_CONFIG = {
 var APP_NAME = '동네 축구왕';
 var APP_SUB = 'KICKTOWN';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '0.86';
+var APP_VERSION = '0.87';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -997,6 +997,13 @@ function mockHandler(fn, a){
     var dp=(DB.players||[]).filter(function(x){return x.id===a[0];})[0];
     if(dp && dp.name){ var dc=(DB.clubs||[]).filter(function(x){return x.id===dp.clubId;})[0]; if(dc){ if(!dc.exPlayers) dc.exPlayers={}; dc.exPlayers[dp.id]={name:dp.name, num:(dp.num!=null?dp.num:'')}; } }
     DB.players=DB.players.filter(function(x){return x.id!==a[0];}); DB.members=DB.members.filter(function(x){return x.playerId!==a[0];}); return mockHandler('getPlayers',[]); }
+  if(fn==='setExPlayer'){  // a: clubId, pid, name → 탈퇴 선수 이름 지정/수정 (기록만 남은 인원)
+    var exc=(DB.clubs||[]).filter(function(x){return x.id===a[0];})[0];
+    if(exc){ if(!exc.exPlayers) exc.exPlayers={}; var enm=String(a[2]||'').trim();
+      if(enm) exc.exPlayers[a[1]]={name:enm, num:(exc.exPlayers[a[1]]&&exc.exPlayers[a[1]].num)||''};
+      else delete exc.exPlayers[a[1]];
+    }
+    return mockHandler('getClubs',[]); }
   if(fn==='mergePlayer'){  // a: fromPid(삭제될 계정연결 B), toPid(유지할 기존 A) → A로 계정·기록 이전 후 B 삭제
     var mf=DB.players.filter(function(x){return x.id===a[0];})[0];
     var mt=DB.players.filter(function(x){return x.id===a[1];})[0];
@@ -1669,7 +1676,7 @@ function playerCard(p){
   return '<div class="player" onclick="openPlayerForm(\''+p.id+'\')">'
     + '<div class="num oswald">'+numDisp(p.num)+'</div>'
     + '<div class="meta"><div class="pname">'+p.name+posHtml+'</div><div class="sub">'+(subHtml||'추가 정보 없음')+'</div></div>'
-    + '<div class="size-badge">'+p.size+'</div></div>';
+    + (p.size ? '<div class="size-badge">'+p.size+'</div>' : '')+'</div>';
 }
 
 /* -------- 2. 경기 + 스쿼드 관리 (동작) -------- */
@@ -2228,6 +2235,17 @@ function openPlayerPage_(pid){
         + '<span class="pp-c">'+(y.mom?('MOM '+y.mom):'-')+'</span></div>';
     }).join('');
     var body = yrRows ? '<div class="pp-list">'+yrRows+'</div>' : '<div class="empty" style="padding:20px;">기록이 없습니다.</div>';
+    // 탈퇴 선수(명단에 없음): 관리자가 이름을 지정/수정할 수 있게
+    var exEditor = '';
+    if(p.left && isAdmin()){
+      var curName = String(p.name||'').replace(/\(탈퇴\)$/,'');
+      exEditor = '<div class="field" style="margin-top:16px;padding-top:14px;border-top:1px dashed var(--line-strong);"><label>탈퇴 선수 이름 지정</label>'
+        + '<p style="font-size:11.5px;color:var(--steel-soft);margin:0 0 7px;line-height:1.5;">명단에서 삭제돼 기록만 남은 선수예요. 실제 이름을 입력하면 모든 순위·기록에 <b>이름(탈퇴)</b>로 표시됩니다.</p>'
+        + '<div style="display:flex;gap:8px;">'
+        +   '<input id="ex_name_'+pid+'" type="text" value="'+esc(curName)+'" placeholder="예: 조용진" style="flex:1;padding:11px;border:1.5px solid var(--line-strong);border-radius:11px;font-family:inherit;font-size:14px;">'
+        +   '<button class="btn-mini" style="margin:0;" onclick="saveExPlayerName_(\''+pid+'\')">저장</button>'
+        + '</div></div>';
+    }
     showSheet('<div class="grabber"></div>'
      + '<div class="sheet-head"><h3>'+esc(p.name)+'</h3><button class="x" onclick="closeSheet()">✕</button></div>'
      + '<div class="sheet-body">'
@@ -2236,8 +2254,19 @@ function openPlayerPage_(pid){
      +   '<div class="eyebrow" style="margin:16px 0 8px;">연도별 기록</div>'
      +   body
      +   '<p class="hint" style="margin-top:10px;">출석률 = (출석+지각) ÷ 출석 기록이 있는 경기 · 전체 기간 기준</p>'
+     +   exEditor
      + '</div>');
   }).catch(function(){ toast('선수 정보를 불러오지 못했습니다'); });
+}
+/* 탈퇴 선수 이름 지정/수정 → 팀 exPlayers에 저장 */
+function saveExPlayerName_(pid){
+  if(!requireAdmin()) return;
+  var el=document.getElementById('ex_name_'+pid); if(!el) return;
+  var nm=(el.value||'').trim();
+  if(!nm){ toast('이름을 입력하세요'); return; }
+  var cid=state.activeClubId;
+  var c=activeClub(); if(c){ if(!c.exPlayers) c.exPlayers={}; c.exPlayers[pid]={name:nm, num:(c.exPlayers[pid]&&c.exPlayers[pid].num)||''}; }
+  API.run('setExPlayer', cid, pid, nm).then(function(list){ if(list) state.clubs=list; closeSheet(); render(); toast('저장했습니다 · '+nm+'(탈퇴)'); }).catch(function(){ toast('저장 실패 · 새로고침'); });
 }
 function setRecTab(t){ state.recTab=t; state.recShow=REC_PAGE; render(); }
 function setH2hOpp(o){ state.h2hOpp=o; render(); }
@@ -3988,7 +4017,7 @@ function openPlayerForm(id){
    +     '<div class="field"><label>등번호</label><input id="f_num" type="number" inputmode="numeric" placeholder="미정 (나중에 입력)" value="'+(p&&p.num!=null&&p.num!==''&&p.num!=='미정'?p.num:'')+'"></div>'
    +     '<div class="field"><label>이름<span class="req">*</span></label><input id="f_name" type="text" placeholder="홍길동" value="'+(p?p.name:'')+'"></div>'
    +   '</div>'
-   +   '<div class="field"><label>유니폼 사이즈<span class="req">*</span></label><div class="sizes" id="f_sizes">'
+   +   '<div class="field"><label>유니폼 사이즈 <span style="color:var(--steel-soft);font-weight:600;">(선택)</span></label><div class="sizes" id="f_sizes">'
    +     SIZES.map(function(s){return '<div class="size-opt '+(state.formSize===s?'sel':'')+'" onclick="pickSize(\''+s+'\')">'+s+'</div>';}).join('')
    +   '</div></div>'
    +   '<div class="field"><label>선호 포지션 <span style="color:var(--steel-soft);font-weight:600;">(복수 선택)</span></label><div class="sizes" id="f_pos">'
@@ -4033,14 +4062,14 @@ function togglePos(pos){
 function savePlayer(){
   var num = document.getElementById('f_num').value.trim();
   var name = document.getElementById('f_name').value.trim();
-  if(!name || !state.formSize){
-    toast('이름·사이즈는 필수입니다');
+  if(!name){
+    toast('이름은 필수입니다');
     return;
   }
   var data = {
     num: (num===''?'':parseInt(num)),
     name: name,
-    size: state.formSize,
+    size: state.formSize || '',
     positions: state.formPositions.slice(),
     birth: document.getElementById('f_birth').value,
     height: parseInt(document.getElementById('f_height').value)||null,
@@ -5281,7 +5310,7 @@ var WRITE_TOUCH = {
   setMatchStats:['stats'], setMatchAttendance:['attendance'], checkinAtt:['attendance'],
   createPoll:['polls'], closePoll:['polls'], deletePoll:['polls','votes'], castVote:['votes'],
   addPost:['posts'], togglePin:['posts'], deletePost:['posts'],
-  addClub:['clubs','players'], updateClub:['clubs'], deleteClub:['clubs'], toggleClubFav:['clubs'],
+  addClub:['clubs','players'], updateClub:['clubs'], deleteClub:['clubs'], toggleClubFav:['clubs'], setExPlayer:['clubs'],
   joinClub:['players','joins'], requestJoin:['joins'], cancelJoin:['joins'], decideJoin:['joins','players'],
   requestExtra:['extras'], approveExtra:['extras','members'], rejectExtra:['extras'],
   applyVotersToMatch:['matchRoster','attendance'], clearMatchRoster:['matchRoster'],
