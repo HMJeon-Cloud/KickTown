@@ -840,7 +840,7 @@ var FIREBASE_CONFIG = {
 var APP_NAME = '동네 축구왕';
 var APP_SUB = 'KICKTOWN';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '0.93';
+var APP_VERSION = '0.94';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -1685,7 +1685,7 @@ function playerCard(p){
     : '';
   return '<div class="player" onclick="openPlayerForm(\''+p.id+'\')">'
     + '<div class="num oswald">'+numDisp(p.num)+'</div>'
-    + '<div class="meta"><div class="pname">'+p.name+posHtml+'</div><div class="sub">'+(subHtml||'추가 정보 없음')+'</div></div>'
+    + '<div class="meta"><div class="pname">'+esc(p.name)+posHtml+'</div><div class="sub">'+(subHtml||'추가 정보 없음')+'</div></div>'
     + (p.size ? '<div class="size-badge">'+p.size+'</div>' : '')+'</div>';
 }
 
@@ -1804,7 +1804,7 @@ function viewForm(){
     + '<span>'+esc(d.squad.name)+' · 맵 '+assignedN+' / 전체 '+d.members.length+'명</span>'
     + (isAdmin()?'<span style="font-size:11px;letter-spacing:0;">'
         + '<a style="color:var(--steel-soft);cursor:pointer;" onclick="openSquadForm(\''+sid+'\')">이름수정</a>'
-        + ' · <a style="color:var(--red);cursor:pointer;" onclick="deleteSquadConfirm(\''+sid+'\',\''+esc(d.squad.name).replace(/'/g,'')+'\')">삭제</a></span>':'')
+        + ' · <a style="color:var(--red);cursor:pointer;" onclick="deleteSquadConfirm(\''+sid+'\',\''+jsq(d.squad.name)+'\')">삭제</a></span>':'')
     + '</div>';
 
   var pitch = '<div class="pitch" id="pitch">'
@@ -1821,7 +1821,7 @@ function viewForm(){
   var rows = d.members.filter(function(mem){ return !q || String(mem.name).toLowerCase().indexOf(q)>=0 || String(mem.num).toLowerCase().indexOf(q)>=0; }).map(function(mem){
     var opts = '<option value=""'+(mem.position?'':' selected')+'>미편성</option>'+POS.map(function(ps){ return '<option value="'+ps[0]+'"'+(mem.position===ps[0]?' selected':'')+'>'+ps[0]+'</option>'; }).join('');
     var sel = isAdmin() ? '<select class="rst-pos" onchange="setMemberPosOnly(\''+mem.playerId+'\',this.value)">'+opts+'</select>' : '<span class="rst-postag">'+(mem.position?esc(mem.position):'미편성')+'</span>';
-    var rm = isAdmin() ? '<button class="rst-x" onclick="removeMemberConfirm(\''+mem.playerId+'\',\''+esc(mem.name).replace(/'/g,'')+'\')">×</button>' : '';
+    var rm = isAdmin() ? '<button class="rst-x" onclick="removeMemberConfirm(\''+mem.playerId+'\',\''+jsq(mem.name)+'\')">×</button>' : '';
     return '<div class="rst-row">'
       + '<span class="rst-num oswald'+(mem.guest?' guest':'')+'">'+(mem.guest?mem.num:numDisp(mem.num))+'</span>'
       + '<span class="rst-name">'+esc(mem.name)+(mem.guest?' <span class="rst-g">게스트</span>':'')+'</span>'
@@ -2000,8 +2000,8 @@ function loadAllToSquadGo(sid){
 function posGroup(en,kr,arr){
   var chips = arr.length
     ? arr.map(function(a){
-        return '<div class="pchip" onclick="removeMemberConfirm(\''+a.playerId+'\',\''+a.name+'\')">'
-          + '<span class="n oswald">'+numLabel(a.num)+'</span><span class="nm">'+a.name+'</span>'
+        return '<div class="pchip" onclick="removeMemberConfirm(\''+a.playerId+'\',\''+jsq(a.name)+'\')">'
+          + '<span class="n oswald">'+numLabel(a.num)+'</span><span class="nm">'+esc(a.name)+'</span>'
           + '<span style="color:var(--steel-soft);font-size:15px;margin-left:2px;">×</span></div>';
       }).join('')
     : '<span style="font-size:12.5px;color:var(--steel-soft);">편성된 선수 없음</span>';
@@ -2018,7 +2018,14 @@ function noteSection(phase, title, notes){
   return '<div class="section"><div class="eyebrow">'+title+'</div>'+body
     + (isLogged_()?'<button class="btn-ghost" onclick="openNoteForm(\''+phase+'\')">＋ '+(phase==='pre'?'요청사항':'피드백')+' 추가</button>':'')+'</div>';
 }
-function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+/* HTML 이스케이프: 텍스트/속성값 공용 (따옴표까지 엔티티화하여 속성값 이탈 방지) */
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+/* 인라인 이벤트 핸들러(onclick="fn('...')") 안의 JS 문자열용 안전 이스케이프.
+   HTML 속성 파싱 후에도 안전하도록 따옴표·꺾쇠를 \uXXXX 로 인코딩(엔티티는 파서가 되돌려 위험). */
+function jsq(s){ return String(s==null?'':s)
+  .replace(/\\/g,'\\\\').replace(/'/g,'\\u0027').replace(/"/g,'\\u0022')
+  .replace(/</g,'\\u003C').replace(/>/g,'\\u003E').replace(/&/g,'\\u0026')
+  .replace(/\r/g,'\\r').replace(/\n/g,'\\n'); }
 /* 등번호 정렬/표기 (미정=맨 아래) */
 function numOf(p){ var n=(p&&p.num); if(n===''||n==null||n==='미정') return Infinity; var v=Number(n); return isNaN(v)?Infinity:v; }
 function numSort(a,b){ return numOf(a)-numOf(b); }
@@ -2396,7 +2403,7 @@ function viewH2H(){
   if(!state.h2hOpp || names.indexOf(state.h2hOpp)<0) state.h2hOpp = names[0];
 
   var chips = names.map(function(o){
-    return '<div class="chip '+(state.h2hOpp===o?'on':'')+'" onclick="setH2hOpp(\''+esc(o)+'\')">'+esc(o)+'</div>';
+    return '<div class="chip '+(state.h2hOpp===o?'on':'')+'" onclick="setH2hOpp(\''+jsq(o)+'\')">'+esc(o)+'</div>';
   }).join('');
 
   var ms = state.recMatches.filter(function(m){ return m.opponent===state.h2hOpp; })
@@ -3389,7 +3396,7 @@ function renderPollDetail(d){
                 : x.status==='rejected' ? '<span class="poll-flag" style="background:var(--steel-soft);">거절</span>'
                 : '<span class="poll-flag" style="background:var(--warn);">대기</span>';
       var btns = (isAdmin() && x.status==='pending')
-        ? '<button class="btn-mini" onclick="openApproveExtra(\''+x.id+'\',\''+esc(x.name).replace(/'/g,'')+'\',\''+p.id+'\')">승인</button>'
+        ? '<button class="btn-mini" onclick="openApproveExtra(\''+x.id+'\',\''+jsq(x.name)+'\',\''+p.id+'\')">승인</button>'
           + '<button class="btn-mini ghost" onclick="rejectExtraGo(\''+x.id+'\')">거절</button>'
         : '';
       return '<div class="tg-row" style="cursor:default;"><div style="flex:1;font-weight:700;font-size:14px;">'+esc(x.name)+'</div>'+badge+btns+'</div>';
@@ -3704,8 +3711,8 @@ function openVenueShare(matchId){
    +     '</div>'
    +   '</div>'
    +   '<div class="field"><label>팀에 공유</label>'
-   +     '<button class="btn-primary" style="margin-bottom:9px;" onclick="shareVenueLink(\''+esc(name).replace(/'/g,'')+'\',\''+esc(shareUrl)+'\')">공유하기 (카카오톡 등)</button>'
-   +     '<button class="btn-ghost" style="margin-top:0;" onclick="copyVenueLink(\''+esc(shareUrl)+'\')">링크 복사</button>'
+   +     '<button class="btn-primary" style="margin-bottom:9px;" onclick="shareVenueLink(\''+jsq(name)+'\',\''+jsq(shareUrl)+'\')">공유하기 (카카오톡 등)</button>'
+   +     '<button class="btn-ghost" style="margin-top:0;" onclick="copyVenueLink(\''+jsq(shareUrl)+'\')">링크 복사</button>'
    +   '</div>'
    + '</div>';
   showSheet(html);
@@ -3814,7 +3821,7 @@ function viewClub(){
                 : isGuest() ? '<button class="btn-mini ghost" onclick="guestJoinNotice()">가입 신청</button>'
                 : pendingJ ? '<button class="btn-mini ghost" onclick="cancelJoinReq(\''+c.id+'\')">신청 대기중</button>'
                 : (state.auth ? '<button class="btn-mini" onclick="requestJoinClub(\''+c.id+'\')">가입 신청</button>' : '<span class="cc-lock">미가입</span>');
-      var del = isClubOwner(c.id) ? '<button class="btn-mini ghost" style="margin-left:6px;" onclick="deleteClubConfirm(\''+c.id+'\',\''+esc(c.name).replace(/'/g,'')+'\')">삭제</button>' : '';
+      var del = isClubOwner(c.id) ? '<button class="btn-mini ghost" style="margin-left:6px;" onclick="deleteClubConfirm(\''+c.id+'\',\''+jsq(c.name)+'\')">삭제</button>' : '';
       return '<div class="club-card'+(isActive?' on':'')+'"'+(joined&&!isActive?' onclick="enterClubConfirm(\''+c.id+'\')" style="cursor:pointer;"':'')+'>'
         + star
         + em
@@ -3982,7 +3989,7 @@ function deleteClubConfirm(id, name){
    + '<div class="sheet-body">'
    +   '<p style="font-size:13.5px;color:var(--steel);margin:0 0 6px;line-height:1.6;"><b style="color:var(--red);">'+esc(name)+'</b> 팀과 해당 팀의 모든 데이터가 삭제됩니다.<br>실수 방지를 위해 아래에 <b>팀삭제</b> 를 입력하세요.</p>'
    +   '<div class="field"><input id="del_confirm" type="text" placeholder="팀삭제" autocomplete="off"></div>'
-   +   '<button class="btn-primary btn-danger" onclick="doDeleteClub(\''+id+'\',\''+esc(name).replace(/'/g,'')+'\')">삭제하기</button>'
+   +   '<button class="btn-primary btn-danger" onclick="doDeleteClub(\''+id+'\',\''+jsq(name)+'\')">삭제하기</button>'
    + '</div>';
   showSheet(html);
 }
@@ -4074,8 +4081,8 @@ function openPlayerForm(id){
    + '<div class="sheet-head"><h3>'+title+'</h3><button class="x" onclick="closeSheet()">✕</button></div>'
    + '<div class="sheet-body">'
    +   '<div class="grid2">'
-   +     '<div class="field"><label>등번호</label><input id="f_num" type="number" inputmode="numeric" placeholder="미정 (나중에 입력)" value="'+(p&&p.num!=null&&p.num!==''&&p.num!=='미정'?p.num:'')+'"></div>'
-   +     '<div class="field"><label>이름<span class="req">*</span></label><input id="f_name" type="text" placeholder="홍길동" value="'+(p?p.name:'')+'"></div>'
+   +     '<div class="field"><label>등번호</label><input id="f_num" type="number" inputmode="numeric" placeholder="미정 (나중에 입력)" value="'+esc(p&&p.num!=null&&p.num!==''&&p.num!=='미정'?p.num:'')+'"></div>'
+   +     '<div class="field"><label>이름<span class="req">*</span></label><input id="f_name" type="text" placeholder="홍길동" value="'+esc(p?p.name:'')+'"></div>'
    +   '</div>'
    +   '<div class="field"><label>유니폼 사이즈 <span style="color:var(--steel-soft);font-weight:600;">(선택)</span></label><div class="sizes" id="f_sizes">'
    +     SIZES.map(function(s){return '<div class="size-opt '+(state.formSize===s?'sel':'')+'" onclick="pickSize(\''+s+'\')">'+s+'</div>';}).join('')
@@ -4083,12 +4090,12 @@ function openPlayerForm(id){
    +   '<div class="field"><label>선호 포지션 <span style="color:var(--steel-soft);font-weight:600;">(복수 선택)</span></label><div class="sizes" id="f_pos">'
    +     POS.map(function(ps){return '<div class="size-opt '+(state.formPositions.indexOf(ps[0])>=0?'sel':'')+'" data-pos="'+ps[0]+'" onclick="togglePos(\''+ps[0]+'\')">'+ps[0]+'</div>';}).join('')
    +   '</div></div>'
-   +   '<div class="field"><label>생일</label><input id="f_birth" type="date" value="'+(p&&p.birth?p.birth:'')+'"></div>'
+   +   '<div class="field"><label>생일</label><input id="f_birth" type="date" value="'+esc(p&&p.birth?p.birth:'')+'"></div>'
    +   '<div class="grid2">'
-   +     '<div class="field"><label>키 (cm)</label><input id="f_height" type="number" inputmode="numeric" placeholder="175" value="'+(p&&p.height?p.height:'')+'"></div>'
-   +     '<div class="field"><label>몸무게 (kg)</label><input id="f_weight" type="number" inputmode="numeric" placeholder="70" value="'+(p&&p.weight?p.weight:'')+'"></div>'
+   +     '<div class="field"><label>키 (cm)</label><input id="f_height" type="number" inputmode="numeric" placeholder="175" value="'+esc(p&&p.height?p.height:'')+'"></div>'
+   +     '<div class="field"><label>몸무게 (kg)</label><input id="f_weight" type="number" inputmode="numeric" placeholder="70" value="'+esc(p&&p.weight?p.weight:'')+'"></div>'
    +   '</div>'
-   +   '<div class="field"><label>지역</label><input id="f_region" type="text" placeholder="서울 강서" value="'+(p&&p.region?p.region:'')+'"></div>'
+   +   '<div class="field"><label>지역</label><input id="f_region" type="text" placeholder="서울 강서" value="'+esc(p&&p.region?p.region:'')+'"></div>'
    +   '<button class="btn-primary" onclick="savePlayer()">'+(id?'수정 완료':'등록하기')+'</button>'
    +   ((id && isAdmin()) ? ((p&&(p.accountId||p.ownerId))
               ? '<div class="field" style="margin-top:10px;"><label>계정 연결</label>'
@@ -4578,7 +4585,7 @@ function openMemberPicker(){
     })).join('');
     return '<div style="display:flex;align-items:center;gap:11px;padding:9px 2px;border-bottom:1px solid var(--line);">'
       + '<span class="oswald" style="font-weight:700;font-size:19px;width:34px;text-align:center;">'+numLabel(p.num)+'</span>'
-      + '<span style="flex:1;font-weight:600;font-size:14.5px;">'+p.name+'</span>'
+      + '<span style="flex:1;font-weight:600;font-size:14.5px;">'+esc(p.name)+'</span>'
       + '<select style="width:104px;padding:9px 10px;border:1.5px solid var(--line-strong);border-radius:10px;font-family:inherit;font-size:14px;" onchange="assignMember(\''+p.id+'\',this.value)">'+opts+'</select>'
       + '</div>';
   }).join('');
@@ -4615,8 +4622,8 @@ function openQuarterMenu(){
   var name = (state.squadDetail && state.squadDetail.squad) ? state.squadDetail.squad.name : '이 쿼터';
   var html = '<div class="grabber"></div>'
    + '<div class="sheet-head"><h3>쿼터 관리</h3><button class="x" onclick="closeSheet()">✕</button></div>'
-   + '<div class="sheet-body"><p style="font-size:13.5px;color:var(--ink-soft);margin:0 0 4px;line-height:1.5;">'+name+'를 삭제하면 이 쿼터의 명단·요청사항·피드백이 모두 사라집니다.</p>'
-   + '<button class="btn-primary" style="background:var(--red);margin-top:12px;" onclick="deleteQuarterConfirm()">'+name+' 삭제</button>'
+   + '<div class="sheet-body"><p style="font-size:13.5px;color:var(--ink-soft);margin:0 0 4px;line-height:1.5;">'+esc(name)+'를 삭제하면 이 쿼터의 명단·요청사항·피드백이 모두 사라집니다.</p>'
+   + '<button class="btn-primary" style="background:var(--red);margin-top:12px;" onclick="deleteQuarterConfirm()">'+esc(name)+' 삭제</button>'
    + '<button class="btn-ghost" onclick="closeSheet()">취소</button></div>';
   showSheet(html);
 }
@@ -4687,7 +4694,7 @@ function openResultForm(matchId){
     return '<div class="res-row" data-pid="'+p.id+'">'
       + '<div style="display:flex;align-items:center;gap:8px;">'
       +   '<span class="oswald" style="font-weight:700;font-size:16px;width:26px;text-align:center;">'+numLabel(p.num)+'</span>'
-      +   '<span style="flex:1;font-weight:600;font-size:14px;">'+p.name+'</span>'
+      +   '<span style="flex:1;font-weight:600;font-size:14px;">'+esc(p.name)+'</span>'
       +   '<span style="font-size:11px;color:var(--steel);">골</span>'
       +   '<input id="st_g_'+p.id+'" type="number" inputmode="numeric" min="0" value="'+(st.g||0)+'" style="width:40px;padding:7px 3px;border:1.5px solid var(--line-strong);border-radius:9px;text-align:center;font-family:inherit;font-size:14px;">'
       +   '<span style="font-size:11px;color:var(--steel);">도움</span>'
