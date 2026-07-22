@@ -830,7 +830,7 @@ var FIREBASE_CONFIG = {
 var APP_NAME = '동네 축구왕';
 var APP_SUB = 'KICKTOWN';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '0.87';
+var APP_VERSION = '0.88';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -2242,7 +2242,7 @@ function openPlayerPage_(pid){
       exEditor = '<div class="field" style="margin-top:16px;padding-top:14px;border-top:1px dashed var(--line-strong);"><label>탈퇴 선수 이름 지정</label>'
         + '<p style="font-size:11.5px;color:var(--steel-soft);margin:0 0 7px;line-height:1.5;">명단에서 삭제돼 기록만 남은 선수예요. 실제 이름을 입력하면 모든 순위·기록에 <b>이름(탈퇴)</b>로 표시됩니다.</p>'
         + '<div style="display:flex;gap:8px;">'
-        +   '<input id="ex_name_'+pid+'" type="text" value="'+esc(curName)+'" placeholder="예: 조용진" style="flex:1;padding:11px;border:1.5px solid var(--line-strong);border-radius:11px;font-family:inherit;font-size:14px;">'
+        +   '<input id="ex_name_'+pid+'" type="text" value="'+esc(curName)+'" placeholder="예: 동축" style="flex:1;padding:11px;border:1.5px solid var(--line-strong);border-radius:11px;font-family:inherit;font-size:14px;">'
         +   '<button class="btn-mini" style="margin:0;" onclick="saveExPlayerName_(\''+pid+'\')">저장</button>'
         + '</div></div>';
     }
@@ -2265,7 +2265,12 @@ function saveExPlayerName_(pid){
   var nm=(el.value||'').trim();
   if(!nm){ toast('이름을 입력하세요'); return; }
   var cid=state.activeClubId;
-  var c=activeClub(); if(c){ if(!c.exPlayers) c.exPlayers={}; c.exPlayers[pid]={name:nm, num:(c.exPlayers[pid]&&c.exPlayers[pid].num)||''}; }
+  // 낙관적 갱신: 공유 객체를 in-place 수정하면 DB.clubs까지 오염돼 fsSyncDiff가 변경을 감지 못함 → 새 객체로 교체
+  state.clubs=(state.clubs||[]).map(function(c){
+    if(c.id!==cid) return c;
+    var ex=Object.assign({}, c.exPlayers||{}); ex[pid]={name:nm, num:(ex[pid]&&ex[pid].num)||''};
+    return Object.assign({}, c, {exPlayers:ex});
+  });
   API.run('setExPlayer', cid, pid, nm).then(function(list){ if(list) state.clubs=list; closeSheet(); render(); toast('저장했습니다 · '+nm+'(탈퇴)'); }).catch(function(){ toast('저장 실패 · 새로고침'); });
 }
 function setRecTab(t){ state.recTab=t; state.recShow=REC_PAGE; render(); }
@@ -2286,9 +2291,16 @@ function seasonData_(year, srcM, srcS, srcA){
   var agg={};
   function bk(pid){ if(!agg[pid]) agg[pid]={g:0,a:0,att:0}; return agg[pid]; }
   (srcS||state.recStats||[]).forEach(function(s){ if(!midSet[s.matchId]) return; var b=bk(s.playerId); b.g+=Number(s.goals)||0; b.a+=Number(s.assists)||0; });
-  (srcA||state.recAtt||[]).forEach(function(x){ if(!midSet[x.matchId]) return; if(x.status==='present'||x.status==='late') bk(x.playerId).att++; });
+  // 출석은 기록 탭과 동일한 점수제(출석 1·지각 lateScore·불참 absentScore·미참석 0)
+  var lateScore=(state.cfg&&state.cfg.lateScore!=null)?Number(state.cfg.lateScore):0.5;
+  var absentScore=(state.cfg&&state.cfg.absentScore!=null)?Number(state.cfg.absentScore):-1;
+  (srcA||state.recAtt||[]).forEach(function(x){ if(!midSet[x.matchId]) return; var b=bk(x.playerId);
+    if(x.status==='present') b.att+=1;
+    else if(x.status==='late') b.att+=lateScore;
+    else if(x.status==='absent') b.att+=absentScore;
+  });
   function top(key){
-    var arr=Object.keys(agg).map(function(pid){ return {pid:pid, name:pname_(pid).name, v:agg[pid][key]}; }).filter(function(r){return r.v>0;}).sort(function(x,y){return y.v-x.v;});
+    var arr=Object.keys(agg).map(function(pid){ return {pid:pid, name:pname_(pid).name, v:Math.round(agg[pid][key]*10)/10}; }).filter(function(r){return r.v>0;}).sort(function(x,y){return y.v-x.v;});
     if(!arr.length) return null;
     var mx=arr[0].v;
     return {v:mx, names:arr.filter(function(r){return r.v===mx;}).map(function(r){return r.name;})};
@@ -2335,7 +2347,7 @@ function renderSeasonReport_(s){
    +   '<div class="aw-list">'
    +     awardRow_('⚽', '득점왕', s.scorer, '골')
    +     awardRow_('🎯', '도움왕', s.assister, '도움')
-   +     awardRow_('📅', '개근왕', s.attKing, '회')
+   +     awardRow_('📅', '출석왕', s.attKing, '점')
    +     awardRow_('🏅', 'MOM왕', s.momKing, '회')
    +     (bestTxt?'<div class="aw-row"><span class="aw-i">🔥</span><span class="aw-k">최고의 승리</span><span class="aw-n">'+esc(bestTxt)+'</span></div>':'')
    +   '</div>'
@@ -2350,7 +2362,7 @@ function seasonText_(year){
     '득점 '+s.gf+' · 실점 '+s.ga+' · 득실차 '+(s.gf-s.ga>0?'+':'')+(s.gf-s.ga),''];
   if(s.scorer) lines.push('⚽ 득점왕: '+s.scorer.names.join('·')+' ('+s.scorer.v+'골)');
   if(s.assister) lines.push('🎯 도움왕: '+s.assister.names.join('·')+' ('+s.assister.v+'도움)');
-  if(s.attKing) lines.push('📅 개근왕: '+s.attKing.names.join('·')+' ('+s.attKing.v+'회)');
+  if(s.attKing) lines.push('📅 출석왕: '+s.attKing.names.join('·')+' ('+s.attKing.v+'점)');
   if(s.momKing) lines.push('🏅 MOM왕: '+s.momKing.names.join('·')+' ('+s.momKing.v+'회)');
   if(s.best) lines.push('🔥 최고의 승리: '+String(s.best.date).slice(5).replace('-','.')+' vs '+(s.best.opp||'상대')+' '+s.best.os+':'+s.best.ps);
   lines.push('', '동네 축구왕에서 확인 → '+location.origin+location.pathname);
@@ -4108,7 +4120,15 @@ function deletePlayer(id){
 }
 function doDeletePlayer(id){
   var gone=(state.players||[]).filter(function(p){return p.id===id;})[0];
-  if(gone && gone.name){ var c=activeClub(); if(c){ if(!c.exPlayers) c.exPlayers={}; c.exPlayers[id]={name:gone.name, num:(gone.num!=null?gone.num:'')}; } }
+  // 낙관적 갱신: 공유 club 객체를 in-place 수정하면 DB.clubs까지 오염돼 deletePlayer의 clubs 저장이 누락됨 → 새 객체로 교체
+  if(gone && gone.name){
+    var cid=state.activeClubId;
+    state.clubs=(state.clubs||[]).map(function(c){
+      if(c.id!==cid) return c;
+      var ex=Object.assign({}, c.exPlayers||{}); ex[id]={name:gone.name, num:(gone.num!=null?gone.num:'')};
+      return Object.assign({}, c, {exPlayers:ex});
+    });
+  }
   state.players = state.players.filter(function(p){return p.id!==id;});
   closeSheet(); render(); toast('삭제되었습니다');
   API.run('deletePlayer', id).then(function(list){ state.players = list; if(state.screen==='team') render(); }).catch(function(){ toast('삭제 저장 실패 · 새로고침'); });
