@@ -845,7 +845,7 @@ var APPCHECK_SITE_KEY = '여기에_reCAPTCHA_사이트키_붙여넣기';
 var APP_NAME = '동네 축구왕';
 var APP_SUB = 'KICKTOWN';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '0.97';
+var APP_VERSION = '0.98';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -1105,6 +1105,17 @@ function mockHandler(fn, a){
       stats: DB.stats.filter(function(s){return mids[s.matchId];}).slice(),
       attendance: DB.attendance.filter(function(x){return mids[x.matchId];}).slice(),
       rosters: DB.matchRoster.filter(function(x){return mids[x.matchId];}).slice()
+    };
+  }
+  if(fn==='getAttBundle'){
+    var mid_ab = a[0];
+    var cms_ab = DB.matches.filter(inClub).slice().sort(function(x,y){return (y.date).localeCompare(x.date);});
+    if(!mid_ab) return {matches:cms_ab, stats:[], attendance:[], rosters:[]};
+    return {
+      matches: cms_ab,
+      stats: DB.stats.filter(function(s){return s.matchId===mid_ab;}).slice(),
+      attendance: DB.attendance.filter(function(x){return x.matchId===mid_ab;}).slice(),
+      rosters: DB.matchRoster.filter(function(x){return x.matchId===mid_ab;}).slice()
     };
   }
   if(fn==='recordMatchResult'){
@@ -2571,7 +2582,11 @@ function viewAtt(){
   + '<p class="hint">체크인 시 휴대폰 위치로 경기장까지의 거리를 계산합니다.</p>';
 }
 function loadAtt(){
-  API.run('getRecordBundle').then(function(b){ state.attData=b||{attendance:[],rosters:[]}; if(state.screen==='att') render(); }).catch(function(){ state.attData={attendance:[],rosters:[]}; if(state.screen==='att') render(); });
+  // 출석 화면은 '현재 경기' 1건의 출석·명단만 사용 → 그 경기 상세만 로드 (전 경기 로드 금지)
+  if(!state.matchesLoaded) state.attLoaded=false;   // 경기 목록 준비 전이면 다음 진입 때 재시도
+  var m = latestMatch();
+  var mid = m ? m.id : null;
+  API.run('getAttBundle', mid).then(function(b){ state.attData=b||{attendance:[],rosters:[]}; if(state.screen==='att') render(); }).catch(function(){ state.attData={attendance:[],rosters:[]}; if(state.screen==='att') render(); });
 }
 /* 출석 점수 설정 (지각·불참 · 임원 전용) */
 function scoreLabel_(v){ return v+'점'; }
@@ -5571,6 +5586,8 @@ var WRITE_TOUCH = {
   applyVotersToMatch:['matchRoster','attendance'], clearMatchRoster:['matchRoster'],
   addNoteComment:['noteComments'], deleteNoteComment:['noteComments']
 };
+/* 쓰기 작업별 '경기 id' 인자 위치 — 해당 경기 상세만 선로딩하기 위함 */
+var MATCH_ARG = { setMatchStats:0, setMatchAttendance:0, checkinAtt:0, clearMatchRoster:0, applyVotersToMatch:2 };
 function fsClean(x){ var c={}; for(var k in x){ if(k==='pw'||k==='pwHash'||k==='_row') continue; c[k]=x[k]; } return c; }
 function fsSnapshot(keys){
   var s={}; keys.forEach(function(k){ var mm={}; (DB[k]||[]).forEach(function(x){ mm[FS_MAP[k].id(x)]=JSON.parse(JSON.stringify(x)); }); s[k]=mm; });
@@ -5859,6 +5876,20 @@ function fsLoadMatchKids(cid, period){
   FS._kidsQ[cid] = next.catch(function(){});   // 오류가 나도 큐가 막히지 않게
   return next;
 }
+/* 지정한 경기들의 상세(득점/출석/명단)만 로드 — 전 경기 로드 방지 */
+function fsLoadKidsForMatches_(cid, ids){
+  if(!cid || !ids || !ids.length) return Promise.resolve();
+  var prev = FS._kidsQ[cid] || Promise.resolve();
+  var next = prev.then(function(){ return fsLoadTeam(cid); }).then(function(){
+    var loaded = FS._kidMids[cid] || (FS._kidMids[cid]={});
+    var need = ids.filter(function(id){ return id && !loaded[id]; });
+    if(!need.length) return;
+    return Promise.all([ fsIn('playerStats','matchId',need), fsIn('attendance','matchId',need), fsIn('matchRoster','matchId',need) ])
+      .then(function(r){ fsMerge('stats',r[0]); fsMerge('attendance',r[1]); fsMerge('matchRoster',r[2]); need.forEach(function(id){ loaded[id]=1; }); });
+  });
+  FS._kidsQ[cid] = next.catch(function(){});
+  return next;
+}
 FS._pk={};
 function fsLoadPollKids(cid){
   if(!cid) return Promise.resolve();
@@ -5894,13 +5925,18 @@ FS.run = function(fn, args){
     else if(fn==='requestJoin'||fn==='cancelJoin'){ pre = Promise.all([fsLoadMy(args[1]||accId), fsLoadTeam(args[0])]); }
     else if(fn==='getJoinRequests'){ pre = fsQ2('joinRequests','clubId',args[0],'status','pending').then(function(r){ fsMerge('joins',r); return fsLoadTeam(args[0]); }); }
     else if(fn==='decideJoin'){ pre = db.collection('joinRequests').doc(String(args[0])).get().then(function(d){ if(d&&d.exists) fsMerge('joins',[d.data()]); var jr=(DB.joins||[]).filter(function(j){return j.id===args[0];})[0]; return jr?fsLoadTeam(jr.clubId):null; }).catch(function(){}); }
+    else if(fn==='getAttBundle'){ pre = fsLoadKidsForMatches_(cid, args[0]?[args[0]]:[]); }
     else if(fn==='getRecordBundle'){ pre = fsLoadMatchKids(cid, args[0]); }
-    else if(fn==='getMatchReport'){ pre = fsLoadMatchKids(cid, '전체'); }
+    else if(fn==='getMatchReport'){ pre = fsLoadKidsForMatches_(cid, [args[0]]); }
     else if(fn==='getPolls'||fn==='getPollDetail'||fn==='getMomList'){ pre = fsLoadPollKids(cid); }
     else if(fn==='getPlayerCareer'){ pre = Promise.all([fsLoadMatchKids(cid,'전체'), fsLoadPollKids(cid)]); }
     else if(fn==='getSquadDetail'){ pre = fsLoadSquadKids(args[0]); }
     else if(cid){ pre = fsLoadTeam(cid); var t=WRITE_TOUCH[fn]||[];
-      if(t.indexOf('stats')>-1||t.indexOf('attendance')>-1||t.indexOf('matchRoster')>-1) pre=pre.then(function(){return fsLoadMatchKids(cid);});
+      if(t.indexOf('stats')>-1||t.indexOf('attendance')>-1||t.indexOf('matchRoster')>-1){
+        var mi = MATCH_ARG[fn];
+        if(mi!=null && args[mi]) pre=pre.then(function(){ return fsLoadKidsForMatches_(cid, [args[mi]]); });
+        else pre=pre.then(function(){ return fsLoadMatchKids(cid); });
+      }
       if(t.indexOf('votes')>-1) pre=pre.then(function(){return fsLoadPollKids(cid);});
       if((t.indexOf('members')>-1||t.indexOf('notes')>-1) && state.currentSquadId) pre=pre.then(function(){return fsLoadSquadKids(state.currentSquadId);});
     }
