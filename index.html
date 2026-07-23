@@ -5510,15 +5510,29 @@ function logout(){
  */
 var FS = { enabled:false, loadFailed:false };
 FS.ready = new Promise(function(res){ FS._resolve = res; });
-/* 저장 권한 프로브: 로드 완료 후 소량 쓰기를 시도해 권한 문제를 즉시 노출 */
+/* 저장 권한 프로브: 로드 완료 후 소량 쓰기를 시도해 문제를 즉시 노출
+ * (쓰기 절약을 위해 기기당 하루 1회만 수행) */
 function fsWriteProbe_(){
   if(!window.db || !FS.enabled) return;
   try{
+    var today = new Date().toISOString().slice(0,10);
+    try{ if(localStorage.getItem('kt_probe') === today) return; localStorage.setItem('kt_probe', today); }catch(e){}
     db.collection('config').doc('app').set({probeAt:new Date().toISOString()}, {merge:true})
       .catch(function(e){
         try{ console.error('쓰기 프로브 실패', e); }catch(_){}
         window.__fsWriteErr=1;
-        setTimeout(function(){ alert('⚠️ 데이터 저장 권한 오류\n\n지금 상태에서는 팀·경기 등 모든 저장이 실패합니다.\nFirebase 콘솔에서 (1) Firestore 규칙, (2) Authentication의 익명 로그인 사용 설정을 확인해주세요.'); }, 600);
+        var code=(e&&e.code)||'';
+        var msg;
+        if(code==='resource-exhausted'){
+          msg='⚠️ 일일 사용량 한도 초과\n\n오늘 사용할 수 있는 데이터 한도를 모두 소진했습니다.\n한도는 매일 한국시간 오후 4시경 자동으로 초기화됩니다.\n그때까지 저장·조회가 실패할 수 있습니다.';
+        } else if(code==='permission-denied'){
+          msg='⚠️ 데이터 저장 권한 오류\n\n지금 상태에서는 팀·경기 등 모든 저장이 실패합니다.\nFirebase 콘솔에서 (1) Firestore 규칙, (2) Authentication의 익명 로그인 사용 설정을 확인해주세요.';
+        } else if(code==='unavailable' || code==='deadline-exceeded'){
+          msg='⚠️ 네트워크 연결 불안정\n\n서버에 연결하지 못했습니다.\n잠시 후 다시 시도해주세요.';
+        } else {
+          msg='⚠️ 데이터 저장 오류\n\n저장에 실패했습니다. ('+(code||'원인 불명')+')\n잠시 후 다시 시도해주세요.';
+        }
+        setTimeout(function(){ alert(msg); }, 600);
       });
   }catch(e){}
 }
@@ -5751,20 +5765,34 @@ window.kjReads = function(){
   }catch(e){}
   return R.n;
 };
-function fsColl(name){ return db.collection(name).get().then(function(snap){ var a=[]; snap.forEach(function(d){ var o=d.data()||{}; a.push(o); }); kjRead_(name,'전체조회',a.length); return a; }).catch(function(e){ if(!window.__fsReadErr){ window.__fsReadErr=1; try{ console.error('읽기 실패 '+name, e); }catch(_){} setTimeout(function(){ toast('⚠️ 데이터 읽기 권한 오류 · Firestore 규칙 확인 필요'); }, 800); } return []; }); }
+/* 읽기 오류 공통 처리: 원인별 1회 안내 (규칙 문제와 한도 초과를 구분) */
+function fsErr_(e, name){
+  var code=(e&&e.code)||'';
+  try{ console.error('읽기 실패 '+name+' ['+code+']', e); }catch(_){}
+  if(window.__fsReadErr) return [];
+  window.__fsReadErr=1;
+  var msg;
+  if(code==='resource-exhausted') msg='⚠️ 일일 사용량 한도 초과 · 오후 4시경 자동 복구';
+  else if(code==='permission-denied') msg='⚠️ 데이터 읽기 권한 오류 · Firestore 규칙 확인 필요';
+  else if(code==='unavailable'||code==='deadline-exceeded') msg='⚠️ 네트워크 연결이 불안정합니다';
+  else msg='⚠️ 데이터를 불러오지 못했습니다 ('+(code||'원인 불명')+')';
+  setTimeout(function(){ toast(msg); }, 800);
+  return [];
+}
+function fsColl(name){ return db.collection(name).get().then(function(snap){ var a=[]; snap.forEach(function(d){ var o=d.data()||{}; a.push(o); }); kjRead_(name,'전체조회',a.length); return a; }).catch(function(e){ return fsErr_(e, name); }); }
 /* ── 절약형 로딩: 부팅=핵심만 / 로그인=내 것 / 팀 입장=그 팀 것 / 화면=상세 ── */
 function fsQ(coll, field, val){
-  return db.collection(coll).where(field,'==',val).get().then(function(snap){ var a=[]; snap.forEach(function(d){ a.push(d.data()||{}); }); kjRead_(coll,'where '+field,a.length); return a; }).catch(function(){ return []; });
+  return db.collection(coll).where(field,'==',val).get().then(function(snap){ var a=[]; snap.forEach(function(d){ a.push(d.data()||{}); }); kjRead_(coll,'where '+field,a.length); return a; }).catch(function(e){ return fsErr_(e, coll); });
 }
 function fsQ2(coll, f1, v1, f2, v2){
-  return db.collection(coll).where(f1,'==',v1).where(f2,'==',v2).get().then(function(snap){ var a=[]; snap.forEach(function(d){ a.push(d.data()||{}); }); kjRead_(coll,'where '+f1+'+'+f2,a.length); return a; }).catch(function(){ return []; });
+  return db.collection(coll).where(f1,'==',v1).where(f2,'==',v2).get().then(function(snap){ var a=[]; snap.forEach(function(d){ a.push(d.data()||{}); }); kjRead_(coll,'where '+f1+'+'+f2,a.length); return a; }).catch(function(e){ return fsErr_(e, coll); });
 }
 function fsIn(coll, field, ids){
   ids=(ids||[]).filter(function(x){return x!=null&&x!=='';});
   if(!ids.length) return Promise.resolve([]);
   var chunks=[]; for(var i=0;i<ids.length;i+=10) chunks.push(ids.slice(i,i+10));
   return Promise.all(chunks.map(function(ch){
-    return db.collection(coll).where(field,'in',ch).get().then(function(snap){ var a=[]; snap.forEach(function(d){ a.push(d.data()||{}); }); kjRead_(coll,'in '+field,a.length); return a; }).catch(function(){ return []; });
+    return db.collection(coll).where(field,'in',ch).get().then(function(snap){ var a=[]; snap.forEach(function(d){ a.push(d.data()||{}); }); kjRead_(coll,'in '+field,a.length); return a; }).catch(function(e){ return fsErr_(e, coll); });
   })).then(function(rr){ var out=[]; rr.forEach(function(x){ out=out.concat(x); }); return out; });
 }
 function fsMerge(key, arr){
