@@ -845,7 +845,7 @@ var APPCHECK_SITE_KEY = '여기에_reCAPTCHA_사이트키_붙여넣기';
 var APP_NAME = '동네 축구왕';
 var APP_SUB = 'KICKTOWN';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '0.96';
+var APP_VERSION = '0.97';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -2769,7 +2769,7 @@ function viewMore(){
   +   '<div class="list-row" style="cursor:pointer;" onclick="logout()"><span class="nm" style="flex:1;color:var(--red);">로그아웃</span><span class="val" style="color:var(--red);font-size:14px;">›</span></div>'
   +   (state.auth && !isGuest() ? '<div class="list-row" style="cursor:pointer;" onclick="openWithdraw()"><span class="nm" style="flex:1;color:var(--steel-soft);">회원탈퇴</span><span class="val" style="color:var(--steel-soft);font-size:14px;">›</span></div>' : '')
   + '</div>'
-  + '<p class="hint">동네 축구왕 · v'+APP_VERSION+'</p>';
+  + '<p class="hint">동네 축구왕 · v'+APP_VERSION+(window.__KJR?(' · 읽기 '+window.__KJR.n+'건'):'')+'</p>';
 }
 function importSection_(){
   return '<div class="eyebrow" style="margin-top:22px;">엑셀 가져오기 <span style="font-size:10px;color:var(--steel-soft);">(구단주 전용)</span></div>'
@@ -5729,20 +5729,42 @@ function fsOwnerKakao(kid, knm){
     return {ok:true, type:'owner', ownerId:id, name:knm, provider:'kakao', memberships:ownerMemberships_(id), token:'fs.own.'+id};
   });
 }
-function fsColl(name){ return db.collection(name).get().then(function(snap){ var a=[]; snap.forEach(function(d){ var o=d.data()||{}; a.push(o); }); return a; }).catch(function(e){ if(!window.__fsReadErr){ window.__fsReadErr=1; try{ console.error('읽기 실패 '+name, e); }catch(_){} setTimeout(function(){ toast('⚠️ 데이터 읽기 권한 오류 · Firestore 규칙 확인 필요'); }, 800); } return []; }); }
+/* ── 읽기 계측(진단용): 세션 동안 컬렉션별 읽은 문서 수 집계 ──
+ * 콘솔에서 kjReads() 실행 시 표로 출력. 문제 원인 파악 후 제거 가능. */
+window.__KJR = {n:0, byColl:{}, byCall:{}, t0:Date.now()};
+function kjRead_(coll, tag, n){
+  try{
+    var R=window.__KJR; R.n+=n;
+    R.byColl[coll]=(R.byColl[coll]||0)+n;
+    var k=coll+' · '+tag;
+    R.byCall[k]=(R.byCall[k]||0)+n;
+    clearTimeout(R._t); R._t=setTimeout(function(){ if(window.kjReads) window.kjReads(); }, 2500);
+  }catch(e){}
+}
+window.kjReads = function(){
+  var R=window.__KJR;
+  var sec=Math.round((Date.now()-R.t0)/1000);
+  try{
+    console.log('=== Firestore 읽기 누계: '+R.n+'건 / 세션 '+sec+'초 ===');
+    console.table(Object.keys(R.byCall).sort(function(a,b){return R.byCall[b]-R.byCall[a];})
+      .map(function(k){ return {호출:k, 읽은문서:R.byCall[k]}; }));
+  }catch(e){}
+  return R.n;
+};
+function fsColl(name){ return db.collection(name).get().then(function(snap){ var a=[]; snap.forEach(function(d){ var o=d.data()||{}; a.push(o); }); kjRead_(name,'전체조회',a.length); return a; }).catch(function(e){ if(!window.__fsReadErr){ window.__fsReadErr=1; try{ console.error('읽기 실패 '+name, e); }catch(_){} setTimeout(function(){ toast('⚠️ 데이터 읽기 권한 오류 · Firestore 규칙 확인 필요'); }, 800); } return []; }); }
 /* ── 절약형 로딩: 부팅=핵심만 / 로그인=내 것 / 팀 입장=그 팀 것 / 화면=상세 ── */
 function fsQ(coll, field, val){
-  return db.collection(coll).where(field,'==',val).get().then(function(snap){ var a=[]; snap.forEach(function(d){ a.push(d.data()||{}); }); return a; }).catch(function(){ return []; });
+  return db.collection(coll).where(field,'==',val).get().then(function(snap){ var a=[]; snap.forEach(function(d){ a.push(d.data()||{}); }); kjRead_(coll,'where '+field,a.length); return a; }).catch(function(){ return []; });
 }
 function fsQ2(coll, f1, v1, f2, v2){
-  return db.collection(coll).where(f1,'==',v1).where(f2,'==',v2).get().then(function(snap){ var a=[]; snap.forEach(function(d){ a.push(d.data()||{}); }); return a; }).catch(function(){ return []; });
+  return db.collection(coll).where(f1,'==',v1).where(f2,'==',v2).get().then(function(snap){ var a=[]; snap.forEach(function(d){ a.push(d.data()||{}); }); kjRead_(coll,'where '+f1+'+'+f2,a.length); return a; }).catch(function(){ return []; });
 }
 function fsIn(coll, field, ids){
   ids=(ids||[]).filter(function(x){return x!=null&&x!=='';});
   if(!ids.length) return Promise.resolve([]);
   var chunks=[]; for(var i=0;i<ids.length;i+=10) chunks.push(ids.slice(i,i+10));
   return Promise.all(chunks.map(function(ch){
-    return db.collection(coll).where(field,'in',ch).get().then(function(snap){ var a=[]; snap.forEach(function(d){ a.push(d.data()||{}); }); return a; }).catch(function(){ return []; });
+    return db.collection(coll).where(field,'in',ch).get().then(function(snap){ var a=[]; snap.forEach(function(d){ a.push(d.data()||{}); }); kjRead_(coll,'in '+field,a.length); return a; }).catch(function(){ return []; });
   })).then(function(rr){ var out=[]; rr.forEach(function(x){ out=out.concat(x); }); return out; });
 }
 function fsMerge(key, arr){
