@@ -840,12 +840,12 @@ var FIREBASE_CONFIG = {
 
 // App Check(reCAPTCHA v3) 사이트 키. reCAPTCHA 관리 콘솔에서 발급한 '사이트 키'를 넣으세요.
 // (비밀 키가 아니라 사이트 키입니다. 사이트 키는 공개돼도 됩니다.)
-var APPCHECK_SITE_KEY = '6Lfmi2AtAAAAAP1R-1JlYz1ht1WuQWp2RS_tibpT';
+var APPCHECK_SITE_KEY = '여기에_reCAPTCHA_사이트키_붙여넣기';
 
 var APP_NAME = '동네 축구왕';
 var APP_SUB = 'KICKTOWN';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '0.95';
+var APP_VERSION = '0.96';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -2767,6 +2767,7 @@ function viewMore(){
   +   (isAdmin()?'<div class="list-row" style="cursor:pointer;" onclick="openRoleManage()"><span class="nm" style="flex:1;">권한 관리</span><span class="val" style="color:var(--red);font-size:14px;">임원/팀원 ›</span></div>':'')
   +   (state.auth && state.auth.provider!=='kakao' ? '<div class="list-row" style="cursor:pointer;" onclick="openChangePw()"><span class="nm" style="flex:1;">비밀번호 변경</span><span class="val" style="color:var(--red);font-size:14px;">›</span></div>' : '')
   +   '<div class="list-row" style="cursor:pointer;" onclick="logout()"><span class="nm" style="flex:1;color:var(--red);">로그아웃</span><span class="val" style="color:var(--red);font-size:14px;">›</span></div>'
+  +   (state.auth && !isGuest() ? '<div class="list-row" style="cursor:pointer;" onclick="openWithdraw()"><span class="nm" style="flex:1;color:var(--steel-soft);">회원탈퇴</span><span class="val" style="color:var(--steel-soft);font-size:14px;">›</span></div>' : '')
   + '</div>'
   + '<p class="hint">동네 축구왕 · v'+APP_VERSION+'</p>';
 }
@@ -3622,6 +3623,130 @@ function deletePollConfirm(pollId){
 }
 function doDeletePoll(pollId){
   API.run('deletePoll', pollId).then(function(list){ state.polls=list; closeSheet(); render(); toast('삭제되었습니다'); }).catch(function(){ toast('실패했습니다'); });
+}
+
+/* ================= 회원탈퇴 =================
+ * 정책: 계정(로그인 정보)과 개인정보는 삭제하고,
+ *       팀 경기 기록의 일관성을 위해 명단 항목은 이름만 남기고 계정 연결을 끊는다.
+ */
+function myOwnedClubs_(){
+  var oid = state.auth && state.auth.ownerId;
+  if(!oid) return [];
+  return (DB.clubs||[]).filter(function(c){ return c.ownerId && c.ownerId===oid; });
+}
+function openWithdraw(){
+  if(!state.auth || isGuest()){ toast('로그인 후 이용할 수 있어요'); return; }
+  var isKakao = (state.auth.provider==='kakao');
+  var owned = myOwnedClubs_();
+  var ownedWarn = owned.length
+    ? '<div style="background:rgba(255,59,48,.08);border:1px solid rgba(255,59,48,.35);border-radius:10px;padding:11px 12px;margin-bottom:12px;">'
+      + '<div style="font-weight:800;font-size:13px;color:var(--red);margin-bottom:4px;">구단주로 등록된 팀이 있어요</div>'
+      + '<div style="font-size:12.5px;line-height:1.55;color:var(--ink);">'
+      +   esc(owned.map(function(c){return c.name;}).join(', '))
+      +   '<br>탈퇴하면 이 팀은 구단주가 없는 상태가 됩니다. 팀을 계속 운영하려면 <b>먼저 다른 임원에게 권한을 넘기는 것</b>을 권해요.'
+      + '</div></div>'
+    : '';
+  var confirmField = isKakao
+    ? '<div class="field"><label>확인 문구 입력</label><input id="wd_txt" type="text" autocomplete="off" placeholder="탈퇴 라고 입력"></div>'
+    : '<div class="field"><label>비밀번호 확인</label><input id="wd_pw" type="password" autocomplete="current-password" placeholder="현재 비밀번호"></div>';
+  var html = '<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>회원탈퇴</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   ownedWarn
+   +   '<div style="background:var(--card-soft,rgba(0,0,0,.03));border:1px solid var(--line-strong);border-radius:10px;padding:11px 12px;margin-bottom:12px;">'
+   +     '<div style="font-weight:800;font-size:13px;margin-bottom:6px;">삭제되는 정보</div>'
+   +     '<div style="font-size:12.5px;line-height:1.6;color:var(--steel);">로그인 계정 정보, 이름·생일·키·몸무게 등 개인 정보, 팀 소속 연결</div>'
+   +     '<div style="font-weight:800;font-size:13px;margin:10px 0 6px;">남는 정보</div>'
+   +     '<div style="font-size:12.5px;line-height:1.6;color:var(--steel);">팀의 경기 결과·득점·출석 기록은 팀 운영 이력을 위해 <b>이름 표기만 남고</b> 계정과의 연결은 끊어집니다.</div>'
+   +   '</div>'
+   +   '<div style="font-size:12.5px;line-height:1.6;color:var(--red);font-weight:700;margin-bottom:12px;">탈퇴 후에는 되돌릴 수 없으며, 같은 계정으로 다시 로그인할 수 없어요.</div>'
+   +   confirmField
+   +   '<label style="display:flex;align-items:flex-start;gap:9px;margin:4px 0 14px;cursor:pointer;">'
+   +     '<input id="wd_agree" type="checkbox" style="width:18px;height:18px;flex:0 0 auto;margin-top:1px;">'
+   +     '<span style="font-size:13px;line-height:1.5;">위 내용을 모두 확인했으며, 탈퇴에 동의합니다.</span>'
+   +   '</label>'
+   +   '<button class="btn-primary" id="wd_btn" style="background:var(--red);" onclick="doWithdraw()">탈퇴하기</button>'
+   + '</div>';
+  showSheet(html);
+}
+function doWithdraw(){
+  if(!state.auth || isGuest()){ toast('로그인 후 이용할 수 있어요'); return; }
+  var agreeEl = document.getElementById('wd_agree');
+  if(!agreeEl || !agreeEl.checked){ toast('탈퇴 동의에 체크해주세요'); return; }
+  var isKakao = (state.auth.provider==='kakao');
+  var pw = '';
+  if(isKakao){
+    if(String(gv_('wd_txt')||'').trim() !== '탈퇴'){ toast('확인 문구로 "탈퇴"를 입력해주세요'); return; }
+  } else {
+    pw = gv_('wd_pw');
+    if(!pw){ toast('비밀번호를 입력해주세요'); return; }
+  }
+  appConfirm_('정말 탈퇴하시겠어요?\n계정과 개인정보가 삭제되며 되돌릴 수 없습니다.', function(){
+    var btn=document.getElementById('wd_btn');
+    if(btn){ btn.disabled=true; btn.textContent='처리 중...'; }
+    withdrawAccount_(pw).then(function(r){
+      if(r && r.ok){
+        closeSheet();
+        toast('탈퇴가 완료되었습니다. 그동안 감사했습니다.');
+        setTimeout(function(){ logout(); }, 400);
+      } else {
+        if(btn){ btn.disabled=false; btn.textContent='탈퇴하기'; }
+        toast((r&&r.error)||'탈퇴에 실패했어요');
+      }
+    }).catch(function(e){
+      if(btn){ btn.disabled=false; btn.textContent='탈퇴하기'; }
+      toast('탈퇴 중 오류가 발생했어요: '+((e&&e.message)||'네트워크'));
+    });
+  });
+}
+/* 실제 삭제 수행: 명단 익명화 → 구단주 해제 → 계정 문서 삭제 → 인증 계정 삭제 */
+function withdrawAccount_(pw){
+  var oid = state.auth && state.auth.ownerId;
+  if(!oid) return Promise.resolve({ok:false, error:'계정 정보를 확인할 수 없습니다'});
+  var isKakao = (state.auth.provider==='kakao');
+  var A = authInst_();
+  var u = A && A.currentUser;
+  var pre;
+  if(!isKakao){
+    if(!u || !u.email) return Promise.resolve({ok:false, error:'다시 로그인 후 시도해주세요'});
+    pre = A.signInWithEmailAndPassword(u.email, pw).then(function(){ return true; })
+           .catch(function(e){ return Promise.reject(new Error(mapAuthErr_(e))); });
+  } else {
+    pre = Promise.resolve(true);
+  }
+  return pre.then(function(){
+    var FV = (window.firebase && firebase.firestore && firebase.firestore.FieldValue) ? firebase.firestore.FieldValue : null;
+    var jobs = [];
+    // 1) 명단 항목 익명화 (이름·등번호는 기록 일관성을 위해 유지)
+    (DB.players||[]).forEach(function(p){
+      if(p.accountId!==oid && p.ownerId!==oid) return;
+      delete p.accountId; delete p.ownerId;
+      delete p.birth; delete p.height; delete p.weight;
+      p.withdrawn = true;
+      if(window.db){
+        var patch = {withdrawn:true};
+        if(FV){ patch.accountId=FV.delete(); patch.ownerId=FV.delete(); patch.birth=FV.delete(); patch.height=FV.delete(); patch.weight=FV.delete(); }
+        jobs.push(db.collection('members').doc(p.id).set(patch, {merge:true}).catch(function(){}));
+      }
+    });
+    // 2) 내가 구단주인 팀은 구단주 연결 해제 (팀 데이터 자체는 유지)
+    myOwnedClubs_().forEach(function(c){
+      delete c.ownerId;
+      if(window.db && FV){ jobs.push(db.collection('clubs').doc(c.id).set({ownerId:FV.delete()}, {merge:true}).catch(function(){})); }
+    });
+    // 3) 계정 문서 삭제
+    DB.owners = (DB.owners||[]).filter(function(o){ return o.id!==oid; });
+    if(window.db){ jobs.push(db.collection('owners').doc(oid).delete()); }
+    return Promise.all(jobs);
+  }).then(function(){
+    // 4) 이메일 계정은 Firebase 인증 계정까지 삭제
+    if(!isKakao && u && u.delete){ return u.delete().catch(function(){}); }
+    return true;
+  }).then(function(){
+    return {ok:true};
+  }).catch(function(e){
+    return {ok:false, error:(e&&e.message)||'삭제 처리에 실패했습니다'};
+  });
 }
 
 /* ================= 계정 비밀번호 변경 ================= */
