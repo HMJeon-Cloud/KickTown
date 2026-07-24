@@ -101,6 +101,44 @@ Xcode에서 `ios/App/App/Info.plist`를 열고 아래 항목을 추가합니다.
 <string>앱 잠금 해제를 위해 Face ID를 사용합니다.</string>
 ```
 
+## 5-1. URL 스킴 등록 (카카오 로그인 필수)
+
+카카오 로그인 후 앱으로 돌아오려면 `kicktown://` 스킴을 등록해야 합니다.
+**이 설정이 없으면 카카오 로그인이 완료되지 않습니다.**
+
+Xcode → App 타겟 → **Info** 탭 → **URL Types** → **+**
+
+| 항목 | 값 |
+|---|---|
+| Identifier | `com.kick-town.app` |
+| URL Schemes | `kicktown` |
+| Role | Editor |
+
+Info.plist 소스로 직접 넣으려면:
+
+```xml
+<key>CFBundleURLTypes</key>
+<array>
+  <dict>
+    <key>CFBundleURLName</key>
+    <string>com.kick-town.app</string>
+    <key>CFBundleURLSchemes</key>
+    <array><string>kicktown</string></array>
+  </dict>
+</array>
+```
+
+### 카카오 백엔드 환경변수도 함께 확인
+
+Vercel의 **카카오 백엔드** 프로젝트에 아래 두 개가 필요합니다.
+
+| 변수 | 값 |
+|---|---|
+| `NATIVE_REDIRECT_URL` | `kicktown://auth` |
+| `ALLOW_ORIGIN` | `https://kick-town.com,capacitor://localhost` |
+
+`ALLOW_ORIGIN`에 `capacitor://localhost`가 없으면 앱에서 CORS 오류로 로그인이 실패합니다.
+
 ## 6. Xcode 설정
 
 ```bash
