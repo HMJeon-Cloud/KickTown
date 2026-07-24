@@ -845,7 +845,7 @@ var APPCHECK_SITE_KEY = '여기에_reCAPTCHA_사이트키_붙여넣기';
 var APP_NAME = '동네 축구왕';
 var APP_SUB = 'KICKTOWN';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '1.0';
+var APP_VERSION = '1.1';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -2782,6 +2782,8 @@ function viewMore(){
   +   (isAdmin()?'<div class="list-row" style="cursor:pointer;" onclick="openRoleManage()"><span class="nm" style="flex:1;">권한 관리</span><span class="val" style="color:var(--red);font-size:14px;">임원/팀원 ›</span></div>':'')
   +   (state.auth && state.auth.provider!=='kakao' ? '<div class="list-row" style="cursor:pointer;" onclick="openChangePw()"><span class="nm" style="flex:1;">비밀번호 변경</span><span class="val" style="color:var(--red);font-size:14px;">›</span></div>' : '')
   +   '<div class="list-row" style="cursor:pointer;" onclick="logout()"><span class="nm" style="flex:1;color:var(--red);">로그아웃</span><span class="val" style="color:var(--red);font-size:14px;">›</span></div>'
+  +   (window.KTN ? '<div class="list-row" style="cursor:pointer;" onclick="KTN.toggleBio()"><span class="nm" style="flex:1;">앱 잠금 (Face ID)</span><span class="val" style="font-size:14px;">›</span></div>'
+      + '<div class="list-row" style="cursor:pointer;" onclick="ktnAskPush()"><span class="nm" style="flex:1;">알림 받기</span><span class="val" style="font-size:14px;">›</span></div>' : '')
   +   (state.auth && !isGuest() ? '<div class="list-row" style="cursor:pointer;" onclick="openWithdraw()"><span class="nm" style="flex:1;color:var(--steel-soft);">회원탈퇴</span><span class="val" style="color:var(--steel-soft);font-size:14px;">›</span></div>' : '')
   + '</div>'
   + '<p class="hint">동네 축구왕 · v'+APP_VERSION+(window.__KJR?(' · 읽기 '+window.__KJR.n+'건'):'')+'</p>';
@@ -3638,6 +3640,15 @@ function deletePollConfirm(pollId){
 }
 function doDeletePoll(pollId){
   API.run('deletePoll', pollId).then(function(list){ state.polls=list; closeSheet(); render(); toast('삭제되었습니다'); }).catch(function(){ toast('실패했습니다'); });
+}
+
+/* 네이티브: 알림 권한 요청 (웹에서는 호출되지 않음) */
+function ktnAskPush(){
+  if(!window.KTN){ toast('앱에서만 사용할 수 있어요'); return; }
+  KTN.registerPush().then(function(ok){
+    if(ok){ KTN.savePushToken(); toast('알림이 켜졌습니다'); }
+    else { toast('설정 > 알림에서 권한을 허용해주세요'); }
+  }).catch(function(){ toast('알림 설정에 실패했어요'); });
 }
 
 /* ================= 회원탈퇴 =================
@@ -6183,6 +6194,7 @@ function fitPhone_(){
 function afterLogin_(){
   document.getElementById('authScreen').style.display='none';
   document.getElementById('tabbar').style.display='flex';
+  try{ if(window.KTN){ KTN.registerPush().then(function(){ KTN.savePushToken(); }); } }catch(e){}
   if(isGuest()){
     state.activeClubId=null; ACTIVE_CLUB=null; window.ACTIVE_CLUB=null;
     state.screen='club'; applyAppHeader(); render(); return;
@@ -6226,6 +6238,7 @@ function loadClubData_(){
   state.loading=true; render();
   Promise.all([API.run('getPlayers'), API.run('getMatches')]).then(function(r){
     state.players=r[0]||[]; state.matches=r[1]||[]; state.matchesLoaded=true; state.loading=false;
+    try{ if(window.KTN) KTN.saveSnapshot(); }catch(e){}
     var pp=state._pendingPoll; state._pendingPoll=null;
     if(pp){ state.screen='poll'; if(state.auth) state.auth.lastScreen='poll'; go('poll'); openPollDetail(pp); return; }   // 투표 링크 진입
     var ps=state._pendingScreen; state._pendingScreen=null;
@@ -6233,6 +6246,282 @@ function loadClubData_(){
     if(state.screen==='team') render();
   }).catch(function(){ state.loading=false; render(); });
 }
+</script>
+<script>
+/* ===================================================================
+ * 동네 축구왕 — 네이티브 브리지 (iOS / Capacitor)
+ * 웹 브라우저에서는 아무 것도 하지 않고 즉시 종료한다.
+ * App Store 심사(가이드라인 4.2) 대응을 위한 네이티브 기능:
+ *   1) 푸시 알림(APNs)   2) Face ID 로그인   3) 오프라인 기록 열람
+ *   4) 네이티브 위치     5) 네이티브 공유     6) 햅틱 피드백
+ * =================================================================== */
+(function(){
+  var C = window.Capacitor;
+  if(!C || typeof C.isNativePlatform !== 'function' || !C.isNativePlatform()) return;
+  var P = C.Plugins || {};
+  var KTN = window.KTN = { native:true, platform:(C.getPlatform?C.getPlatform():'ios'), online:true };
+
+  function log(){ try{ console.log.apply(console, ['[KTN]'].concat([].slice.call(arguments))); }catch(e){} }
+  function say(msg){ try{ if(window.toast) toast(msg); }catch(e){} }
+
+  /* ---------- 0. 저장소 (Preferences) ---------- */
+  function pset(k, v){
+    if(!P.Preferences) return Promise.resolve();
+    return P.Preferences.set({key:k, value:JSON.stringify(v)}).catch(function(){});
+  }
+  function pget(k){
+    if(!P.Preferences) return Promise.resolve(null);
+    return P.Preferences.get({key:k}).then(function(r){
+      if(!r || !r.value) return null;
+      try{ return JSON.parse(r.value); }catch(e){ return null; }
+    }).catch(function(){ return null; });
+  }
+  KTN.pset = pset; KTN.pget = pget;
+
+  /* ---------- 1. 스플래시 / 상태표시줄 ---------- */
+  function bootUi(){
+    try{ if(P.StatusBar){ P.StatusBar.setStyle({style:'DARK'}); P.StatusBar.setBackgroundColor({color:'#111015'}); } }catch(e){}
+    setTimeout(function(){ try{ if(P.SplashScreen) P.SplashScreen.hide(); }catch(e){} }, 300);
+  }
+
+  /* ---------- 2. 네트워크 상태 + 오프라인 배너 ---------- */
+  function banner(show, text){
+    var id='ktn-offline-bar', el=document.getElementById(id);
+    if(!show){ if(el) el.parentNode.removeChild(el); return; }
+    if(!el){
+      el=document.createElement('div'); el.id=id;
+      el.style.cssText='position:fixed;left:0;right:0;top:0;z-index:99999;background:#8a6d1f;color:#fff;'
+        + 'font-size:12.5px;font-weight:700;text-align:center;padding:7px 10px;'
+        + 'padding-top:calc(7px + env(safe-area-inset-top));';
+      document.body.appendChild(el);
+    }
+    el.textContent = text || '오프라인 · 저장된 기록을 보는 중입니다';
+  }
+  function watchNetwork(){
+    if(!P.Network) return;
+    P.Network.getStatus().then(function(s){ KTN.online = !!(s && s.connected); banner(!KTN.online); }).catch(function(){});
+    try{
+      P.Network.addListener('networkStatusChange', function(s){
+        var was = KTN.online;
+        KTN.online = !!(s && s.connected);
+        banner(!KTN.online);
+        if(!was && KTN.online) say('연결이 복구되었습니다');
+      });
+    }catch(e){}
+  }
+
+  /* ---------- 3. 오프라인 캐시 (기록 열람) ----------
+   * 온라인일 때 마지막으로 불러온 팀 데이터를 저장해 두고,
+   * 오프라인 부팅 시 그대로 복원해 읽기 전용으로 열람할 수 있게 한다. */
+  var CACHE_KEY = 'ktn_snapshot_v1';
+  KTN.saveSnapshot = function(){
+    try{
+      if(!KTN.online || !window.DB) return;
+      var snap = {
+        at: Date.now(),
+        clubs: DB.clubs||[], players: DB.players||[], matches: DB.matches||[],
+        stats: DB.stats||[], attendance: DB.attendance||[], squads: DB.squads||[],
+        posts: DB.posts||[], polls: DB.polls||[]
+      };
+      var s = JSON.stringify(snap);
+      if(s.length > 4000000) return;           // 과도하게 크면 저장 생략
+      pset(CACHE_KEY, snap);
+    }catch(e){}
+  };
+  KTN.loadSnapshot = function(){
+    return pget(CACHE_KEY).then(function(snap){
+      if(!snap || !window.DB) return false;
+      ['clubs','players','matches','stats','attendance','squads','posts','polls'].forEach(function(k){
+        if(snap[k]) DB[k] = snap[k];
+      });
+      return true;
+    });
+  };
+
+  /* ---------- 4. 푸시 알림 (APNs) ---------- */
+  KTN.registerPush = function(){
+    if(!P.PushNotifications) return Promise.resolve(false);
+    return P.PushNotifications.checkPermissions().then(function(p){
+      if(p && p.receive === 'granted') return p;
+      return P.PushNotifications.requestPermissions();
+    }).then(function(p){
+      if(!p || p.receive !== 'granted'){ log('푸시 권한 거부'); return false; }
+      P.PushNotifications.register();
+      return true;
+    }).catch(function(e){ log('푸시 등록 실패', e); return false; });
+  };
+  function bindPush(){
+    if(!P.PushNotifications) return;
+    try{
+      P.PushNotifications.addListener('registration', function(t){
+        var token = t && t.value; if(!token) return;
+        KTN.pushToken = token;
+        pset('ktn_push_token', token);
+        savePushToken(token);
+      });
+      P.PushNotifications.addListener('registrationError', function(e){ log('APNs 등록 오류', e); });
+      P.PushNotifications.addListener('pushNotificationReceived', function(n){
+        if(n && n.title) say(n.title);
+      });
+      P.PushNotifications.addListener('pushNotificationActionPerformed', function(a){
+        var d = (a && a.notification && a.notification.data) || {};
+        try{
+          if(d.screen && window.go) go(d.screen);
+          else if(d.screen && window.state){ state.screen = d.screen; if(window.render) render(); }
+        }catch(e){}
+      });
+    }catch(e){}
+  }
+  /* 토큰을 Firestore에 저장 — 서버가 이 토큰으로 알림을 보낸다 */
+  function savePushToken(token){
+    try{
+      if(!window.db || !window.state || !state.auth) return;
+      var oid = state.auth.ownerId || '';
+      var pid = (window.authId ? authId() : '') || '';
+      var cid = (window.state && state.activeClubId) || '';
+      if(!oid && !pid) return;
+      var id = 'ios_' + (oid || pid);
+      db.collection('pushTokens').doc(id).set({
+        id:id, token:token, platform:'ios',
+        ownerId:oid, playerId:pid, clubId:cid,
+        updatedAt: new Date().toISOString()
+      }, {merge:true}).catch(function(){});
+    }catch(e){}
+  }
+  KTN.savePushToken = function(){ if(KTN.pushToken) savePushToken(KTN.pushToken); };
+
+  /* ---------- 5. Face ID / Touch ID 앱 잠금 ----------
+   * 세션은 이미 기기에 남아 있으므로, 실행 시 생체 인증으로 잠금을 푼다.
+   * 기존 부팅 로직을 건드리지 않도록 브리지가 전체화면 잠금막을 직접 관리한다. */
+  var BIO_FLAG = 'ktn_bio_on';
+  function bio(){ return P.BiometricAuth || null; }
+
+  KTN.bioAvailable = function(){
+    var B = bio(); if(!B) return Promise.resolve(false);
+    return B.checkBiometry().then(function(r){ return !!(r && r.isAvailable); }).catch(function(){ return false; });
+  };
+  KTN.bioEnabled = function(){ return pget(BIO_FLAG).then(function(v){ return v === true; }); };
+  KTN.enableBio = function(){
+    return KTN.bioAvailable().then(function(ok){
+      if(!ok){ say('이 기기에서는 Face ID를 사용할 수 없어요'); return false; }
+      return pset(BIO_FLAG, true).then(function(){ say('앱 잠금이 켜졌습니다'); return true; });
+    });
+  };
+  KTN.disableBio = function(){ return pset(BIO_FLAG, false).then(function(){ say('앱 잠금이 꺼졌습니다'); return true; }); };
+  KTN.toggleBio = function(){
+    return KTN.bioEnabled().then(function(on){ return on ? KTN.disableBio() : KTN.enableBio(); })
+      .then(function(){ try{ if(window.render) render(); }catch(e){} });
+  };
+
+  function lockOverlay(show){
+    var id='ktn-lock', el=document.getElementById(id);
+    if(!show){ if(el && el.parentNode) el.parentNode.removeChild(el); return; }
+    if(el) return;
+    el=document.createElement('div'); el.id=id;
+    el.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#111015;color:#e8e8ec;'
+      + 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;';
+    el.innerHTML='<div style="font-size:44px;">&#128274;</div>'
+      + '<div style="font-size:15px;font-weight:800;">잠금 해제가 필요합니다</div>'
+      + '<button id="ktn-lock-btn" style="margin-top:6px;padding:11px 22px;border-radius:12px;border:0;'
+      + 'background:#2a56d6;color:#fff;font-size:14px;font-weight:800;">Face ID로 열기</button>';
+    document.body.appendChild(el);
+    var btn=document.getElementById('ktn-lock-btn');
+    if(btn) btn.onclick = function(){ doUnlock(); };
+  }
+  function doUnlock(){
+    var B = bio();
+    if(!B){ lockOverlay(false); return; }
+    B.authenticate({
+      reason: '동네 축구왕 잠금 해제',
+      cancelTitle: '취소',
+      allowDeviceCredential: true,
+      iosFallbackTitle: '암호 입력'
+    }).then(function(){ lockOverlay(false); KTN.tap('success'); })
+      .catch(function(){ /* 실패 시 잠금 유지 — 버튼으로 재시도 */ });
+  }
+  KTN.lockIfEnabled = function(){
+    return KTN.bioEnabled().then(function(on){
+      if(!on) return false;
+      lockOverlay(true);
+      doUnlock();
+      return true;
+    });
+  };
+
+  /* ---------- 6. 네이티브 위치 (GPS 출석 체크인) ---------- */
+  KTN.getPosition = function(){
+    if(!P.Geolocation) return Promise.reject(new Error('no-geo'));
+    return P.Geolocation.requestPermissions().catch(function(){ return null; }).then(function(){
+      return P.Geolocation.getCurrentPosition({enableHighAccuracy:true, timeout:12000});
+    });
+  };
+  /* 기존 웹 코드가 navigator.geolocation을 쓰므로 네이티브 구현으로 대체 */
+  function patchGeolocation(){
+    if(!P.Geolocation || !navigator.geolocation) return;
+    var orig = navigator.geolocation.getCurrentPosition.bind(navigator.geolocation);
+    navigator.geolocation.getCurrentPosition = function(ok, err, opts){
+      KTN.getPosition().then(function(pos){ if(ok) ok(pos); })
+        .catch(function(e){ try{ orig(ok, err, opts); }catch(_){ if(err) err(e); } });
+    };
+  }
+
+  /* ---------- 7. 네이티브 공유 ---------- */
+  function patchShare(){
+    if(!P.Share) return;
+    navigator.share = function(data){
+      data = data || {};
+      return P.Share.share({
+        title: data.title || '동네 축구왕',
+        text: data.text || '',
+        url: data.url || '',
+        dialogTitle: '공유'
+      });
+    };
+  }
+
+  /* ---------- 8. 햅틱 ---------- */
+  KTN.tap = function(kind){
+    try{
+      if(!P.Haptics) return;
+      if(kind === 'success') P.Haptics.notification({type:'SUCCESS'});
+      else if(kind === 'error') P.Haptics.notification({type:'ERROR'});
+      else P.Haptics.impact({style:'Light'});
+    }catch(e){}
+  };
+
+  /* ---------- 9. 앱 생명주기 ---------- */
+  function bindApp(){
+    if(!P.App) return;
+    try{
+      P.App.addListener('appStateChange', function(s){
+        if(s && s.isActive){ KTN.saveSnapshot(); }
+      });
+      P.App.addListener('backButton', function(){ /* iOS 미사용 */ });
+    }catch(e){}
+  }
+
+  /* ---------- 10. 웹 전용 동작 비활성화 ----------
+   * 네이티브에서는 App Store를 통해 업데이트하므로
+   * version.json 기반 자동 새로고침을 끈다. */
+  function disableWebUpdate(){
+    try{ window.checkForUpdate_ = function(){}; }catch(e){}
+  }
+
+  /* ---------- 초기화 ---------- */
+  function init(){
+    bootUi();
+    watchNetwork();
+    bindPush();
+    bindApp();
+    patchGeolocation();
+    patchShare();
+    disableWebUpdate();
+    KTN.lockIfEnabled();
+    log('네이티브 브리지 준비 완료 ·', KTN.platform);
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
 </script>
 </body>
 </html>
