@@ -3,9 +3,9 @@
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "kr.kicktown.app",
+      "package_name": "com.kick_town.app",
       "sha256_cert_fingerprints": [
-        "여기에_플레이콘솔_앱서명키_SHA256_지문을_붙여넣으세요"
+        "8F:8C:1A:1F:E8:22:9D:A3:D4:EE:EE:2D:C1:6D:77:12:25:70:99:64:EE:F5:58:6F:9F:3A:99:71:DC:93:72:7F"
       ]
     }
   }
