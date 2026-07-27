@@ -5,8 +5,8 @@
  * 기존 sw.js(오프라인 캐시)와는 별개로 동작한다.
  * 이 파일은 반드시 사이트 루트(/firebase-messaging-sw.js)에 있어야 한다.
  * =================================================================== */
-importScripts('https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.12.4/firebase-messaging-compat.js');
 
 firebase.initializeApp({
   apiKey: "AIzaSyDta6TclznndZwBO0Nv9dXg3rZHaOVGOnE",
