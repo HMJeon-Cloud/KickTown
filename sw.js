@@ -1,7 +1,8 @@
 /* 동네 축구왕 서비스 워커
    - HTML(화면): 항상 최신(no-store 네트워크) → 접속 시 최신 버전 보장, 오프라인 시 캐시 폴백
-   - 정적 자원(이미지·CSS·JS·폰트): 캐시 우선 + 백그라운드 갱신 → 재접속 로딩 가속 */
-var CACHE = 'kicktown-v2';
+   - 정적 자원(이미지·CSS·JS·폰트): 캐시 우선 + 백그라운드 갱신 → 재접속 로딩 가속
+   - 서비스워커 스크립트 자체는 캐시하지 않음 (알림 등록 실패 방지) */
+var CACHE = 'kicktown-v3';
 
 self.addEventListener('install', function(e){ self.skipWaiting(); });
 
@@ -22,11 +23,19 @@ self.addEventListener('message', function(e){
 
 function isStatic(url){ return /\.(png|jpg|jpeg|webp|gif|svg|ico|css|js|woff2?|ttf|otf)$/i.test(url.pathname); }
 
+/* 서비스워커 스크립트는 항상 네트워크에서 직접 받아야 한다.
+   캐시된 옛 응답(특히 파일이 없던 시절의 404)이 남으면 등록이 실패한다. */
+function isServiceWorkerScript(url){
+  return url.pathname === '/sw.js' || url.pathname === '/firebase-messaging-sw.js';
+}
+
 self.addEventListener('fetch', function(e){
   var req = e.request;
   if(req.method !== 'GET') return;
   var url = new URL(req.url);
   if(url.origin !== self.location.origin) return;   // Firebase/카카오 등 외부는 건드리지 않음
+
+  if(isServiceWorkerScript(url)) return;            // 가로채지 않고 브라우저에 맡김
 
   var wantsHTML = (req.mode==='navigate') || url.pathname.endsWith('/') || url.pathname.endsWith('index.html');
 

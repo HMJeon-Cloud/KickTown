@@ -854,7 +854,7 @@ var PUSH_API = 'https://kicktown-push.vercel.app';
 var APP_NAME = '동네 축구왕';
 var APP_SUB = 'KICKTOWN';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '1.7';
+var APP_VERSION = '1.8';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -3684,20 +3684,38 @@ function deviceId_(){
     return d;
   }catch(e){ return 'dev'; }
 }
-/* 알림 켜기 — 권한 요청 → 토큰 발급 → Firestore 저장 */
+/* 알림용 서비스워커를 직접 등록한다.
+ * FCM 자동 등록에 맡기면 기존 sw.js(오프라인 캐시)가 요청을 가로채
+ * 등록이 실패하는 경우가 있어, 캐시를 우회해 명시적으로 등록한다. */
+function pushSwReg_(){
+  if(!('serviceWorker' in navigator)) return Promise.reject(new Error('서비스워커 미지원'));
+  return navigator.serviceWorker.register('/firebase-messaging-sw.js?v='+encodeURIComponent(APP_VERSION), {
+    scope:'/firebase-cloud-messaging-push-scope', updateViaCache:'none'
+  }).catch(function(){
+    // 위 경로가 막히면 루트 범위로 한 번 더 시도
+    return navigator.serviceWorker.register('/firebase-messaging-sw.js?v='+encodeURIComponent(APP_VERSION), {updateViaCache:'none'});
+  });
+}
+/* 알림 켜기 — 권한 요청 → 서비스워커 등록 → 토큰 발급 → Firestore 저장 */
 function pushEnable_(){
   if(!pushSupported_()) return Promise.resolve({ok:false, error:'이 브라우저에서는 알림을 사용할 수 없어요'});
   if(!FCM_VAPID_KEY || FCM_VAPID_KEY.indexOf('여기에')===0) return Promise.resolve({ok:false, error:'알림 설정이 준비 중이에요'});
   return Notification.requestPermission().then(function(p){
     if(p!=='granted') return {ok:false, error:'알림 권한이 거부되었어요. 브라우저 설정에서 허용해주세요'};
-    return firebase.messaging().getToken({vapidKey:FCM_VAPID_KEY}).then(function(token){
+    return pushSwReg_().then(function(reg){
+      return firebase.messaging().getToken({vapidKey:FCM_VAPID_KEY, serviceWorkerRegistration:reg});
+    }).then(function(token){
       if(!token) return {ok:false, error:'알림 토큰을 받지 못했어요'};
       return pushSaveToken_(token).then(function(){
         try{ localStorage.setItem(PUSH_FLAG,'1'); }catch(e){}
         return {ok:true};
       });
     });
-  }).catch(function(e){ return {ok:false, error:(e&&e.message)||'알림 설정에 실패했어요'}; });
+  }).catch(function(e){
+    try{ console.error('[push] 알림 설정 실패', e); }catch(_){}
+    var m=(e && (e.message||e.code))||'원인 불명';
+    return {ok:false, error:'알림 설정 실패 · '+String(m).slice(0,90)};
+  });
 }
 function pushSaveToken_(token){
   try{
@@ -3740,8 +3758,9 @@ function pushRefresh_(){
   if(!pushOn_() || !pushSupported_()) return;
   try{
     if(Notification.permission!=='granted') return;
-    firebase.messaging().getToken({vapidKey:FCM_VAPID_KEY})
-      .then(function(t){ if(t) pushSaveToken_(t); }).catch(function(){});
+    pushSwReg_().then(function(reg){
+      return firebase.messaging().getToken({vapidKey:FCM_VAPID_KEY, serviceWorkerRegistration:reg});
+    }).then(function(t){ if(t) pushSaveToken_(t); }).catch(function(){});
   }catch(e){}
 }
 /* 앱이 열려 있을 때 도착한 알림은 토스트로 */
