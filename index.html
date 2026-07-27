@@ -711,6 +711,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-check-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging-compat.js"></script>
 <script>
 /* ================= State ================= */
 var state = {
@@ -842,10 +843,18 @@ var FIREBASE_CONFIG = {
 // (비밀 키가 아니라 사이트 키입니다. 사이트 키는 공개돼도 됩니다.)
 var APPCHECK_SITE_KEY = '6Lfmi2AtAAAAAP1R-1JlYz1ht1WuQWp2RS_tibpT';
 
+/* ── 알림(웹 푸시) 설정 ──────────────────────────────────────
+ * FCM_VAPID_KEY : Firebase 콘솔 > 프로젝트 설정 > 클라우드 메시징 >
+ *                 웹 구성 > 웹 푸시 인증서 의 '키 쌍' 값
+ * PUSH_API      : 푸시 백엔드(Vercel) 주소. 끝에 슬래시 없이.
+ * ※ 배포할 때 이 세 개(App Check 키 포함)가 비어 있지 않은지 꼭 확인하세요. */
+var FCM_VAPID_KEY = 'BLFHrcrd89uJC28vFOXvIWUVWlIF__5b9r74xdlqBPS-UI5u98f0SbylHfFBA1KkU5M6cxo7fvKJe7sFc2ab5lw';
+var PUSH_API = 'https://kicktown-push.vercel.app';
+
 var APP_NAME = '동네 축구왕';
 var APP_SUB = 'KICKTOWN';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '1.6';
+var APP_VERSION = '1.7';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -2780,6 +2789,7 @@ function viewMore(){
   +   (isAdmin()?'<div class="list-row" style="cursor:pointer;" onclick="openRoleManage()"><span class="nm" style="flex:1;">권한 관리</span><span class="val" style="color:var(--red);font-size:14px;">임원/팀원 ›</span></div>':'')
   +   (state.auth && state.auth.provider!=='kakao' ? '<div class="list-row" style="cursor:pointer;" onclick="openChangePw()"><span class="nm" style="flex:1;">비밀번호 변경</span><span class="val" style="color:var(--red);font-size:14px;">›</span></div>' : '')
   +   '<div class="list-row" style="cursor:pointer;" onclick="logout()"><span class="nm" style="flex:1;color:var(--red);">로그아웃</span><span class="val" style="color:var(--red);font-size:14px;">›</span></div>'
+  +   (pushSupported_() && state.auth && !isGuest() ? '<div class="list-row" style="cursor:pointer;" onclick="togglePush()"><span class="nm" style="flex:1;">알림 받기</span><span class="val" style="font-size:14px;">'+(pushOn_()?'켜짐':'꺼짐')+' ›</span></div>' : '')
   +   (window.KTN ? '<div class="list-row" style="cursor:pointer;" onclick="KTN.toggleBio()"><span class="nm" style="flex:1;">앱 잠금 (Face ID)</span><span class="val" style="font-size:14px;">›</span></div>'
       + '<div class="list-row" style="cursor:pointer;" onclick="ktnAskPush()"><span class="nm" style="flex:1;">알림 받기</span><span class="val" style="font-size:14px;">›</span></div>' : '')
   +   (state.auth && !isGuest() ? '<div class="list-row" style="cursor:pointer;" onclick="openWithdraw()"><span class="nm" style="flex:1;color:var(--steel-soft);">회원탈퇴</span><span class="val" style="color:var(--steel-soft);font-size:14px;">›</span></div>' : '')
@@ -3647,6 +3657,130 @@ function ktnAskPush(){
     if(ok){ KTN.savePushToken(); toast('알림이 켜졌습니다'); }
     else { toast('설정 > 알림에서 권한을 허용해주세요'); }
   }).catch(function(){ toast('알림 설정에 실패했어요'); });
+}
+
+/* ===================================================================
+ * 알림 (웹 푸시 · FCM)
+ *  - 가입신청 / 경기등록 / 스쿼드등록 / 투표등록 / 게시글등록 시 팀원에게 알림
+ *  - 네이티브(iOS) 앱에서는 KTN 브리지가 APNs를 쓰므로 여기서는 동작하지 않음
+ * =================================================================== */
+var PUSH_FLAG = 'kt_push_on';
+var PUSH_DEV  = 'kt_push_dev';
+
+function pushSupported_(){
+  try{
+    if(window.KTN) return false;                       // iOS 네이티브는 별도 경로
+    if(!('serviceWorker' in navigator)) return false;
+    if(!('Notification' in window)) return false;
+    if(!(window.firebase && firebase.messaging)) return false;
+    return !!firebase.messaging.isSupported && firebase.messaging.isSupported();
+  }catch(e){ return false; }
+}
+function pushOn_(){ try{ return localStorage.getItem(PUSH_FLAG)==='1'; }catch(e){ return false; } }
+function deviceId_(){
+  try{
+    var d=localStorage.getItem(PUSH_DEV);
+    if(!d){ d=Math.random().toString(36).slice(2)+Date.now().toString(36); localStorage.setItem(PUSH_DEV,d); }
+    return d;
+  }catch(e){ return 'dev'; }
+}
+/* 알림 켜기 — 권한 요청 → 토큰 발급 → Firestore 저장 */
+function pushEnable_(){
+  if(!pushSupported_()) return Promise.resolve({ok:false, error:'이 브라우저에서는 알림을 사용할 수 없어요'});
+  if(!FCM_VAPID_KEY || FCM_VAPID_KEY.indexOf('여기에')===0) return Promise.resolve({ok:false, error:'알림 설정이 준비 중이에요'});
+  return Notification.requestPermission().then(function(p){
+    if(p!=='granted') return {ok:false, error:'알림 권한이 거부되었어요. 브라우저 설정에서 허용해주세요'};
+    return firebase.messaging().getToken({vapidKey:FCM_VAPID_KEY}).then(function(token){
+      if(!token) return {ok:false, error:'알림 토큰을 받지 못했어요'};
+      return pushSaveToken_(token).then(function(){
+        try{ localStorage.setItem(PUSH_FLAG,'1'); }catch(e){}
+        return {ok:true};
+      });
+    });
+  }).catch(function(e){ return {ok:false, error:(e&&e.message)||'알림 설정에 실패했어요'}; });
+}
+function pushSaveToken_(token){
+  try{
+    if(!window.db || !state.auth) return Promise.resolve();
+    var oid = state.auth.ownerId||'';
+    var pid = (window.authId?authId():'')||'';
+    var cid = (state.activeClubId)||'';
+    var id  = 'web_'+(oid||pid||'anon')+'_'+deviceId_();
+    return db.collection('pushTokens').doc(id).set({
+      id:id, token:token, platform:'web',
+      ownerId:oid, playerId:pid, clubId:cid,
+      updatedAt:new Date().toISOString()
+    }, {merge:true});
+  }catch(e){ return Promise.resolve(); }
+}
+function pushDisable_(){
+  try{ localStorage.setItem(PUSH_FLAG,'0'); }catch(e){}
+  try{
+    if(window.db && state.auth){
+      var oid=state.auth.ownerId||''; var pid=(window.authId?authId():'')||'';
+      db.collection('pushTokens').doc('web_'+(oid||pid||'anon')+'_'+deviceId_()).delete().catch(function(){});
+    }
+  }catch(e){}
+  try{ firebase.messaging().deleteToken().catch(function(){}); }catch(e){}
+  return Promise.resolve({ok:true});
+}
+function togglePush(){
+  if(pushOn_()){
+    pushDisable_().then(function(){ toast('알림을 껐어요'); if(window.render) render(); });
+  } else {
+    toast('알림 권한을 확인해주세요...');
+    pushEnable_().then(function(r){
+      toast(r.ok?'알림이 켜졌어요':(r.error||'알림 설정에 실패했어요'));
+      if(window.render) render();
+    });
+  }
+}
+/* 로그인 상태에서 이미 켜둔 사용자는 토큰을 갱신해 둔다 */
+function pushRefresh_(){
+  if(!pushOn_() || !pushSupported_()) return;
+  try{
+    if(Notification.permission!=='granted') return;
+    firebase.messaging().getToken({vapidKey:FCM_VAPID_KEY})
+      .then(function(t){ if(t) pushSaveToken_(t); }).catch(function(){});
+  }catch(e){}
+}
+/* 앱이 열려 있을 때 도착한 알림은 토스트로 */
+function pushBindForeground_(){
+  if(!pushSupported_()) return;
+  try{
+    firebase.messaging().onMessage(function(p){
+      var n=(p&&p.notification)||{};
+      if(n.title) toast(n.title);
+    });
+  }catch(e){}
+}
+/* 이벤트 발생을 백엔드에 알림 (실패해도 앱 동작에는 영향 없음) */
+var NOTIFY_KIND = {
+  requestJoin:{key:'joins',   kind:'join'},
+  addMatch:   {key:'matches', kind:'match'},
+  createSquad:{key:'squads',  kind:'squad'},
+  createPoll: {key:'polls',   kind:'poll'},
+  addPost:    {key:'posts',   kind:'post'}
+};
+function notifyEvent_(fn){
+  try{
+    var m = NOTIFY_KIND[fn]; if(!m || !PUSH_API) return;
+    var arr = DB[m.key]||[]; if(!arr.length) return;
+    // id 에 박힌 생성 시각이 가장 큰 것 = 방금 만든 문서
+    // (배열 순서에 의존하지 않도록 값으로 판단한다)
+    var doc = arr[arr.length-1], best = -1;
+    for(var i=0;i<arr.length;i++){
+      var n = parseInt(String((arr[i]&&arr[i].id)||'').replace(/\D/g,''), 10);
+      if(!isNaN(n) && n > best){ best = n; doc = arr[i]; }
+    }
+    if(!doc || !doc.id) return;
+    var actor = (state.auth && state.auth.ownerId) || '';
+    fetch(PUSH_API+'/api/notify', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({kind:m.kind, id:String(doc.id), actorId:actor})
+    }).catch(function(){});
+  }catch(e){}
 }
 
 /* ================= 회원탈퇴 =================
@@ -6001,6 +6135,8 @@ FS._dispatch = function(fn, args){
       var before=fsSnapshot(touched);
       var res=mockHandler(fn, args);
       touched.forEach(function(k){ fsSyncDiff(k, before[k]); });
+      // 저장 성공 시에만 알림 (오류를 반환한 경우는 제외)
+      try{ if(!(res && res.ok===false) && window.notifyEvent_) notifyEvent_(fn); }catch(e){}
       return res;
     }
     return mockHandler(fn, args);   // 읽기 (메모리 즉시)
@@ -6205,6 +6341,7 @@ function afterLogin_(){
   document.getElementById('authScreen').style.display='none';
   document.getElementById('tabbar').style.display='flex';
   try{ if(window.KTN){ KTN.registerPush().then(function(){ KTN.savePushToken(); }); } }catch(e){}
+  try{ pushRefresh_(); pushBindForeground_(); }catch(e){}
   if(isGuest()){
     state.activeClubId=null; ACTIVE_CLUB=null; window.ACTIVE_CLUB=null;
     state.screen='club'; applyAppHeader(); render(); return;
