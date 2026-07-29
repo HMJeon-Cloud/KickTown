@@ -26,8 +26,8 @@ messaging.onBackgroundMessage(function (payload) {
   var options = {
     body: n.body || d.body || '',
     icon: '/icon-192.png',
-    badge: '/icon-192.png',
-    tag: d.tag || 'kicktown',
+    badge: '/icon-badge-96.png',
+    tag: d.tag || ((d.kind || 'kicktown') + '-' + (d.id || Date.now())),
     data: { screen: d.screen || '', url: d.url || '/' }
   };
   return self.registration.showNotification(title, options);
