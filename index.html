@@ -3763,13 +3763,30 @@ function pushRefresh_(){
     }).then(function(t){ if(t) pushSaveToken_(t); }).catch(function(){});
   }catch(e){}
 }
-/* 앱이 열려 있을 때 도착한 알림은 토스트로 */
+/* 앱이 열려 있을 때 도착한 알림 - 토스트 + 상태바 알림 둘 다 */
 function pushBindForeground_(){
   if(!pushSupported_()) return;
   try{
     firebase.messaging().onMessage(function(p){
       var n=(p&&p.notification)||{};
-      if(n.title) toast(n.title);
+      var d=(p&&p.data)||{};
+      var title=n.title||d.title||'동네 축구왕';
+      var body=n.body||d.body||'';
+      if(title) toast(title);
+      try{
+        if(Notification.permission!=='granted') return;
+        pushSwReg_().then(function(reg){
+          if(!reg) return;
+          reg.showNotification(title, {
+            body: body,
+            icon: '/icon-192.png',
+            badge: '/icon-badge-96.png',
+            tag: (d.kind||'kicktown')+'-'+(d.id||''),
+            renotify: true,
+            data: d
+          });
+        }).catch(function(){});
+      }catch(e2){}
     });
   }catch(e){}
 }
