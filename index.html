@@ -130,15 +130,15 @@
   /* Squad list */
   .squad{display:flex;flex-direction:column;gap:9px;}
   .player{
-    display:flex;align-items:center;gap:13px;
+    display:flex;align-items:center;gap:10px;
     background:var(--card);border:1px solid var(--line);border-radius:17px;
     padding:11px 13px;box-shadow:var(--shadow-sm);position:relative;overflow:hidden;
     cursor:pointer;transition:transform .12s ease,box-shadow .12s ease;
   }
   .player:active{transform:scale(.985);}
   .player .num{
-    font-family:'Oswald';font-weight:700;font-size:30px;line-height:1;
-    width:52px;text-align:center;color:var(--ink);
+    font-family:'Oswald';font-weight:700;font-size:27px;line-height:1;
+    width:42px;text-align:center;color:var(--ink);
     position:relative;flex:0 0 auto;
   }
   .player .num::after{content:"";position:absolute;right:-7px;top:8%;height:84%;width:2px;background:var(--line-strong);}
@@ -146,15 +146,15 @@
   .player .pname{font-weight:700;font-size:16px;letter-spacing:-.01em;display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
   .pos-tags{display:inline-flex;gap:4px;}
   .pos-tag{font-family:'Oswald';font-weight:600;font-size:10px;letter-spacing:.04em;color:var(--red);background:var(--red-tint);border-radius:5px;padding:2px 6px;line-height:1.3;}
-  .player .sub{font-size:12px;color:var(--steel);margin-top:3px;display:flex;gap:8px;flex-wrap:wrap;}
+  .player .sub{font-size:11.5px;color:var(--steel);margin-top:3px;display:flex;gap:5px;flex-wrap:nowrap;white-space:nowrap;overflow:hidden;letter-spacing:-.02em;}
   .player .sub .dot{color:var(--line-strong);}
-  .pl-avatar{width:42px;height:42px;border-radius:50%;object-fit:cover;flex:0 0 auto;border:1px solid var(--line);background:var(--paper);}
+  .pl-avatar{width:36px;height:36px;border-radius:50%;object-fit:cover;flex:0 0 auto;border:1px solid var(--line);background:var(--paper);}
   .pl-avatar-empty{display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--steel-soft);}
   .rst-ava{width:30px;height:30px;border-radius:50%;object-fit:cover;flex:0 0 auto;border:1px solid var(--line);background:var(--paper);}
   .rst-ava-empty{display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--steel-soft);}
   .size-badge{
-    font-family:'Oswald';font-weight:600;font-size:12px;letter-spacing:.06em;
-    background:var(--ink);color:var(--gold-soft);border:1px solid rgba(199,162,75,.4);border-radius:8px;padding:5px 10px;flex:0 0 auto;
+    font-family:'Oswald';font-weight:600;font-size:10px;letter-spacing:.04em;
+    background:var(--ink);color:var(--gold-soft);border:1px solid rgba(199,162,75,.4);border-radius:6px;padding:3px 6px;flex:0 0 auto;
   }
 
   /* FAB */
@@ -614,7 +614,7 @@ var APPCHECK_SITE_KEY = '6Lfmi2AtAAAAAP1R-1JlYz1ht1WuQWp2RS_tibpT';
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '2.6';
+var APP_VERSION = '2.7';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
