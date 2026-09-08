@@ -149,6 +149,9 @@
   .player .sub{font-size:12px;color:var(--steel);margin-top:3px;display:flex;gap:8px;flex-wrap:wrap;}
   .player .sub .dot{color:var(--line-strong);}
   .pl-avatar{width:42px;height:42px;border-radius:50%;object-fit:cover;flex:0 0 auto;border:1px solid var(--line);background:var(--paper);}
+  .pl-avatar-empty{display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--steel-soft);}
+  .rst-ava{width:30px;height:30px;border-radius:50%;object-fit:cover;flex:0 0 auto;border:1px solid var(--line);background:var(--paper);}
+  .rst-ava-empty{display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--steel-soft);}
   .size-badge{
     font-family:'Oswald';font-weight:600;font-size:12px;letter-spacing:.06em;
     background:var(--ink);color:var(--gold-soft);border:1px solid rgba(199,162,75,.4);border-radius:8px;padding:5px 10px;flex:0 0 auto;
@@ -283,7 +286,12 @@
     padding:1px 5px;border-radius:5px;white-space:nowrap;max-width:72px;overflow:hidden;text-overflow:ellipsis;
   }
   .token.drag .t-num{transform:scale(1.12);}
-  .token .t-photo{width:37px;height:37px;border-radius:50%;background-size:cover;background-position:center;background-color:#fff;border:2.5px solid var(--ink);box-shadow:0 3px 8px rgba(0,0,0,.35);display:block;}
+  .token .t-photo{position:relative;width:37px;height:37px;border-radius:50%;background-size:cover;background-position:center;background-color:#fff;border:2.5px solid var(--ink);box-shadow:0 3px 8px rgba(0,0,0,.35);display:block;}
+  .token .t-pos{position:absolute;top:-6px;right:-9px;font-size:8.5px;font-weight:600;letter-spacing:.02em;color:#fff;background:var(--ink);border-radius:5px;padding:1.5px 4px;line-height:1.2;border:1px solid #fff;}
+  .pos-GK .t-pos{background:#E0A400;}
+  .pos-DF .t-pos,.pos-CB .t-pos,.pos-LB .t-pos,.pos-RB .t-pos,.pos-LWB .t-pos,.pos-RWB .t-pos{background:#2563C9;}
+  .pos-MF .t-pos,.pos-DM .t-pos,.pos-CM .t-pos,.pos-AM .t-pos{background:#1E9E6A;}
+  .pos-FW .t-pos,.pos-ST .t-pos,.pos-CF .t-pos,.pos-LW .t-pos,.pos-RW .t-pos{background:var(--red);}
   .token.drag .t-photo{transform:scale(1.12);}
   .pos-GK .t-photo{border-color:#E0A400;}
   .pos-DF .t-photo,.pos-CB .t-photo,.pos-LB .t-photo,.pos-RB .t-photo,.pos-LWB .t-photo,.pos-RWB .t-photo{border-color:#2563C9;}
@@ -606,7 +614,7 @@ var APPCHECK_SITE_KEY = '6Lfmi2AtAAAAAP1R-1JlYz1ht1WuQWp2RS_tibpT';
 var APP_NAME = '동네 축구왕';
 var APP_SUB = 'KICKTOWN';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '2.1';
+var APP_VERSION = '2.2';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -992,6 +1000,7 @@ function initPitchDrag(){
       if(!tok.getAttribute('data-guest')){   // 이동 중 실시간 포지션 표기
         var lp = posFromXY(x,y);
         var nn = tok.querySelector('.t-num'); if(nn && nn.textContent!==lp){ nn.textContent = lp; }
+        var np = tok.querySelector('.t-pos'); if(np && np.textContent!==lp){ np.textContent = lp; }
         tok.className = 'token pos-'+lp+' drag';
       }
     });
@@ -1021,10 +1030,17 @@ function viewTeam(){
   var players = state.players.slice().sort(numSort);
   var body = players.length ? players.map(playerCard).join('') :
     '<div class="empty"><div class="ei">⚽</div>등록된 팀원이 없습니다.<br>우측 하단 + 버튼으로 추가하세요.</div>';
+  var lateScore = (state.cfg.lateScore!=null) ? Number(state.cfg.lateScore) : 0.5;
+  var absentScore = (state.cfg.absentScore!=null) ? Number(state.cfg.absentScore) : -1;
   var clubSec = '<div class="section" style="margin-top:24px;"><div class="eyebrow">팀 관리</div>'
     + '<div class="card" style="padding:4px 0;">'
     + '<div class="list-row" style="cursor:pointer;" onclick="openClubForm()"><span class="nm" style="flex:1;">팀 정보 수정</span><span class="val" style="color:var(--red);font-size:14px;">'+esc(ourTeamName_())+' ›</span></div>'
-    + '</div></div>';
+    + cfgRow('출석 점수 (기록 집계)', '1점 고정', 'scoreFixedNotice')
+    + cfgRow('지각 점수', scoreLabel_(lateScore), 'editLateScore')
+    + cfgRow('불참 점수', scoreLabel_(absentScore), 'editAbsentScore')
+    + '</div>'
+    + '<p style="font-size:11.5px;color:var(--steel-soft);margin:8px 2px 0;">출석·지각·불참 점수는 기록 탭 출석 순위 집계에 반영돼요. (미참석 0점)</p>'
+    + '</div>';
   return '<div class="eyebrow">등록 선수 '+players.length+'명</div>'
     + '<div class="squad">'+body+'</div>'
     + clubSec
@@ -1041,8 +1057,8 @@ function playerCard(p){
     ? '<div class="pos-tags">'+p.positions.map(function(pp){return '<span class="pos-tag">'+pp+'</span>';}).join('')+'</div>'
     : '';
   return '<div class="player" onclick="openPlayerForm(\''+p.id+'\')">'
+    + (p.photo ? '<img class="pl-avatar" src="'+p.photo+'" alt="">' : '<div class="pl-avatar pl-avatar-empty">👤</div>')
     + '<div class="num oswald">'+numDisp(p.num)+'</div>'
-    + (p.photo ? '<img class="pl-avatar" src="'+p.photo+'" alt="">' : '')
     + '<div class="meta"><div class="pname">'+esc(p.name)+posHtml+'</div><div class="sub">'+(subHtml||'추가 정보 없음')+'</div></div>'
     + (p.size ? '<div class="size-badge">'+p.size+'</div>' : '')+'</div>';
 }
@@ -1153,7 +1169,7 @@ function viewForm(){
   var tokens = d.members.filter(function(m){ return m.position; }).map(function(mem){
     var label = (mem.guest?mem.num:numTok(mem.num)) + ' ' + esc(mem.name);
     var face = mem.photo
-      ? '<span class="t-photo" style="background-image:url('+mem.photo+')"></span>'
+      ? '<span class="t-photo" style="background-image:url('+mem.photo+')"><span class="t-pos oswald">'+esc(mem.position)+'</span></span>'
       : '<span class="t-num oswald">'+esc(mem.position)+'</span>';
     return '<div class="token pos-'+(mem.guest?'guest':mem.position)+'" data-pid="'+mem.playerId+'"'+(mem.guest?' data-guest="1"':'')+' style="left:'+(mem.x*100)+'%;top:'+(mem.y*100)+'%;">'
       + face + '<span class="t-name">'+label+'</span></div>';
@@ -1182,7 +1198,9 @@ function viewForm(){
     var opts = '<option value=""'+(mem.position?'':' selected')+'>미편성</option>'+POS.map(function(ps){ return '<option value="'+ps[0]+'"'+(mem.position===ps[0]?' selected':'')+'>'+ps[0]+'</option>'; }).join('');
     var sel = isAdmin() ? '<select class="rst-pos" onchange="setMemberPosOnly(\''+mem.playerId+'\',this.value)">'+opts+'</select>' : '<span class="rst-postag">'+(mem.position?esc(mem.position):'미편성')+'</span>';
     var rm = isAdmin() ? '<button class="rst-x" onclick="removeMemberConfirm(\''+mem.playerId+'\',\''+jsq(mem.name)+'\')">×</button>' : '';
+    var ava = mem.photo ? '<img class="rst-ava" src="'+mem.photo+'" alt="">' : '<div class="rst-ava rst-ava-empty">👤</div>';
     return '<div class="rst-row">'
+      + ava
       + '<span class="rst-num oswald'+(mem.guest?' guest':'')+'">'+(mem.guest?mem.num:numDisp(mem.num))+'</span>'
       + '<span class="rst-name">'+esc(mem.name)+(mem.guest?' <span class="rst-g">게스트</span>':'')+'</span>'
       + sel + rm + '</div>';
@@ -1385,7 +1403,7 @@ function viewRecord(){
   }
 
   var matches = state.recMatches.filter(function(m){ return inPeriod(m.date); });
-  var played = matches.filter(function(m){ return m.result==='W'||m.result==='D'||m.result==='L'; });
+  var played = matches.filter(hasResult_);
   var w=0,dr=0,l=0,gf=0,ga=0;
   played.forEach(function(m){
     if(m.result==='W')w++; else if(m.result==='D')dr++; else l++;
@@ -1402,7 +1420,7 @@ function viewRecord(){
   var recCap = state.recShow || REC_PAGE;
   var shown = matches.slice(0, recCap);
   var mrows = shown.map(function(m){
-    var has = (m.result==='W'||m.result==='D'||m.result==='L');
+    var has = hasResult_(m);
     var cls = m.result==='W'?'r-w':(m.result==='L'?'r-l':'r-d');
     var right = has ? '<span class="result '+cls+'">'+m.result+'</span>'
       : (recOn_(m,'recMatch') ? '<span style="font-size:11px;color:var(--red);font-weight:700;">결과 입력 ›</span>'
@@ -1579,7 +1597,7 @@ function setH2hOpp(o){ state.h2hOpp=o; render(); }
 /* ── 시즌 결산 리포트 ── */
 function seasonData_(year, srcM, srcS, srcA){
   var ms=(srcM||state.recMatches||[]).filter(function(m){ return m.date && m.date.slice(0,4)===year; });
-  var played=ms.filter(function(m){ return m.result==='W'||m.result==='D'||m.result==='L'; });
+  var played=ms.filter(hasResult_);
   var w=0,d=0,l=0,gf=0,ga=0,best=null;
   played.forEach(function(m){
     if(m.result==='W')w++; else if(m.result==='D')d++; else l++;
@@ -1689,14 +1707,15 @@ function viewH2H(){
   // 상대 전적 요약
   var w=0,dr=0,l=0,gf=0,ga=0;
   ms.forEach(function(m){
-    if(m.result==='W')w++; else if(m.result==='D')dr++; else if(m.result==='L')l++;
+    if(!hasResult_(m)) return;
+    if(m.result==='W')w++; else if(m.result==='D')dr++; else l++;
     gf+=Number(m.ourScore)||0; ga+=Number(m.oppScore)||0;
   });
   var summary = '<div class="stat-strip"><div class="stat"><div class="k">'+esc(state.h2hOpp)+' 전적</div><div class="v oswald">'+w+'승 '+dr+'무 '+l+'패</div></div>'
     + '<div class="stat"><div class="k">득 · 실</div><div class="v oswald">'+gf+'·'+ga+'</div></div></div>';
 
   var list = ms.map(function(m){
-    var has=(m.result==='W'||m.result==='D'||m.result==='L');
+    var has=hasResult_(m);
     var cls = m.result==='W'?'r-w':(m.result==='L'?'r-l':'r-d');
     var right = has ? '<span class="result '+cls+'">'+m.result+'</span>' : '<span style="font-size:11px;color:var(--steel-soft);">미기록</span>';
     var scoreLine = has ? '<span class="oswald" style="font-size:19px;font-weight:700;">'+m.ourScore+' : '+m.oppScore+'</span>' : '<span style="color:var(--steel-soft);">VS</span>';
@@ -1719,7 +1738,7 @@ function openMatchReport(matchId){
     var scLine = r.scorers.length ? r.scorers.map(function(s){return s.name+(s.goals>1?' '+s.goals:'');}).join(', ') : '없음';
     var asLine = r.assisters.length ? r.assisters.map(function(s){return s.name+(s.assists>1?' '+s.assists:'');}).join(', ') : '없음';
     var att=r.attendance;
-    var has=(m.result==='W'||m.result==='D'||m.result==='L');
+    var has=hasResult_(m);
     var html = '<div class="grabber"></div>'
      + '<div class="sheet-head"><h3>vs '+esc(m.opponent)+'</h3><button class="x" onclick="closeSheet()">✕</button></div>'
      + '<div class="sheet-body">'
@@ -1769,7 +1788,7 @@ function viewAttHistory_(cur){
   var cap=state.attHistShow||ATT_HIST_PAGE;
   var shown=past.slice(0, cap);
   var rows=shown.map(function(m){
-    var has=(m.result==='W'||m.result==='D'||m.result==='L');
+    var has=hasResult_(m);
     var cls=m.result==='W'?'r-w':(m.result==='L'?'r-l':'r-d');
     var badge=has?('<span class="result '+cls+'">'+m.result+'</span>'):'<span class="hr-na">미입력</span>';
     var score=has?(m.ourScore+' : '+m.oppScore):'-';
@@ -1840,17 +1859,7 @@ function viewAtt(){
     +     '<div style="margin-top:12px;">'+venueAppGrid_(m)+'</div>'
     +   '</div></div></div>';
   var hist = viewAttHistory_(m);
-  var lateScore = (state.cfg.lateScore!=null) ? Number(state.cfg.lateScore) : 0.5;
-  var absentScore = (state.cfg.absentScore!=null) ? Number(state.cfg.absentScore) : -1;
-  var settingsSec = '<div class="section"><div class="eyebrow">출석 점수 (기록 집계)</div>'
-    +   '<div class="card" style="padding:4px 0;">'
-    +     cfgRow('출석 점수', '1점 (고정)', 'scoreFixedNotice')
-    +     cfgRow('지각 점수', scoreLabel_(lateScore), 'editLateScore')
-    +     cfgRow('불참 점수', scoreLabel_(absentScore), 'editAbsentScore')
-    +   '</div>'
-    +   '<p style="font-size:11.5px;color:var(--steel-soft);margin:8px 2px 0;">기록 탭 출석 순위 집계에 반영돼요. (미참석은 0점)</p>'
-    + '</div>';
-  return card + venueSec + hist + settingsSec
+  return card + venueSec + hist
     + '<p class="hint">출석·지각·불참은 기록 탭에서 경기를 탭해 입력합니다.</p>';
 }
 /* 출석 점수 설정 (기록 집계용) */
@@ -2150,8 +2159,8 @@ function openPlayerForm(id){
    +   '<div class="field"><label>프로필 사진 <span style="color:var(--steel-soft);font-weight:600;">(선택)</span></label>'
    +     '<div style="display:flex;align-items:center;gap:12px;">'
    +       '<div id="pp_prev" style="width:56px;height:56px;border-radius:50%;flex:0 0 auto;border:1px solid var(--line-strong);display:flex;align-items:center;justify-content:center;font-size:22px;background:var(--paper) center/cover no-repeat'+(state.formPhoto?(' url('+state.formPhoto+')'):'')+';">'+(state.formPhoto?'':'👤')+'</div>'
-   +       '<label class="btn-ghost" style="flex:1;margin:0;text-align:center;cursor:pointer;">사진 선택<input type="file" accept="image/*" style="display:none;" onchange="pickPlayerPhoto(this)"></label>'
-   +       '<button class="btn-ghost" type="button" style="flex:0 0 auto;margin:0;" onclick="clearPlayerPhoto()">삭제</button>'
+   +       '<button type="button" id="pp_btn" class="btn-ghost" style="flex:1;width:auto;margin:0;" onclick="photoBtnTap_()">'+(state.formPhoto?'🗑️ 사진 삭제':'📷 사진 등록')+'</button>'
+   +       '<input type="file" id="pp_file" accept="image/*" style="display:none;" onchange="pickPlayerPhoto(this)">'
    +     '</div></div>'
    +   '<div class="grid2">'
    +     '<div class="field"><label>등번호</label><input id="f_num" type="number" inputmode="numeric" placeholder="미정 (나중에 입력)" value="'+esc(p&&p.num!=null&&p.num!==''&&p.num!=='미정'?p.num:'')+'"></div>'
@@ -2172,6 +2181,14 @@ function openPlayerForm(id){
 
   showSheet(html);
 }
+/* 프로필 사진 버튼: 없으면 파일 선택, 있으면 삭제 확인 */
+function photoBtnTap_(){
+  if(state.formPhoto){
+    appConfirm_('프로필 사진을 삭제할까요?', function(){ clearPlayerPhoto(); toast('사진을 지웠어요 · 저장해야 반영됩니다'); });
+  } else {
+    var f=document.getElementById('pp_file'); if(f){ f.value=''; f.click(); }
+  }
+}
 /* 프로필 사진: 정사각형 크롭 후 128px JPEG로 축소 저장 (Firestore 문서에 내장) */
 function pickPlayerPhoto(input){
   var file=input.files&&input.files[0]; if(!file) return;
@@ -2185,6 +2202,7 @@ function pickPlayerPhoto(input){
       ctx.drawImage(img,(img.width-side)/2,(img.height-side)/2,side,side,0,0,sz,sz);
       state.formPhoto=c.toDataURL('image/jpeg',0.82);
       var pv=document.getElementById('pp_prev'); if(pv){ pv.style.background='var(--paper) center/cover no-repeat url('+state.formPhoto+')'; pv.textContent=''; }
+      var bt=document.getElementById('pp_btn'); if(bt) bt.textContent='🗑️ 사진 삭제';
     };
     img.src=e.target.result;
   };
@@ -2193,6 +2211,7 @@ function pickPlayerPhoto(input){
 function clearPlayerPhoto(){
   state.formPhoto='';
   var pv=document.getElementById('pp_prev'); if(pv){ pv.style.background='var(--paper)'; pv.textContent='👤'; }
+  var bt=document.getElementById('pp_btn'); if(bt) bt.textContent='📷 사진 등록';
 }
 function pickSize(s){
   state.formSize = s;
@@ -2294,6 +2313,8 @@ function toggleNvList_(btn){
 /* ================= 경기 폼 ================= */
 /* 기록 여부: 필드가 없으면(과거 경기) 전부 기록으로 간주 */
 function recOn_(m, key){ return !(m && m[key]===false); }
+/* 경기(승무패) 기록을 끈 경기는 저장된 결과가 있어도 무시 */
+function hasResult_(m){ return recOn_(m,'recMatch') && (m.result==='W'||m.result==='D'||m.result==='L'); }
 function recChk_(key, label, m){
   return '<label style="flex:1 1 42%;display:flex;align-items:center;gap:7px;padding:10px 11px;border:1.5px solid var(--line-strong);border-radius:11px;font-size:13.5px;font-weight:700;cursor:pointer;background:#fff;">'
    + '<input type="checkbox" id="g_'+key+'" style="width:17px;height:17px;accent-color:var(--red);flex:0 0 auto;" '+(recOn_(m,key)?'checked':'')+'> '+label+'</label>';
@@ -2561,6 +2582,7 @@ function saveMatch(id){
     recGoal: !!(document.getElementById('g_recGoal')||{checked:true}).checked,
     recAssist: !!(document.getElementById('g_recAssist')||{checked:true}).checked
   };
+  if(!data.recMatch){ data.ourScore=''; data.oppScore=''; data.result=''; }
   var fn = id ? 'updateMatch' : 'addMatch';
   if(id) data.id = id;
   closeSheet();
