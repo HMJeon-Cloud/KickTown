@@ -264,13 +264,35 @@
   .qtab.on{background:linear-gradient(150deg,var(--red),var(--red-deep));color:#fff;box-shadow:0 3px 10px rgba(200,16,46,.35);}
 
   /* Formation pitch */
+  .arena{
+    position:relative;width:100%;padding-bottom:126%;border-radius:18px;overflow:hidden;
+    perspective:900px;perspective-origin:50% 50%;
+    background:
+      radial-gradient(1.6px 1.6px at 11% 6%, rgba(255,255,255,.85), transparent 60%),
+      radial-gradient(1.2px 1.2px at 27% 12%, rgba(255,255,255,.6), transparent 60%),
+      radial-gradient(1.8px 1.8px at 43% 4%, rgba(255,255,255,.9), transparent 60%),
+      radial-gradient(1.1px 1.1px at 58% 10%, rgba(255,255,255,.55), transparent 60%),
+      radial-gradient(1.5px 1.5px at 72% 5%, rgba(255,255,255,.8), transparent 60%),
+      radial-gradient(1.2px 1.2px at 86% 11%, rgba(255,255,255,.6), transparent 60%),
+      radial-gradient(1.7px 1.7px at 94% 3%, rgba(255,255,255,.85), transparent 60%),
+      radial-gradient(1.1px 1.1px at 18% 16%, rgba(255,255,255,.45), transparent 60%),
+      radial-gradient(1.3px 1.3px at 66% 15%, rgba(255,255,255,.5), transparent 60%),
+      radial-gradient(120% 60% at 50% -10%, rgba(255,255,240,.14), transparent 62%),
+      linear-gradient(180deg,#152045 0%,#0e1630 30%,#0a100e 58%,#0b120f 100%);
+    box-shadow:0 14px 34px rgba(0,0,0,.35);
+  }
   .pitch{
-    position:relative;width:100%;padding-bottom:132%;
-    border-radius:14px;overflow:hidden;border:2px solid #2c6e49;
+    position:absolute;left:2.5%;right:2.5%;bottom:2%;height:84%;
+    border-radius:10px;border:2px solid #2c6e49;
     background:
       repeating-linear-gradient(0deg, #2f8f57 0, #2f8f57 11%, #2b8551 11%, #2b8551 22%);
-    box-shadow:var(--shadow-sm);touch-action:pan-y;user-select:none;
+    transform:rotateX(24deg);transform-origin:50% 100%;transform-style:preserve-3d;
+    box-shadow:0 22px 40px rgba(0,0,0,.45);
+    touch-action:pan-y;user-select:none;
   }
+  /* 토큰을 평면 위로 살짝 띄워(translateZ) 이름표가 잔디 평면에 잠기지 않게 */
+  .pitch .token{transform:translate(-50%,-50%) translateZ(18px) rotateX(-24deg);}
+  .pitch .token.drag{transform:translate(-50%,-50%) translateZ(30px) rotateX(-24deg);}
   .pitch-lines{position:absolute;inset:0;width:100%;height:100%;}
   .pitch-label{position:absolute;left:8px;bottom:6px;font-size:10px;color:rgba(255,255,255,.75);font-weight:600;letter-spacing:.02em;}
   .token{
@@ -694,7 +716,7 @@ var APPCHECK_SITE_KEY = '6Lfmi2AtAAAAAP1R-1JlYz1ht1WuQWp2RS_tibpT';
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '4.0';
+var APP_VERSION = '4.1';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -1090,10 +1112,25 @@ function render(){
 /* 칩 줄 가로 스크롤 위치 저장 (렌더 시 복원용) */
 function saveChipScroll_(k, el){ state._chipScroll=state._chipScroll||{}; state._chipScroll[k]=el.scrollLeft; }
 
+/* 3D 스쿼드판: 화면 좌표 → 경기장 평면 좌표 역변환 (CSS rotateX(24deg)·perspective 900px와 일치해야 함) */
+var PITCH_TILT=24*Math.PI/180, PITCH_PERS=900;
+function pitch3dPt_(arena, cx, cy){
+  var R=arena.getBoundingClientRect();
+  if(!R.width || !R.height) return {x:0.5,y:0.5};
+  var Wp=R.width*0.95, Hp=R.height*0.84, T=R.height*0.98-Hp;
+  var Oy=R.height/2, Pd=PITCH_PERS*(R.width/Math.max(1,arena.offsetWidth)), th=PITCH_TILT;
+  var xs=cx-R.left, ys=cy-R.top;
+  var A=(T+Hp)-Oy, yrel=ys-Oy;
+  var a=Pd*(A-yrel)/(yrel*Math.sin(th)+Pd*Math.cos(th));
+  var sc=Pd/(Pd+a*Math.sin(th));
+  var u=R.width/2+(xs-R.width/2)/sc;
+  return { x:(u-R.width*0.025)/Wp, y:(Hp-a)/Hp };
+}
 function initPitchDrag(){
   if(!isAdmin()) return;
   var pitch = document.getElementById('pitch');
   if(!pitch) return;
+  var arena = document.getElementById('arena') || pitch;
   var toks = pitch.querySelectorAll('.token');
   Array.prototype.forEach.call(toks, function(tok){
     var pid = tok.getAttribute('data-pid');
@@ -1105,11 +1142,9 @@ function initPitchDrag(){
     });
     tok.addEventListener('pointermove', function(e){
       if(!dragging) return;
-      var rect = pitch.getBoundingClientRect();
-      var x = (e.clientX - rect.left)/rect.width;
-      var y = (e.clientY - rect.top)/rect.height;
-      x = Math.max(0.05, Math.min(0.95, x));
-      y = Math.max(0.03, Math.min(0.97, y));
+      var pt = pitch3dPt_(arena, e.clientX, e.clientY);
+      var x = Math.max(0.05, Math.min(0.95, pt.x));
+      var y = Math.max(0.03, Math.min(0.97, pt.y));
       tok.style.left = (x*100)+'%';
       tok.style.top = (y*100)+'%';
       tok._x = x; tok._y = y; moved=true;
@@ -1314,14 +1349,14 @@ function viewForm(){
         + ' · <a style="color:var(--red);cursor:pointer;" onclick="deleteSquadConfirm(\''+sid+'\',\''+jsq(d.squad.name)+'\')">삭제</a></span>':'')
     + '</div>';
 
-  var pitch = '<div class="pitch" id="pitch">'
+  var pitch = '<div class="arena" id="arena"><div class="pitch" id="pitch">'
     + '<svg class="pitch-lines" viewBox="0 0 100 132" preserveAspectRatio="none">'
     +   '<g fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="0.7">'
     +   '<rect x="2" y="2" width="96" height="128" rx="1"/><line x1="2" y1="66" x2="98" y2="66"/><circle cx="50" cy="66" r="12"/>'
     +   '<rect x="28" y="2" width="44" height="15"/><rect x="40" y="2" width="20" height="6"/>'
     +   '<rect x="28" y="115" width="44" height="15"/><rect x="40" y="124" width="20" height="6"/>'
     +   '</g><circle cx="50" cy="66" r="1" fill="rgba(255,255,255,0.6)"/></svg>'
-    + '<div class="pitch-label">우리 진영 ↓</div>' + tokens + '</div>'+ (isAdmin()&&assignedN>11?'<p style="font-size:11.5px;color:var(--red);margin:8px 2px 0;font-weight:600;">⚠️ 맵에 '+assignedN+'명 배치됨 · 베스트11은 11명입니다.</p>':'');
+    + '<div class="pitch-label">우리 진영 ↓</div>' + tokens + '</div></div>'+ (isAdmin()&&assignedN>11?'<p style="font-size:11.5px;color:var(--red);margin:8px 2px 0;font-weight:600;">⚠️ 맵에 '+assignedN+'명 배치됨 · 베스트11은 11명입니다.</p>':'');
 
   // #6 인라인 명단 + 검색
   var q = (state.formRosterQ||'').trim().toLowerCase();
@@ -3244,9 +3279,10 @@ function cardHeader_(ctx, W, title, sub, emblemImg, bgImg){
 }
 function cardWatermark_(ctx, W, H, emblem, alpha){
   if(!emblem) return;
-  ctx.save(); ctx.globalAlpha=alpha||0.055;
-  var s=560;
-  ctx.drawImage(emblem, W-s+130, H-s+60, s, s);
+  var im=emblemCut_(emblem)||emblem;
+  ctx.save(); ctx.globalAlpha=alpha||0.07;
+  var s=Math.min(880, H*0.72);
+  ctx.drawImage(im, W-s+s*0.22, H-s+s*0.10, s, s);
   ctx.restore();
 }
 function panel_(ctx,x,y,w,h,r,fill){
@@ -3265,10 +3301,60 @@ function sectionTitle_(ctx, x, y, kr, en){
     ctx.fillText(en, x+26+w+18, y+3);
   }
 }
+/* ── 엠블럼 흰 배경 제거: 가장자리에서 연결된 흰색만 투명화 (내부 흰색은 보존) ── */
+var _emblemCutC=null;
+function emblemCut_(img){
+  if(!img) return null;
+  if(_emblemCutC && _emblemCutC._src===img.src) return _emblemCutC;
+  try{
+    var S=512, c=document.createElement('canvas'); c.width=c.height=S;
+    var x=c.getContext('2d'); x.drawImage(img,0,0,S,S);
+    var d=x.getImageData(0,0,S,S), px=d.data;
+    var vis=new Uint8Array(S*S), stack=[];
+    function isW(p){ return px[p*4+3]<10 || (px[p*4]>228 && px[p*4+1]>228 && px[p*4+2]>228); }
+    for(var i=0;i<S;i++){
+      [i, (S-1)*S+i, i*S, i*S+S-1].forEach(function(p){ if(!vis[p]&&isW(p)){ vis[p]=1; stack.push(p); } });
+    }
+    while(stack.length){
+      var p=stack.pop(); px[p*4+3]=0;
+      var xx=p%S, yy=(p/S)|0;
+      if(xx>0){ var a=p-1; if(!vis[a]&&isW(a)){vis[a]=1;stack.push(a);} }
+      if(xx<S-1){ var b=p+1; if(!vis[b]&&isW(b)){vis[b]=1;stack.push(b);} }
+      if(yy>0){ var e=p-S; if(!vis[e]&&isW(e)){vis[e]=1;stack.push(e);} }
+      if(yy<S-1){ var f=p+S; if(!vis[f]&&isW(f)){vis[f]=1;stack.push(f);} }
+    }
+    x.putImageData(d,0,0);
+    c._src=img.src; _emblemCutC=c; return c;
+  }catch(e){ return img; }
+}
+/* ── 별하늘 · 금별 (챔피언스리그 밤 분위기) ── */
+function starField_(ctx,x,y,w,h,seed,n){
+  seed=seed||13; function rnd(){ seed=(seed*9301+49297)%233280; return seed/233280; }
+  for(var i=0;i<n;i++){
+    var sx=x+rnd()*w, sy=y+rnd()*h, rr=0.6+rnd()*1.5, a=0.22+rnd()*0.6;
+    ctx.fillStyle='rgba(255,255,255,'+a.toFixed(2)+')';
+    ctx.beginPath(); ctx.arc(sx,sy,rr,0,Math.PI*2); ctx.fill();
+    if(rnd()>0.86){
+      ctx.strokeStyle='rgba(255,255,255,'+(a*0.75).toFixed(2)+')'; ctx.lineWidth=1;
+      var L=rr*3.5+3;
+      ctx.beginPath(); ctx.moveTo(sx-L,sy); ctx.lineTo(sx+L,sy); ctx.moveTo(sx,sy-L); ctx.lineTo(sx,sy+L); ctx.stroke();
+    }
+  }
+}
+function goldStar_(ctx,cx,cy,R,rot,fill){
+  ctx.beginPath();
+  for(var i=0;i<10;i++){
+    var ang=(rot!=null?rot:-Math.PI/2)+i*Math.PI/5, rr=(i%2? R*0.45:R);
+    var qx=cx+Math.cos(ang)*rr, qy=cy+Math.sin(ang)*rr;
+    if(i) ctx.lineTo(qx,qy); else ctx.moveTo(qx,qy);
+  }
+  ctx.closePath(); ctx.fillStyle=fill||CARD_GOLD; ctx.fill();
+}
 /* ── 3D 카드 공통: 야간 경기장 베이스 + 유리/입체 패널 ── */
 function darkBase_(ctx,W,H){
-  var g=ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,'#171b26'); g.addColorStop(0.55,'#10141a'); g.addColorStop(1,'#0b100e');
+  var g=ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,'#131b31'); g.addColorStop(0.5,'#0e1421'); g.addColorStop(1,'#0b100e');
   ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  starField_(ctx,0,0,W,H*0.55,29,110);
   var fl=ctx.createRadialGradient(W/2,-H*0.08,40,W/2,-H*0.08,H*0.95);
   fl.addColorStop(0,'rgba(255,255,235,.15)'); fl.addColorStop(1,'rgba(255,255,235,0)');
   ctx.fillStyle=fl; ctx.fillRect(0,0,W,H);
@@ -3371,8 +3457,9 @@ function drawPitch_(ctx,x,y,w,h){
   ctx.save(); ctx.shadowColor='rgba(0,0,0,.35)'; ctx.shadowBlur=30; ctx.shadowOffsetY=12;
   rr_(ctx,x,y,w,h,26); ctx.fillStyle='#0b1210'; ctx.fill(); ctx.restore();
   rr_(ctx,x,y,w,h,26); ctx.save(); ctx.clip();
-  var sky=ctx.createLinearGradient(0,y,0,PJ.yTop); sky.addColorStop(0,'#1a2430'); sky.addColorStop(1,'#0c1512');
+  var sky=ctx.createLinearGradient(0,y,0,PJ.yTop); sky.addColorStop(0,'#152045'); sky.addColorStop(0.6,'#0e1630'); sky.addColorStop(1,'#0a101f');
   ctx.fillStyle=sky; ctx.fillRect(x,y,w,PJ.yTop-y+2);
+  starField_(ctx, x+6, y+4, w-12, Math.max(10,PJ.yTop-y-14), 41, 60);
   var flood=ctx.createRadialGradient(PJ.xc,y-h*0.25,10, PJ.xc,y-h*0.25,h*0.9);
   flood.addColorStop(0,'rgba(255,255,240,.28)'); flood.addColorStop(1,'rgba(255,255,240,0)');
   ctx.fillStyle=flood; ctx.fillRect(x,y,w,h);
@@ -3768,13 +3855,14 @@ function sharePlayerCard_(pid){
         ctx.fillStyle=CARD_INK; ctx.fillRect(0,0,W,H);
         if(emblem){
           ctx.save(); ctx.globalAlpha=0.18;
-          var es=1300; ctx.drawImage(emblem, (W-es)/2, (H-es)/2-40, es, es);
+          var es=1300; ctx.drawImage(emblemCut_(emblem)||emblem, (W-es)/2, (H-es)/2-40, es, es);
           ctx.restore();
           var vg=ctx.createRadialGradient(W/2,H/2,200,W/2,H/2,900); vg.addColorStop(0,'rgba(17,16,21,0)'); vg.addColorStop(1,'rgba(17,16,21,.85)');
           ctx.fillStyle=vg; ctx.fillRect(0,0,W,H);
         }
         ctx.save(); ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(W*0.62,0); ctx.lineTo(W*0.38,H); ctx.lineTo(0,H); ctx.closePath();
         var g=ctx.createLinearGradient(0,0,W*0.6,H); g.addColorStop(0,'rgba(200,16,46,.55)'); g.addColorStop(1,'rgba(150,0,31,.25)'); ctx.fillStyle=g; ctx.fill(); ctx.restore();
+        starField_(ctx, 0, 0, W, H*0.5, 77, 90);
         ctx.fillStyle=CARD_GOLD; ctx.fillRect(0,0,W,6);
         // 상단: 팀명 · 시즌
         ctx.textAlign='left'; ctx.textBaseline='middle';
@@ -3786,6 +3874,22 @@ function sharePlayerCard_(pid){
         var glow=ctx.createRadialGradient(cx,cy,r*0.5,cx,cy,r*2.1);
         glow.addColorStop(0,'rgba(199,162,75,.30)'); glow.addColorStop(1,'rgba(199,162,75,0)');
         ctx.fillStyle=glow; ctx.fillRect(cx-r*2.2,cy-r*2.2,r*4.4,r*4.4);
+        // 금빛 방사광 (스포트라이트)
+        ctx.save(); ctx.translate(cx,cy);
+        var rg2=ctx.createRadialGradient(0,0,r*1.02,0,0,r*2.5);
+        rg2.addColorStop(0,'rgba(199,162,75,.30)'); rg2.addColorStop(1,'rgba(199,162,75,0)');
+        ctx.fillStyle=rg2;
+        for(var ri=0;ri<20;ri++){
+          var ra=ri*Math.PI/10 - Math.PI/2 + 0.157, rw=Math.PI/10*0.42;
+          ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,r*2.5,ra-rw,ra+rw); ctx.closePath(); ctx.fill();
+        }
+        ctx.restore();
+        // 별 아치 (얼굴 위 5개)
+        [-0.44,-0.22,0,0.22,0.44].forEach(function(t,si){
+          var ang=-Math.PI/2+t, sx2=cx+Math.cos(ang)*(r+72), sy2=cy+Math.sin(ang)*(r+72);
+          ctx.save(); ctx.shadowColor='rgba(199,162,75,.85)'; ctx.shadowBlur=16;
+          goldStar_(ctx,sx2,sy2,(si===2?27:19),ang,CARD_GOLD); ctx.restore();
+        });
         ctx.save(); ctx.shadowColor='rgba(0,0,0,.6)'; ctx.shadowBlur=40; ctx.shadowOffsetY=14;
         ctx.beginPath(); ctx.arc(cx,cy,r+12,0,Math.PI*2); ctx.fillStyle=CARD_GOLD; ctx.fill(); ctx.restore();
         ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fillStyle='#1F1D25'; ctx.fill();
@@ -3798,8 +3902,11 @@ function sharePlayerCard_(pid){
         rr_(ctx, cx+r-nw+20, cy+r-96, nw, 100, 24); ctx.fillStyle=CARD_RED; ctx.fill(); ctx.restore();
         ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.fillText(numTxt, cx+r-nw/2+20, cy+r-44);
         // 이름 · 포지션
+        ctx.fillStyle=CARD_GOLD; ctx.font='700 25px Oswald, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.save(); ctx.shadowColor='rgba(199,162,75,.6)'; ctx.shadowBlur=10;
+        ctx.fillText('★  T H E   B E S T   P L A Y E R  ★', cx, 736); ctx.restore();
         ctx.fillStyle='#fff'; ctx.font='700 76px Pretendard, sans-serif'; ctx.textAlign='center';
-        ctx.fillText(String(p.name||''), cx, 790);
+        ctx.fillText(String(p.name||''), cx, 796);
         var posTxt=(p.positions&&p.positions.length)?p.positions.join(' · '):'';
         if(posTxt){
           ctx.font='600 30px Oswald, sans-serif'; var pw=ctx.measureText(posTxt).width+44;
