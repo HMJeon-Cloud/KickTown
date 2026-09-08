@@ -265,8 +265,8 @@
 
   /* Formation pitch */
   .arena{
-    position:relative;width:100%;padding-bottom:126%;border-radius:18px;overflow:hidden;
-    perspective:900px;perspective-origin:50% 50%;
+    position:relative;width:100%;padding-bottom:118%;border-radius:18px;overflow:hidden;
+    perspective:950px;perspective-origin:50% 50%;
     background:
       radial-gradient(1.6px 1.6px at 11% 6%, rgba(255,255,255,.85), transparent 60%),
       radial-gradient(1.2px 1.2px at 27% 12%, rgba(255,255,255,.6), transparent 60%),
@@ -282,17 +282,17 @@
     box-shadow:0 14px 34px rgba(0,0,0,.35);
   }
   .pitch{
-    position:absolute;left:2.5%;right:2.5%;bottom:2%;height:84%;
+    position:absolute;left:2.5%;right:2.5%;bottom:1.5%;height:116%;
     border-radius:10px;border:2px solid #2c6e49;
     background:
       repeating-linear-gradient(0deg, #2f8f57 0, #2f8f57 11%, #2b8551 11%, #2b8551 22%);
-    transform:rotateX(24deg);transform-origin:50% 100%;transform-style:preserve-3d;
+    transform:rotateX(22deg);transform-origin:50% 100%;transform-style:preserve-3d;
     box-shadow:0 22px 40px rgba(0,0,0,.45);
     touch-action:pan-y;user-select:none;
   }
   /* 토큰을 평면 위로 살짝 띄워(translateZ) 이름표가 잔디 평면에 잠기지 않게 */
-  .pitch .token{transform:translate(-50%,-50%) translateZ(18px) rotateX(-24deg);}
-  .pitch .token.drag{transform:translate(-50%,-50%) translateZ(30px) rotateX(-24deg);}
+  .pitch .token{transform:translate(-50%,-50%) translateZ(18px) rotateX(-22deg);}
+  .pitch .token.drag{transform:translate(-50%,-50%) translateZ(30px) rotateX(-22deg);}
   .pitch-lines{position:absolute;inset:0;width:100%;height:100%;}
   .pitch-label{position:absolute;left:8px;bottom:6px;font-size:10px;color:rgba(255,255,255,.75);font-weight:600;letter-spacing:.02em;}
   .token{
@@ -716,7 +716,7 @@ var APPCHECK_SITE_KEY = '6Lfmi2AtAAAAAP1R-1JlYz1ht1WuQWp2RS_tibpT';
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '4.1';
+var APP_VERSION = '4.2';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -1112,13 +1112,13 @@ function render(){
 /* 칩 줄 가로 스크롤 위치 저장 (렌더 시 복원용) */
 function saveChipScroll_(k, el){ state._chipScroll=state._chipScroll||{}; state._chipScroll[k]=el.scrollLeft; }
 
-/* 3D 스쿼드판: 화면 좌표 → 경기장 평면 좌표 역변환 (CSS rotateX(24deg)·perspective 900px와 일치해야 함) */
-var PITCH_TILT=24*Math.PI/180, PITCH_PERS=900;
+/* 3D 스쿼드판: 화면 좌표 → 경기장 평면 좌표 역변환 (CSS rotateX(22deg)·initPitchDrag가 설정하는 perspective와 일치) */
+var PITCH_TILT=22*Math.PI/180, PITCH_PERS_F=2.44;   // perspective = 스쿼드판 폭 × 2.44
 function pitch3dPt_(arena, cx, cy){
   var R=arena.getBoundingClientRect();
   if(!R.width || !R.height) return {x:0.5,y:0.5};
-  var Wp=R.width*0.95, Hp=R.height*0.84, T=R.height*0.98-Hp;
-  var Oy=R.height/2, Pd=PITCH_PERS*(R.width/Math.max(1,arena.offsetWidth)), th=PITCH_TILT;
+  var Wp=R.width*0.95, Hp=R.height*1.16, T=R.height*0.985-Hp;
+  var Oy=R.height/2, Pd=R.width*PITCH_PERS_F, th=PITCH_TILT;
   var xs=cx-R.left, ys=cy-R.top;
   var A=(T+Hp)-Oy, yrel=ys-Oy;
   var a=Pd*(A-yrel)/(yrel*Math.sin(th)+Pd*Math.cos(th));
@@ -1131,6 +1131,7 @@ function initPitchDrag(){
   var pitch = document.getElementById('pitch');
   if(!pitch) return;
   var arena = document.getElementById('arena') || pitch;
+  if(arena && arena.offsetWidth) arena.style.perspective=Math.round(arena.offsetWidth*PITCH_PERS_F)+'px';
   var toks = pitch.querySelectorAll('.token');
   Array.prototype.forEach.call(toks, function(tok){
     var pid = tok.getAttribute('data-pid');
@@ -3215,7 +3216,12 @@ var CARD_INK='#111015', CARD_RED='#C8102E', CARD_GOLD='#C7A24B', CARD_PAPER='#F6
 var CARD_HDR=250;
 function loadImg_(src){ return new Promise(function(res){ if(!src){ res(null); return; } var i=new Image(); i.onload=function(){ res(i); }; i.onerror=function(){ res(null); }; i.src=src; }); }
 function rr_(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
-function circImg_(ctx,img,cx,cy,r){ ctx.save(); ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.clip(); ctx.drawImage(img,cx-r,cy-r,r*2,r*2); ctx.restore(); }
+function circImg_(ctx,img,cx,cy,r){
+  ctx.save(); ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.clip();
+  var iw=img.width||img.naturalWidth||1, ih=img.height||img.naturalHeight||1, side=Math.min(iw,ih);
+  ctx.drawImage(img,(iw-side)/2,(ih-side)/2,side,side,cx-r,cy-r,r*2,r*2);   // 비율 유지 · 중앙 크롭
+  ctx.restore();
+}
 function drawCover_(ctx,img,x,y,w,h){
   var ir=img.width/img.height, r=w/h, sw,sh,sx,sy;
   if(ir>r){ sh=img.height; sw=sh*r; sx=(img.width-sw)/2; sy=0; }
