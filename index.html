@@ -614,7 +614,7 @@ var APPCHECK_SITE_KEY = '6Lfmi2AtAAAAAP1R-1JlYz1ht1WuQWp2RS_tibpT';
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '2.7';
+var APP_VERSION = '2.8';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -841,7 +841,8 @@ function buildSquadDetail_(squadId){
   var notes = DB.notes.filter(function(x){return x.squadId===squadId;}).map(function(n){
     return {id:n.id, squadId:n.squadId, phase:n.phase, scope:n.scope, body:n.body, author:n.author||'', authorId:n.authorId||''};
   });
-  return {squad:squad, members:members, notes:notes};
+  // squad는 복사본으로 반환 — 화면의 낙관적 수정이 메모리 DB를 오염시켜 저장 diff가 누락되는 것 방지
+  return {squad: squad ? {id:squad.id, clubId:squad.clubId, name:squad.name} : null, members:members, notes:notes};
 }
 
 function loadTeam(){
@@ -3257,6 +3258,36 @@ function shareMatchCard_(){
  */
 var FS = { enabled:false, loadFailed:false };
 FS.ready = new Promise(function(res){ FS._resolve = res; });
+/* ── 로컬 캐시: 마지막 조회 데이터를 기기에 저장 → 10분 내 재접속은 네트워크 조회 없이 즉시 시작 ──
+ * (당겨서 새로고침은 캐시를 건너뛰고 서버에서 새로 조회) */
+var KT_CACHE_KEY='kt_cache_v1', KT_CACHE_TTL=10*60*1000;
+var _ktSaveT=null;
+function ktCacheSave_(){
+  clearTimeout(_ktSaveT);
+  _ktSaveT=setTimeout(function(){
+    try{
+      var cid=window.ACTIVE_CLUB||state.activeClubId||'';
+      if(!cid) return;
+      var o={v:APP_VERSION, ts:Date.now(), cid:cid,
+        clubs:DB.clubs, config:DB.config, players:DB.players, matches:DB.matches, squads:DB.squads,
+        members:DB.members, notes:DB.notes, stats:DB.stats, attendance:DB.attendance,
+        sk:Object.keys(FS._sk||{}),
+        kidMids:(FS._kidMids&&FS._kidMids[cid])||{}, kidLite:(FS._kidLite&&FS._kidLite[cid])||{}};
+      localStorage.setItem(KT_CACHE_KEY, JSON.stringify(o));
+    }catch(e){ try{ localStorage.removeItem(KT_CACHE_KEY); }catch(_){} }
+  }, 600);
+}
+function ktCacheLoad_(){
+  try{
+    var o=JSON.parse(localStorage.getItem(KT_CACHE_KEY)||'null');
+    if(!o || o.v!==APP_VERSION || !o.ts || !o.cid) return null;
+    return o;
+  }catch(e){ return null; }
+}
+function ktCacheBypass_(){
+  try{ if(sessionStorage.getItem('kt_fresh')==='1'){ sessionStorage.removeItem('kt_fresh'); return true; } }catch(e){}
+  return false;
+}
 /* 저장 권한 프로브: 로드 완료 후 소량 쓰기를 시도해 문제를 즉시 노출
  * (쓰기 절약을 위해 기기당 하루 1회만 수행) */
 function fsWriteProbe_(){
@@ -3413,6 +3444,7 @@ function fsLoadTeam(cid){
     fsQ('members','clubId',cid), fsQ('matches','clubId',cid), fsQ('squads','clubId',cid)
   ]).then(function(r){
     fsMerge('players',r[0]); fsMerge('matches',r[1]); fsMerge('squads',r[2]);
+    ktCacheSave_();
   });
   return FS._team[cid];
 }
@@ -3435,7 +3467,7 @@ function fsLoadMatchKids(cid, period){
     var need=want.filter(function(id){ return !loaded[id] && !lite[id]; });
     if(!need.length) return;
     return Promise.all([ fsIn('playerStats','matchId',need), fsIn('attendance','matchId',need) ])
-      .then(function(r){ fsMerge('stats',r[0]); fsMerge('attendance',r[1]); need.forEach(function(id){ lite[id]=1; }); });
+      .then(function(r){ fsMerge('stats',r[0]); fsMerge('attendance',r[1]); need.forEach(function(id){ lite[id]=1; }); ktCacheSave_(); });
   });
   FS._kidsQ[cid] = next.catch(function(){});   // 오류가 나도 큐가 막히지 않게
   return next;
@@ -3454,6 +3486,7 @@ function fsLoadKidsForMatches_(cid, ids){
     return Promise.all([ fsIn('playerStats','matchId',fresh), fsIn('attendance','matchId',fresh) ]).then(function(r){
       fsMerge('stats',r[0]); fsMerge('attendance',r[1]);
       todo.forEach(function(id){ loaded[id]=1; lite[id]=1; });
+      ktCacheSave_();
     });
   });
   FS._kidsQ[cid] = next.catch(function(){});
@@ -3476,6 +3509,7 @@ function fsLoadSquadKids(sid){
   if(FS._sk[sid]) return FS._sk[sid];
   FS._sk[sid]=Promise.all([ fsQ('squadMembers','squadId',sid), fsQ('squadNotes','squadId',sid) ]).then(function(r){
     fsMerge('members',r[0]); fsMerge('notes',r[1]);
+    ktCacheSave_();
   });
   return FS._sk[sid];
 }
@@ -3501,20 +3535,17 @@ FS.run = function(fn, args){
   });
 };
 FS._dispatch = function(fn, args){
-    if(fn==='setConfig'){ var rc=mockHandler(fn, args); fsSyncConfig(); return rc; }
+    if(fn==='setConfig'){ var rc=mockHandler(fn, args); fsSyncConfig(); ktCacheSave_(); return rc; }
     var touched=WRITE_TOUCH[fn];
     if(touched){
       var before=fsSnapshot(touched);
       var res=mockHandler(fn, args);
       touched.forEach(function(k){ fsSyncDiff(k, before[k]); });
+      ktCacheSave_();
       return res;
     }
     return mockHandler(fn, args);   // 읽기 (메모리 즉시)
 };
-/* 자동 시드 비활성화: 빈 상태로 시작 (구단주가 직접 팀 생성) */
-function fsSeedClub_(){
-  return Promise.resolve();
-}
 function fsStampClub_(){
   var own = (DB.clubs||[]).filter(function(c){return c.own;})[0] || (DB.clubs||[])[0];
   if(!own) return Promise.resolve();
@@ -3539,10 +3570,22 @@ FS.init = function(){
   window.db = firebase.firestore();
   FS.enabled = true;
   var authP = firebase.auth ? firebase.auth().signInAnonymously().catch(function(){}) : Promise.resolve();
+  // 캐시가 신선하면(10분) 조회 없이 즉시 시작 — 읽기 사용량 절감 + 빠른 로딩
+  var cache = ktCacheLoad_();
+  if(cache && !ktCacheBypass_() && (Date.now()-cache.ts) < KT_CACHE_TTL){
+    ['clubs','players','matches','squads','members','notes','stats','attendance'].forEach(function(k){ if(cache[k]) DB[k]=cache[k]; });
+    if(cache.config) DB.config=cache.config;
+    FS._team[cache.cid]=Promise.resolve();
+    (cache.sk||[]).forEach(function(sid){ FS._sk[sid]=Promise.resolve(); });
+    FS._kidMids[cache.cid]=cache.kidMids||{};
+    FS._kidLite[cache.cid]=cache.kidLite||{};
+    FS._fromCache=true;
+    FS._resolve();
+    return;
+  }
   authP.then(function(){ return fsLoadAll(); })
-    .then(function(){ return fsSeedClub_(); })
     .then(function(){ return fsStampClub_(); })
-    .then(function(){ FS._resolve(); fsWriteProbe_(); })
+    .then(function(){ FS._resolve(); fsWriteProbe_(); ktCacheSave_(); })
     .catch(function(e){ if(window.console)console.warn('FS init', e); FS.loadFailed=true; FS._resolve(); });
 };
 
@@ -3617,7 +3660,7 @@ function initPTR_(){
       ind.classList.add('spinning');
       ind.style.transition='transform .18s ease';
       ind.style.transform='translateY('+THRESH+'px)'; ind.style.opacity='1';
-      setTimeout(function(){ try{ location.reload(); }catch(e){ reset(true); active=false; } }, 300);
+      setTimeout(function(){ try{ sessionStorage.setItem('kt_fresh','1'); }catch(e){} try{ location.reload(); }catch(e){ reset(true); active=false; } }, 300);
     } else { reset(true); }
   }, {passive:true});
 }
