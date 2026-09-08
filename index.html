@@ -694,7 +694,7 @@ var APPCHECK_SITE_KEY = '6Lfmi2AtAAAAAP1R-1JlYz1ht1WuQWp2RS_tibpT';
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '3.8';
+var APP_VERSION = '4.0';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -1157,7 +1157,7 @@ function viewTeam(){
     + '<div class="list-row" style="cursor:pointer;" onclick="exportBackup_()"><span class="nm" style="flex:1;">데이터 백업 (엑셀)</span><span class="val" style="color:var(--red);font-size:14px;">📥 내보내기 ›</span></div>'
     + '<div class="list-row" style="cursor:pointer;" onclick="importBackup_()"><span class="nm" style="flex:1;">데이터 복구 (백업 엑셀 업로드)</span><span class="val" style="color:var(--red);font-size:14px;">📤 가져오기 ›</span></div>'
     + '<div class="list-row" style="cursor:pointer;" onclick="openLogView_()"><span class="nm" style="flex:1;">활동 로그</span><span class="val" style="color:var(--red);font-size:14px;">🗒️ 보기 ›</span></div>'
-    + cfgRow('내 이름 (로그 표시)', esc(whoName_()||'미설정'), 'editWho_')
+    + cfgRow('내 이름', esc(whoName_()||'미설정'), 'editWho_')
     + '<input type="file" id="bk_file" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none;" onchange="importBackupPick_(this)">'
     + '</div>'
     + '<p style="font-size:11.5px;color:var(--steel-soft);margin:8px 2px 0;">출석·지각·불참 점수는 기록 탭 출석 순위 집계에 반영돼요. (미참석 0점)</p>'
@@ -3242,9 +3242,9 @@ function cardHeader_(ctx, W, title, sub, emblemImg, bgImg){
   ctx.restore();
   if(sub){ ctx.fillStyle=CARD_GOLD; ctx.font='600 28px Pretendard, sans-serif'; ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.fillText(String(sub), tx, 160); }
 }
-function cardWatermark_(ctx, W, H, emblem){
+function cardWatermark_(ctx, W, H, emblem, alpha){
   if(!emblem) return;
-  ctx.save(); ctx.globalAlpha=0.055;
+  ctx.save(); ctx.globalAlpha=alpha||0.055;
   var s=560;
   ctx.drawImage(emblem, W-s+130, H-s+60, s, s);
   ctx.restore();
@@ -3264,6 +3264,46 @@ function sectionTitle_(ctx, x, y, kr, en){
     ctx.fillStyle=CARD_GOLD; ctx.font='600 23px Oswald, sans-serif';
     ctx.fillText(en, x+26+w+18, y+3);
   }
+}
+/* ── 3D 카드 공통: 야간 경기장 베이스 + 유리/입체 패널 ── */
+function darkBase_(ctx,W,H){
+  var g=ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,'#171b26'); g.addColorStop(0.55,'#10141a'); g.addColorStop(1,'#0b100e');
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  var fl=ctx.createRadialGradient(W/2,-H*0.08,40,W/2,-H*0.08,H*0.95);
+  fl.addColorStop(0,'rgba(255,255,235,.15)'); fl.addColorStop(1,'rgba(255,255,235,0)');
+  ctx.fillStyle=fl; ctx.fillRect(0,0,W,H);
+}
+function glass_(ctx,x,y,w,h,r,alpha){
+  ctx.save(); ctx.shadowColor='rgba(0,0,0,.45)'; ctx.shadowBlur=20; ctx.shadowOffsetY=8;
+  rr_(ctx,x,y,w,h,r); ctx.fillStyle='rgba(255,255,255,'+(alpha||0.07)+')'; ctx.fill(); ctx.restore();
+  ctx.save(); rr_(ctx,x,y,w,h,r); ctx.clip();
+  var gl=ctx.createLinearGradient(0,y,0,y+h*0.5); gl.addColorStop(0,'rgba(255,255,255,.09)'); gl.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle=gl; ctx.fillRect(x,y,w,h*0.5); ctx.restore();
+  rr_(ctx,x,y,w,h,r); ctx.strokeStyle='rgba(255,255,255,.16)'; ctx.lineWidth=2; ctx.stroke();
+}
+function tile3d_(ctx,x,y,w,h,r,color){
+  ctx.save(); ctx.shadowColor='rgba(0,0,0,.5)'; ctx.shadowBlur=22; ctx.shadowOffsetY=10;
+  var g=ctx.createLinearGradient(0,y,0,y+h);
+  g.addColorStop(0,shade_(color,0.16)); g.addColorStop(0.5,color); g.addColorStop(1,shade_(color,-0.35));
+  rr_(ctx,x,y,w,h,r); ctx.fillStyle=g; ctx.fill(); ctx.restore();
+  ctx.save(); rr_(ctx,x,y,w,h,r); ctx.clip();
+  var gl=ctx.createLinearGradient(0,y,0,y+h*0.45); gl.addColorStop(0,'rgba(255,255,255,.26)'); gl.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle=gl; ctx.fillRect(x,y,w,h*0.45);
+  ctx.fillStyle='rgba(0,0,0,.25)'; ctx.fillRect(x,y+h-5,w,5);
+  ctx.restore();
+  rr_(ctx,x,y,w,h,r); ctx.strokeStyle='rgba(255,255,255,.14)'; ctx.lineWidth=2; ctx.stroke();
+}
+function sectionTitleW_(ctx, x, y, kr, en){
+  ctx.fillStyle=CARD_RED; ctx.fillRect(x, y-17, 7, 34);
+  ctx.textAlign='left'; ctx.textBaseline='middle';
+  ctx.fillStyle='#fff'; ctx.font='700 34px Pretendard, sans-serif';
+  ctx.fillText(kr, x+26, y);
+  if(en){ var w=ctx.measureText(kr).width; ctx.fillStyle=CARD_GOLD; ctx.font='600 23px Oswald, sans-serif'; ctx.fillText(en, x+26+w+18, y+3); }
+}
+function cardFooterW_(ctx, W, H){
+  ctx.fillStyle='rgba(199,162,75,.55)'; ctx.fillRect(W/2-190, H-64, 120, 2); ctx.fillRect(W/2+70, H-64, 120, 2);
+  ctx.fillStyle='rgba(255,255,255,.5)'; ctx.font='600 24px Oswald, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('FC JEMIRO · FOOTBALL CLUB', W/2, H-40);
 }
 function cardFooter_(ctx, W, H){
   ctx.fillStyle='rgba(199,162,75,.55)'; ctx.fillRect(W/2-190, H-64, 120, 2);
@@ -3304,48 +3344,155 @@ function downloadCardNow_(){ if(_cardBlob) dlBlob_(_cardBlob, _cardName); else t
 /* ── 스쿼드 카드 ── */
 var POS_COLORS={GK:'#E0A400',DF:'#2563C9',CB:'#2563C9',LB:'#2563C9',RB:'#2563C9',LWB:'#2563C9',RWB:'#2563C9',
   MF:'#1E9E6A',DM:'#1E9E6A',CM:'#1E9E6A',AM:'#1E9E6A',FW:'#C8102E',ST:'#C8102E',CF:'#C8102E',LW:'#C8102E',RW:'#C8102E'};
-function drawPitch_(ctx,x,y,w,h){
-  ctx.save(); ctx.shadowColor='rgba(17,16,21,.18)'; ctx.shadowBlur=22; ctx.shadowOffsetY=8;
-  rr_(ctx,x,y,w,h,22); ctx.fillStyle='#2f8f57'; ctx.fill(); ctx.restore();
-  rr_(ctx,x,y,w,h,22); ctx.save(); ctx.clip();
-  var stripes=8;
-  for(var i=0;i<stripes;i++){ ctx.fillStyle=(i%2?'#2b8551':'#2f8f57'); ctx.fillRect(x, y+h*i/stripes, w, h/stripes+1); }
-  ctx.strokeStyle='rgba(255,255,255,.55)'; ctx.lineWidth=3;
-  ctx.strokeRect(x+16,y+16,w-32,h-32);
-  ctx.beginPath(); ctx.moveTo(x+16,y+h/2); ctx.lineTo(x+w-16,y+h/2); ctx.stroke();
-  ctx.beginPath(); ctx.arc(x+w/2,y+h/2,h*0.085,0,Math.PI*2); ctx.stroke();
-  var bw=w*0.44, bh=h*0.11;
-  ctx.strokeRect(x+(w-bw)/2, y+16, bw, bh);
-  ctx.strokeRect(x+(w-bw)/2, y+h-16-bh, bw, bh);
-  ctx.restore();
-  rr_(ctx,x,y,w,h,22); ctx.strokeStyle='#2c6e49'; ctx.lineWidth=5; ctx.stroke();
+/* ── 3D 원근 경기장 (스쿼드 카드) ──
+ * 평면 좌표 (u: 0~1 가로, v: 0=상대 골(먼 쪽) ~ 1=우리 골(가까운 쪽)) → 원근 투영
+ * 지평선(yh) 기준으로 화면 y에 비례해 너비가 커지는 실제 원근 (같은 간격의 v가 멀수록 촘촘해짐) */
+function shade_(hex, amt){   // amt>0 밝게, <0 어둡게 (-1~1)
+  var m=/^#?([0-9a-f]{6})$/i.exec(hex||''); if(!m) return hex;
+  var n=parseInt(m[1],16), r=(n>>16)&255, g=(n>>8)&255, b=n&255;
+  function f(c){ return Math.max(0,Math.min(255,Math.round(amt>0 ? c+(255-c)*amt : c*(1+amt)))); }
+  return 'rgb('+f(r)+','+f(g)+','+f(b)+')';
 }
-function drawToken_(ctx,cx,cy,m,img){
+function pitchProj_(x,y,w,h){
+  var yTop=y+h*0.10, yBot=y+h*0.965, xc=x+w/2, Wn=w*0.985, ratio=0.66;   // 먼 쪽 너비 = 가까운 쪽의 66%
+  var yh=(yTop-ratio*yBot)/(1-ratio);
+  function Y(v){ return yh + 1/((1-v)/(yTop-yh) + v/(yBot-yh)); }
+  function Wd(v){ return Wn*(Y(v)-yh)/(yBot-yh); }
+  function P(u,v){ return {x:xc+(u-0.5)*Wd(v), y:Y(v)}; }
+  function S(v){ return Wd(v)/Wn; }   // 깊이 스케일 (먼 쪽 0.56 ~ 가까운 쪽 1)
+  return {P:P, Y:Y, Wd:Wd, S:S, yTop:yTop, yBot:yBot, xc:xc, Wn:Wn, yh:yh};
+}
+function drawPitch_(ctx,x,y,w,h){
+  var PJ=pitchProj_(x,y,w,h), P=PJ.P;
+  function poly(pts){ ctx.beginPath(); pts.forEach(function(p,i){ if(i) ctx.lineTo(p.x,p.y); else ctx.moveTo(p.x,p.y); }); ctx.closePath(); }
+  function quad(u0,v0,u1,v1){ return [P(u0,v0),P(u1,v0),P(u1,v1),P(u0,v1)]; }
+  function path(pts, close){ ctx.beginPath(); pts.forEach(function(p,i){ if(i) ctx.lineTo(p.x,p.y); else ctx.moveTo(p.x,p.y); }); if(close) ctx.closePath(); }
+  // ── 배경 패널: 야간 경기장 분위기 ──
+  ctx.save(); ctx.shadowColor='rgba(0,0,0,.35)'; ctx.shadowBlur=30; ctx.shadowOffsetY=12;
+  rr_(ctx,x,y,w,h,26); ctx.fillStyle='#0b1210'; ctx.fill(); ctx.restore();
+  rr_(ctx,x,y,w,h,26); ctx.save(); ctx.clip();
+  var sky=ctx.createLinearGradient(0,y,0,PJ.yTop); sky.addColorStop(0,'#1a2430'); sky.addColorStop(1,'#0c1512');
+  ctx.fillStyle=sky; ctx.fillRect(x,y,w,PJ.yTop-y+2);
+  var flood=ctx.createRadialGradient(PJ.xc,y-h*0.25,10, PJ.xc,y-h*0.25,h*0.9);
+  flood.addColorStop(0,'rgba(255,255,240,.28)'); flood.addColorStop(1,'rgba(255,255,240,0)');
+  ctx.fillStyle=flood; ctx.fillRect(x,y,w,h);
+  // 관중석 느낌: 먼 쪽 위 어두운 띠 + 작은 조명 점
+  var st=ctx.createLinearGradient(0,PJ.yTop-h*0.09,0,PJ.yTop); st.addColorStop(0,'rgba(40,46,58,0)'); st.addColorStop(1,'rgba(40,46,58,.9)');
+  ctx.fillStyle=st; ctx.fillRect(x,PJ.yTop-h*0.09,w,h*0.09);
+  var seed=7; function rnd(){ seed=(seed*9301+49297)%233280; return seed/233280; }
+  for(var i=0;i<90;i++){ var lx=x+rnd()*w, ly=PJ.yTop-h*0.075+rnd()*h*0.06; ctx.fillStyle='rgba(255,235,180,'+(0.15+rnd()*0.35)+')'; ctx.beginPath(); ctx.arc(lx,ly,1.2+rnd()*1.6,0,Math.PI*2); ctx.fill(); }
+  // ── 잔디 (터치라인 바깥 여유 포함) ──
+  var U0=-0.075, U1=1.075, V0=-0.055, V1=1.045;
+  // 잔디 두께(앞면 단면)
+  var e0=P(U0,V1), e1=P(U1,V1);
+  ctx.fillStyle='#143d25'; ctx.beginPath(); ctx.moveTo(e0.x,e0.y); ctx.lineTo(e1.x,e1.y); ctx.lineTo(e1.x,e1.y+18); ctx.lineTo(e0.x,e0.y+18); ctx.closePath(); ctx.fill();
+  ctx.fillStyle='#0e2c1a'; ctx.fillRect(x, e0.y+18, w, h);
+  // 잔디 바탕 + 줄무늬(가로 방향, 원근 적용)
+  poly(quad(U0,V0,U1,V1)); ctx.fillStyle='#2f8a52'; ctx.fill();
+  var stripes=12;
+  for(var s=0;s<stripes;s++){
+    var v0=V0+(V1-V0)*s/stripes, v1=V0+(V1-V0)*(s+1)/stripes;
+    poly(quad(U0,v0,U1,v1)); ctx.fillStyle=(s%2?'#2c8350':'#34955a'); ctx.fill();
+  }
+  // 잔디 질감(노이즈) + 조명 (먼 쪽 어둡게, 중앙 밝게)
+  poly(quad(U0,V0,U1,V1)); ctx.save(); ctx.clip();
+  var nc=document.createElement('canvas'); nc.width=nc.height=160; var nx=nc.getContext('2d'); var idt=nx.createImageData(160,160);
+  for(var k=0;k<idt.data.length;k+=4){ var g=Math.random()*255; idt.data[k]=g; idt.data[k+1]=g; idt.data[k+2]=g; idt.data[k+3]=26; }
+  nx.putImageData(idt,0,0);
+  ctx.fillStyle=ctx.createPattern(nc,'repeat'); ctx.fillRect(x,y,w,h);
+  var lg=ctx.createLinearGradient(0,PJ.yTop,0,PJ.yBot); lg.addColorStop(0,'rgba(0,0,0,.42)'); lg.addColorStop(0.45,'rgba(0,0,0,.05)'); lg.addColorStop(1,'rgba(0,0,0,.18)');
+  ctx.fillStyle=lg; ctx.fillRect(x,y,w,h);
+  var hl=ctx.createRadialGradient(PJ.xc,PJ.Y(0.55),20, PJ.xc,PJ.Y(0.55),w*0.7); hl.addColorStop(0,'rgba(255,255,230,.14)'); hl.addColorStop(1,'rgba(255,255,230,0)');
+  ctx.fillStyle=hl; ctx.fillRect(x,y,w,h);
+  ctx.restore();
+  // ── 라인 (깊이에 따라 굵기 변화) ──
+  ctx.strokeStyle='rgba(255,255,255,.88)'; ctx.lineCap='round'; ctx.lineJoin='round';
+  function lineV(u,va,vb){ var n=12; ctx.beginPath(); for(var i=0;i<=n;i++){ var v=va+(vb-va)*i/n, p=P(u,v); if(i) ctx.lineTo(p.x,p.y); else ctx.moveTo(p.x,p.y); } ctx.lineWidth=2.2+2.2*PJ.S((va+vb)/2); ctx.stroke(); }
+  function lineU(v,ua,ub){ var a=P(ua,v), b=P(ub,v); ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.lineWidth=2.2+2.2*PJ.S(v); ctx.stroke(); }
+  function box(u0,u1,v0,v1){ lineU(v0,u0,u1); lineU(v1,u0,u1); lineV(u0,v0,v1); lineV(u1,v0,v1); }
+  function arc(uc,vc,ru,rv,a0,a1,vLimitFn){ ctx.beginPath(); var n=40, started=false; for(var i=0;i<=n;i++){ var a=a0+(a1-a0)*i/n, u=uc+ru*Math.cos(a), v=vc+rv*Math.sin(a); if(vLimitFn && !vLimitFn(v)){ started=false; continue; } var p=P(u,v); if(started) ctx.lineTo(p.x,p.y); else { ctx.moveTo(p.x,p.y); started=true; } } ctx.lineWidth=2.2+2.2*PJ.S(vc); ctx.stroke(); }
+  box(0,1,0,1);                       // 터치라인
+  lineU(0.5,0,1);                     // 하프라인
+  arc(0.5,0.5,0.135,0.087,0,Math.PI*2);   // 센터 서클
+  ctx.fillStyle='rgba(255,255,255,.9)'; var cs=P(0.5,0.5); ctx.beginPath(); ctx.ellipse(cs.x,cs.y,5,3,0,0,Math.PI*2); ctx.fill();
+  box(0.205,0.795,0,0.157); box(0.365,0.635,0,0.052);          // 먼 쪽 페널티/골 에어리어
+  box(0.205,0.795,0.843,1); box(0.365,0.635,0.948,1);          // 가까운 쪽
+  arc(0.5,0.105,0.135,0.087,0,Math.PI*2,function(v){ return v>0.157; });   // 페널티 아크(먼 쪽)
+  arc(0.5,0.895,0.135,0.087,0,Math.PI*2,function(v){ return v<0.843; });   // (가까운 쪽)
+  var ps1=P(0.5,0.105), ps2=P(0.5,0.895);
+  ctx.beginPath(); ctx.ellipse(ps1.x,ps1.y,4,2.4,0,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(ps2.x,ps2.y,5.5,3.2,0,0,Math.PI*2); ctx.fill();
+  // ── 골대 (기둥 + 그물) ──
+  function goal(v, dir){   // dir: -1 = 먼 쪽(그물이 위/뒤로), +1 = 가까운 쪽
+    var l=P(0.446,v), r=P(0.554,v), gw=r.x-l.x, gh=gw*0.34, depth=gw*0.22*0.6;
+    var bl={x:l.x+(dir<0?-depth*0.15:depth*0.15), y:l.y-depth*dir}, br={x:r.x+(dir<0?depth*0.15:-depth*0.15), y:r.y-depth*dir};
+    // 그물 (뒤판 + 옆판)
+    ctx.save(); ctx.strokeStyle='rgba(255,255,255,.35)'; ctx.lineWidth=1;
+    var cols=9, rows=4;
+    for(var i=0;i<=cols;i++){ var t=i/cols; ctx.beginPath(); ctx.moveTo(bl.x+(br.x-bl.x)*t, bl.y-gh); ctx.lineTo(bl.x+(br.x-bl.x)*t, bl.y); ctx.stroke(); }
+    for(var j=0;j<=rows;j++){ var q=j/rows; ctx.beginPath(); ctx.moveTo(bl.x, bl.y-gh*q); ctx.lineTo(br.x, br.y-gh*q); ctx.stroke(); }
+    // 옆 그물
+    ctx.beginPath(); ctx.moveTo(l.x,l.y); ctx.lineTo(bl.x,bl.y); ctx.lineTo(bl.x,bl.y-gh); ctx.lineTo(l.x,l.y-gh); ctx.closePath(); ctx.fillStyle='rgba(255,255,255,.10)'; ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(r.x,r.y); ctx.lineTo(br.x,br.y); ctx.lineTo(br.x,br.y-gh); ctx.lineTo(r.x,r.y-gh); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(l.x,l.y-gh); ctx.lineTo(bl.x,bl.y-gh); ctx.lineTo(br.x,br.y-gh); ctx.lineTo(r.x,r.y-gh); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.restore();
+    // 기둥·크로스바
+    ctx.save(); ctx.strokeStyle='#ffffff'; ctx.lineCap='round'; ctx.lineWidth=3+3*PJ.S(v); ctx.shadowColor='rgba(0,0,0,.4)'; ctx.shadowBlur=6; ctx.shadowOffsetY=2;
+    ctx.beginPath(); ctx.moveTo(l.x,l.y); ctx.lineTo(l.x,l.y-gh); ctx.lineTo(r.x,r.y-gh); ctx.lineTo(r.x,r.y); ctx.stroke();
+    ctx.restore();
+  }
+  goal(0,-1); goal(1,1);
+  ctx.restore();   // 패널 clip
+  rr_(ctx,x,y,w,h,26); ctx.strokeStyle='rgba(255,255,255,.10)'; ctx.lineWidth=2; ctx.stroke();
+  return PJ;
+}
+function drawToken_(ctx,PJ,m,img){
   var col = m.guest ? '#6B7280' : (POS_COLORS[m.position]||CARD_INK);
-  var r=42;
-  ctx.save(); ctx.shadowColor='rgba(0,0,0,.35)'; ctx.shadowBlur=10; ctx.shadowOffsetY=4;
-  ctx.beginPath(); ctx.arc(cx,cy,img?(r+5):r,0,Math.PI*2); ctx.fillStyle=col; ctx.fill(); ctx.restore();
+  var p=PJ.P(m.x,m.y), sc=0.76+0.24*PJ.S(m.y), r=43*sc, cx=p.x, cy=p.y-r*0.55;
+  // 바닥 그림자 (타원)
+  ctx.save(); ctx.translate(cx, p.y+r*0.18); ctx.scale(1, 0.32);
+  var sg=ctx.createRadialGradient(0,0,r*0.2, 0,0,r*1.35); sg.addColorStop(0,'rgba(0,0,0,.45)'); sg.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=sg; ctx.beginPath(); ctx.arc(0,0,r*1.35,0,Math.PI*2); ctx.fill(); ctx.restore();
+  // 구체(입체) 디스크
+  ctx.save(); ctx.shadowColor='rgba(0,0,0,.35)'; ctx.shadowBlur=14; ctx.shadowOffsetY=6;
+  var rg=ctx.createRadialGradient(cx-r*0.35, cy-r*0.4, r*0.1, cx, cy, r*1.15);
+  rg.addColorStop(0, shade_(col,0.45)); rg.addColorStop(0.55, col); rg.addColorStop(1, shade_(col,-0.45));
+  ctx.beginPath(); ctx.arc(cx,cy,img?r+6*sc:r,0,Math.PI*2); ctx.fillStyle=rg; ctx.fill(); ctx.restore();
   if(img){
     ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.fill();
     circImg_(ctx,img,cx,cy,r);
-    ctx.font='600 20px Oswald, sans-serif';
-    var pt=String(m.position||''), ptw=ctx.measureText(pt).width+16;
-    rr_(ctx,cx+r-ptw+6,cy-r-14,ptw,30,8); ctx.fillStyle=col; ctx.fill();
-    ctx.lineWidth=2.5; ctx.strokeStyle='#fff'; ctx.stroke();
+    // 유광 하이라이트
+    ctx.save(); ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.clip();
+    var gl=ctx.createLinearGradient(0,cy-r,0,cy); gl.addColorStop(0,'rgba(255,255,255,.35)'); gl.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle=gl; ctx.fillRect(cx-r,cy-r,r*2,r); ctx.restore();
+    ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.lineWidth=3*sc; ctx.strokeStyle='rgba(255,255,255,.9)'; ctx.stroke();
+    // 포지션 배지
+    ctx.font='600 '+Math.round(20*sc)+'px Oswald, sans-serif';
+    var pt=String(m.position||''), ptw=ctx.measureText(pt).width+16*sc, bh=30*sc;
+    ctx.save(); ctx.shadowColor='rgba(0,0,0,.3)'; ctx.shadowBlur=6; ctx.shadowOffsetY=2;
+    rr_(ctx,cx+r-ptw+6*sc,cy-r-14*sc,ptw,bh,8*sc); ctx.fillStyle=col; ctx.fill(); ctx.restore();
+    ctx.lineWidth=2.5*sc; ctx.strokeStyle='#fff'; ctx.stroke();
     ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText(pt, cx+r-ptw/2+6, cy-r+1);
+    ctx.fillText(pt, cx+r-ptw/2+6*sc, cy-r+1);
   } else {
-    ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.lineWidth=5; ctx.strokeStyle='#fff'; ctx.stroke();
-    ctx.fillStyle='#fff'; ctx.font='600 30px Oswald, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText(String(m.position||''), cx, cy+1);
+    ctx.save(); ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.clip();
+    var gl2=ctx.createLinearGradient(0,cy-r,0,cy); gl2.addColorStop(0,'rgba(255,255,255,.28)'); gl2.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle=gl2; ctx.fillRect(cx-r,cy-r,r*2,r); ctx.restore();
+    ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.lineWidth=4.5*sc; ctx.strokeStyle='rgba(255,255,255,.92)'; ctx.stroke();
+    ctx.fillStyle='#fff'; ctx.font='600 '+Math.round(30*sc)+'px Oswald, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.save(); ctx.shadowColor='rgba(0,0,0,.35)'; ctx.shadowBlur=4; ctx.shadowOffsetY=1;
+    ctx.fillText(String(m.position||''), cx, cy+1); ctx.restore();
   }
+  // 이름표
   var label=(m.guest?m.num:numTok(m.num))+' '+String(m.name||'');
-  ctx.font='700 24px Pretendard, sans-serif';
-  var tw=ctx.measureText(label).width;
-  var pw=tw+28, py=cy+(img?r+5:r)+12;
-  rr_(ctx,cx-pw/2,py,pw,40,10); ctx.fillStyle='rgba(20,18,26,.85)'; ctx.fill();
+  ctx.font='700 '+Math.round(24*sc)+'px Pretendard, sans-serif';
+  var tw=ctx.measureText(label).width, pw=tw+28*sc, ph=40*sc, py=cy+(img?r+6*sc:r)+10*sc;
+  ctx.save(); ctx.shadowColor='rgba(0,0,0,.4)'; ctx.shadowBlur=10; ctx.shadowOffsetY=4;
+  var pg=ctx.createLinearGradient(0,py,0,py+ph); pg.addColorStop(0,'rgba(38,35,46,.95)'); pg.addColorStop(1,'rgba(16,14,22,.95)');
+  rr_(ctx,cx-pw/2,py,pw,ph,10*sc); ctx.fillStyle=pg; ctx.fill(); ctx.restore();
+  rr_(ctx,cx-pw/2,py,pw,ph,10*sc); ctx.lineWidth=1; ctx.strokeStyle='rgba(255,255,255,.18)'; ctx.stroke();
   ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.fillText(label,cx,py+21);
+  ctx.fillText(label,cx,py+ph/2+1);
 }
 function shareSquadCard_(){
   var d=state.squadDetail;
@@ -3356,7 +3503,7 @@ function shareSquadCard_(){
   fontsReady_(function(){
     Promise.all(jobs).then(function(imgs){
       var emblem=imgs[0], bg=imgs[1];
-      var W=1080, pad=50, pw=W-pad*2, ph=Math.round(pw*1.12);
+      var W=1080, pad=50, pw=W-pad*2, ph=Math.round(pw*1.16);
       // 메모: 줄바꿈·자동 줄바꿈 반영해 높이 선계산 (내용 전체 표시 · 카드가 길어짐)
       var mctx=document.createElement('canvas').getContext('2d');
       mctx.font='500 27px Pretendard, sans-serif';
@@ -3375,8 +3522,10 @@ function shareSquadCard_(){
       cardWatermark_(ctx, W, H, emblem);
       cardHeader_(ctx, W, ourTeamName_(), 'SQUAD · '+String(d.squad.name||'')+' · '+fmtDateDot(attToday_()), emblem, bg);
       var px=pad, py=CARD_HDR+48;
-      drawPitch_(ctx, px, py, pw, ph);
-      mems.forEach(function(m,i){ drawToken_(ctx, px+m.x*pw, py+m.y*ph, m, imgs[i+2]); });
+      var PJ=drawPitch_(ctx, px, py, pw, ph);
+      // 먼 쪽(상대 골) 선수부터 그려 가까운 선수가 위에 겹치게
+      mems.map(function(m,i){ return {m:m, img:imgs[i+2]}; }).sort(function(a,b){ return a.m.y-b.m.y; })
+        .forEach(function(t){ drawToken_(ctx, PJ, t.m, t.img); });
       if(notes.length){
         var ny=py+ph+72;
         sectionTitle_(ctx, pad, ny, '요청사항 · 메모', 'NOTES');
@@ -3418,15 +3567,15 @@ function shareSeasonCard_(year){
       var H=CARD_HDR + 66 + 2*182 + 76 + (awards.length? (56+awards.length*114) : 0) + 116;
       var c=document.createElement('canvas'); c.width=W; c.height=H;
       var ctx=c.getContext('2d');
-      ctx.fillStyle=CARD_PAPER; ctx.fillRect(0,0,W,H);
-      cardWatermark_(ctx, W, H, emblem);
+      darkBase_(ctx,W,H);
+      cardWatermark_(ctx, W, H, emblem, 0.10);
       var sub = s.range ? (s.year+' 시즌 결산 · '+s.range) : (year+' SEASON REVIEW');
       cardHeader_(ctx, W, ourTeamName_(), sub, emblem, bg);
       var cw=(W-pad*2-40)/3;
       function tile(ix,row,k,v,hot){
         var x=pad+ix*(cw+20), y=CARD_HDR+66+row*182;
-        panel_(ctx,x,y,cw,158,20, hot?CARD_RED:CARD_INK);
-        ctx.fillStyle='rgba(255,255,255,.72)'; ctx.font='600 26px Pretendard, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+        tile3d_(ctx,x,y,cw,158,20, hot?CARD_RED:'#242a38');
+        ctx.fillStyle='rgba(255,255,255,.78)'; ctx.font='600 26px Pretendard, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
         ctx.fillText(k, x+cw/2, y+44);
         ctx.fillStyle='#fff'; ctx.font='700 58px Oswald, sans-serif';
         ctx.fillText(String(v), x+cw/2, y+105);
@@ -3435,25 +3584,25 @@ function shareSeasonCard_(year){
       tile(0,1,'득점', s.gf); tile(1,1,'실점', s.ga); tile(2,1,'득실차', (s.gf-s.ga>0?'+':'')+(s.gf-s.ga));
       if(awards.length){
         var ay=CARD_HDR+66+2*182+62;
-        sectionTitle_(ctx, pad, ay, '시즌 어워드', 'AWARDS');
+        sectionTitleW_(ctx, pad, ay, '시즌 어워드', 'AWARDS');
         ay+=48;
         awards.forEach(function(a){
-          panel_(ctx, pad, ay, W-pad*2, 98, 16);
+          glass_(ctx, pad, ay, W-pad*2, 98, 16);
           ctx.textBaseline='middle'; ctx.textAlign='left';
-          ctx.font='500 42px Pretendard, sans-serif'; ctx.fillStyle=CARD_INK;
+          ctx.font='500 42px Pretendard, sans-serif'; ctx.fillStyle='#fff';
           ctx.fillText(a[0], pad+28, ay+51);
-          ctx.fillStyle=CARD_STEEL; ctx.font='700 28px Pretendard, sans-serif';
+          ctx.fillStyle='rgba(255,255,255,.62)'; ctx.font='700 28px Pretendard, sans-serif';
           ctx.fillText(a[1], pad+100, ay+51);
           ctx.textAlign='right';
-          ctx.fillStyle=CARD_RED; ctx.font='700 34px Oswald, sans-serif';
+          ctx.fillStyle=CARD_GOLD; ctx.font='700 34px Oswald, sans-serif';
           var vw=ctx.measureText(a[3]).width;
       ctx.fillText(a[3], W-pad-28, ay+51);
-          ctx.fillStyle=CARD_INK; ctx.font='700 30px Pretendard, sans-serif';
+          ctx.fillStyle='#fff'; ctx.font='700 30px Pretendard, sans-serif';
           ctx.fillText(cardEllipsis_(ctx, a[2], W-pad*2-430), W-pad-28-vw-22, ay+51);
           ay+=114;
         });
       }
-      cardFooter_(ctx, W, H);
+      cardFooterW_(ctx, W, H);
       showCardPreview_(c, 'FCJEMIRO_season_'+s.year+'.png');
     });
   });
@@ -3478,41 +3627,43 @@ function shareMatchCard_(){
     Promise.all([loadImg_(teamEmblemSrc_()), loadImg_(teamBgSrc_()), chain]).then(function(res){
       var emblem=res[0], bg=res[1], reports=res[2];
       var W=1080, pad=50, pw=W-pad*2;
-      var rowH=152;
-      var H=CARD_HDR + 48 + 310 + (past.length? (96+past.length*(rowH+18)) : 0) + 116;
+      var rowH=152, uh=470;
+      var H=CARD_HDR + 48 + uh + (past.length? (96+past.length*(rowH+18)) : 0) + 116;
       var c=document.createElement('canvas'); c.width=W; c.height=H;
       var ctx=c.getContext('2d');
-      ctx.fillStyle=CARD_PAPER; ctx.fillRect(0,0,W,H);
-      cardWatermark_(ctx, W, H, emblem);
+      darkBase_(ctx,W,H);
+      cardWatermark_(ctx, W, H, emblem, 0.10);
       cardHeader_(ctx, W, ourTeamName_(), 'MATCH DAY', emblem, bg);
-      // 다가오는 경기 블록 (팀 사진 배경)
+      // 다가오는 경기 블록: 3D 야간 경기장 위에 텍스트
       var uy=CARD_HDR+48;
-      ctx.save(); ctx.shadowColor='rgba(17,16,21,.25)'; ctx.shadowBlur=22; ctx.shadowOffsetY=8;
-      rr_(ctx, pad, uy, pw, 310, 24); ctx.fillStyle=CARD_INK; ctx.fill(); ctx.restore();
-      rr_(ctx, pad, uy, pw, 310, 24); ctx.save(); ctx.clip();
-      if(bg){ drawCover_(ctx,bg,pad,uy,pw,310); ctx.fillStyle='rgba(10,9,14,.78)'; ctx.fillRect(pad,uy,pw,310); }
+      drawPitch_(ctx, pad, uy, pw, uh);
+      rr_(ctx, pad, uy, pw, uh, 26); ctx.save(); ctx.clip();
+      var dk=ctx.createLinearGradient(0,uy,0,uy+uh);
+      dk.addColorStop(0,'rgba(8,10,14,.30)'); dk.addColorStop(0.5,'rgba(8,10,14,.58)'); dk.addColorStop(1,'rgba(8,10,14,.30)');
+      ctx.fillStyle=dk; ctx.fillRect(pad,uy,pw,uh); ctx.restore();
+      rr_(ctx, pad, uy, pw, uh, 26); ctx.strokeStyle='rgba(199,162,75,.55)'; ctx.lineWidth=3; ctx.stroke();
+      ctx.save(); ctx.shadowColor='rgba(0,0,0,.6)'; ctx.shadowBlur=14; ctx.shadowOffsetY=4;
+      ctx.fillStyle=CARD_GOLD; ctx.font='600 30px Pretendard, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(fmtMatchWhen(m), W/2, uy+118);
+      ctx.fillStyle='#fff'; ctx.font='700 62px Pretendard, sans-serif';
+      ctx.fillText(cardEllipsis_(ctx, ourTeamName_()+'  vs  '+(m.opponent||'상대 미정'), pw-80), W/2, uy+uh/2);
+      ctx.fillStyle='rgba(255,255,255,.92)'; ctx.font='500 30px Pretendard, sans-serif';
+      ctx.fillText('📍 '+String(m.venue||'경기장 미지정'), W/2, uy+uh-108);
       ctx.restore();
-      rr_(ctx, pad, uy, pw, 310, 24); ctx.strokeStyle='rgba(199,162,75,.55)'; ctx.lineWidth=3; ctx.stroke();
-      ctx.fillStyle=CARD_GOLD; ctx.font='600 28px Pretendard, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.fillText(fmtMatchWhen(m), W/2, uy+64);
-      ctx.fillStyle='#fff'; ctx.font='700 58px Pretendard, sans-serif';
-      ctx.fillText(cardEllipsis_(ctx, ourTeamName_()+'  vs  '+(m.opponent||'상대 미정'), pw-80), W/2, uy+152);
-      ctx.fillStyle='rgba(255,255,255,.88)'; ctx.font='500 30px Pretendard, sans-serif';
-      ctx.fillText('📍 '+String(m.venue||'경기장 미지정'), W/2, uy+238);
       if(past.length){
-        var py=uy+310+64;
-        sectionTitle_(ctx, pad, py, 'vs '+opp+' · 지난 경기', 'HEAD TO HEAD');
+        var py=uy+uh+64;
+        sectionTitleW_(ctx, pad, py, 'vs '+opp+' · 지난 경기', 'HEAD TO HEAD');
         py+=44;
         past.forEach(function(pm, i){
           var r=reports[i];
-          panel_(ctx, pad, py, pw, rowH, 16);
+          glass_(ctx, pad, py, pw, rowH, 16);
           ctx.textBaseline='middle';
-          ctx.textAlign='left'; ctx.fillStyle=CARD_STEEL; ctx.font='600 26px Pretendard, sans-serif';
+          ctx.textAlign='left'; ctx.fillStyle='rgba(255,255,255,.62)'; ctx.font='600 26px Pretendard, sans-serif';
           ctx.fillText(fmtDateDot(pm.date)+' · '+String(pm.venue||'장소 미상'), pad+26, py+44);
           var has=hasResult_(pm);
           if(has){
             var rc = pm.result==='W' ? '#177E56' : (pm.result==='L' ? CARD_RED : CARD_STEEL);
-            ctx.textAlign='right'; ctx.fillStyle=CARD_INK; ctx.font='700 42px Oswald, sans-serif';
+            ctx.textAlign='right'; ctx.fillStyle='#fff'; ctx.font='700 42px Oswald, sans-serif';
             ctx.fillText(pm.ourScore+' : '+pm.oppScore, W-pad-98, py+46);
             rr_(ctx, W-pad-82, py+25, 56, 42, 10); ctx.fillStyle=rc; ctx.fill();
             ctx.textAlign='center'; ctx.fillStyle='#fff'; ctx.font='700 28px Oswald, sans-serif';
@@ -3523,12 +3674,12 @@ function shareMatchCard_(){
           }
           var sc = (r && r.scorers && r.scorers.length) ? r.scorers.map(function(x){ return x.name+(x.goals>1?' '+x.goals:''); }).join(', ') : '-';
           var as = (r && r.assisters && r.assisters.length) ? r.assisters.map(function(x){ return x.name+(x.assists>1?' '+x.assists:''); }).join(', ') : '-';
-          ctx.textAlign='left'; ctx.fillStyle=CARD_INK; ctx.font='500 26px Pretendard, sans-serif';
+          ctx.textAlign='left'; ctx.fillStyle='rgba(255,255,255,.88)'; ctx.font='500 26px Pretendard, sans-serif';
           ctx.fillText(cardEllipsis_(ctx, '⚽ '+sc+'    🅰 '+as, pw-52), pad+26, py+106);
           py+=rowH+18;
         });
       }
-      cardFooter_(ctx, W, H);
+      cardFooterW_(ctx, W, H);
       showCardPreview_(c, 'FCJEMIRO_match_'+String(m.date||attToday_())+'.png');
     });
   });
@@ -3632,6 +3783,9 @@ function sharePlayerCard_(pid){
         ctx.fillStyle=CARD_GOLD; ctx.font='600 24px Pretendard, sans-serif'; ctx.fillText((sy?sy.year+' SEASON':'CAREER')+' · PLAYER CARD', 160, 122);
         // 얼굴
         var cx=W/2, cy=470, r=230;
+        var glow=ctx.createRadialGradient(cx,cy,r*0.5,cx,cy,r*2.1);
+        glow.addColorStop(0,'rgba(199,162,75,.30)'); glow.addColorStop(1,'rgba(199,162,75,0)');
+        ctx.fillStyle=glow; ctx.fillRect(cx-r*2.2,cy-r*2.2,r*4.4,r*4.4);
         ctx.save(); ctx.shadowColor='rgba(0,0,0,.6)'; ctx.shadowBlur=40; ctx.shadowOffsetY=14;
         ctx.beginPath(); ctx.arc(cx,cy,r+12,0,Math.PI*2); ctx.fillStyle=CARD_GOLD; ctx.fill(); ctx.restore();
         ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fillStyle='#1F1D25'; ctx.fill();
@@ -3659,9 +3813,8 @@ function sharePlayerCard_(pid){
         var pad=60, tw=(W-pad*2-3*18)/4, ty=940;
         tiles.forEach(function(t,i){
           var x=pad+i*(tw+18);
-          rr_(ctx,x,ty,tw,190,22); ctx.fillStyle='rgba(255,255,255,.08)'; ctx.fill();
-          ctx.strokeStyle='rgba(255,255,255,.14)'; ctx.lineWidth=2; ctx.stroke();
-          ctx.fillStyle='rgba(255,255,255,.7)'; ctx.font='600 26px Pretendard, sans-serif'; ctx.textAlign='center';
+          tile3d_(ctx,x,ty,tw,190,22,'#262b38');
+          ctx.fillStyle='rgba(255,255,255,.75)'; ctx.font='600 26px Pretendard, sans-serif'; ctx.textAlign='center';
           ctx.fillText(t[0], x+tw/2, ty+50);
           ctx.fillStyle='#fff'; ctx.font='700 68px Oswald, sans-serif';
           ctx.fillText(String(t[1]), x+tw/2, ty+125);
@@ -4034,7 +4187,7 @@ function whoSubmit_(){
 function editWho_(){
   var cur=whoName_();
   showSheet('<div class="grabber"></div>'
-   + '<div class="sheet-head"><h3>내 이름 (로그 표시)</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-head"><h3>내 이름</h3><button class="x" onclick="closeSheet()">✕</button></div>'
    + '<div class="sheet-body">'
    +   '<p style="font-size:13px;color:var(--steel);margin:0 0 14px;line-height:1.55;">이 기기에서 한 작업은 활동 로그에 이 이름으로 남아요. 기기를 바꾸면 다시 입력하게 됩니다.</p>'
    +   '<div class="field"><label>이름</label><input id="who_edit" type="text" maxlength="12" value="'+esc(cur)+'" placeholder="이름"></div>'
@@ -4056,14 +4209,25 @@ function logEvent_(kind, act, detail){
   clearTimeout(_logT); _logT=setTimeout(logFlush_, 1500);   // 연속 작업은 한 번에 씀
   return e;
 }
+try{ document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='hidden'){ clearTimeout(_logT); logFlush_(); } }); window.addEventListener('pagehide', function(){ clearTimeout(_logT); logFlush_(); }); }catch(e){}
+var _logTries=0;
+function _logRetry_(items){
+  if(_logTries>=5) return; _logTries++;
+  _logPending=items.concat(_logPending);
+  clearTimeout(_logT); _logT=setTimeout(logFlush_, 4000);
+}
 function logFlush_(){
   var items=_logPending; _logPending=[];
   if(!items.length || !(window.db && FS.enabled)) return;
+  // 인증 준비 전/오프라인이면 잠시 후 재시도 (최대 5회) — 기록 유실 방지
+  var authed=false; try{ authed=!!(firebase.auth&&firebase.auth().currentUser); }catch(e){}
+  var online=(typeof navigator.onLine==='boolean') ? navigator.onLine : true;
+  if(!authed || !online){ _logRetry_(items); return; }
   try{
     var FV=firebase.firestore.FieldValue;
     db.collection('logs').doc(LOG_DOC).set({id:LOG_DOC, items:FV.arrayUnion.apply(FV, items), updatedAt:new Date().toISOString()}, {merge:true})
-      .catch(function(e){ try{ console.warn('log write', e); }catch(_){} });
-  }catch(e){}
+      .catch(function(e){ try{ console.warn('log write', e); }catch(_){} _logRetry_(items); });
+  }catch(e){ _logRetry_(items); }
 }
 /* 스쿼드 편집처럼 잦은 작업: 같은 행위·대상이 10분 내 이미 있으면 생략 */
 function logCoalesced_(kind, act, detail){
