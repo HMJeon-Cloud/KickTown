@@ -2,7 +2,7 @@
    - HTML(화면): 항상 최신(no-store 네트워크) → 접속 시 최신 버전 보장, 오프라인 시 캐시 폴백
    - 정적 자원(이미지·CSS·JS·폰트): 캐시 우선 + 백그라운드 갱신 → 재접속 로딩 가속
    - 서비스워커 스크립트 자체는 캐시하지 않음 (알림 등록 실패 방지) */
-var CACHE = 'kicktown-v3';
+var CACHE = 'kicktown-v4';
 
 self.addEventListener('install', function(e){ self.skipWaiting(); });
 
@@ -23,10 +23,9 @@ self.addEventListener('message', function(e){
 
 function isStatic(url){ return /\.(png|jpg|jpeg|webp|gif|svg|ico|css|js|woff2?|ttf|otf)$/i.test(url.pathname); }
 
-/* 서비스워커 스크립트는 항상 네트워크에서 직접 받아야 한다.
-   캐시된 옛 응답(특히 파일이 없던 시절의 404)이 남으면 등록이 실패한다. */
+/* 서비스워커 스크립트는 항상 네트워크에서 직접 받아야 한다. */
 function isServiceWorkerScript(url){
-  return url.pathname === '/sw.js' || url.pathname === '/firebase-messaging-sw.js';
+  return url.pathname === '/sw.js';
 }
 
 self.addEventListener('fetch', function(e){
