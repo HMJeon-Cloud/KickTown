@@ -664,7 +664,7 @@ var APPCHECK_SITE_KEY = '6Lfmi2AtAAAAAP1R-1JlYz1ht1WuQWp2RS_tibpT';
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '3.1';
+var APP_VERSION = '3.2';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -3466,13 +3466,18 @@ function sharePlayerCard_(pid){
         var W=1080, H=1520;
         var c=document.createElement('canvas'); c.width=W; c.height=H;
         var ctx=c.getContext('2d');
-        // 배경: 팀 사진 + 짙은 오버레이, 붉은 사선
+        // 배경: 잉크 바탕 + 대형 엠블럼(은은하게) + 붉은 사선
         ctx.fillStyle=CARD_INK; ctx.fillRect(0,0,W,H);
-        if(bg){ drawCover_(ctx,bg,0,0,W,H); ctx.fillStyle='rgba(10,9,14,.9)'; ctx.fillRect(0,0,W,H); }
+        if(emblem){
+          ctx.save(); ctx.globalAlpha=0.18;
+          var es=1300; ctx.drawImage(emblem, (W-es)/2, (H-es)/2-40, es, es);
+          ctx.restore();
+          var vg=ctx.createRadialGradient(W/2,H/2,200,W/2,H/2,900); vg.addColorStop(0,'rgba(17,16,21,0)'); vg.addColorStop(1,'rgba(17,16,21,.85)');
+          ctx.fillStyle=vg; ctx.fillRect(0,0,W,H);
+        }
         ctx.save(); ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(W*0.62,0); ctx.lineTo(W*0.38,H); ctx.lineTo(0,H); ctx.closePath();
         var g=ctx.createLinearGradient(0,0,W*0.6,H); g.addColorStop(0,'rgba(200,16,46,.55)'); g.addColorStop(1,'rgba(150,0,31,.25)'); ctx.fillStyle=g; ctx.fill(); ctx.restore();
         ctx.fillStyle=CARD_GOLD; ctx.fillRect(0,0,W,6);
-        cardWatermark_(ctx, W, H, emblem);
         // 상단: 팀명 · 시즌
         ctx.textAlign='left'; ctx.textBaseline='middle';
         if(emblem){ ctx.beginPath(); ctx.arc(96,96,44,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.fill(); circImg_(ctx,emblem,96,96,40); }
