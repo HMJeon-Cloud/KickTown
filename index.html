@@ -524,6 +524,15 @@
   .pv-cap{color:#fff;font-size:15px;font-weight:700;}
   .pv-sub{color:rgba(255,255,255,.6);font-size:11.5px;margin-top:-8px;}
   .pv-x{position:absolute;top:16px;right:16px;width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.12);color:#fff;font-size:18px;cursor:pointer;}
+  /* 활동 로그 */
+  .lg-row{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);}
+  .lg-t{font-family:'Oswald';font-size:12px;color:var(--steel);min-width:74px;line-height:1.4;padding-top:1px;}
+  .lg-b{flex:1;min-width:0;}
+  .lg-a{font-weight:800;font-size:13.5px;color:var(--ink);line-height:1.4;}
+  .lg-a.add{color:var(--ok);} .lg-a.edit{color:#2563C9;} .lg-a.del{color:var(--red);} .lg-a.in{color:var(--steel);}
+  .lg-d{font-weight:600;font-size:12.5px;color:var(--ink);word-break:break-all;}
+  .lg-w{font-size:11px;color:var(--steel-soft);margin-top:2px;}
+  .lg-day{font-family:'Oswald';font-weight:600;font-size:12.5px;letter-spacing:.04em;color:var(--red);background:var(--paper);border-radius:8px;padding:5px 10px;margin:12px 0 2px;}
   /* 프로필 사진 영역 조절(이동·확대) */
   .crop-wrap{position:absolute;inset:0;z-index:75;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;background:rgba(8,7,11,.96);padding:24px 20px;}
   .crop-wrap.open{display:flex;}
@@ -685,7 +694,7 @@ var APPCHECK_SITE_KEY = '6Lfmi2AtAAAAAP1R-1JlYz1ht1WuQWp2RS_tibpT';
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '3.4';
+var APP_VERSION = '3.7';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -700,7 +709,13 @@ var API = {
     if(window.FS && FS.enabled){ return FS.run(fn, args); }
     // Firestore 미연결(로컬 미리보기) 시 목업으로 동작
     return new Promise(function(resolve, reject){
-      setTimeout(function(){ try{ resolve(mockHandler(fn, args)); }catch(e){ reject(e); } }, 40);
+      setTimeout(function(){ try{
+        var ld=null; if(WRITE_TOUCH[fn]){ try{ ld=logDescribe_(fn, args); }catch(e){} }
+        var r=mockHandler(fn, args);
+        if(ld){ try{ logWrite_(fn, args, r, ld); }catch(e){} }
+        if(fn==='setConfig'){ try{ logConfig_(args[0]); }catch(e){} }
+        resolve(r);
+      }catch(e){ reject(e); } }, 40);
     });
   }
 };
@@ -818,6 +833,8 @@ function mockHandler(fn, a){
     list.forEach(function(s){ if(s.status && s.status!=='none') DB.attendance.push({matchId:mid5, playerId:s.playerId, status:s.status, checkedAt:s.checkedAt||null}); });
     return mockHandler('getRecordBundle',[]);
   }
+  // --- 백업 복구 ---
+  if(fn==='restoreBackup'){ return restoreApply_(a[0]||{}, !!a[1], AC); }
   // --- config ---
   if(fn==='getConfig'){ var c=JSON.parse(JSON.stringify(DB.config)); delete c.staffPw; delete c.memberPw; return c; }
   if(fn==='setConfig'){ DB.config[a[0]]=a[1]; return JSON.parse(JSON.stringify(DB.config)); }
@@ -1138,6 +1155,10 @@ function viewTeam(){
     + cfgRow('지각 점수', scoreLabel_(lateScore), 'editLateScore')
     + cfgRow('불참 점수', scoreLabel_(absentScore), 'editAbsentScore')
     + '<div class="list-row" style="cursor:pointer;" onclick="exportBackup_()"><span class="nm" style="flex:1;">데이터 백업 (엑셀)</span><span class="val" style="color:var(--red);font-size:14px;">📥 내보내기 ›</span></div>'
+    + '<div class="list-row" style="cursor:pointer;" onclick="importBackup_()"><span class="nm" style="flex:1;">데이터 복구 (백업 엑셀 업로드)</span><span class="val" style="color:var(--red);font-size:14px;">📤 가져오기 ›</span></div>'
+    + '<div class="list-row" style="cursor:pointer;" onclick="openLogView_()"><span class="nm" style="flex:1;">활동 로그</span><span class="val" style="color:var(--red);font-size:14px;">🗒️ 보기 ›</span></div>'
+    + cfgRow('내 이름 (로그 표시)', esc(whoName_()||'미설정'), 'editWho_')
+    + '<input type="file" id="bk_file" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none;" onchange="importBackupPick_(this)">'
     + '</div>'
     + '<p style="font-size:11.5px;color:var(--steel-soft);margin:8px 2px 0;">출석·지각·불참 점수는 기록 탭 출석 순위 집계에 반영돼요. (미참석 0점)</p>'
     + '</div>';
@@ -3718,6 +3739,7 @@ function exportBackup_(){
       var blob=new Blob([out], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
       var name='FCJEMIRO_backup_'+attToday_()+'.xlsx';
       var file=null; try{ file=new File([blob], name, {type:blob.type}); }catch(e){}
+      try{ logEvent_('etc','백업 내보내기', name); }catch(e){}
       if(file && navigator.canShare && navigator.share && navigator.canShare({files:[file]})){
         navigator.share({files:[file]}).catch(function(e){ if(!e || e.name!=='AbortError') dlBlob_(blob, name); });
       } else { dlBlob_(blob, name); }
@@ -3725,6 +3747,433 @@ function exportBackup_(){
   });
 }
 
+/* ================= 백업 엑셀 복구 (내보내기 양식 그대로 업로드) =================
+ * - 시트: 팀원 · 경기 · 득점·도움 · 출석 · 스쿼드 (헤더 이름으로 열을 찾으므로 열 순서는 자유)
+ * - 병합 방식: 파일에 있는 항목을 현재 데이터에 '추가/수정'만 함 (파일에 없는 기존 데이터는 삭제하지 않음)
+ * - 1차 dry-run으로 변경 건수를 보여주고 확인 후 실제 반영 → 바뀐 문서만 Firestore에 씀 (무료 사용량 절약)
+ */
+function rpad2_(n){ return ('0'+n).slice(-2); }
+function restoreDate_(v){
+  if(v instanceof Date && !isNaN(v)) return v.getFullYear()+'-'+rpad2_(v.getMonth()+1)+'-'+rpad2_(v.getDate());
+  if(typeof v==='number' && window.XLSX && XLSX.SSF){ var d=XLSX.SSF.parse_date_code(v); if(d) return d.y+'-'+rpad2_(d.m)+'-'+rpad2_(d.d); }
+  var s=String(v==null?'':v).trim(); var m=s.match(/^(\d{4})[.\-\/년]\s*(\d{1,2})[.\-\/월]\s*(\d{1,2})/);
+  if(m) return m[1]+'-'+rpad2_(m[2])+'-'+rpad2_(m[3]);
+  return s;
+}
+function restoreTime_(v){
+  if(v instanceof Date && !isNaN(v)) return rpad2_(v.getHours())+':'+rpad2_(v.getMinutes());
+  if(typeof v==='number' && window.XLSX && XLSX.SSF){ var d=XLSX.SSF.parse_date_code(v); if(d) return rpad2_(d.H)+':'+rpad2_(d.M); }
+  var s=String(v==null?'':v).trim(); var m=s.match(/^(\d{1,2}):(\d{2})/);
+  if(m) return rpad2_(m[1])+':'+m[2];
+  return s;
+}
+function restoreStr_(v){ return v==null ? '' : String(v).trim(); }
+function restoreInt_(v){ var s=restoreStr_(v); if(s==='' || s==='미정') return ''; var n=parseInt(s,10); return isNaN(n)?'':n; }
+function restoreYN_(v){ var s=restoreStr_(v).toUpperCase(); if(s==='') return true; return !(s==='N'||s==='NO'||s==='X'||s==='아니오'||s==='FALSE'||s==='0'); }
+/* 시트 → 헤더 키 객체 배열 */
+function restoreSheet_(wb, key){
+  var nm=(wb.SheetNames||[]).filter(function(n){ return String(n).replace(/\s/g,'').indexOf(key)>-1; })[0];
+  if(!nm) return null;
+  var rows=XLSX.utils.sheet_to_json(wb.Sheets[nm], {header:1, raw:true, defval:''});
+  var hdr=(rows[0]||[]).map(function(h){ return String(h==null?'':h).replace(/\s/g,''); });
+  return rows.slice(1).filter(function(r){ return (r||[]).some(function(c){ return c!=='' && c!=null; }); }).map(function(r){
+    var o={}; hdr.forEach(function(h,i){ if(h) o[h]=r[i]; }); return o;
+  });
+}
+function rg_(o, keys){ for(var i=0;i<keys.length;i++){ if(o[keys[i]]!==undefined) return o[keys[i]]; } return ''; }
+function restoreParseWb_(wb){
+  var out={any:false};
+  var STATUS_CODE={}; PSTATUS.forEach(function(st){ STATUS_CODE[st[1]]=st[0]; });
+  var t=restoreSheet_(wb,'팀원');
+  if(t){ out.any=true; out.players=t.map(function(o){
+    var stL=restoreStr_(rg_(o,['상태']));
+    return { num:restoreInt_(rg_(o,['등번호','번호'])), name:restoreStr_(rg_(o,['이름','선수'])),
+      positions:restoreStr_(rg_(o,['포지션'])).split(/[\/,·\s]+/).filter(Boolean),
+      birth:(function(v){ return v===''||v==null ? '' : restoreDate_(v); })(rg_(o,['생일','생년월일'])),
+      height:restoreInt_(rg_(o,['키(cm)','키'])), weight:restoreInt_(rg_(o,['몸무게(kg)','몸무게'])),
+      region:restoreStr_(rg_(o,['지역'])), size:restoreStr_(rg_(o,['유니폼','사이즈','유니폼사이즈'])).toUpperCase(),
+      status:(STATUS_CODE[stL]!==undefined ? STATUS_CODE[stL] : '') };
+  }); }
+  var m=restoreSheet_(wb,'경기');
+  if(m){ out.any=true; out.matches=m.map(function(o){
+    return { date:restoreDate_(rg_(o,['날짜'])), time:restoreTime_(rg_(o,['시간'])), opponent:restoreStr_(rg_(o,['상대팀','상대'])),
+      venue:restoreStr_(rg_(o,['경기장','장소'])), our:restoreInt_(rg_(o,['우리점수','우리'])), opp:restoreInt_(rg_(o,['상대점수'])),
+      recMatch:restoreYN_(rg_(o,['경기기록'])), recAtt:restoreYN_(rg_(o,['출석기록'])), recGoal:restoreYN_(rg_(o,['득점기록'])), recAssist:restoreYN_(rg_(o,['어시기록','어시스트기록'])) };
+  }); }
+  var s=restoreSheet_(wb,'득점');
+  if(s){ out.any=true; out.stats=s.map(function(o){
+    return { date:restoreDate_(rg_(o,['날짜'])), opponent:restoreStr_(rg_(o,['상대팀','상대'])), player:restoreStr_(rg_(o,['선수','이름'])),
+      goals:restoreInt_(rg_(o,['골','득점']))||0, assists:restoreInt_(rg_(o,['도움','어시','어시스트']))||0 };
+  }); }
+  var a=restoreSheet_(wb,'출석');
+  if(a){ out.any=true; out.att=a.map(function(o){
+    return { date:restoreDate_(rg_(o,['날짜'])), opponent:restoreStr_(rg_(o,['상대팀','상대'])), player:restoreStr_(rg_(o,['선수','이름'])), status:restoreStr_(rg_(o,['출석','상태'])) };
+  }); }
+  var q=restoreSheet_(wb,'스쿼드');
+  if(q){ out.any=true; out.squad=q.map(function(o){
+    return { squad:restoreStr_(rg_(o,['스쿼드','스쿼드명'])), num:restoreStr_(rg_(o,['등번호','번호'])), player:restoreStr_(rg_(o,['선수','이름'])),
+      position:restoreStr_(rg_(o,['포지션'])), memo:restoreStr_(rg_(o,['메모'])) };
+  }); }
+  return out;
+}
+/* 메모리 DB에 병합 (dry=true면 건수만 계산) — mockHandler('restoreBackup')에서 호출 */
+function restoreApply_(data, dry, AC){
+  var sum={pAdd:0,pUpd:0,mAdd:0,mUpd:0,sAdd:0,sUpd:0,aAdd:0,aUpd:0,qAdd:0,qmAdd:0,qmUpd:0,nAdd:0,skip:[]};
+  function inClub(x){ return !AC || x.clubId===AC; }
+  var now=Date.now(), seq=0; function nid(pre){ return pre+now+'_'+(seq++); }
+  var club=(DB.clubs||[]).filter(function(c){ return c.id===AC; })[0]||{};
+  var ATT_CODE={'출석':'present','지각':'late','불참':'absent','미참석':'excused',present:'present',late:'late',absent:'absent',excused:'excused'};
+  function nv(v){ return (v==null||v==='') ? '' : v; }
+  function same(a,b){ return JSON.stringify(nv(a))===JSON.stringify(nv(b)); }
+  // ── 팀원 ──
+  var byName={};
+  DB.players.filter(inClub).forEach(function(p){ (byName[p.name]=byName[p.name]||[]).push(p); });
+  function findP(name, num){
+    var arr=byName[name]||[]; if(!arr.length) return null;
+    if(arr.length>1 && num!==''){ var e=arr.filter(function(p){ return String(p.num)===String(num); })[0]; if(e) return e; }
+    return arr[0];
+  }
+  (data.players||[]).forEach(function(r){
+    if(!r.name){ sum.skip.push('팀원: 이름이 비어 있는 행'); return; }
+    var patch={num:r.num, positions:r.positions, birth:r.birth, height:r.height, weight:r.weight, region:r.region, size:(SIZES.indexOf(r.size)>-1?r.size:''), status:r.status};
+    var ex=findP(r.name, r.num);
+    if(ex){
+      var ch=Object.keys(patch).some(function(k){ return k==='positions' ? (ex.positions||[]).join('/')!==patch.positions.join('/') : !same(ex[k], patch[k]); });
+      if(ch){ sum.pUpd++; if(!dry) Object.assign(ex, patch); }
+    } else {
+      sum.pAdd++;
+      var np=Object.assign({id:nid('m'), clubId:AC, name:r.name, role:'팀원', photo:''}, patch);
+      if(!dry) DB.players.push(np);
+      (byName[r.name]=byName[r.name]||[]).push(np);
+    }
+  });
+  function pidByName(name){
+    var nmz=String(name||'').replace(/\(탈퇴\)\s*$/,'').trim(); if(!nmz) return null;
+    var p=findP(nmz,''); if(p) return p.id;
+    var ex=club.exPlayers||{}; for(var k in ex){ if(ex[k] && ex[k].name===nmz) return k; }
+    return null;
+  }
+  // ── 경기 ──
+  var mByKey={};
+  function mKey(d,o){ return String(d)+'|'+String(o||'').trim(); }
+  DB.matches.filter(inClub).forEach(function(m){ var k=mKey(m.date,m.opponent); (mByKey[k]=mByKey[k]||[]).push(m); });
+  function findM(d,o,t){
+    var arr=mByKey[mKey(d,o)]||[]; if(!arr.length) return null;
+    if(arr.length>1 && t){ var e=arr.filter(function(m){ return cleanTime(m.time)===t; })[0]; if(e) return e; }
+    return arr[0];
+  }
+  (data.matches||[]).forEach(function(r){
+    if(!r.date || !r.opponent){ sum.skip.push('경기: 날짜/상대팀 없음'); return; }
+    var patch={time:r.time, venue:r.venue, recMatch:r.recMatch, recAtt:r.recAtt, recGoal:r.recGoal, recAssist:r.recAssist};
+    if(r.recMatch && r.our!=='' && r.opp!==''){ patch.ourScore=r.our; patch.oppScore=r.opp; patch.result=(r.our>r.opp?'W':(r.our<r.opp?'L':'D')); }
+    var ex=findM(r.date, r.opponent, r.time);
+    if(ex){
+      var ch=Object.keys(patch).some(function(k){ return k==='time' ? cleanTime(ex.time)!==patch.time : !same(ex[k], patch[k]); });
+      if(ch){ sum.mUpd++; if(!dry) Object.assign(ex, patch); }
+    } else {
+      sum.mAdd++;
+      var nm=Object.assign({id:nid('g'), clubId:AC, date:r.date, opponent:r.opponent, createdAt:new Date().toISOString()}, patch);
+      if(!dry) DB.matches.push(nm);
+      var k=mKey(r.date,r.opponent); (mByKey[k]=mByKey[k]||[]).push(nm);
+    }
+  });
+  // ── 득점·도움 ──
+  (data.stats||[]).forEach(function(r){
+    var m=findM(r.date, r.opponent, ''); if(!m){ sum.skip.push('득점·도움: 경기 없음 '+r.date+' '+r.opponent); return; }
+    var pid=pidByName(r.player); if(!pid){ sum.skip.push('득점·도움: 선수 없음 '+r.player); return; }
+    var g=r.goals||0, a=r.assists||0;
+    var ex=DB.stats.filter(function(x){ return x.matchId===m.id && x.playerId===pid; })[0];
+    if(ex){ if((ex.goals||0)!==g || (ex.assists||0)!==a){ sum.sUpd++; if(!dry){ ex.goals=g; ex.assists=a; } } }
+    else if(g>0||a>0){ sum.sAdd++; if(!dry) DB.stats.push({matchId:m.id, playerId:pid, goals:g, assists:a}); }
+  });
+  // ── 출석 ──
+  (data.att||[]).forEach(function(r){
+    var m=findM(r.date, r.opponent, ''); if(!m){ sum.skip.push('출석: 경기 없음 '+r.date+' '+r.opponent); return; }
+    var pid=pidByName(r.player); if(!pid){ sum.skip.push('출석: 선수 없음 '+r.player); return; }
+    var st=ATT_CODE[r.status]; if(!st){ if(r.status) sum.skip.push('출석: 알 수 없는 상태 "'+r.status+'"'); return; }
+    var ex=DB.attendance.filter(function(x){ return x.matchId===m.id && x.playerId===pid; })[0];
+    if(ex){ if(ex.status!==st){ sum.aUpd++; if(!dry) ex.status=st; } }
+    else { sum.aAdd++; if(!dry) DB.attendance.push({matchId:m.id, playerId:pid, status:st, checkedAt:null}); }
+  });
+  // ── 스쿼드 (명단 + 메모) ──
+  var sqByName={}; DB.squads.filter(inClub).forEach(function(s){ sqByName[s.name]=s; });
+  var dryMembers=[];   // dry-run 중 추가된 명단(중복 집계 방지)
+  function memberOf(sid, pid){ return DB.members.filter(function(x){ return x.squadId===sid && x.playerId===pid; })[0] || dryMembers.filter(function(x){ return x.squadId===sid && x.playerId===pid; })[0]; }
+  (data.squad||[]).forEach(function(r){
+    if(!r.squad){ sum.skip.push('스쿼드: 이름 없는 행'); return; }
+    var sq=sqByName[r.squad];
+    if(!sq){ sq={id:nid('s'), clubId:AC, name:r.squad, createdAt:new Date().toISOString()}; sqByName[r.squad]=sq; sum.qAdd++; if(!dry) DB.squads.push(sq); }
+    if(r.player){
+      var pos=(!r.position || r.position==='미편성') ? '' : r.position;
+      if(/^G\d+$/i.test(r.num)){   // 게스트
+        var exg=DB.members.filter(function(x){ return x.squadId===sq.id && x.guest && x.gname===r.player; })[0];
+        if(exg){ if((exg.position||'')!==pos){ sum.qmUpd++; if(!dry){ exg.position=pos; } } }
+        else { sum.qmAdd++; if(!dry){ var gp=pos||'FW', gn=DB.members.filter(function(x){ return x.squadId===sq.id && x.position===gp; }).length, gd=posDefaultXY(gp,gn); DB.members.push({squadId:sq.id, playerId:'guest_'+now+'_'+(seq++), guest:true, gname:r.player, position:gp, x:gd.x, y:gd.y}); } }
+        return;
+      }
+      var pid=pidByName(r.player); if(!pid){ sum.skip.push('스쿼드 '+r.squad+': 선수 없음 '+r.player); return; }
+      var exm=memberOf(sq.id, pid);
+      if(exm){
+        if((exm.position||'')!==pos){ sum.qmUpd++; if(!dry){ exm.position=pos; if(!pos){ exm.x=null; exm.y=null; } else if(exm.x==null||exm.y==null){ var n1=DB.members.filter(function(x){ return x.squadId===sq.id && x.position===pos; }).length, d1=posDefaultXY(pos,n1); exm.x=d1.x; exm.y=d1.y; } } }
+      } else {
+        sum.qmAdd++;
+        var n2=DB.members.filter(function(x){ return x.squadId===sq.id && x.position===pos; }).length;
+        var d2=pos ? posDefaultXY(pos,n2) : {x:null,y:null};
+        var mem={squadId:sq.id, playerId:pid, position:pos, x:d2.x, y:d2.y};
+        if(!dry) DB.members.push(mem); else dryMembers.push(mem);
+      }
+    } else if(r.memo){
+      var mm=r.memo.match(/^\[([^\]]*)\]\s*([\s\S]*)$/); var scope=mm?mm[1]:'전체', body=(mm?mm[2]:r.memo).trim();
+      if(!body) return;
+      var exn=DB.notes.filter(function(x){ return x.squadId===sq.id && String(x.scope||'전체')===scope && String(x.body||'').trim()===body; })[0];
+      if(!exn){ sum.nAdd++; if(!dry) DB.notes.push({id:nid('n'), squadId:sq.id, phase:'req', scope:scope, body:body, author:'', authorId:''}); }
+    }
+  });
+  sum.total=sum.pAdd+sum.pUpd+sum.mAdd+sum.mUpd+sum.sAdd+sum.sUpd+sum.aAdd+sum.aUpd+sum.qAdd+sum.qmAdd+sum.qmUpd+sum.nAdd;
+  return {summary:sum, players:mockHandler('getPlayers',[]), matches:mockHandler('getMatches',[]), squads:mockHandler('getSquads',[])};
+}
+/* ── UI: 파일 선택 → 비교(dry-run) → 확인 → 반영 ── */
+function importBackup_(){ var inp=document.getElementById('bk_file'); if(inp){ try{ inp.value=''; }catch(e){} inp.click(); } }
+function importBackupPick_(input){
+  var f=input.files&&input.files[0]; if(!f) return;
+  toast('백업 파일 읽는 중...');
+  loadXLSX_(function(ok){
+    if(!ok){ toast('엑셀 모듈을 불러오지 못했어요 (네트워크 확인)'); return; }
+    var rd=new FileReader();
+    rd.onload=function(e){
+      var wb, data;
+      try{ wb=XLSX.read(new Uint8Array(e.target.result), {type:'array', cellDates:true}); data=restoreParseWb_(wb); }
+      catch(err){ toast('엑셀 파일을 읽지 못했어요'); return; }
+      if(!data.any){ toast('백업 양식이 아닙니다 (팀원·경기·득점·도움·출석·스쿼드 시트 필요)'); return; }
+      toast('현재 데이터와 비교 중... (전체 기록 조회)');
+      API.run('restoreBackup', data, true).then(function(res){
+        var s=res.summary;
+        if(!s.total){ appConfirm_('복구할 변경 사항이 없습니다.\n현재 데이터가 백업 파일과 같습니다.'+restoreSkipTxt_(s), null); return; }
+        appConfirm_(restoreSummaryTxt_(s, f.name), function(){ runRestore_(data); });
+      }).catch(function(){ toast('비교에 실패했습니다 · 새로고침 후 다시 시도'); });
+    };
+    rd.readAsArrayBuffer(f);
+  });
+}
+function restoreSkipTxt_(s){
+  if(!s.skip.length) return '';
+  var seen={}, uniq=s.skip.filter(function(x){ if(seen[x]) return false; seen[x]=1; return true; });
+  return '\n\n건너뜀 '+s.skip.length+'건:\n'+uniq.slice(0,6).join('\n')+(uniq.length>6?'\n… 외 '+(uniq.length-6)+'건':'');
+}
+function restoreSummaryTxt_(s, fname){
+  return '📂 '+fname+'\n\n'
+    + '팀원  추가 '+s.pAdd+' · 수정 '+s.pUpd+'\n'
+    + '경기  추가 '+s.mAdd+' · 수정 '+s.mUpd+'\n'
+    + '득점·도움  추가 '+s.sAdd+' · 수정 '+s.sUpd+'\n'
+    + '출석  추가 '+s.aAdd+' · 수정 '+s.aUpd+'\n'
+    + '스쿼드  추가 '+s.qAdd+' · 명단 추가 '+s.qmAdd+' · 수정 '+s.qmUpd+' · 메모 추가 '+s.nAdd
+    + restoreSkipTxt_(s)
+    + '\n\n백업에 없는 기존 데이터는 삭제되지 않습니다.\n위 내용을 복구할까요?';
+}
+function runRestore_(data){
+  toast('복구 중...');
+  API.run('restoreBackup', data, false).then(function(res){
+    var s=res.summary;
+    if(res.players) state.players=res.players;
+    if(res.matches){ state.matches=res.matches; state.matchesLoaded=true; }
+    if(res.squads) state.squadList=res.squads;
+    render();
+    toast('복구 완료 · '+s.total+'건 반영');
+  }).catch(function(){ toast('복구 실패 · 새로고침 후 다시 시도'); });
+}
+
+/* ================= 활동 로그 (입력·수정·삭제·접속 이력) =================
+ * - 저장: Firestore logs/recent 문서 1개에 items 배열로 누적 (arrayUnion) → 기록 = 쓰기 1회, 조회 = 읽기 1회
+ * - 보관: 최근 14일만. 로그 화면을 열 때 14일 지난 항목이 있으면 트랜잭션으로 잘라내어 저장 (그때만 쓰기 1회 추가)
+ * - 사용자: PIN 통과 후 처음 한 번 이름 입력 → 기기(localStorage)에 저장, 로그마다 '이름 · 기기' 표시
+ * - 접속: 기기당 하루 1회만 기록
+ * - 항목: {t:시각, w:이름, v:기기, u:익명uid앞6자, k:종류(in/add/edit/del/etc), a:행위, d:상세}
+ */
+var WHO_KEY='kt_who', LOG_LAST_KEY='kt_log_access';
+var LOG_DOC='recent', LOG_KEEP_DAYS=14, LOG_MAX=1500;
+var LOG_ITEMS=[], LOG_LOADED=false;   // 서버 조회분 + 이번 세션 기록분 / 서버 조회 여부
+var _logPending=[], _logT=null;
+function whoName_(){ try{ return localStorage.getItem(WHO_KEY)||''; }catch(e){ return ''; } }
+function devStr_(){
+  var ua=navigator.userAgent||'';
+  var os=/iPhone|iPad|iPod/.test(ua)?'iPhone':/Android/.test(ua)?'Android':/Windows/.test(ua)?'Windows':/Mac/.test(ua)?'Mac':'기타';
+  var br=/KAKAOTALK/i.test(ua)?'카카오톡':/SamsungBrowser/.test(ua)?'삼성브라우저':/Edg\//.test(ua)?'Edge':/CriOS|Chrome/.test(ua)?'Chrome':/Safari/.test(ua)?'Safari':'브라우저';
+  var pwa=false; try{ pwa=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||!!navigator.standalone; }catch(e){}
+  return os+' '+br+(pwa?' 앱':'');
+}
+function logUid_(){ try{ var u=firebase.auth().currentUser; return u?String(u.uid).slice(0,6):''; }catch(e){ return ''; } }
+function logCutoff_(){ return new Date(Date.now()-LOG_KEEP_DAYS*24*60*60*1000).toISOString(); }
+function logTrim_(items){ var c=logCutoff_(); var a=items.filter(function(e){ return e && e.t && e.t>=c; }); a.sort(function(x,y){ return String(x.t).localeCompare(String(y.t)); }); if(a.length>LOG_MAX) a=a.slice(a.length-LOG_MAX); return a; }
+/* ── 이름 등록 화면 (PIN 통과 직후 · 이미 통과한 기기는 다음 접속 때 한 번) ── */
+function whoGate_(done){ if(whoName_()){ done(); return; } renderWho_(done); }
+function renderWho_(done){
+  window._whoDone=done;
+  var el=document.getElementById('pinScreen'); if(!el){ done(); return; }
+  el.innerHTML='<div class="auth-inner">'
+    + '<img class="auth-logo" src="'+APP_LOGO+'" alt="'+esc(APP_NAME)+'">'
+    + '<div class="auth-title">FC JEMIRO</div>'
+    + '<div class="auth-sub">'+APP_SUB+'</div>'
+    + '<div class="auth-form">'
+    +   '<div class="auth-team-name">👤 이름 등록<br><span style="font-size:12px;font-weight:400;color:rgba(255,255,255,.75);">활동 로그에 표시할 이름이에요. 이 기기에서 한 번만 입력하면 됩니다.</span></div>'
+    +   '<input id="who_1" type="text" maxlength="12" placeholder="이름 (예: 전형만)" autocomplete="off" onkeydown="if(event.key===\'Enter\')whoSubmit_()">'
+    +   '<button class="auth-btn" onclick="whoSubmit_()">시작하기</button>'
+    + '</div></div>';
+  el.style.display='flex';
+  var tb=document.getElementById('tabbar'); if(tb) tb.style.display='none';
+  var fb=document.getElementById('fab'); if(fb) fb.style.display='none';
+  setTimeout(function(){ var i=document.getElementById('who_1'); if(i) i.focus(); }, 80);
+}
+function whoSubmit_(){
+  var v=(gv_('who_1')||'').trim();
+  if(!v){ toast('이름을 입력하세요'); return; }
+  try{ localStorage.setItem(WHO_KEY, v); }catch(e){}
+  pinHide_();
+  var d=window._whoDone; window._whoDone=null; if(d) d();
+}
+/* 팀 관리에서 이름 변경 */
+function editWho_(){
+  var cur=whoName_();
+  showSheet('<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>내 이름 (로그 표시)</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<p style="font-size:13px;color:var(--steel);margin:0 0 14px;line-height:1.55;">이 기기에서 한 작업은 활동 로그에 이 이름으로 남아요. 기기를 바꾸면 다시 입력하게 됩니다.</p>'
+   +   '<div class="field"><label>이름</label><input id="who_edit" type="text" maxlength="12" value="'+esc(cur)+'" placeholder="이름"></div>'
+   +   '<button class="btn-primary" onclick="saveWho_()">저장</button>'
+   + '</div>');
+}
+function saveWho_(){
+  var v=(gv_('who_edit')||'').trim(); if(!v){ toast('이름을 입력하세요'); return; }
+  var old=whoName_();
+  try{ localStorage.setItem(WHO_KEY, v); }catch(e){}
+  closeSheet(); render(); toast('저장되었습니다');
+  if(old && old!==v) logEvent_('etc','이름 변경', old+' → '+v);
+}
+/* ── 기록 ── */
+function logEvent_(kind, act, detail){
+  var e={t:new Date().toISOString(), w:whoName_()||'(이름 없음)', v:devStr_(), u:logUid_(), k:kind||'etc', a:act||'', d:String(detail==null?'':detail).slice(0,80)};
+  LOG_ITEMS.push(e);
+  _logPending.push(e);
+  clearTimeout(_logT); _logT=setTimeout(logFlush_, 1500);   // 연속 작업은 한 번에 씀
+  return e;
+}
+function logFlush_(){
+  var items=_logPending; _logPending=[];
+  if(!items.length || !(window.db && FS.enabled)) return;
+  try{
+    var FV=firebase.firestore.FieldValue;
+    db.collection('logs').doc(LOG_DOC).set({id:LOG_DOC, items:FV.arrayUnion.apply(FV, items), updatedAt:new Date().toISOString()}, {merge:true})
+      .catch(function(e){ try{ console.warn('log write', e); }catch(_){} });
+  }catch(e){}
+}
+/* 스쿼드 편집처럼 잦은 작업: 같은 행위·대상이 10분 내 이미 있으면 생략 */
+function logCoalesced_(kind, act, detail){
+  var arr=LOG_ITEMS;
+  for(var i=arr.length-1;i>=0;i--){
+    var e=arr[i]; if(e.a===act && e.d===detail && e.w===(whoName_()||'(이름 없음)')){ if(Date.now()-new Date(e.t).getTime()<10*60*1000) return null; break; }
+  }
+  return logEvent_(kind, act, detail);
+}
+/* 접속: 기기당 하루 1회 */
+function logAccess_(){
+  var today=attToday_();
+  try{ if(localStorage.getItem(LOG_LAST_KEY)===today) return; localStorage.setItem(LOG_LAST_KEY, today); }catch(e){}
+  logEvent_('in','접속','');
+}
+/* 쓰기 작업 → 로그 문구 (mockHandler 실행 '전'에 호출: 삭제 대상 이름 조회 가능) */
+function logDescribe_(fn, a){
+  a=a||[];
+  function pN(id){ var p=(DB.players||[]).filter(function(x){return x.id===id;})[0]; return p?p.name:'(선수)'; }
+  function mD(id){ var m=(DB.matches||[]).filter(function(x){return x.id===id;})[0]; return m?(m.date+' vs '+(m.opponent||'')):'(경기)'; }
+  function sN(id){ var s=(DB.squads||[]).filter(function(x){return x.id===id;})[0]; return s?s.name:'(스쿼드)'; }
+  var SQ=['setSquadMember','setSquadPos','setSquadMemberPos','removeSquadMember','loadAllToSquad','addGuest'];
+  switch(fn){
+    case 'addPlayer': return ['add','팀원 등록', a[0]&&a[0].name];
+    case 'updatePlayer': { var ex=(DB.players||[]).filter(function(x){return x.id===(a[0]||{}).id;})[0]||{}; var ph=(ex.photo||'')!==((a[0]||{}).photo||''); return ['edit','팀원 수정', (a[0]&&a[0].name)+(ph?' (사진 변경)':'')]; }
+    case 'deletePlayer': return ['del','팀원 삭제', pN(a[0])];
+    case 'addMatch': return ['add','경기 등록', a[0]&&(a[0].date+' vs '+(a[0].opponent||''))];
+    case 'updateMatch': return ['edit','경기 수정', a[0]&&(a[0].date+' vs '+(a[0].opponent||''))];
+    case 'deleteMatch': return ['del','경기 삭제', mD(a[0])];
+    case 'recordMatchResult': return ['edit','경기 결과 입력', mD(a[0])+' '+a[1]+':'+a[2]];
+    case 'setMatchStats': return ['edit','득점·도움 입력', mD(a[0])];
+    case 'setMatchAttendance': return ['edit','출석 입력', mD(a[0])];
+    case 'createSquad': return ['add','스쿼드 생성', a[0]||'새 스쿼드'];
+    case 'deleteSquad': return ['del','스쿼드 삭제', sN(a[0])];
+    case 'renameSquad': return ['edit','스쿼드 이름 변경', sN(a[0])+' → '+a[1]];
+    case 'addNote': return ['add','메모 추가', sN(a[0])];
+    case 'deleteNote': { var n=(DB.notes||[]).filter(function(x){return x.id===a[0];})[0]; return ['del','메모 삭제', n?sN(n.squadId):'']; }
+    case 'updateClub': return ['edit','팀 정보 수정', ''];
+    case 'setExPlayer': return ['edit','탈퇴 선수 이름 지정', a[2]||''];
+    case 'restoreBackup': return a[1] ? null : ['etc','백업 복구', ''];
+    default:
+      if(SQ.indexOf(fn)>-1) return ['edit','스쿼드 편집', sN(a[0]), true];   // true = 10분 내 중복 생략
+      return null;
+  }
+}
+function logWrite_(fn, a, res, d){
+  d=d||logDescribe_(fn, a); if(!d) return;
+  if(fn==='restoreBackup'){ var s=res&&res.summary; if(!s||!s.total) return; d[2]=s.total+'건 반영'; }
+  if(d[3]) logCoalesced_(d[0], d[1], d[2]); else logEvent_(d[0], d[1], d[2]);
+}
+function logConfig_(key){
+  var L={adminPinHash:'PIN 변경', presentScore:'출석 점수', lateScore:'지각 점수', absentScore:'불참 점수'};
+  logEvent_('edit','설정 변경', L[key]||key);
+}
+/* ── 조회 화면 (최근 14일) ── */
+var _logView={kind:'all', loading:false};
+function openLogView_(){ _logView.kind='all'; renderLogView_(); logLoad_(); }
+function logLoad_(force){
+  if(LOG_LOADED && !force){ renderLogView_(); return; }
+  if(!(window.db && FS.enabled)){ LOG_LOADED=true; LOG_ITEMS=logTrim_(LOG_ITEMS); renderLogView_(); return; }
+  _logView.loading=true; renderLogView_();
+  var ref=db.collection('logs').doc(LOG_DOC);
+  ref.get().then(function(doc){
+    kjRead_('logs','최근 로그',1);
+    var server=((doc&&doc.exists&&doc.data()&&doc.data().items)||[]).slice();
+    var seen={}; server.forEach(function(e){ seen[e.t+'|'+e.a+'|'+e.u]=1; });
+    var merged=server.slice(); LOG_ITEMS.forEach(function(e){ if(!seen[e.t+'|'+e.a+'|'+e.u]) merged.push(e); });
+    LOG_ITEMS=logTrim_(merged); LOG_LOADED=true;
+    // 서버에 14일 지난 항목(또는 상한 초과)이 있으면 잘라서 저장 — 트랜잭션으로 다른 기기의 추가분 보존
+    var c=logCutoff_();
+    if(server.some(function(e){ return !e || !e.t || e.t<c; }) || server.length>LOG_MAX){
+      db.runTransaction(function(tx){
+        return tx.get(ref).then(function(d){
+          var cur=((d&&d.exists&&d.data()&&d.data().items)||[]);
+          tx.set(ref, {id:LOG_DOC, items:logTrim_(cur), updatedAt:new Date().toISOString(), trimmedAt:new Date().toISOString()}, {merge:true});
+        });
+      }).catch(function(e){ try{ console.warn('log trim', e); }catch(_){} });
+    }
+  }).catch(function(e){ toast('로그 조회 실패 · '+((e&&e.code)||'네트워크')); })
+    .then(function(){ _logView.loading=false; renderLogView_(); });
+}
+function logKind_(k){ _logView.kind=k; renderLogView_(); }
+function logRefresh_(){ logLoad_(true); }
+function renderLogView_(){
+  var items=LOG_ITEMS.slice().sort(function(a,b){ return String(b.t).localeCompare(String(a.t)); });
+  var k=_logView.kind; if(k!=='all') items=items.filter(function(e){ return e.k===k; });
+  var KL={in:'접속',add:'등록',edit:'수정',del:'삭제',etc:'기타'};
+  var chips=[['all','전체'],['in','접속'],['add','등록'],['edit','수정'],['del','삭제']].map(function(c){ return '<button class="chip'+(k===c[0]?' on':'')+'" onclick="logKind_(\''+c[0]+'\')">'+c[1]+'</button>'; }).join('');
+  var lastDay='';
+  var rows=items.map(function(e){
+    var d=new Date(e.t); if(isNaN(d)) return '';
+    var day=d.getFullYear()+'.'+('0'+(d.getMonth()+1)).slice(-2)+'.'+('0'+d.getDate()).slice(-2)+' ('+['일','월','화','수','목','금','토'][d.getDay()]+')';
+    var head=''; if(day!==lastDay){ lastDay=day; head='<div class="lg-day">'+day+'</div>'; }
+    var ts=('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
+    return head+'<div class="lg-row"><div class="lg-t">'+ts+'</div><div class="lg-b">'
+      + '<div class="lg-a '+esc(e.k)+'">'+esc(e.a)+(e.d?' <span class="lg-d">'+esc(e.d)+'</span>':'')+'</div>'
+      + '<div class="lg-w">'+esc(e.w||'')+' · '+esc(e.v||'')+(e.u?' · '+esc(e.u):'')+'</div>'
+      + '</div></div>';
+  }).join('');
+  var body = _logView.loading ? '<div class="empty" style="padding:30px 0;">불러오는 중...</div>'
+    : (rows || '<div class="empty" style="padding:30px 0;"><div class="ei">🗒️</div>최근 '+LOG_KEEP_DAYS+'일 내 '+(k==='all'?'':KL[k]+' ')+'기록이 없습니다.</div>');
+  showSheet('<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>활동 로그</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<div class="chips">'+chips+'</div>'
+   +   '<div class="eyebrow" style="display:flex;align-items:center;">최근 '+LOG_KEEP_DAYS+'일 · '+items.length+'건<span style="flex:1;"></span><button class="btn-mini" onclick="logRefresh_()">↻ 새로고침</button></div>'
+   +   '<p class="hint" style="margin:0 0 6px;">'+LOG_KEEP_DAYS+'일이 지난 기록은 자동으로 삭제됩니다 · 기기당 접속은 하루 1회만 기록</p>'
+   +   body
+   + '</div>');
+}
 /* ================= Firestore 데이터 계층 =================
  * 설계: 앱 시작 시 Firestore → 메모리(DB) 1회 로드.
  *   읽기 = 메모리에서 즉시(기존 mockHandler 재사용) → 매우 빠름
@@ -3808,7 +4257,8 @@ var WRITE_TOUCH = {
   loadAllToSquad:['members'], setSquadPos:['members'], addGuest:['members'],
   addNote:['notes'], deleteNote:['notes'],
   setMatchStats:['stats'], setMatchAttendance:['attendance'],
-  updateClub:['clubs'], setExPlayer:['clubs']
+  updateClub:['clubs'], setExPlayer:['clubs'],
+  restoreBackup:['players','matches','squads','members','notes','stats','attendance']
 };
 /* 쓰기 작업별 '경기 id' 인자 위치 — 해당 경기 상세만 선로딩하기 위함 */
 var MATCH_ARG = { setMatchStats:0, setMatchAttendance:0 };
@@ -3819,13 +4269,25 @@ function fsSnapshot(keys){
 }
 function fsSyncDiff(k, beforeMap){
   var m=FS_MAP[k]; var after={}; (DB[k]||[]).forEach(function(x){ after[m.id(x)]=x; });
-  var batch=db.batch(); var n=0;
+  var ops=[];
   Object.keys(after).forEach(function(idv){
     var cur=after[idv], prev=beforeMap[idv];
-    if(!prev || JSON.stringify(prev)!==JSON.stringify(cur)){ batch.set(db.collection(m.coll).doc(String(idv)), fsClean(cur), {merge:true}); n++; }
+    if(!prev || JSON.stringify(prev)!==JSON.stringify(cur)) ops.push(['set', idv, fsClean(cur)]);
   });
-  Object.keys(beforeMap).forEach(function(idv){ if(!after[idv]){ batch.delete(db.collection(m.coll).doc(String(idv))); n++; } });
-  if(n) batch.commit().catch(function(e){ if(window.console)console.warn('fs sync '+k, e); toast('저장 동기화 실패 · 새로고침'); });
+  Object.keys(beforeMap).forEach(function(idv){ if(!after[idv]) ops.push(['del', idv]); });
+  if(!ops.length) return;
+  // Firestore 배치 한도(500) 대비 400개씩 순차 커밋
+  var chain=Promise.resolve();
+  for(var i=0;i<ops.length;i+=400){
+    (function(part){
+      chain=chain.then(function(){
+        var batch=db.batch();
+        part.forEach(function(op){ var ref=db.collection(m.coll).doc(String(op[1])); if(op[0]==='set') batch.set(ref, op[2], {merge:true}); else batch.delete(ref); });
+        return batch.commit();
+      });
+    })(ops.slice(i, i+400));
+  }
+  chain.catch(function(e){ if(window.console)console.warn('fs sync '+k, e); toast('저장 동기화 실패 · 새로고침'); });
 }
 function fsSyncConfig(){
   var c={}; for(var k in DB.config){ if(k==='staffPw'||k==='memberPw') continue; c[k]=DB.config[k]; }
@@ -3998,6 +4460,13 @@ FS.run = function(fn, args){
     else if(fn==='getMatchReport'){ pre = fsLoadKidsForMatches_(cid, [args[0]]); }
     else if(fn==='getPlayerCareer'){ pre = fsLoadPlayerKids_(cid, args[0]); }
     else if(fn==='getSquadDetail'){ pre = fsLoadSquadKids(args[0]); }
+    else if(fn==='restoreBackup' && cid){
+      pre = fsLoadMatchKids(cid).then(function(){
+        var ch=Promise.resolve();
+        (DB.squads||[]).filter(function(sq){ return sq.clubId===cid; }).forEach(function(sq){ ch=ch.then(function(){ return fsLoadSquadKids(sq.id); }); });
+        return ch;
+      });
+    }
     else if(cid){ pre = fsLoadTeam(cid); var t=WRITE_TOUCH[fn]||[];
       if(t.indexOf('stats')>-1||t.indexOf('attendance')>-1){
         var mi = MATCH_ARG[fn];
@@ -4010,13 +4479,15 @@ FS.run = function(fn, args){
   });
 };
 FS._dispatch = function(fn, args){
-    if(fn==='setConfig'){ var rc=mockHandler(fn, args); fsSyncConfig(); ktCacheSave_(); return rc; }
+    if(fn==='setConfig'){ var rc=mockHandler(fn, args); fsSyncConfig(); ktCacheSave_(); try{ logConfig_(args[0]); }catch(e){} return rc; }
     var touched=WRITE_TOUCH[fn];
     if(touched){
       var before=fsSnapshot(touched);
+      var ld=null; try{ ld=logDescribe_(fn, args); }catch(e){}
       var res=mockHandler(fn, args);
       touched.forEach(function(k){ fsSyncDiff(k, before[k]); });
       ktCacheSave_();
+      if(ld){ try{ logWrite_(fn, args, res, ld); }catch(e){} }
       return res;
     }
     return mockHandler(fn, args);   // 읽기 (메모리 즉시)
@@ -4182,7 +4653,7 @@ function fitPhone_(){
       document.getElementById('content').innerHTML='<div class="empty"><div class="ei">🛡️</div>팀 데이터를 찾을 수 없습니다.<br>네트워크 상태를 확인한 뒤 새로고침해 주세요.</div>';
       return;
     }
-    pinGate_(function(){ enterApp_(club.id); });
+    pinGate_(function(){ whoGate_(function(){ enterApp_(club.id); }); });
   }).catch(function(){ hideSplash_(); toast('데이터를 불러오지 못했습니다'); });
 })();
 
@@ -4199,6 +4670,7 @@ function enterApp_(clubId){
   state.screen='team'; state._backStack=[];
   var tb=document.getElementById('tabbar'); if(tb) tb.style.display='flex';
   loadClubData_();
+  try{ logAccess_(); }catch(e){}
 }
 function loadClubData_(){
   state.loading=true; render();
