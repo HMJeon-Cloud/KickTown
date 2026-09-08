@@ -524,6 +524,18 @@
   .pv-cap{color:#fff;font-size:15px;font-weight:700;}
   .pv-sub{color:rgba(255,255,255,.6);font-size:11.5px;margin-top:-8px;}
   .pv-x{position:absolute;top:16px;right:16px;width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.12);color:#fff;font-size:18px;cursor:pointer;}
+  /* 프로필 사진 영역 조절(이동·확대) */
+  .crop-wrap{position:absolute;inset:0;z-index:75;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;background:rgba(8,7,11,.96);padding:24px 20px;}
+  .crop-wrap.open{display:flex;}
+  .crop-title{color:#fff;font-size:16px;font-weight:800;}
+  .crop-sub{color:rgba(255,255,255,.6);font-size:12px;margin-top:-8px;text-align:center;line-height:1.5;}
+  .crop-box{width:min(300px,78vw);height:min(300px,78vw);border-radius:18px;overflow:hidden;background:#111;box-shadow:0 20px 60px rgba(0,0,0,.6);}
+  .crop-box canvas{width:100%;height:100%;display:block;touch-action:none;cursor:grab;-webkit-user-select:none;user-select:none;}
+  .crop-zoom{display:flex;align-items:center;gap:10px;width:min(300px,78vw);color:#fff;font-size:18px;font-weight:700;}
+  .crop-zoom input[type=range]{flex:1;accent-color:var(--gold);height:28px;}
+  .crop-btns{display:flex;gap:10px;width:min(300px,78vw);}
+  .crop-btns .btn-ghost{flex:1;margin:0;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.3);color:#fff;}
+  .crop-btns .btn-primary{flex:1.4;margin:0;}
   .pl-avatar.tap{cursor:zoom-in;}
   .toast{
     position:absolute;left:50%;bottom:110px;transform:translateX(-50%) translateY(20px);
@@ -587,6 +599,15 @@
     <img id="pvImg" alt="">
     <div class="pv-cap" id="pvCap"></div>
     <div class="pv-sub" id="pvSub"></div>
+  </div>
+
+  <!-- 프로필 사진 영역 조절 -->
+  <div class="crop-wrap" id="cropWrap">
+    <div class="crop-title">프로필 사진 영역 조절</div>
+    <div class="crop-sub">드래그로 위치 이동 · 두 손가락(또는 슬라이더)으로 확대·축소<br>원 안에 보이는 부분이 프로필 사진이 됩니다</div>
+    <div class="crop-box"><canvas id="cropCv" width="600" height="600"></canvas></div>
+    <div class="crop-zoom"><span>－</span><input type="range" id="cropZoom" min="100" max="400" value="100" oninput="cropSlider_(this.value)"><span>＋</span></div>
+    <div class="crop-btns"><button class="btn-ghost" onclick="cropCancel_()">취소</button><button class="btn-primary" onclick="cropApply_()">이 영역으로 적용</button></div>
   </div>
 
   <!-- Bottom sheet -->
@@ -664,7 +685,7 @@ var APPCHECK_SITE_KEY = '6Lfmi2AtAAAAAP1R-1JlYz1ht1WuQWp2RS_tibpT';
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '3.2';
+var APP_VERSION = '3.3';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -2342,25 +2363,106 @@ function pickPlayerPhoto(input){
   var reader=new FileReader();
   reader.onload=function(e){
     var img=new Image();
-    img.onload=function(){
-      var sz=128, c=document.createElement('canvas'); c.width=sz; c.height=sz;
-      var ctx=c.getContext('2d'); try{ ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high'; }catch(err){}
-      var side=Math.min(img.width,img.height);
-      ctx.drawImage(img,(img.width-side)/2,(img.height-side)/2,side,side,0,0,sz,sz);
-      state.formPhoto=c.toDataURL('image/jpeg',0.82);
-      // 원본용: 비율 유지, 긴 변 800px 이내 JPEG (별도 컬렉션에 저장 · 탭할 때만 조회)
-      var r=Math.min(800/img.width, 800/img.height, 1);
-      var lw=Math.max(1,Math.round(img.width*r)), lh=Math.max(1,Math.round(img.height*r));
-      var cl=document.createElement('canvas'); cl.width=lw; cl.height=lh;
-      var cx=cl.getContext('2d'); try{ cx.imageSmoothingEnabled=true; cx.imageSmoothingQuality='high'; }catch(err){}
-      cx.drawImage(img,0,0,lw,lh);
-      state.formPhotoL=cl.toDataURL('image/jpeg',0.85);
-      var pv=document.getElementById('pp_prev'); if(pv){ pv.style.background='var(--paper) center/cover no-repeat url('+state.formPhoto+')'; pv.textContent=''; }
-      var bt=document.getElementById('pp_btn'); if(bt) bt.textContent='🗑️ 사진 삭제';
-    };
+    img.onload=function(){ openCropper_(img); };
     img.src=e.target.result;
   };
   reader.readAsDataURL(file);
+  try{ input.value=''; }catch(err){}   // 같은 파일 재선택 허용
+}
+/* ── 프로필 사진 영역 조절: 이동(드래그) + 확대·축소(핀치/슬라이더/휠) ── */
+var CROP={img:null,V:600,scale:1,min:1,ox:0,oy:0,ptrs:{},dist:0,bound:false};
+function openCropper_(img){
+  var V=CROP.V;
+  CROP.img=img;
+  CROP.min=Math.max(V/img.width, V/img.height);
+  CROP.scale=CROP.min;
+  CROP.ox=(V-img.width*CROP.scale)/2; CROP.oy=(V-img.height*CROP.scale)/2;
+  var z=document.getElementById('cropZoom'); if(z) z.value=100;
+  cropBind_();
+  cropDraw_();
+  var w=document.getElementById('cropWrap'); if(w) w.classList.add('open');
+}
+function cropClamp_(){
+  var V=CROP.V, w=CROP.img.width*CROP.scale, h=CROP.img.height*CROP.scale;
+  CROP.ox=Math.min(0, Math.max(V-w, CROP.ox));
+  CROP.oy=Math.min(0, Math.max(V-h, CROP.oy));
+}
+function cropDraw_(){
+  var cv=document.getElementById('cropCv'); if(!cv||!CROP.img) return;
+  var V=CROP.V, ctx=cv.getContext('2d');
+  try{ ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high'; }catch(e){}
+  ctx.clearRect(0,0,V,V);
+  ctx.fillStyle='#111'; ctx.fillRect(0,0,V,V);
+  ctx.drawImage(CROP.img, CROP.ox, CROP.oy, CROP.img.width*CROP.scale, CROP.img.height*CROP.scale);
+  // 원 밖은 어둡게
+  ctx.save();
+  ctx.beginPath(); ctx.rect(0,0,V,V); ctx.arc(V/2,V/2,V/2-6,0,Math.PI*2,true);
+  ctx.fillStyle='rgba(0,0,0,.62)'; ctx.fill('evenodd');
+  ctx.restore();
+  ctx.beginPath(); ctx.arc(V/2,V/2,V/2-6,0,Math.PI*2);
+  ctx.lineWidth=4; ctx.strokeStyle='rgba(255,255,255,.9)'; ctx.stroke();
+}
+function cropZoomTo_(ns, cx, cy){
+  ns=Math.max(CROP.min, Math.min(CROP.min*4, ns));
+  var k=ns/CROP.scale;
+  CROP.ox=cx-(cx-CROP.ox)*k; CROP.oy=cy-(cy-CROP.oy)*k;
+  CROP.scale=ns; cropClamp_(); cropDraw_();
+  var z=document.getElementById('cropZoom'); if(z) z.value=Math.round(CROP.scale/CROP.min*100);
+}
+function cropSlider_(v){ if(!CROP.img) return; cropZoomTo_(CROP.min*(parseInt(v,10)||100)/100, CROP.V/2, CROP.V/2); }
+function cropPt_(ev){
+  var cv=document.getElementById('cropCv'), r=cv.getBoundingClientRect(), k=CROP.V/(r.width||1);
+  return {x:(ev.clientX-r.left)*k, y:(ev.clientY-r.top)*k};
+}
+function cropBind_(){
+  if(CROP.bound) return; CROP.bound=true;
+  var cv=document.getElementById('cropCv'); if(!cv) return;
+  cv.addEventListener('pointerdown', function(ev){
+    ev.preventDefault();
+    try{ cv.setPointerCapture(ev.pointerId); }catch(e){}
+    CROP.ptrs[ev.pointerId]=cropPt_(ev);
+    var ids=Object.keys(CROP.ptrs);
+    if(ids.length===2){ var a=CROP.ptrs[ids[0]], b=CROP.ptrs[ids[1]]; CROP.dist=Math.hypot(a.x-b.x,a.y-b.y); }
+  });
+  cv.addEventListener('pointermove', function(ev){
+    if(!CROP.ptrs[ev.pointerId]) return;
+    ev.preventDefault();
+    var np=cropPt_(ev), ids=Object.keys(CROP.ptrs);
+    if(ids.length===1){
+      var pp=CROP.ptrs[ev.pointerId];
+      CROP.ox+=np.x-pp.x; CROP.oy+=np.y-pp.y;
+      CROP.ptrs[ev.pointerId]=np; cropClamp_(); cropDraw_();
+    }else if(ids.length>=2){
+      CROP.ptrs[ev.pointerId]=np;
+      var a=CROP.ptrs[ids[0]], b=CROP.ptrs[ids[1]];
+      var d=Math.hypot(a.x-b.x,a.y-b.y);
+      if(CROP.dist>0 && d>0) cropZoomTo_(CROP.scale*d/CROP.dist, (a.x+b.x)/2, (a.y+b.y)/2);
+      CROP.dist=d;
+    }
+  });
+  function up(ev){ delete CROP.ptrs[ev.pointerId]; CROP.dist=0; var ids=Object.keys(CROP.ptrs); if(ids.length===1) CROP.ptrs[ids[0]]=CROP.ptrs[ids[0]]; }
+  cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up); cv.addEventListener('lostpointercapture', up);
+  cv.addEventListener('wheel', function(ev){ ev.preventDefault(); var p=cropPt_(ev); cropZoomTo_(CROP.scale*(ev.deltaY<0?1.08:1/1.08), p.x, p.y); }, {passive:false});
+}
+function cropCancel_(){ var w=document.getElementById('cropWrap'); if(w) w.classList.remove('open'); CROP.img=null; CROP.ptrs={}; }
+function cropApply_(){
+  var img=CROP.img; if(!img) return;
+  var V=CROP.V, sx=-CROP.ox/CROP.scale, sy=-CROP.oy/CROP.scale, sw=V/CROP.scale, sh=V/CROP.scale;
+  // 썸네일: 원 안에 보이는 영역 → 128px 정사각 JPEG (선수 목록·스쿼드 토큰용)
+  var sz=128, c=document.createElement('canvas'); c.width=sz; c.height=sz;
+  var ctx=c.getContext('2d'); try{ ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high'; }catch(err){}
+  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sz, sz);
+  state.formPhoto=c.toDataURL('image/jpeg',0.82);
+  // 원본용: 비율 유지, 긴 변 800px 이내 JPEG (별도 컬렉션에 저장 · 탭할 때만 조회)
+  var r=Math.min(800/img.width, 800/img.height, 1);
+  var lw=Math.max(1,Math.round(img.width*r)), lh=Math.max(1,Math.round(img.height*r));
+  var cl=document.createElement('canvas'); cl.width=lw; cl.height=lh;
+  var cx=cl.getContext('2d'); try{ cx.imageSmoothingEnabled=true; cx.imageSmoothingQuality='high'; }catch(err){}
+  cx.drawImage(img,0,0,lw,lh);
+  state.formPhotoL=cl.toDataURL('image/jpeg',0.85);
+  var pv=document.getElementById('pp_prev'); if(pv){ pv.style.background='var(--paper) center/cover no-repeat url('+state.formPhoto+')'; pv.textContent=''; }
+  var bt=document.getElementById('pp_btn'); if(bt) bt.textContent='🗑️ 사진 삭제';
+  cropCancel_();
 }
 function clearPlayerPhoto(){
   state.formPhoto=''; state.formPhotoL='';
