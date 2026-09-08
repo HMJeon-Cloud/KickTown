@@ -1,7 +1,7 @@
 {
-  "name": "동네 축구왕",
-  "short_name": "동축",
-  "description": "우리 동네 축구팀 출석·기록·순위 관리",
+  "name": "FC JEMIRO",
+  "short_name": "FC JEMIRO",
+  "description": "FC JEMIRO 팀 관리 — 팀원·경기·기록·출석",
   "lang": "ko",
   "id": "./",
   "start_url": "./",

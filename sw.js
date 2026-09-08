@@ -1,8 +1,8 @@
-/* 동네 축구왕 서비스 워커
+/* FC JEMIRO 서비스 워커
    - HTML(화면): 항상 최신(no-store 네트워크) → 접속 시 최신 버전 보장, 오프라인 시 캐시 폴백
    - 정적 자원(이미지·CSS·JS·폰트): 캐시 우선 + 백그라운드 갱신 → 재접속 로딩 가속
    - 서비스워커 스크립트 자체는 캐시하지 않음 (알림 등록 실패 방지) */
-var CACHE = 'kicktown-v4';
+var CACHE = 'kicktown-v5';
 
 self.addEventListener('install', function(e){ self.skipWaiting(); });
 
