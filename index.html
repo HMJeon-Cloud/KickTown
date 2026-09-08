@@ -535,7 +535,7 @@
   .crop-zoom input[type=range]{flex:1;accent-color:var(--gold);height:28px;}
   .crop-btns{display:flex;gap:10px;width:min(300px,78vw);}
   .crop-btns .btn-ghost{flex:1;margin:0;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.3);color:#fff;}
-  .crop-btns .btn-primary{flex:1.4;margin:0;}
+  .crop-ok{flex:1.4;padding:15px;border:none;border-radius:14px;background:var(--red);color:#fff;font-size:16px;font-weight:700;font-family:inherit;cursor:pointer;}
   .pl-avatar.tap{cursor:zoom-in;}
   .toast{
     position:absolute;left:50%;bottom:110px;transform:translateX(-50%) translateY(20px);
@@ -607,7 +607,7 @@
     <div class="crop-sub">드래그로 위치 이동 · 두 손가락(또는 슬라이더)으로 확대·축소<br>원 안에 보이는 부분이 프로필 사진이 됩니다</div>
     <div class="crop-box"><canvas id="cropCv" width="600" height="600"></canvas></div>
     <div class="crop-zoom"><span>－</span><input type="range" id="cropZoom" min="100" max="400" value="100" oninput="cropSlider_(this.value)"><span>＋</span></div>
-    <div class="crop-btns"><button class="btn-ghost" onclick="cropCancel_()">취소</button><button class="btn-primary" onclick="cropApply_()">이 영역으로 적용</button></div>
+    <div class="crop-btns"><button class="btn-ghost" onclick="cropCancel_()">취소</button><button class="crop-ok" onclick="cropApply_()">이 영역으로 적용</button></div>
   </div>
 
   <!-- Bottom sheet -->
@@ -685,7 +685,7 @@ var APPCHECK_SITE_KEY = '6Lfmi2AtAAAAAP1R-1JlYz1ht1WuQWp2RS_tibpT';
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '3.3';
+var APP_VERSION = '3.4';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -2308,14 +2308,27 @@ function openPlayerForm(id){
 }
 /* ── 원본(큰) 사진: 목록 문서를 가볍게 유지하기 위해 별도 컬렉션(memberPhotos)에 저장, 탭했을 때만 1건 읽음 ── */
 var PHOTO_L = {};   // pid -> dataURL ('' = 없음)
+var PHOTO_L_ERR = {};   // pid -> 마지막 조회/저장 오류 코드
+function photoErrMsg_(code){
+  if(code==='permission-denied') return 'Firestore 규칙에서 memberPhotos 컬렉션 읽기/쓰기 허용 필요';
+  if(code==='resource-exhausted') return '일일 사용량 한도 초과';
+  if(code==='invalid-argument') return '사진 용량 초과';
+  return code || '네트워크 오류';
+}
 function savePlayerPhotoL_(pid, dataUrl){
   if(!pid) return;
   PHOTO_L[pid] = dataUrl || '';
+  delete PHOTO_L_ERR[pid];
   if(!(window.db && FS.enabled)) return;
   try{
     var ref = db.collection('memberPhotos').doc(String(pid));
-    if(dataUrl) ref.set({id:String(pid), clubId:(state.activeClubId||''), photo:dataUrl, updatedAt:new Date().toISOString()}).catch(function(){});
-    else ref.delete().catch(function(){});
+    var p = dataUrl ? ref.set({id:String(pid), clubId:(state.activeClubId||''), photo:dataUrl, updatedAt:new Date().toISOString()}) : ref.delete();
+    p.catch(function(e){
+      var code=(e&&e.code)||'';
+      PHOTO_L_ERR[pid]=code; delete PHOTO_L[pid];
+      try{ console.error('memberPhotos 저장 실패', e); }catch(_){}
+      toast('원본 사진 저장 실패 · '+photoErrMsg_(code));
+    });
   }catch(e){}
 }
 function loadPlayerPhotoL_(pid){
@@ -2325,8 +2338,12 @@ function loadPlayerPhotoL_(pid){
   return db.collection('memberPhotos').doc(String(pid)).get().then(function(d){
     kjRead_('memberPhotos','원본 1건',1);
     var v=(d && d.exists && d.data() && d.data().photo) || '';
-    PHOTO_L[pid]=v; return v;
-  }).catch(function(){ return ''; });
+    PHOTO_L[pid]=v; delete PHOTO_L_ERR[pid]; return v;
+  }).catch(function(e){
+    PHOTO_L_ERR[pid]=(e&&e.code)||'unknown';
+    try{ console.error('memberPhotos 조회 실패', e); }catch(_){}
+    return '';
+  });
 }
 function openPhotoView_(pid, thumb, name, directSrc){
   var w=document.getElementById('pvWrap'), img=document.getElementById('pvImg'), cap=document.getElementById('pvCap'), sub=document.getElementById('pvSub');
@@ -2339,6 +2356,7 @@ function openPhotoView_(pid, thumb, name, directSrc){
   loadPlayerPhotoL_(pid).then(function(big){
     if(!w.classList.contains('open')) return;
     if(big){ img.src=big; sub.textContent=''; }
+    else if(PHOTO_L_ERR[pid]){ sub.textContent='원본 조회 실패 · '+photoErrMsg_(PHOTO_L_ERR[pid]); }
     else { sub.textContent='원본이 없어 축소본을 표시합니다 · 사진을 다시 등록하면 원본이 저장돼요'; }
   });
 }
@@ -2459,7 +2477,13 @@ function cropApply_(){
   var cl=document.createElement('canvas'); cl.width=lw; cl.height=lh;
   var cx=cl.getContext('2d'); try{ cx.imageSmoothingEnabled=true; cx.imageSmoothingQuality='high'; }catch(err){}
   cx.drawImage(img,0,0,lw,lh);
-  state.formPhotoL=cl.toDataURL('image/jpeg',0.85);
+  var big=cl.toDataURL('image/jpeg',0.85), q=0.85, tries=0;
+  while(big.length>900*1024 && tries<6){
+    tries++;
+    if(q>0.6) q-=0.1; else { lw=Math.round(lw*0.8); lh=Math.round(lh*0.8); cl.width=lw; cl.height=lh; cx=cl.getContext('2d'); cx.drawImage(img,0,0,lw,lh); }
+    big=cl.toDataURL('image/jpeg',q);
+  }
+  state.formPhotoL=big;
   var pv=document.getElementById('pp_prev'); if(pv){ pv.style.background='var(--paper) center/cover no-repeat url('+state.formPhoto+')'; pv.textContent=''; }
   var bt=document.getElementById('pp_btn'); if(bt) bt.textContent='🗑️ 사진 삭제';
   cropCancel_();
@@ -2504,7 +2528,7 @@ function savePlayer(){
     status: state.formStatus || '',
     photo: state.formPhoto || ''
   };
-  var btn = document.querySelector('.btn-primary');
+  var btn = document.querySelector('#sheetWrap .btn-primary');
   if(btn){ btn.textContent = '저장 중...'; btn.disabled = true; }
 
   if(state.editId){
@@ -2528,7 +2552,7 @@ function savePlayer(){
   }
 }
 function saveErr(){
-  var btn = document.querySelector('.btn-primary');
+  var btn = document.querySelector('#sheetWrap .btn-primary');
   if(btn){ btn.textContent = '다시 시도'; btn.disabled = false; }
   toast('저장에 실패했습니다');
 }
@@ -3018,7 +3042,7 @@ function saveResult(matchId){
     if(g>0||a>0) stats.push({playerId:p.id, goals:g, assists:a});
     att.push({playerId:p.id, status:(state.formAtt[p.id]||state._attDefault||'present')});
   });
-  var btn=document.querySelector('.btn-primary'); if(btn){btn.textContent='저장 중...';btn.disabled=true;}
+  var btn=document.querySelector('#sheetWrap .btn-primary'); if(btn){btn.textContent='저장 중...';btn.disabled=true;}
   var chain = Promise.resolve();
   if(fMatch) chain = chain.then(function(){ return API.run('recordMatchResult', matchId, our, opp).then(applyRecBundle_); });
   if(fGoal||fAssist) chain = chain.then(function(){ return API.run('setMatchStats', matchId, stats).then(applyRecBundle_); });
