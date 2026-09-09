@@ -743,7 +743,7 @@ var APPCHECK_SITE_KEY = '6Lfmi2AtAAAAAP1R-1JlYz1ht1WuQWp2RS_tibpT';
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '5.3';
+var APP_VERSION = '5.4';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -3596,7 +3596,7 @@ function drawPitch_(ctx,x,y,w,h){
 }
 function drawToken_(ctx,PJ,m,img,badges,phase){
   var col = m.guest ? '#6B7280' : (POS_COLORS[m.position]||CARD_INK);
-  var p=PJ.P(m.x,m.y), sc=0.80+0.20*PJ.S(m.y), r=49*sc, cx=p.x, cy=p.y-r*0.55;
+  var p=PJ.P(m.x,m.y), sc=0.84+0.16*PJ.S(m.y), r=63*sc, cx=p.x, cy=p.y-r*0.55;
   if(phase==='label') return drawTokenLabel_(ctx,m,img,badges,cx,cy,r,sc);
   // 바닥 그림자 (타원)
   ctx.save(); ctx.translate(cx, p.y+r*0.18); ctx.scale(1, 0.32);
@@ -3616,8 +3616,8 @@ function drawToken_(ctx,PJ,m,img,badges,phase){
     ctx.fillStyle=gl; ctx.fillRect(cx-r,cy-r,r*2,r); ctx.restore();
     ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.lineWidth=3*sc; ctx.strokeStyle='rgba(255,255,255,.9)'; ctx.stroke();
     // 포지션 배지
-    ctx.font='600 '+Math.round(20*sc)+'px Oswald, sans-serif';
-    var pt=String(m.position||''), ptw=ctx.measureText(pt).width+16*sc, bh=30*sc;
+    ctx.font='600 '+Math.round(23*sc)+'px Oswald, sans-serif';
+    var pt=String(m.position||''), ptw=ctx.measureText(pt).width+18*sc, bh=34*sc;
     ctx.save(); ctx.shadowColor='rgba(0,0,0,.3)'; ctx.shadowBlur=6; ctx.shadowOffsetY=2;
     rr_(ctx,cx+r-ptw+6*sc,cy-r-14*sc,ptw,bh,8*sc); ctx.fillStyle=col; ctx.fill(); ctx.restore();
     ctx.lineWidth=2.5*sc; ctx.strokeStyle='#fff'; ctx.stroke();
@@ -3628,7 +3628,7 @@ function drawToken_(ctx,PJ,m,img,badges,phase){
     var gl2=ctx.createLinearGradient(0,cy-r,0,cy); gl2.addColorStop(0,'rgba(255,255,255,.28)'); gl2.addColorStop(1,'rgba(255,255,255,0)');
     ctx.fillStyle=gl2; ctx.fillRect(cx-r,cy-r,r*2,r); ctx.restore();
     ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.lineWidth=4.5*sc; ctx.strokeStyle='rgba(255,255,255,.92)'; ctx.stroke();
-    ctx.fillStyle='#fff'; ctx.font='600 '+Math.round(30*sc)+'px Oswald, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillStyle='#fff'; ctx.font='600 '+Math.round(34*sc)+'px Oswald, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
     ctx.save(); ctx.shadowColor='rgba(0,0,0,.35)'; ctx.shadowBlur=4; ctx.shadowOffsetY=1;
     ctx.fillText(String(m.position||''), cx, cy+1); ctx.restore();
   }
@@ -3636,23 +3636,23 @@ function drawToken_(ctx,PJ,m,img,badges,phase){
 /* 이름표 + 달성 뱃지 (모든 디스크를 그린 뒤 위에 겹쳐 그려 가려지지 않게) */
 function drawTokenLabel_(ctx,m,img,badges,cx,cy,r,sc){
   var label=(m.guest?m.num:numTok(m.num))+' '+String(m.name||'');
-  ctx.font='700 '+Math.round(24*sc)+'px Pretendard, sans-serif';
-  var tw=ctx.measureText(label).width, pw=tw+26*sc, ph=38*sc, py=cy+(img?r+6*sc:r)+7*sc;
-  ctx.save(); ctx.shadowColor='rgba(0,0,0,.4)'; ctx.shadowBlur=10; ctx.shadowOffsetY=4;
-  var pg=ctx.createLinearGradient(0,py,0,py+ph); pg.addColorStop(0,'rgba(38,35,46,.95)'); pg.addColorStop(1,'rgba(16,14,22,.95)');
-  rr_(ctx,cx-pw/2,py,pw,ph,10*sc); ctx.fillStyle=pg; ctx.fill(); ctx.restore();
-  rr_(ctx,cx-pw/2,py,pw,ph,10*sc); ctx.lineWidth=1; ctx.strokeStyle='rgba(255,255,255,.18)'; ctx.stroke();
+  ctx.font='700 '+Math.round(27*sc)+'px Pretendard, sans-serif';
+  var tw=ctx.measureText(label).width, pw=tw+30*sc, ph=42*sc, py=cy+(img?r+6*sc:r)+7*sc;
+  ctx.save(); ctx.shadowColor='rgba(0,0,0,.45)'; ctx.shadowBlur=12; ctx.shadowOffsetY=4;
+  var pg=ctx.createLinearGradient(0,py,0,py+ph); pg.addColorStop(0,'rgba(38,35,46,.96)'); pg.addColorStop(1,'rgba(16,14,22,.96)');
+  rr_(ctx,cx-pw/2,py,pw,ph,11*sc); ctx.fillStyle=pg; ctx.fill(); ctx.restore();
+  rr_(ctx,cx-pw/2,py,pw,ph,11*sc); ctx.lineWidth=1.4; ctx.strokeStyle='rgba(255,255,255,.20)'; ctx.stroke();
   ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.textBaseline='middle';
   ctx.fillText(label,cx,py+ph/2+1);
-  // 달성 뱃지 (이름표 아래)
+  // 달성 뱃지 (이름표 아래 · 한눈에 구별되도록 크게)
   if(badges && badges.length){
-    var bi=28*sc, bgap=4*sc, bpad=7*sc, bh2=bi+bpad, bw2=badges.length*bi+(badges.length-1)*bgap+bpad*1.6;
-    var by2=py+ph+4*sc, bx2=cx-bw2/2;
-    ctx.save(); ctx.shadowColor='rgba(0,0,0,.4)'; ctx.shadowBlur=8; ctx.shadowOffsetY=3;
-    rr_(ctx,bx2,by2,bw2,bh2,bh2/2); ctx.fillStyle='rgba(14,12,20,.9)'; ctx.fill(); ctx.restore();
-    rr_(ctx,bx2,by2,bw2,bh2,bh2/2); ctx.lineWidth=1.2; ctx.strokeStyle='rgba(255,255,255,.22)'; ctx.stroke();
+    var bi=46*sc, bgap=7*sc, bpad=9*sc, bh2=bi+bpad, bw2=badges.length*bi+(badges.length-1)*bgap+bpad*1.7;
+    var by2=py+ph+5*sc, bx2=cx-bw2/2;
+    ctx.save(); ctx.shadowColor='rgba(0,0,0,.45)'; ctx.shadowBlur=10; ctx.shadowOffsetY=4;
+    rr_(ctx,bx2,by2,bw2,bh2,bh2/2); ctx.fillStyle='rgba(14,12,20,.92)'; ctx.fill(); ctx.restore();
+    rr_(ctx,bx2,by2,bw2,bh2,bh2/2); ctx.lineWidth=1.4; ctx.strokeStyle='rgba(255,255,255,.24)'; ctx.stroke();
     badges.forEach(function(bd,bidx){
-      drawIcon_(ctx, bd[0], bx2+bpad*0.8+bi/2+bidx*(bi+bgap), by2+bh2/2, bi, bd[1]);
+      drawIcon_(ctx, bd[0], bx2+bpad*0.85+bi/2+bidx*(bi+bgap), by2+bh2/2, bi, bd[1]);
     });
   }
 }
