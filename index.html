@@ -743,7 +743,7 @@ var APPCHECK_SITE_KEY = '6Lfmi2AtAAAAAP1R-1JlYz1ht1WuQWp2RS_tibpT';
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '5.1';
+var APP_VERSION = '5.2';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -4577,9 +4577,9 @@ function renderLogView_(){
 /* ================= 뱃지 아이콘 (트로피 이미지 스프라이트) =================
  * badges.jpg = 4열(동·은·금·다이아) × 4행(골든볼·골든부츠·운동장·왕관)
  * 화면은 CSS background-position, 카드는 canvas drawImage로 같은 이미지를 사용 */
-var BADGE_SRC='badges.jpg?v=2', BADGE_COLS=4, BADGE_ROWS=4;
+var BADGE_SRC='badges.jpg?v=3', BADGE_COLS=4, BADGE_ROWS=5;
 var BADGE_TIER={bronze:0, silver:1, gold:2, diamond:3, grey:2, ivory:2};
-var BADGE_ROW ={ball:0, boot:1, stadium:2, crown:3, trophy:3};
+var BADGE_ROW ={ball:0, boot:1, stadium:2, crown:3, trophy:4};
 var METAL={   // 테두리·글자 색 (아이콘 이미지의 톤과 맞춤)
   bronze:['#F3C48F','#C8853F','#5E3614'],
   silver:['#FFFFFF','#C4CDD9','#5B6673'],
