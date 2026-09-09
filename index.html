@@ -743,7 +743,7 @@ var APPCHECK_SITE_KEY = '6Lfmi2AtAAAAAP1R-1JlYz1ht1WuQWp2RS_tibpT';
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '5.2';
+var APP_VERSION = '5.3';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -4578,6 +4578,12 @@ function renderLogView_(){
  * badges.jpg = 4열(동·은·금·다이아) × 4행(골든볼·골든부츠·운동장·왕관)
  * 화면은 CSS background-position, 카드는 canvas drawImage로 같은 이미지를 사용 */
 var BADGE_SRC='badges.jpg?v=3', BADGE_COLS=4, BADGE_ROWS=5;
+var HOF_TROPHY_SRC='trophy.png?v=1', HOF_TROPHY=null, _hofTrP=null;
+function hofTrophyReady_(){
+  if(HOF_TROPHY) return Promise.resolve(HOF_TROPHY);
+  if(!_hofTrP) _hofTrP=loadImg_(HOF_TROPHY_SRC).then(function(im){ HOF_TROPHY=im||null; return HOF_TROPHY; }).catch(function(){ return null; });
+  return _hofTrP;
+}
 var BADGE_TIER={bronze:0, silver:1, gold:2, diamond:3, grey:2, ivory:2};
 var BADGE_ROW ={ball:0, boot:1, stadium:2, crown:3, trophy:4};
 var METAL={   // 테두리·글자 색 (아이콘 이미지의 톤과 맞춤)
@@ -5071,7 +5077,7 @@ function shareHofCard_(year){
   var mvp=mvpId?((state.players||[]).filter(function(x){return x.id===mvpId;})[0]||pname_(mvpId)):null;
   toast('카드 만드는 중...');
   var photoP = mvpId ? loadPlayerPhotoL_(mvpId) : Promise.resolve('');
-  Promise.all([loadImg_(teamEmblemSrc_()), photoP, iconsReady_()]).then(function(rs){
+  Promise.all([loadImg_(teamEmblemSrc_()), photoP, iconsReady_(), hofTrophyReady_()]).then(function(rs){
     var emblem=rs[0], big=rs[1]||'';
     return loadImg_(big||(mvp&&mvp.photo)||'').then(function(face){
       fontsReady_(function(){
@@ -5090,14 +5096,24 @@ function shareHofCard_(year){
         ctx.fillText('HALL OF FAME', W/2, 156); ctx.restore();
         ctx.fillStyle=CARD_GOLD; ctx.font='700 40px Oswald, sans-serif'; ctx.fillText(year+' SEASON', W/2, 224);
         // 트로피 + 방사광
-        var ty=430;
+        var ty=460;
         ctx.save(); ctx.translate(W/2,ty);
         var rg=ctx.createRadialGradient(0,0,60,0,0,430); rg.addColorStop(0,'rgba(199,162,75,.35)'); rg.addColorStop(1,'rgba(199,162,75,0)');
         ctx.fillStyle=rg;
         for(var ri=0;ri<20;ri++){ var ra=ri*Math.PI/10, rw=Math.PI/10*0.4;
           ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,430,ra-rw,ra+rw); ctx.closePath(); ctx.fill(); }
         ctx.restore();
-        trophy_(ctx,W/2,ty,300);
+        if(HOF_TROPHY){
+          var th=380, tw=th*(HOF_TROPHY.width/HOF_TROPHY.height);
+          ctx.save(); ctx.shadowColor='rgba(199,162,75,.55)'; ctx.shadowBlur=44; ctx.shadowOffsetY=14;
+          ctx.drawImage(HOF_TROPHY, W/2-tw/2, ty-th*0.52, tw, th); ctx.restore();
+          ctx.save(); ctx.globalAlpha=0.28;
+          var rf=ctx.createLinearGradient(0,ty+th*0.46,0,ty+th*0.68);
+          rf.addColorStop(0,'rgba(199,162,75,.55)'); rf.addColorStop(1,'rgba(199,162,75,0)');
+          ctx.fillStyle=rf; ctx.fillRect(W/2-tw*0.42, ty+th*0.46, tw*0.84, th*0.22); ctx.restore();
+        } else {
+          trophy_(ctx,W/2,ty,300);
+        }
         // MVP
         var my=760;
         [-0.5,-0.25,0,0.25,0.5].forEach(function(t,si){
