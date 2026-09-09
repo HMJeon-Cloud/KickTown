@@ -546,6 +546,9 @@
   .pv-cap{color:#fff;font-size:15px;font-weight:700;}
   .pv-sub{color:rgba(255,255,255,.6);font-size:11.5px;margin-top:-8px;}
   .pv-x{position:absolute;top:16px;right:16px;width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.12);color:#fff;font-size:18px;cursor:pointer;}
+  /* 뱃지 아이콘 타일 (badges.jpg 스프라이트) */
+  .ic-bd{display:inline-block;flex:0 0 auto;vertical-align:-3px;background-repeat:no-repeat;box-shadow:0 1px 3px rgba(0,0,0,.3);}
+  .ic-bd.lock{filter:grayscale(1) brightness(.62);opacity:.85;}
   /* 랭킹 레이스 · 마일스톤 · 명예의 전당 */
   .rc-mv{flex:0 0 auto;font-family:'Oswald';font-weight:700;font-size:12px;color:var(--steel-soft);min-width:38px;text-align:right;margin-right:8px;}
   .rc-mv.up{color:#1E9E6A;} .rc-mv.dn{color:var(--red);} .rc-mv.new{color:#2563C9;font-size:10.5px;}
@@ -554,7 +557,7 @@
   .msb-top{display:flex;align-items:center;margin-bottom:7px;}
   .msb-k{font-size:12.5px;font-weight:800;color:var(--ink);}
   .msb-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;}
-  .msb{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:12px;padding:8px 2px 6px;font-size:12px;color:#B3B8C0;background:var(--paper);border:1.5px solid var(--line-strong);opacity:.7;white-space:nowrap;}
+  .msb{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border-radius:12px;padding:9px 2px 7px;font-size:12px;color:#B3B8C0;background:var(--paper);border:1.5px solid var(--line-strong);opacity:.7;white-space:nowrap;}
   .msb small{font-family:'Oswald';font-weight:600;font-size:11px;letter-spacing:.02em;}
   .msb.on{color:var(--ink);background:#fff;box-shadow:0 4px 12px rgba(0,0,0,.14);cursor:pointer;opacity:1;}
   .stk{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:800;color:var(--ink);background:#fff;border:1.5px solid var(--gold);border-radius:8px;padding:1px 6px 1px 4px;margin-left:5px;white-space:nowrap;vertical-align:middle;}
@@ -740,7 +743,7 @@ var APPCHECK_SITE_KEY = '6Lfmi2AtAAAAAP1R-1JlYz1ht1WuQWp2RS_tibpT';
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '4.8';
+var APP_VERSION = '5.1';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -1766,7 +1769,7 @@ function openPlayerPage_(pid){
       + '</div>';
     var stk=(d.streak||0);
     var sT=streakTier_(stk);
-    var stkHtml = stk>=2 ? '<p style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:800;color:'+(sT?sT.c:'#B45309')+';margin:10px 2px 0;">'+svgIcon_('crown',sT?sT.key:'grey',18)+'연속 출석 '+stk+'경기 진행 중!</p>' : '';
+    var stkHtml = stk>=2 ? '<p style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:800;color:'+(sT?sT.c:'#B45309')+';margin:10px 2px 0;">'+svgIcon_('crown',sT?sT.key:'grey',22)+'연속 출석 '+stk+'경기 진행 중!</p>' : '';
     var badges = '<div class="eyebrow" style="margin:16px 0 4px;">통산 마일스톤 뱃지 <span style="letter-spacing:0;color:var(--steel-soft);">(달성 뱃지를 탭하면 축하 카드)</span></div>'
       + msBadgeChips_(pid,'g',tt.g||0)
       + msBadgeChips_(pid,'a',tt.a||0)
@@ -3660,7 +3663,7 @@ function shareSquadCard_(){
   var mems=(d.members||[]).filter(function(m){ return m.position; });
   var jobs=[loadImg_(teamEmblemSrc_()), loadImg_(teamBgSrc_())].concat(mems.map(function(m){ return loadImg_(m.photo||''); }));
   fontsReady_(function(){
-    Promise.all([Promise.all(jobs), careerReady_()]).then(function(rr){ var imgs=rr[0];
+    Promise.all([Promise.all(jobs), careerReady_(), iconsReady_()]).then(function(rr){ var imgs=rr[0];
       var emblem=imgs[0], bg=imgs[1];
       var W=1080, pad=50, pw=W-pad*2, ph=Math.round(pw*1.22);
       // 메모: 줄바꿈·자동 줄바꿈 반영해 높이 선계산 (내용 전체 표시 · 카드가 길어짐)
@@ -3914,7 +3917,7 @@ function sharePlayerCard_(pid){
   var p=(state.players||[]).filter(function(x){ return x.id===pid; })[0];
   if(!p){ toast('선수를 찾을 수 없습니다'); return; }
   toast('카드 만드는 중...');
-  Promise.all([ API.run('getPlayerCareer', pid), loadPlayerPhotoL_(pid), loadImg_(teamEmblemSrc_()), loadImg_(teamBgSrc_()), hofReady_() ]).then(function(rs){
+  Promise.all([ API.run('getPlayerCareer', pid), loadPlayerPhotoL_(pid), loadImg_(teamEmblemSrc_()), loadImg_(teamBgSrc_()), hofReady_(), iconsReady_() ]).then(function(rs){
     var career=rs[0]||{}, big=rs[1]||'', emblem=rs[2], bg=rs[3];
     return loadImg_(big||p.photo||'').then(function(face){
       fontsReady_(function(){
@@ -4571,110 +4574,53 @@ function renderLogView_(){
    +   body
    + '</div>');
 }
-/* ================= 벡터 아이콘 (축구화·축구공·경기장·트로피·왕관) · 3D 금속 =================
- * 화면(SVG)과 카드(캔버스)에서 같은 경로 사용 · viewBox 24×24
- * 3D: 아래로 두께(extrusion) → 금속 그라데이션 본체 → 디테일 선 → 상단 광택 */
-var METAL={
-  bronze:['#F3C48F','#B0793F','#5E3614'],
-  silver:['#FFFFFF','#B9C2CE','#5B6673'],
+/* ================= 뱃지 아이콘 (트로피 이미지 스프라이트) =================
+ * badges.jpg = 4열(동·은·금·다이아) × 4행(골든볼·골든부츠·운동장·왕관)
+ * 화면은 CSS background-position, 카드는 canvas drawImage로 같은 이미지를 사용 */
+var BADGE_SRC='badges.jpg?v=2', BADGE_COLS=4, BADGE_ROWS=4;
+var BADGE_TIER={bronze:0, silver:1, gold:2, diamond:3, grey:2, ivory:2};
+var BADGE_ROW ={ball:0, boot:1, stadium:2, crown:3, trophy:3};
+var METAL={   // 테두리·글자 색 (아이콘 이미지의 톤과 맞춤)
+  bronze:['#F3C48F','#C8853F','#5E3614'],
+  silver:['#FFFFFF','#C4CDD9','#5B6673'],
   gold:  ['#FFF6BF','#E3B341','#7E5606'],
-  diamond:['#F2FDFF','#6FD3EA','#12758F'],
+  diamond:['#F2FDFF','#63C8F0','#12758F'],
   grey:  ['#E6E8EC','#C3C7CE','#8F949C'],
   ivory: ['#FFFFFF','#F1EFE8','#B8B3A4']
 };
-var ICONS=(function(){
-  function ballDetail(){
-    var cx=12, cy=12, d='', pts=[];
-    for(var i=0;i<5;i++){ var a=-Math.PI/2+i*2*Math.PI/5; pts.push([cx+Math.cos(a)*3.6, cy+Math.sin(a)*3.6, a]); }
-    d+='M'+pts[0][0].toFixed(2)+' '+pts[0][1].toFixed(2);
-    for(var j=1;j<5;j++) d+=' L'+pts[j][0].toFixed(2)+' '+pts[j][1].toFixed(2);
-    d+=' Z';
-    pts.forEach(function(p){ d+=' M'+p[0].toFixed(2)+' '+p[1].toFixed(2)+' L'+(cx+Math.cos(p[2])*9.3).toFixed(2)+' '+(cy+Math.sin(p[2])*9.3).toFixed(2); });
-    return d;
-  }
-  return {
-    /* 최신 니트 칼라 축구화: 낮은 삭스 칼라 · 매끈한 어퍼 · 블레이드 스터드 */
-    boot:{
-      main:'M2.6 9.9 C2.7 8.5 3.5 7.4 4.8 7 L6.6 6.4 C7.7 6 8.8 6.5 9.3 7.5 L10.9 10.4 C11.7 11.9 13.1 12.9 14.8 13.3 L19.8 14.6 C21.4 15 22.4 16 22.4 17.1 C22.4 17.9 21.8 18.5 21 18.5 L3.4 18.5 C2.5 18.5 1.9 17.8 2 16.9 Z'
-           +' M3.1 19.1 L21.2 19.1 C21.9 19.1 22.2 19.6 22 20.1 L21.8 20.5 L3.4 20.5 C2.8 20.5 2.5 20 2.7 19.5 Z'
-           +' M4.6 20.6 L6 20.6 L5.7 22.3 L4.9 22.3 Z M8.3 20.6 L9.7 20.6 L9.4 22.3 L8.6 22.3 Z M12 20.6 L13.4 20.6 L13.1 22.3 L12.3 22.3 Z M15.7 20.6 L17.1 20.6 L16.8 22.3 L16 22.3 Z M19 20.6 L20.4 20.6 L20.1 22.3 L19.3 22.3 Z',
-      detail:'M7.4 8.9 L9.1 8.3 M7.9 10.3 L9.9 9.6 M8.5 11.7 L10.8 10.9 M4.2 13.6 C8.5 13.4 12.6 14.6 19.6 16.4 M5.3 7.3 C6.2 8.9 6.7 10.8 6.6 12.4'
-    },
-    /* 축구공: 구체(라디얼) + 오각형 패턴 */
-    ball:{ radial:true, main:'M12 2 A10 10 0 1 1 11.99 2 Z', detail:ballDetail() },
-    /* 경기장(운동장): 원근 잔디판 + 흰 라인(터치라인·하프라인·센터서클·페널티박스) */
-    stadium:{
-      thick:1.8,
-      main:'M4.4 4.6 L19.6 4.6 C20.5 4.6 21.2 5.2 21.4 6 L23.2 17.4 C23.4 18.4 22.6 19.2 21.6 19.2 L2.4 19.2 C1.4 19.2 0.6 18.4 0.8 17.4 L2.6 6 C2.8 5.2 3.5 4.6 4.4 4.6 Z',
-      detail:'M5.3 6.6 L18.7 6.6 L20.7 17.2 L3.3 17.2 Z M4.3 11.9 L19.7 11.9 M9.9 11.9 A2.1 1.35 0 1 0 14.1 11.9 A2.1 1.35 0 1 0 9.9 11.9 M9.2 6.6 L9.2 8.9 L14.8 8.9 L14.8 6.6 M8.2 17.2 L8.6 14.6 L15.4 14.6 L15.8 17.2',
-      detailLight:true
-    },
-    trophy:{
-      main:'M7 3 L17 3 L17 9 C17 12 14.8 14 12 14 C9.2 14 7 12 7 9 Z'
-           +' M7 5 L4.5 5 C3.5 5 3 5.6 3 6.5 C3 9 5 10.8 7.4 11 L7.4 9.3 C6 9.1 5 8 5 6.8 L7 6.8 Z'
-           +' M17 5 L19.5 5 C20.5 5 21 5.6 21 6.5 C21 9 19 10.8 16.6 11 L16.6 9.3 C18 9.1 19 8 19 6.8 L17 6.8 Z'
-           +' M10.8 14.5 L13.2 14.5 L13.2 17 L15.5 17 L16.5 20.5 L7.5 20.5 L8.5 17 L10.8 17 Z',
-      detail:'M9.3 4.8 L9.3 9.2 C9.3 10.3 9.9 11.2 10.8 11.7 M8.2 18.3 L15.8 18.3'
-    },
-    crown:{
-      main:'M3 18.5 L3 7.5 L8 11.5 L12 4.5 L16 11.5 L21 7.5 L21 18.5 Z M3 19.6 L21 19.6 L21 21.2 L3 21.2 Z',
-      detail:'M7 15.2 m-1.1 0 a1.1 1.1 0 1 0 2.2 0 a1.1 1.1 0 1 0 -2.2 0 M12 14.2 m-1.3 0 a1.3 1.3 0 1 0 2.6 0 a1.3 1.3 0 1 0 -2.6 0 M17 15.2 m-1.1 0 a1.1 1.1 0 1 0 2.2 0 a1.1 1.1 0 1 0 -2.2 0 M4.2 17.4 L19.8 17.4'
-    }
-  };
-})();
-var _iconDefsDone=false;
-function iconDefs_(){
-  if(_iconDefsDone || !document.body) return; _iconDefsDone=true;
-  var defs=Object.keys(METAL).map(function(k){ var m=METAL[k];
-    return '<linearGradient id="mg-'+k+'" x1="0" y1="0" x2="0.6" y2="1"><stop offset="0" stop-color="'+m[0]+'"/><stop offset="0.5" stop-color="'+m[1]+'"/><stop offset="1" stop-color="'+m[2]+'"/></linearGradient>'
-      + '<radialGradient id="mr-'+k+'" cx="0.36" cy="0.3" r="0.8"><stop offset="0" stop-color="'+m[0]+'"/><stop offset="0.45" stop-color="'+m[1]+'"/><stop offset="1" stop-color="'+m[2]+'"/></radialGradient>';
-  }).join('')
-  + '<linearGradient id="hl-w" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.6"/><stop offset="0.5" stop-color="#fff" stop-opacity="0"/></linearGradient>';
-  var svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
-  svg.setAttribute('width','0'); svg.setAttribute('height','0'); svg.style.position='absolute'; svg.setAttribute('aria-hidden','true');
-  svg.innerHTML='<defs>'+defs+'</defs>';
-  document.body.appendChild(svg);
+/* 카드용 스프라이트 프리로드 */
+var BADGE_IMG=null, _badgeP=null;
+function iconsReady_(){
+  if(BADGE_IMG) return Promise.resolve(BADGE_IMG);
+  if(!_badgeP) _badgeP=loadImg_(BADGE_SRC).then(function(im){ BADGE_IMG=im; return im; });
+  return _badgeP;
 }
-/* 화면용 SVG 아이콘 (3D) */
+try{ setTimeout(function(){ iconsReady_(); }, 1200); }catch(e){}
+/* 화면용 아이콘 (스프라이트 타일) */
 function svgIcon_(name, tier, size){
-  iconDefs_();
-  var ic=ICONS[name]; if(!ic) return '';
-  var m=METAL[tier]||METAL.grey; size=size||16;
-  var th=ic.thick||1.3;
-  var fill=ic.radial?('url(#mr-'+tier+')'):('url(#mg-'+tier+')');
-  var dc=ic.detailLight?'rgba(255,255,255,.9)':m[2];
-  return '<svg class="ic" width="'+size+'" height="'+size+'" viewBox="0 -0.5 24 25" style="vertical-align:-3px;flex:0 0 auto;filter:drop-shadow(0 1.5px 1.5px rgba(0,0,0,.35));">'
-    + '<path d="'+ic.main+'" transform="translate(0,'+th+')" fill="'+m[2]+'"/>'
-    + '<path d="'+ic.main+'" fill="'+fill+'" stroke="'+m[2]+'" stroke-width="0.45" stroke-linejoin="round"/>'
-    + (ic.detail?'<path d="'+ic.detail+'" fill="none" stroke="'+dc+'" stroke-opacity="'+(ic.detailLight?0.9:0.55)+'" stroke-width="'+(ic.detailLight?0.9:1)+'" stroke-linecap="round" stroke-linejoin="round"/>':'')
-    + '<path d="'+ic.main+'" fill="url(#hl-w)"/>'
-    + '</svg>';
+  var col=BADGE_TIER[tier]!=null?BADGE_TIER[tier]:2, row=BADGE_ROW[name]!=null?BADGE_ROW[name]:0;
+  size=size||16;
+  var px=(BADGE_COLS>1)?(col*100/(BADGE_COLS-1)):0, py=(BADGE_ROWS>1)?(row*100/(BADGE_ROWS-1)):0;
+  var lock=(tier==='grey');
+  return '<span class="ic-bd'+(lock?' lock':'')+'" style="width:'+size+'px;height:'+size+'px;'
+    + 'background-image:url('+BADGE_SRC+');background-size:'+(BADGE_COLS*100)+'% '+(BADGE_ROWS*100)+'%;'
+    + 'background-position:'+px+'% '+py+'%;border-radius:'+Math.max(3,Math.round(size*0.22))+'px;"></span>';
 }
-/* 카드(캔버스)용 아이콘 (3D) */
+/* 카드(캔버스)용 아이콘 — 라운드 클립 + 테두리 */
 function drawIcon_(ctx, name, cx, cy, size, tier, opt){
-  var ic=ICONS[name]; if(!ic) return;
-  var m=METAL[tier]||METAL.gold; opt=opt||{};
-  var th=ic.thick||1.3;
-  ctx.save();
-  ctx.translate(cx-size/2, cy-size/2); var k=size/24; ctx.scale(k,k);
-  var P=new Path2D(ic.main);
-  // 그림자 + 두께
-  if(opt.shadow!==false){ ctx.shadowColor='rgba(0,0,0,.5)'; ctx.shadowBlur=7/k; ctx.shadowOffsetY=3/k; }
-  ctx.save(); ctx.translate(0,th); ctx.fillStyle=m[2]; ctx.fill(P); ctx.restore();
-  ctx.shadowColor='transparent';
-  // 본체
-  var g = ic.radial ? ctx.createRadialGradient(8.6,7.2,1,12,12,13) : ctx.createLinearGradient(0,0,14,24);
-  g.addColorStop(0,m[0]); g.addColorStop(ic.radial?0.45:0.5,m[1]); g.addColorStop(1,m[2]);
-  ctx.fillStyle=g; ctx.fill(P);
-  ctx.lineWidth=0.5; ctx.strokeStyle=m[2]; ctx.lineJoin='round'; ctx.stroke(P);
-  // 디테일
-  if(ic.detail){ var D=new Path2D(ic.detail); ctx.lineWidth=ic.detailLight?0.9:1; ctx.lineCap='round'; ctx.lineJoin='round';
-    ctx.strokeStyle=ic.detailLight?'rgba(255,255,255,.9)':m[2]; ctx.globalAlpha=ic.detailLight?0.92:0.6; ctx.stroke(D); ctx.globalAlpha=1; }
-  // 광택
-  ctx.save(); ctx.clip(P);
-  var gl=ctx.createLinearGradient(0,0,0,13); gl.addColorStop(0,'rgba(255,255,255,.6)'); gl.addColorStop(1,'rgba(255,255,255,0)');
-  ctx.fillStyle=gl; ctx.fillRect(0,0,24,13); ctx.restore();
-  ctx.restore();
+  opt=opt||{};
+  var m=METAL[tier]||METAL.gold;
+  var x=cx-size/2, y=cy-size/2, r=Math.max(3,size*0.22);
+  if(opt.shadow!==false){ ctx.save(); ctx.shadowColor='rgba(0,0,0,.5)'; ctx.shadowBlur=size*0.16; ctx.shadowOffsetY=size*0.06;
+    rr_(ctx,x,y,size,size,r); ctx.fillStyle='rgba(10,12,18,.9)'; ctx.fill(); ctx.restore(); }
+  if(BADGE_IMG){
+    var col=BADGE_TIER[tier]!=null?BADGE_TIER[tier]:2, row=BADGE_ROW[name]!=null?BADGE_ROW[name]:0;
+    var cw=BADGE_IMG.width/BADGE_COLS, ch=BADGE_IMG.height/BADGE_ROWS;
+    ctx.save(); rr_(ctx,x,y,size,size,r); ctx.clip();
+    ctx.drawImage(BADGE_IMG, col*cw, row*ch, cw, ch, x, y, size, size);
+    ctx.restore();
+  }
+  if(opt.ring!==false){ rr_(ctx,x,y,size,size,r); ctx.lineWidth=Math.max(1,size*0.035); ctx.strokeStyle=m[1]; ctx.globalAlpha=0.75; ctx.stroke(); ctx.globalAlpha=1; }
 }
 
 /* ================= 동기부여 모듈: 랭킹 레이스 · 마일스톤 뱃지 · 출석 스트릭 · 명예의 전당 ================= */
@@ -4693,7 +4639,7 @@ function streakIcon_(n){ return streakTier_(n) ? '👑' : ''; }
 /* 왕관 스트릭 칩 (화면) */
 function streakChip_(n, key, size){
   var t=streakTier_(n,key); if(!t) return '';
-  return '<span class="stk" style="border-color:'+t.c+';">'+svgIcon_('crown',t.key,size||14)+'<b>'+n+'</b></span>';
+  return '<span class="stk" style="border-color:'+t.c+';">'+svgIcon_('crown',t.key,size||17)+'<b>'+n+'</b></span>';
 }
 /* 연속 득점/도움: 참석한 경기 기준으로 최근부터 연속 (참석 안 한 경기는 건너뜀) */
 function streakStatOf_(pid, msDesc, attByM, statByM, key){
@@ -4768,7 +4714,7 @@ function tokenBadges_(mem){
   var c=state._careerMap[mem.playerId]; if(!c) return '';
   var out='';
   [['g','boot'],['a','ball'],['att','stadium']].forEach(function(p){
-    var e=msEarned_(c[p[0]]||0); if(e) out+=svgIcon_(p[1], MS_TIER[e].key, 17);
+    var e=msEarned_(c[p[0]]||0); if(e) out+=svgIcon_(p[1], MS_TIER[e].key, 20);
   });
   return out ? '<span class="t-bd">'+out+'</span>' : '';
 }
@@ -4840,12 +4786,12 @@ function openRace_(){
         + mvHtml_(r)
         + '<span class="rk-val oswald">'+r.v+'<small>'+(key==='att'?'점':cat.unit)+'</small></span></div>';
     }).join('') || '<div class="empty" style="padding:16px;">기록이 없습니다.</div>';
-    return '<div class="eyebrow" style="margin:14px 0 6px;display:flex;align-items:center;gap:6px;">'+svgIcon_(cat.icon,'gold',16)+cat.label+' 레이스</div><div class="rk-list">'+rows+'</div>';
+    return '<div class="eyebrow" style="margin:14px 0 6px;display:flex;align-items:center;gap:6px;">'+svgIcon_(cat.icon,'gold',20)+cat.label+' 레이스</div><div class="rk-list">'+rows+'</div>';
   }
   showSheet('<div class="grabber"></div>'
    + '<div class="sheet-head"><h3>🏁 랭킹 레이스</h3><button class="x" onclick="closeSheet()">✕</button></div>'
    + '<div class="sheet-body">'
-   +   '<p style="font-size:12px;color:var(--steel-soft);margin:0;">'+recPeriodLabel_()+' · 순위 변동은 이번 달 시작 전 대비<br>'+svgIcon_('crown','gold',12)+' 연속 기록 왕관 — 출석 3·5·10·20경기 / 득점·도움 2·3·5·10경기 연속 (동·은·금·다이아)</p>'
+   +   '<p style="font-size:12px;color:var(--steel-soft);margin:0;">'+recPeriodLabel_()+' · 순위 변동은 이번 달 시작 전 대비<br>'+svgIcon_('crown','gold',15)+' 연속 기록 왕관 — 출석 3·5·10·20경기 / 득점·도움 2·3·5·10경기 연속 (동·은·금·다이아)</p>'
    +   sec('g') + sec('a') + sec('att')
    +   '<button class="btn-primary" style="margin-top:16px;" onclick="shareRaceCard_()">🖼️ 레이스 카드 이미지 저장</button>'
    + '</div>');
@@ -4854,7 +4800,7 @@ function shareRaceCard_(){
   var d=raceData_();
   toast('카드 만드는 중...');
   fontsReady_(function(){
-    Promise.all([loadImg_(teamEmblemSrc_()), loadImg_(teamBgSrc_())]).then(function(imgs){
+    Promise.all([loadImg_(teamEmblemSrc_()), loadImg_(teamBgSrc_()), iconsReady_()]).then(function(imgs){
       var emblem=imgs[0], bg=imgs[1];
       var W=1080, pad=50, pw=W-pad*2;
       var rows=5, rh=92, secH=64+rows*rh+26;
@@ -4958,18 +4904,18 @@ function msBadgeChips_(pid, key, v){
   var cat=MS_CATS[key];
   var chips=MS_TH.map(function(t){
     var tier=MS_TIER[t];
-    if(v>=t) return '<span class="msb on" style="border-color:'+tier.c+';" onclick="shareMilestone_(\''+pid+'\',\''+key+'\','+t+')">'+svgIcon_(cat.icon,tier.key,26)+'<small>'+t+'</small></span>';
-    return '<span class="msb">'+svgIcon_(cat.icon,'grey',26)+'<small>'+t+'</small></span>';
+    if(v>=t) return '<span class="msb on" style="border-color:'+tier.c+';" onclick="shareMilestone_(\''+pid+'\',\''+key+'\','+t+')">'+svgIcon_(cat.icon,tier.key,42)+'<small>'+t+'</small></span>';
+    return '<span class="msb">'+svgIcon_(cat.icon,'grey',42)+'<small>'+t+'</small></span>';
   }).join('');
   var nx=msNext_(v);
   var prog = nx!=null ? ('<span class="msb-prog">'+v+' / '+nx+cat.unit+'</span>') : '<span class="msb-prog" style="color:'+MS_TIER[200].c+';">MAX!</span>';
-  return '<div class="msb-row"><div class="msb-top"><span class="msb-k" style="display:flex;align-items:center;gap:6px;">'+svgIcon_(cat.icon,'gold',16)+cat.label+'</span>'+prog+'</div><div class="msb-grid">'+chips+'</div></div>';
+  return '<div class="msb-row"><div class="msb-top"><span class="msb-k" style="display:flex;align-items:center;gap:6px;">'+svgIcon_(cat.icon,'gold',20)+cat.label+'</span>'+prog+'</div><div class="msb-grid">'+chips+'</div></div>';
 }
 function shareMilestone_(pid, key, tier){
   var p=(state.players||[]).filter(function(x){ return x.id===pid; })[0] || pname_(pid);
   var cat=MS_CATS[key], T=MS_TIER[tier];
   toast('카드 만드는 중...');
-  Promise.all([ API.run('getPlayerCareer', pid), loadPlayerPhotoL_(pid), loadImg_(teamEmblemSrc_()) ]).then(function(rs){
+  Promise.all([ API.run('getPlayerCareer', pid), loadPlayerPhotoL_(pid), loadImg_(teamEmblemSrc_()), iconsReady_() ]).then(function(rs){
     var tt=(rs[0]&&rs[0].total)||{}, big=rs[1]||'', emblem=rs[2];
     var v = key==='g' ? (tt.g||0) : key==='a' ? (tt.a||0) : ((tt.present||0)+(tt.late||0));
     return loadImg_(big||p.photo||'').then(function(face){
@@ -4997,12 +4943,20 @@ function shareMilestone_(pid, key, tier){
         for(var ri=0;ri<18;ri++){ var ra=ri*Math.PI/9, rw=Math.PI/9*0.42;
           ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,MR*2.4,ra-rw,ra+rw); ctx.closePath(); ctx.fill(); }
         ctx.restore();
-        // 메달
-        medal_(ctx,mcx,mcy,MR,T,cat.icon);
-        // 메달 숫자
-        ctx.save(); ctx.shadowColor='rgba(0,0,0,.4)'; ctx.shadowBlur=8; ctx.shadowOffsetY=3;
-        ctx.fillStyle='#fff'; ctx.font='700 '+Math.round(MR*0.34)+'px Oswald, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-        ctx.fillText(String(tier), mcx, mcy+MR*0.38); ctx.restore();
+        // 트로피 타일 (크게) + 단계 링
+        var TS=MR*1.62;
+        ctx.save(); ctx.shadowColor=T.c+'99'; ctx.shadowBlur=46; ctx.shadowOffsetY=10;
+        rr_(ctx,mcx-TS/2,mcy-TS/2,TS,TS,TS*0.22); ctx.fillStyle='rgba(10,12,18,.95)'; ctx.fill(); ctx.restore();
+        drawIcon_(ctx, cat.icon, mcx, mcy, TS, T.key, {shadow:false, ring:false});
+        rr_(ctx,mcx-TS/2,mcy-TS/2,TS,TS,TS*0.22); ctx.lineWidth=6; ctx.strokeStyle=T.c; ctx.stroke();
+        // 단계 수치 배지
+        ctx.font='700 44px Oswald, sans-serif';
+        var nw3=ctx.measureText(String(tier)).width+56, nh3=64, nx3=mcx-nw3/2, ny3=mcy+TS/2-nh3/2;
+        ctx.save(); ctx.shadowColor='rgba(0,0,0,.5)'; ctx.shadowBlur=14; ctx.shadowOffsetY=5;
+        rr_(ctx,nx3,ny3,nw3,nh3,nh3/2); ctx.fillStyle=T.c; ctx.fill(); ctx.restore();
+        rr_(ctx,nx3,ny3,nw3,nh3,nh3/2); ctx.lineWidth=3; ctx.strokeStyle='rgba(255,255,255,.85)'; ctx.stroke();
+        ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText(String(tier), mcx, ny3+nh3/2+1);
         // 선수 사진 + 이름
         var fy=980;
         if(face){
@@ -5053,8 +5007,8 @@ function renderHall_(){
       + '<div class="hf-year"><span><span class="oswald">'+y+'</span> 시즌</span>'
       +   (isAdmin()?'<a class="hf-set" onclick="openMvpPick_(\''+y+'\')">'+(mvpId?'MVP 변경':'MVP 지정')+'</a>':'')
       + '</div>'
-      + '<div class="hf-line mvp"><span class="hf-i">'+svgIcon_('trophy','gold',20)+'</span><span class="hf-k">MVP</span><span class="hf-n">'+(mvpName?('<b>'+esc(mvpName)+'</b>'):'<span style="color:var(--steel-soft);">미지정</span>')+'</span></div>'
-      + line(svgIcon_('boot','gold',20),'득점왕',s.scorer,'골') + line(svgIcon_('ball','gold',20),'도움왕',s.assister,'도움') + line(svgIcon_('stadium','gold',20),'출석왕',s.attKing,'점')
+      + '<div class="hf-line mvp"><span class="hf-i">'+svgIcon_('trophy','gold',24)+'</span><span class="hf-k">MVP</span><span class="hf-n">'+(mvpName?('<b>'+esc(mvpName)+'</b>'):'<span style="color:var(--steel-soft);">미지정</span>')+'</span></div>'
+      + line(svgIcon_('boot','gold',24),'득점왕',s.scorer,'골') + line(svgIcon_('ball','gold',24),'도움왕',s.assister,'도움') + line(svgIcon_('stadium','gold',24),'출석왕',s.attKing,'점')
       + '<button class="btn-ghost" style="margin-top:10px;" onclick="shareHofCard_(\''+y+'\')">🖼️ '+y+' 시상 카드 만들기</button>'
       + '</div>';
   }).join('') || '<div class="empty" style="padding:24px;"><div class="ei">🏆</div>결과가 기록된 시즌이 없습니다.</div>';
@@ -5117,7 +5071,7 @@ function shareHofCard_(year){
   var mvp=mvpId?((state.players||[]).filter(function(x){return x.id===mvpId;})[0]||pname_(mvpId)):null;
   toast('카드 만드는 중...');
   var photoP = mvpId ? loadPlayerPhotoL_(mvpId) : Promise.resolve('');
-  Promise.all([loadImg_(teamEmblemSrc_()), photoP]).then(function(rs){
+  Promise.all([loadImg_(teamEmblemSrc_()), photoP, iconsReady_()]).then(function(rs){
     var emblem=rs[0], big=rs[1]||'';
     return loadImg_(big||(mvp&&mvp.photo)||'').then(function(face){
       fontsReady_(function(){
