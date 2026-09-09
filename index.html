@@ -302,17 +302,17 @@
   }
   .token.drag{z-index:5;cursor:grabbing;}
   .token .t-num{
-    min-width:34px;height:34px;padding:0 4px;border-radius:17px;display:flex;align-items:center;justify-content:center;
-    font-weight:700;font-size:12.5px;letter-spacing:.02em;color:#fff;border:2px solid #fff;
-    box-shadow:0 3px 8px rgba(0,0,0,.35);background:var(--ink);
+    min-width:44px;height:44px;padding:0 5px;border-radius:22px;display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:15px;letter-spacing:.02em;color:#fff;border:2.5px solid #fff;
+    box-shadow:0 3px 9px rgba(0,0,0,.38);background:var(--ink);
   }
   .token .t-name{
-    font-size:9.5px;font-weight:700;color:#fff;background:rgba(20,18,26,.72);
-    padding:1px 5px;border-radius:5px;white-space:nowrap;max-width:72px;overflow:hidden;text-overflow:ellipsis;
+    font-size:11px;font-weight:700;color:#fff;background:rgba(20,18,26,.78);
+    padding:2px 6px;border-radius:6px;white-space:nowrap;max-width:88px;overflow:hidden;text-overflow:ellipsis;
   }
   .token.drag .t-num{transform:scale(1.12);}
-  .token .t-photo{position:relative;width:37px;height:37px;border-radius:50%;background-size:cover;background-position:center;background-color:#fff;border:2.5px solid var(--ink);box-shadow:0 3px 8px rgba(0,0,0,.35);display:block;}
-  .token .t-pos{position:absolute;top:-6px;right:-9px;font-size:8.5px;font-weight:600;letter-spacing:.02em;color:#fff;background:var(--ink);border-radius:5px;padding:1.5px 4px;line-height:1.2;border:1px solid #fff;}
+  .token .t-photo{position:relative;width:50px;height:50px;border-radius:50%;background-size:cover;background-position:center;background-color:#fff;border:3px solid var(--ink);box-shadow:0 3px 10px rgba(0,0,0,.4);display:block;}
+  .token .t-pos{position:absolute;top:-7px;right:-11px;font-size:9.5px;font-weight:600;letter-spacing:.02em;color:#fff;background:var(--ink);border-radius:6px;padding:1.5px 5px;line-height:1.2;border:1.2px solid #fff;}
   .pos-GK .t-pos{background:#E0A400;}
   .pos-DF .t-pos,.pos-CB .t-pos,.pos-LB .t-pos,.pos-RB .t-pos,.pos-LWB .t-pos,.pos-RWB .t-pos{background:#2563C9;}
   .pos-MF .t-pos,.pos-DM .t-pos,.pos-CM .t-pos,.pos-AM .t-pos{background:#1E9E6A;}
@@ -559,7 +559,7 @@
   .msb.on{color:var(--ink);background:#fff;box-shadow:0 4px 12px rgba(0,0,0,.14);cursor:pointer;opacity:1;}
   .stk{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:800;color:var(--ink);background:#fff;border:1.5px solid var(--gold);border-radius:8px;padding:1px 6px 1px 4px;margin-left:5px;white-space:nowrap;vertical-align:middle;}
   .stk b{font-family:'Oswald';font-weight:600;font-size:12px;}
-  .t-bd{display:flex;gap:2px;align-items:center;background:rgba(20,18,26,.72);border-radius:6px;padding:2px 4px;margin-top:2px;}
+  .t-bd{display:flex;gap:3px;align-items:center;background:rgba(20,18,26,.78);border-radius:8px;padding:2.5px 6px;margin-top:3px;box-shadow:0 2px 6px rgba(0,0,0,.3);}
   .t-bd svg{filter:none !important;}
   .msb-prog{margin-left:auto;font-size:11.5px;font-weight:800;color:var(--steel);}
   .hf-card{background:#fff;border:1px solid var(--line-strong);border-radius:16px;padding:14px 16px;margin-bottom:14px;box-shadow:var(--shadow-sm);}
@@ -740,7 +740,7 @@ var APPCHECK_SITE_KEY = '6Lfmi2AtAAAAAP1R-1JlYz1ht1WuQWp2RS_tibpT';
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '4.6';
+var APP_VERSION = '4.7';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -3590,9 +3590,10 @@ function drawPitch_(ctx,x,y,w,h){
   rr_(ctx,x,y,w,h,26); ctx.strokeStyle='rgba(255,255,255,.10)'; ctx.lineWidth=2; ctx.stroke();
   return PJ;
 }
-function drawToken_(ctx,PJ,m,img){
+function drawToken_(ctx,PJ,m,img,badges,phase){
   var col = m.guest ? '#6B7280' : (POS_COLORS[m.position]||CARD_INK);
-  var p=PJ.P(m.x,m.y), sc=0.76+0.24*PJ.S(m.y), r=43*sc, cx=p.x, cy=p.y-r*0.55;
+  var p=PJ.P(m.x,m.y), sc=0.80+0.20*PJ.S(m.y), r=49*sc, cx=p.x, cy=p.y-r*0.55;
+  if(phase==='label') return drawTokenLabel_(ctx,m,img,badges,cx,cy,r,sc);
   // 바닥 그림자 (타원)
   ctx.save(); ctx.translate(cx, p.y+r*0.18); ctx.scale(1, 0.32);
   var sg=ctx.createRadialGradient(0,0,r*0.2, 0,0,r*1.35); sg.addColorStop(0,'rgba(0,0,0,.45)'); sg.addColorStop(1,'rgba(0,0,0,0)');
@@ -3627,16 +3628,29 @@ function drawToken_(ctx,PJ,m,img){
     ctx.save(); ctx.shadowColor='rgba(0,0,0,.35)'; ctx.shadowBlur=4; ctx.shadowOffsetY=1;
     ctx.fillText(String(m.position||''), cx, cy+1); ctx.restore();
   }
-  // 이름표
+}
+/* 이름표 + 달성 뱃지 (모든 디스크를 그린 뒤 위에 겹쳐 그려 가려지지 않게) */
+function drawTokenLabel_(ctx,m,img,badges,cx,cy,r,sc){
   var label=(m.guest?m.num:numTok(m.num))+' '+String(m.name||'');
   ctx.font='700 '+Math.round(24*sc)+'px Pretendard, sans-serif';
-  var tw=ctx.measureText(label).width, pw=tw+28*sc, ph=40*sc, py=cy+(img?r+6*sc:r)+10*sc;
+  var tw=ctx.measureText(label).width, pw=tw+26*sc, ph=38*sc, py=cy+(img?r+6*sc:r)+7*sc;
   ctx.save(); ctx.shadowColor='rgba(0,0,0,.4)'; ctx.shadowBlur=10; ctx.shadowOffsetY=4;
   var pg=ctx.createLinearGradient(0,py,0,py+ph); pg.addColorStop(0,'rgba(38,35,46,.95)'); pg.addColorStop(1,'rgba(16,14,22,.95)');
   rr_(ctx,cx-pw/2,py,pw,ph,10*sc); ctx.fillStyle=pg; ctx.fill(); ctx.restore();
   rr_(ctx,cx-pw/2,py,pw,ph,10*sc); ctx.lineWidth=1; ctx.strokeStyle='rgba(255,255,255,.18)'; ctx.stroke();
   ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.textBaseline='middle';
   ctx.fillText(label,cx,py+ph/2+1);
+  // 달성 뱃지 (이름표 아래)
+  if(badges && badges.length){
+    var bi=28*sc, bgap=4*sc, bpad=7*sc, bh2=bi+bpad, bw2=badges.length*bi+(badges.length-1)*bgap+bpad*1.6;
+    var by2=py+ph+4*sc, bx2=cx-bw2/2;
+    ctx.save(); ctx.shadowColor='rgba(0,0,0,.4)'; ctx.shadowBlur=8; ctx.shadowOffsetY=3;
+    rr_(ctx,bx2,by2,bw2,bh2,bh2/2); ctx.fillStyle='rgba(14,12,20,.9)'; ctx.fill(); ctx.restore();
+    rr_(ctx,bx2,by2,bw2,bh2,bh2/2); ctx.lineWidth=1.2; ctx.strokeStyle='rgba(255,255,255,.22)'; ctx.stroke();
+    badges.forEach(function(bd,bidx){
+      drawIcon_(ctx, bd[0], bx2+bpad*0.8+bi/2+bidx*(bi+bgap), by2+bh2/2, bi, bd[1]);
+    });
+  }
 }
 function shareSquadCard_(){
   var d=state.squadDetail;
@@ -3645,9 +3659,9 @@ function shareSquadCard_(){
   var mems=(d.members||[]).filter(function(m){ return m.position; });
   var jobs=[loadImg_(teamEmblemSrc_()), loadImg_(teamBgSrc_())].concat(mems.map(function(m){ return loadImg_(m.photo||''); }));
   fontsReady_(function(){
-    Promise.all(jobs).then(function(imgs){
+    Promise.all([Promise.all(jobs), careerReady_()]).then(function(rr){ var imgs=rr[0];
       var emblem=imgs[0], bg=imgs[1];
-      var W=1080, pad=50, pw=W-pad*2, ph=Math.round(pw*1.16);
+      var W=1080, pad=50, pw=W-pad*2, ph=Math.round(pw*1.22);
       // 메모: 줄바꿈·자동 줄바꿈 반영해 높이 선계산 (내용 전체 표시 · 카드가 길어짐)
       var mctx=document.createElement('canvas').getContext('2d');
       mctx.font='500 27px Pretendard, sans-serif';
@@ -3668,8 +3682,10 @@ function shareSquadCard_(){
       var px=pad, py=CARD_HDR+48;
       var PJ=drawPitch_(ctx, px, py, pw, ph);
       // 먼 쪽(상대 골) 선수부터 그려 가까운 선수가 위에 겹치게
-      mems.map(function(m,i){ return {m:m, img:imgs[i+2]}; }).sort(function(a,b){ return a.m.y-b.m.y; })
-        .forEach(function(t){ drawToken_(ctx, PJ, t.m, t.img); });
+      var toks=mems.map(function(m,i){ return {m:m, img:imgs[i+2], bd:(m.guest?null:earnedBadges_(m.playerId))}; })
+        .sort(function(a,b){ return a.m.y-b.m.y; });
+      toks.forEach(function(t){ drawToken_(ctx, PJ, t.m, t.img, t.bd, 'disc'); });
+      toks.forEach(function(t){ drawToken_(ctx, PJ, t.m, t.img, t.bd, 'label'); });
       if(notes.length){
         var ny=py+ph+72;
         sectionTitle_(ctx, pad, ny, '요청사항 · 메모', 'NOTES');
@@ -4657,12 +4673,27 @@ function ensureCareer_(){
     if(state.screen==='form') render();
   }).catch(function(){ state._careerLoading=false; });
 }
+/* 통산 집계가 준비될 때까지 기다림 (스쿼드 카드용) */
+function careerReady_(){
+  if(state._careerMap) return Promise.resolve(state._careerMap);
+  return API.run('getRecordBundle','전체').then(function(b){ state._careerMap=careerMap_(b||{}); return state._careerMap; })
+    .catch(function(){ return null; });
+}
+/* 선수의 달성 뱃지 목록 [[아이콘, 단계키], ...] */
+function earnedBadges_(pid){
+  var c=(state._careerMap||{})[pid]; if(!c) return [];
+  var out=[];
+  [['g','boot'],['a','ball'],['att','stadium']].forEach(function(p){
+    var e=msEarned_(c[p[0]]||0); if(e) out.push([p[1], MS_TIER[e].key]);
+  });
+  return out;
+}
 function tokenBadges_(mem){
   if(!mem || mem.guest || !state._careerMap) return '';
   var c=state._careerMap[mem.playerId]; if(!c) return '';
   var out='';
   [['g','boot'],['a','ball'],['att','stadium']].forEach(function(p){
-    var e=msEarned_(c[p[0]]||0); if(e) out+=svgIcon_(p[1], MS_TIER[e].key, 11);
+    var e=msEarned_(c[p[0]]||0); if(e) out+=svgIcon_(p[1], MS_TIER[e].key, 17);
   });
   return out ? '<span class="t-bd">'+out+'</span>' : '';
 }
