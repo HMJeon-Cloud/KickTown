@@ -740,7 +740,7 @@ var APPCHECK_SITE_KEY = '6Lfmi2AtAAAAAP1R-1JlYz1ht1WuQWp2RS_tibpT';
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '4.7';
+var APP_VERSION = '4.8';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -1855,7 +1855,8 @@ function seasonAggFrom_(ms, srcS, srcA){
     var arr=Object.keys(agg).map(function(pid){ return {pid:pid, name:pname_(pid).name, v:Math.round(agg[pid][key]*10)/10}; }).filter(function(r){return r.v>0;}).sort(function(x,y){return y.v-x.v;});
     if(!arr.length) return null;
     var mx=arr[0].v;
-    return {v:mx, names:arr.filter(function(r){return r.v===mx;}).map(function(r){return r.name;})};
+    var tops=arr.filter(function(r){return r.v===mx;});
+    return {v:mx, names:tops.map(function(r){return r.name;}), pids:tops.map(function(r){return r.pid;})};
   }
   return {games:played.length, w:w, d:d, l:l, gf:gf, ga:ga,
     winRate:played.length?Math.round(w/played.length*100):0,
@@ -3913,7 +3914,7 @@ function sharePlayerCard_(pid){
   var p=(state.players||[]).filter(function(x){ return x.id===pid; })[0];
   if(!p){ toast('선수를 찾을 수 없습니다'); return; }
   toast('카드 만드는 중...');
-  Promise.all([ API.run('getPlayerCareer', pid), loadPlayerPhotoL_(pid), loadImg_(teamEmblemSrc_()), loadImg_(teamBgSrc_()) ]).then(function(rs){
+  Promise.all([ API.run('getPlayerCareer', pid), loadPlayerPhotoL_(pid), loadImg_(teamEmblemSrc_()), loadImg_(teamBgSrc_()), hofReady_() ]).then(function(rs){
     var career=rs[0]||{}, big=rs[1]||'', emblem=rs[2], bg=rs[3];
     return loadImg_(big||p.photo||'').then(function(face){
       fontsReady_(function(){
@@ -3921,7 +3922,18 @@ function sharePlayerCard_(pid){
         var sy=years[0]||null;                 // 최근 시즌
         var tt=career.total||{g:0,a:0,present:0,late:0,absent:0,excused:0};
         function rate(o){ var a=(o.present||0)+(o.late||0), all=a+(o.absent||0)+(o.excused||0); return all?Math.round(a/all*100):0; }
-        var W=1080, H=1520;
+        var attTotC=(tt.present||0)+(tt.late||0);
+        // 우상단 뱃지 (항목별 최고 단계만)
+        var myBadges=[];
+        [['g','boot',tt.g||0],['a','ball',tt.a||0],['att','stadium',attTotC]].forEach(function(q){
+          var e=msEarned_(q[2]); if(e) myBadges.push({icon:q[1], tier:MS_TIER[e], th:e});
+        });
+        // 수상 이력 (연도별)
+        var titles=playerTitles_(pid);
+        var TROW=62, ty0=1350;
+        var honH = titles.length ? (44 + titles.length*TROW) : 0;
+        var ylY = ty0 + honH + (titles.length?18:0) + 22;
+        var W=1080, H=Math.round(ylY+96);
         var c=document.createElement('canvas'); c.width=W; c.height=H;
         var ctx=c.getContext('2d');
         // 배경: 잉크 바탕 + 대형 엠블럼(은은하게) + 붉은 사선
@@ -3942,6 +3954,20 @@ function sharePlayerCard_(pid){
         if(emblem){ ctx.beginPath(); ctx.arc(96,96,44,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.fill(); circImg_(ctx,emblem,96,96,40); }
         ctx.fillStyle='#fff'; ctx.font='700 40px Oswald, sans-serif'; ctx.fillText(ourTeamName_(), 160, 84);
         ctx.fillStyle=CARD_GOLD; ctx.font='600 24px Pretendard, sans-serif'; ctx.fillText((sy?sy.year+' SEASON':'CAREER')+' · PLAYER CARD', 160, 122);
+        // 우상단: 획득 뱃지 (항목별 최고 단계)
+        if(myBadges.length){
+          var bd0=104, bgap0=16, bx0=W-56-bd0;
+          for(var mb=myBadges.length-1; mb>=0; mb--){
+            var B=myBadges[mb], bcx=bx0+ (mb-(myBadges.length-1))*0 , bcy=104;
+            bcx = W-56-bd0/2 - (myBadges.length-1-mb)*(bd0+bgap0);
+            ctx.save(); ctx.shadowColor='rgba(0,0,0,.45)'; ctx.shadowBlur=14; ctx.shadowOffsetY=5;
+            ctx.beginPath(); ctx.arc(bcx,bcy,bd0/2,0,Math.PI*2); ctx.fillStyle='rgba(14,12,20,.82)'; ctx.fill(); ctx.restore();
+            ctx.beginPath(); ctx.arc(bcx,bcy,bd0/2,0,Math.PI*2); ctx.lineWidth=3; ctx.strokeStyle=B.tier.c; ctx.stroke();
+            drawIcon_(ctx, B.icon, bcx, bcy-9, 52, B.tier.key);
+            ctx.fillStyle='#fff'; ctx.font='700 20px Oswald, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+            ctx.fillText(String(B.th), bcx, bcy+31);
+          }
+        }
         // 얼굴
         var cx=W/2, cy=470, r=230;
         var glow=ctx.createRadialGradient(cx,cy,r*0.5,cx,cy,r*2.1);
@@ -4009,9 +4035,36 @@ function sharePlayerCard_(pid){
         ctx.fillText('통산', pad+30, ly+60);
         ctx.fillStyle='#fff'; ctx.font='600 30px Pretendard, sans-serif';
         ctx.fillText((tt.g||0)+'골 · '+(tt.a||0)+'도움 · 출석 '+((tt.present||0)+(tt.late||0))+'경기 · 출석률 '+rate(tt)+'%', pad+110, ly+60);
+        // 수상 이력 (연도별 MVP·득점왕·도움왕·출석왕)
+        if(titles.length){
+          ctx.textAlign='left'; ctx.textBaseline='middle';
+          ctx.fillStyle=CARD_GOLD; ctx.font='600 24px Oswald, sans-serif';
+          ctx.fillText('HONOURS', pad+30, ty0-4);
+          ctx.fillStyle='rgba(255,255,255,.55)'; ctx.font='600 22px Pretendard, sans-serif';
+          ctx.fillText('수상 이력', pad+30+ctx.measureText('HONOURS').width+30, ty0-2);
+          var TIC={'MVP':'trophy','득점왕':'boot','도움왕':'ball','출석왕':'stadium'};
+          titles.forEach(function(t,ti){
+            var ry=ty0+22+ti*TROW;
+            glass_(ctx,pad,ry,W-pad*2,TROW-10,14);
+            ctx.textAlign='left'; ctx.textBaseline='middle';
+            ctx.fillStyle=CARD_GOLD; ctx.font='700 30px Oswald, sans-serif';
+            ctx.fillText(t.year, pad+26, ry+(TROW-10)/2);
+            var tx=pad+126;
+            t.list.forEach(function(nm){
+              ctx.font='700 24px Pretendard, sans-serif';
+              var tw2=ctx.measureText(nm).width, cw2=tw2+66;
+              rr_(ctx,tx,ry+8,cw2,TROW-26,13); ctx.fillStyle='rgba(199,162,75,.16)'; ctx.fill();
+              ctx.lineWidth=1.5; ctx.strokeStyle='rgba(199,162,75,.55)'; ctx.stroke();
+              drawIcon_(ctx,TIC[nm]||'trophy',tx+26,ry+(TROW-10)/2,34,'gold');
+              ctx.fillStyle='#fff'; ctx.textAlign='left';
+              ctx.fillText(nm, tx+48, ry+(TROW-10)/2+1);
+              tx+=cw2+12;
+            });
+          });
+        }
         // 연도별 미니 라인
         var yl=(years||[]).slice(0,4).map(function(y){ return y.year+' '+y.g+'골 '+y.a+'도움'; }).join('   ·   ');
-        if(yl){ ctx.fillStyle='rgba(255,255,255,.55)'; ctx.font='500 24px Pretendard, sans-serif'; ctx.textAlign='center'; ctx.fillText(cardEllipsis_(ctx, yl, W-pad*2), W/2, 1380); }
+        if(yl){ ctx.fillStyle='rgba(255,255,255,.55)'; ctx.font='500 24px Pretendard, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(cardEllipsis_(ctx, yl, W-pad*2), W/2, ylY); }
         ctx.fillStyle='rgba(255,255,255,.45)'; ctx.font='600 24px Oswald, sans-serif'; ctx.textAlign='center';
         ctx.fillText('FC JEMIRO · FOOTBALL CLUB', W/2, H-46);
         showCardPreview_(c, 'FCJEMIRO_player_'+String(p.name||pid)+'.png');
@@ -4672,6 +4725,28 @@ function ensureCareer_(){
     state._careerMap=careerMap_(b||{}); state._careerLoading=false;
     if(state.screen==='form') render();
   }).catch(function(){ state._careerLoading=false; });
+}
+/* 전체 기록 번들 (시즌 타이틀 계산용) — 세션 캐시 */
+function hofReady_(){
+  if(state._hofBundle) return Promise.resolve(state._hofBundle);
+  return API.run('getRecordBundle','전체').then(function(b){ state._hofBundle=b||{}; return state._hofBundle; }).catch(function(){ return null; });
+}
+/* 선수의 연도별 수상 이력 [{year, list:['MVP','득점왕',...]}, ...] (최신순) */
+function playerTitles_(pid){
+  var b=state._hofBundle; if(!b) return [];
+  var hon=honors_();
+  var years={}; (b.matches||[]).forEach(function(m){ if(m.date && hasResult_(m)) years[m.date.slice(0,4)]=1; });
+  var out=[];
+  Object.keys(years).sort().reverse().forEach(function(y){
+    var sd=seasonData_(y,(b.matches||[]),(b.stats||[]),(b.attendance||[]));
+    var list=[];
+    if(hon[y] && hon[y].mvp===pid) list.push('MVP');
+    if(sd.scorer && (sd.scorer.pids||[]).indexOf(pid)>-1) list.push('득점왕');
+    if(sd.assister && (sd.assister.pids||[]).indexOf(pid)>-1) list.push('도움왕');
+    if(sd.attKing && (sd.attKing.pids||[]).indexOf(pid)>-1) list.push('출석왕');
+    if(list.length) out.push({year:y, list:list});
+  });
+  return out;
 }
 /* 통산 집계가 준비될 때까지 기다림 (스쿼드 카드용) */
 function careerReady_(){
