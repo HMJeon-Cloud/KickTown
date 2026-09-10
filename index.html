@@ -632,6 +632,7 @@
 .vt-bar>i{display:block;height:100%;background:linear-gradient(90deg,#C7A24B,#E7CE86);}
 .vt-res.win .vt-bar>i{background:linear-gradient(90deg,#D9A62E,#FFE9A8);}
 .vt-cnt{min-width:22px;text-align:right;font-weight:800;}
+.vt-reslist.dark{background:rgba(14,16,23,.62);border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:12px 12px;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);}
 .vt-reslist.dark .vt-res{color:#E7E9EE;}
 .vt-reslist.dark .vt-bar{background:rgba(255,255,255,.14);}
 .vt-wrap{max-width:460px;width:100%;}
@@ -654,9 +655,9 @@
 .b11-sc{grid-area:sc;font-size:18px;font-weight:800;color:#9a7b23;}
 .auth-screen.vote{align-items:flex-start;justify-content:center;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:20px 16px 34px;
   background:linear-gradient(180deg,rgba(8,9,13,.90) 0%,rgba(8,9,13,.96) 100%),var(--login-img,radial-gradient(120% 90% at 50% 0%,#201D28 0%,#111015 60%,#0C0B10 100%));}
-.auth-screen.vote .auth-logo{width:64px;height:64px;border-radius:16px;}
+.auth-screen.vote .auth-logo{width:74px;height:74px;border-radius:0;background:transparent;border:0;box-shadow:none;filter:drop-shadow(0 6px 14px rgba(0,0,0,.65));}
 .auth-screen.vote .auth-title{font-size:24px;margin-top:10px;}
-.vt-card{background:rgba(20,22,30,.86);border-color:rgba(255,255,255,.28);padding:13px 8px;}
+.vt-card{background:rgba(14,16,23,.66);border-color:rgba(255,255,255,.30);padding:13px 8px;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);}
 .vt-card.on{background:rgba(199,162,75,.30);}
 .vt-cnum{font-size:17px;}
 .vt-cnm{font-size:15.5px;color:#fff;}
@@ -796,7 +797,7 @@ var APPCHECK_SITE_KEY = '6Lfmi2AtAAAAAP1R-1JlYz1ht1WuQWp2RS_tibpT';
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '6.1';
+var APP_VERSION = '6.2';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -1441,8 +1442,8 @@ function viewForm(){
   var sid = d.squad.id;
 
   var applyBtns = isAdmin() ? ('<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">'
-    + '<button class="btn-ghost" style="flex:1;margin:0;" onclick="loadAllToSquadGo(\''+sid+'\')">👥 전체 팀원 불러오기</button>'
-    + '<button class="btn-ghost" style="flex:1;margin:0;" onclick="openAddMembers_(\''+sid+'\')">➕ 팀원 추가</button>'
+    + '<button class="btn-ghost" style="flex:1;margin:0;" onclick="loadAllToSquadGo(\''+sid+'\')">👥 전체</button>'
+    + '<button class="btn-ghost" style="flex:1;margin:0;" onclick="openAddMembers_(\''+sid+'\')">➕ 팀원</button>'
     + '<button class="btn-ghost" style="flex:1;margin:0;" onclick="openGuestForm(\''+sid+'\')">➕ 게스트</button>'
     + '</div>') : '';
 
@@ -6142,6 +6143,44 @@ function voteKey_(){
     return k;
   }catch(e){ return 'k'+Math.random().toString(36).slice(2,9); }
 }
+/* 투표 화면용 엠블럼 (흰 배경 제거 · 워터마크용 반투명본 함께 생성) */
+var _voteEmb=null;
+function voteEmblem_(cb){
+  if(_voteEmb){ cb(_voteEmb); return; }
+  loadImg_(APP_LOGO).then(function(im){
+    var out={logo:APP_LOGO, wm:''};
+    try{
+      var c=im?emblemCut_(im):null;
+      if(c && c.toDataURL){
+        out.logo=c.toDataURL('image/png');
+        var f=document.createElement('canvas'); f.width=c.width; f.height=c.height;
+        var fx=f.getContext('2d'); fx.globalAlpha=0.16; fx.drawImage(c,0,0);
+        out.wm=f.toDataURL('image/png');
+      }
+    }catch(e){}
+    _voteEmb=out; cb(out);
+  }).catch(function(){ cb({logo:APP_LOGO, wm:''}); });
+}
+/* 투표 화면 배경 = 엠블럼(반투명) + 어둡게 깔린 경기장 사진 */
+function voteSkin_(){
+  var el=document.getElementById('pinScreen'); if(!el) return;
+  voteEmblem_(function(e){
+    var el2=document.getElementById('pinScreen'); if(!el2 || !el2.classList.contains('vote')) return;
+    Array.prototype.forEach.call(el2.querySelectorAll('.vt-logo'), function(im){ if(e.logo) im.src=e.logo; });
+    var bgImg=(AUTH_BG?'url("'+AUTH_BG+'")':'radial-gradient(120% 90% at 50% 0%,#201D28 0%,#111015 60%,#0C0B10 100%)');
+    var shade='linear-gradient(180deg,rgba(8,9,13,.58) 0%,rgba(8,9,13,.80) 45%,rgba(8,9,13,.93) 100%)';
+    if(e.wm){
+      el2.style.backgroundImage='url("'+e.wm+'"), '+shade+', '+bgImg;
+      el2.style.backgroundSize='76% auto, cover, cover';
+      el2.style.backgroundPosition='center 26%, center, center';
+      el2.style.backgroundRepeat='no-repeat, no-repeat, no-repeat';
+    } else {
+      el2.style.backgroundImage=shade+', '+bgImg;
+      el2.style.backgroundSize='cover, cover';
+      el2.style.backgroundPosition='center, center';
+    }
+  });
+}
 function voteHashId_(){ var m=String(location.hash||'').match(/^#vote=([A-Za-z0-9_-]+)/); return m?m[1]:''; }
 function voteUrl_(id){ return location.origin+location.pathname+'#vote='+id; }
 function voteRef_(id){ return db.collection(VOTE_COLL).doc(String(id)); }
@@ -6378,7 +6417,7 @@ function voteDeleteId_(id){
 function voteBoot_(){
   var id=voteHashId_();
   var el=document.getElementById('pinScreen');
-  if(el){ el.classList.add('vote'); el.style.display='flex'; el.innerHTML='<div class="auth-inner"><div class="auth-title">MOM 투표</div><div class="auth-sub">불러오는 중...</div></div>'; }
+  if(el){ el.classList.add('vote'); el.style.display='flex'; el.innerHTML='<div class="auth-inner"><div class="auth-title">MOM 투표</div><div class="auth-sub">불러오는 중...</div></div>'; voteSkin_(); }
   var tb=document.getElementById('tabbar'); if(tb) tb.style.display='none';
   var fb=document.getElementById('fab'); if(fb) fb.style.display='none';
   FS.ready.then(function(){
@@ -6392,8 +6431,10 @@ function voteBoot_(){
 }
 function voteFail_(msg){
   var el=document.getElementById('pinScreen'); if(!el) return;
-  el.innerHTML='<div class="auth-inner"><img class="auth-logo" src="'+APP_LOGO+'" alt=""><div class="auth-title">MOM 투표</div>'
+  el.classList.add('vote');
+  el.innerHTML='<div class="auth-inner"><img class="auth-logo vt-logo" src="'+APP_LOGO+'" alt=""><div class="auth-title">MOM 투표</div>'
     + '<div class="auth-sub">'+msg+'</div></div>';
+  voteSkin_();
 }
 function renderVoteScreen_(){
   var v=state._voteDoc; if(!v) return;
@@ -6415,11 +6456,12 @@ function renderVoteScreen_(){
       + '<button class="auth-btn" style="margin-top:14px;" onclick="voteFinish_()">완료 · 창 닫기</button>'
       + '<button class="auth-btn ghost" style="margin-top:8px;" onclick="voteEdit_()">선택 바꾸기</button>';
     el.innerHTML='<div class="auth-inner vt-wrap">'
-      + '<img class="auth-logo" src="'+APP_LOGO+'" alt="">'
+      + '<img class="auth-logo vt-logo" src="'+APP_LOGO+'" alt="">'
       + '<div class="auth-title">MOM 투표</div>'
       + '<div class="auth-sub">'+esc(v.title||'')+'</div>'
       + body + '</div>';
     el.style.display='flex';
+    voteSkin_();
     return;
   }
   if(v.closed){
@@ -6441,22 +6483,24 @@ function renderVoteScreen_(){
       + '<p class="vt-hint">'+(my?'다른 선수를 누르면 변경돼요.':'오늘 가장 잘한 선수를 한 번만 눌러주세요.')+'</p>';
   }
   el.innerHTML='<div class="auth-inner vt-wrap">'
-    + '<img class="auth-logo" src="'+APP_LOGO+'" alt="">'
+    + '<img class="auth-logo vt-logo" src="'+APP_LOGO+'" alt="">'
     + '<div class="auth-title">MOM 투표</div>'
     + '<div class="auth-sub">'+esc(v.title||'')+'</div>'
     + body
     + '</div>';
   el.style.display='flex';
+  voteSkin_();
 }
 function voteEdit_(){ state._voteEdit=true; renderVoteScreen_(); }
 function voteFinish_(){
   try{ window.close(); }catch(e){}
   setTimeout(function(){
     var el=document.getElementById('pinScreen'); if(!el) return;
-    el.innerHTML='<div class="auth-inner"><img class="auth-logo" src="'+APP_LOGO+'" alt="">'
+    el.innerHTML='<div class="auth-inner"><img class="auth-logo vt-logo" src="'+APP_LOGO+'" alt="">'
       + '<div class="auth-title">투표 완료</div>'
       + '<div class="auth-sub">참여해 주셔서 감사합니다</div>'
       + '<p class="vt-hint" style="margin-top:18px;">이 창은 닫으셔도 됩니다.</p></div>';
+    voteSkin_();
   }, 350);
 }
 function voteCast_(pid){
