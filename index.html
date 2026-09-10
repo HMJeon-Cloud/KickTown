@@ -662,6 +662,8 @@
 .vt-cnum{font-size:17px;}
 .vt-cnm{font-size:15.5px;color:#fff;}
 .vt-del{margin-left:8px;background:transparent;border:0;font-size:16px;cursor:pointer;padding:4px 6px;}
+.vt-actions{display:flex;gap:14px;margin-top:18px;}
+.vt-actions .auth-btn{flex:1 1 0;margin:0;padding:15px 8px;font-size:15px;white-space:nowrap;}
 </style>
 </head>
 <body>
@@ -797,7 +799,7 @@ var APPCHECK_SITE_KEY = '6Lfmi2AtAAAAAP1R-1JlYz1ht1WuQWp2RS_tibpT';
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '6.2';
+var APP_VERSION = '6.3';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -1069,9 +1071,12 @@ function loadTeam(){
 }
 // 기본 기간: 이미 로드된 경기목록(state.matches) 기준 가장 최근 연도
 function recDefaultPeriod(){
-  var ys={}; (state.matches||[]).forEach(function(m){ if(m.date) ys[m.date.slice(0,4)]=1; });
-  var arr=Object.keys(ys).sort().reverse();
-  return arr.length ? arr[0] : '전체';
+  /* 기본 조회 = 이번 시즌 (경기가 없으면 기록이 있는 최근 시즌, 그것도 없으면 전체) */
+  var cur=seasonKeyOf_(attToday_());
+  var ks={}; (state.matches||[]).forEach(function(m){ if(m.date) ks[seasonKeyOf_(m.date)]=1; });
+  if(ks[cur]) return 'S:'+cur;
+  var arr=Object.keys(ks).sort().reverse();
+  return arr.length ? ('S:'+arr[0]) : 'S:'+cur;
 }
 function loadRecord(){
   state.recPeriod = recDefaultPeriod();
@@ -5645,6 +5650,7 @@ function fsLoadMatchKids(cid, period){
     // period 지정 시 그 시즌(YYYY 또는 YYYY-MM) 경기만, 없거나 '전체'면 전 경기
     var want=(DB.matches||[]).filter(function(m){
       if(m.clubId!==cid) return false;
+      if(period && String(period).indexOf('S:')===0) return m.date && seasonKeyOf_(m.date)===String(period).slice(2);
       if(period && period!=='전체') return m.date && m.date.indexOf(period)===0;
       return true;
     }).map(function(m){return m.id;});
@@ -5963,7 +5969,9 @@ function editSeason_(){
    + '</div>');
 }
 function saveSeason_(m){
-  state.cfg.seasonStart=m; recCacheClear_(); closeSheet(); render();
+  state.cfg.seasonStart=m; recCacheClear_();
+  if(String(state.recPeriod||'').indexOf('S:')===0) state.recPeriod='S:'+seasonKeyOf_(attToday_());
+  closeSheet(); render();
   toast('시즌 기간 · '+seasonRangeLabel_());
   API.run('setConfig','seasonStart',m).then(function(cfg){ if(cfg) state.cfg=cfg; }).catch(function(){ toast('저장 실패 · 새로고침'); });
 }
@@ -6453,8 +6461,10 @@ function renderVoteScreen_(){
             + '<span class="vt-bar"><i style="width:'+pct+'%"></i></span><span class="vt-cnt oswald">'+r.n+'</span></div>';
         }).join('')+'</div>'
       + '<p class="vt-hint">현재 '+t.total+'명 참여 · 최종 MOM은 관리자가 마감하면 확정돼요.</p>'
-      + '<button class="auth-btn" style="margin-top:14px;" onclick="voteFinish_()">완료 · 창 닫기</button>'
-      + '<button class="auth-btn ghost" style="margin-top:8px;" onclick="voteEdit_()">선택 바꾸기</button>';
+      + '<div class="vt-actions">'
+      +   '<button class="auth-btn" onclick="voteFinish_()">완료 · 창 닫기</button>'
+      +   '<button class="auth-btn ghost" onclick="voteEdit_()">선택 바꾸기</button>'
+      + '</div>';
     el.innerHTML='<div class="auth-inner vt-wrap">'
       + '<img class="auth-logo vt-logo" src="'+APP_LOGO+'" alt="">'
       + '<div class="auth-title">MOM 투표</div>'
@@ -6493,15 +6503,20 @@ function renderVoteScreen_(){
 }
 function voteEdit_(){ state._voteEdit=true; renderVoteScreen_(); }
 function voteFinish_(){
+  var ua=String(navigator.userAgent||'');
+  /* ① 인앱 브라우저 전용 종료 스킴 (카카오톡·네이버·라인) */
+  try{
+    if(/KAKAOTALK/i.test(ua)) location.href='kakaoweb://closeBrowser';
+    else if(/NAVER\(inapp/i.test(ua)) location.href='navercorp://close';
+    else if(/Line\//i.test(ua)) location.href='line://close';
+  }catch(e){}
+  /* ② 일반 브라우저: 스크립트로 연 창이면 바로 닫힌다 */
   try{ window.close(); }catch(e){}
+  setTimeout(function(){ try{ window.open('','_self'); window.close(); }catch(e){} }, 150);
+  /* ③ 그래도 남아 있으면 빈 화면으로 종료 처리 */
   setTimeout(function(){
-    var el=document.getElementById('pinScreen'); if(!el) return;
-    el.innerHTML='<div class="auth-inner"><img class="auth-logo vt-logo" src="'+APP_LOGO+'" alt="">'
-      + '<div class="auth-title">투표 완료</div>'
-      + '<div class="auth-sub">참여해 주셔서 감사합니다</div>'
-      + '<p class="vt-hint" style="margin-top:18px;">이 창은 닫으셔도 됩니다.</p></div>';
-    voteSkin_();
-  }, 350);
+    try{ if(!document.hidden) location.replace('about:blank'); }catch(e){}
+  }, 700);
 }
 function voteCast_(pid){
   var v=state._voteDoc; if(!v || v.closed) return;
