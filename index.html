@@ -799,7 +799,7 @@ var APPCHECK_SITE_KEY = '6Lfmi2AtAAAAAP1R-1JlYz1ht1WuQWp2RS_tibpT';
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '6.4';
+var APP_VERSION = '6.5';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -1311,6 +1311,7 @@ function viewTeam(){
     + cfgRow('내 이름', esc(whoName_()||'미설정'), 'editWho_')
     + '<div class="list-row" style="cursor:pointer;" onclick="openVoteList_()"><span class="nm" style="flex:1;">MOM 투표 관리</span><span class="val" style="color:var(--red);font-size:14px;">🗳️ 목록 ›</span></div>'
     + cfgRow('시즌 기간', seasonRangeLabel_(), 'editSeason_')
+    + '<div class="list-row" style="cursor:pointer;" onclick="openUsage_()"><span class="nm" style="flex:1;">데이터 사용량 (이번 접속)</span><span class="val" style="color:var(--red);font-size:14px;">📶 '+((window.__KJR&&window.__KJR.n)||0)+'건 ›</span></div>'
     + '<div class="list-row" style="cursor:pointer;" onclick="viewerSwitch_()"><span class="nm" style="flex:1;">조회 전용 모드로 전환</span><span class="val" style="color:var(--red);font-size:14px;">👀 팀원 모드 ›</span></div>'
     + '<input type="file" id="bk_file" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none;" onchange="importBackupPick_(this)">'
     + '</div>'
@@ -4892,7 +4893,7 @@ function recBundleReady_(){
   return state._bundleP;
 }
 /* 기록이 바뀌면 파생 캐시를 한 곳에서 폐기 */
-function recCacheClear_(){ state._hofBundle=null; state._bundleP=null; state._careerMap=null; state._titles=null; }
+function recCacheClear_(){ state._hofBundle=null; state._bundleP=null; state._careerMap=null; state._titles=null; careerCacheClear_(); }
 /* 기록에 영향을 주는 쓰기면 파생 캐시 폐기 */
 function recTouch_(touched){
   if(!touched) return;
@@ -4903,9 +4904,12 @@ function recTouch_(touched){
 }
 function ensureCareer_(){
   if(state._careerMap || state._careerLoading) return;
+  var cm=careerCacheLoad_();
+  if(cm){ state._careerMap=cm; return; }
   state._careerLoading=true;
   recBundleReady_().then(function(b){
-    state._careerMap=careerMap_(b||{}); state._careerLoading=false;
+    state._careerMap=careerMap_(b||{}); careerCacheSave_(state._careerMap);
+    state._careerLoading=false;
     if(state.screen==='form') render();
   }).catch(function(){ state._careerLoading=false; });
 }
@@ -4933,7 +4937,9 @@ function playerTitles_(pid){
 /* 통산 집계가 준비될 때까지 기다림 (스쿼드 카드용) */
 function careerReady_(){
   if(state._careerMap) return Promise.resolve(state._careerMap);
-  return recBundleReady_().then(function(b){ state._careerMap=careerMap_(b||{}); return state._careerMap; })
+  var cm=careerCacheLoad_();
+  if(cm){ state._careerMap=cm; return Promise.resolve(cm); }
+  return recBundleReady_().then(function(b){ state._careerMap=careerMap_(b||{}); careerCacheSave_(state._careerMap); return state._careerMap; })
     .catch(function(){ return null; });
 }
 /* 선수의 달성 뱃지 목록 [[아이콘, 단계키], ...] */
@@ -5436,7 +5442,29 @@ var FS = { enabled:false, loadFailed:false };
 FS.ready = new Promise(function(res){ FS._resolve = res; });
 /* ── 로컬 캐시: 마지막 조회 데이터를 기기에 저장 → 10분 내 재접속은 네트워크 조회 없이 즉시 시작 ──
  * (30분 · 당겨서 새로고침은 캐시를 건너뛰고 서버에서 새로 조회) */
-var KT_CACHE_KEY='kt_cache_v1', KT_CACHE_TTL=30*60*1000;
+var KT_CACHE_KEY='kt_cache_v1', KT_CACHE_SCHEMA='1';
+/* 캐시 유지 시간: 관리자 3시간 · 조회 전용 6시간 (당겨서 새로고침은 항상 최신 조회)
+   ※ 앱 버전이 올라가도 데이터 캐시는 유지한다 — 예전에는 배포할 때마다 모든 기기가 전체 재조회했다. */
+var KT_CACHE_TTL=3*60*60*1000, KT_CACHE_TTL_VIEWER=6*60*60*1000;
+function ktCacheTtl_(){ try{ return (roleGet_()==='viewer')?KT_CACHE_TTL_VIEWER:KT_CACHE_TTL; }catch(e){ return KT_CACHE_TTL; } }
+/* 통산 집계(뱃지·마일스톤) 로컬 캐시 — 있으면 전체 기록을 다시 읽지 않는다 */
+var KT_CAREER_KEY='kt_career_v1', KT_CAREER_TTL=12*60*60*1000;
+function careerCacheLoad_(){
+  try{
+    var o=JSON.parse(localStorage.getItem(KT_CAREER_KEY)||'null');
+    var cid=window.ACTIVE_CLUB||state.activeClubId||'';
+    if(o && o.cid===cid && o.ts && (Date.now()-o.ts)<KT_CAREER_TTL && o.map) return o.map;
+  }catch(e){}
+  return null;
+}
+function careerCacheSave_(map){
+  try{
+    var cid=window.ACTIVE_CLUB||state.activeClubId||'';
+    if(!cid || !map) return;
+    localStorage.setItem(KT_CAREER_KEY, JSON.stringify({cid:cid, ts:Date.now(), map:map}));
+  }catch(e){}
+}
+function careerCacheClear_(){ try{ localStorage.removeItem(KT_CAREER_KEY); }catch(e){} }
 var _ktSaveT=null;
 function ktCacheSave_(){
   clearTimeout(_ktSaveT);
@@ -5444,23 +5472,46 @@ function ktCacheSave_(){
     try{
       var cid=window.ACTIVE_CLUB||state.activeClubId||'';
       if(!cid) return;
-      var o={v:APP_VERSION, ts:Date.now(), cid:cid,
+      var o={v:APP_VERSION, s:KT_CACHE_SCHEMA, ts:Date.now(), cid:cid,
         clubs:DB.clubs, config:DB.config, players:DB.players, matches:DB.matches, squads:DB.squads,
         members:DB.members, notes:DB.notes, stats:DB.stats, attendance:DB.attendance,
         sk:Object.keys(FS._sk||{}),
         kidMids:(FS._kidMids&&FS._kidMids[cid])||{}, kidLite:(FS._kidLite&&FS._kidLite[cid])||{}};
-      localStorage.setItem(KT_CACHE_KEY, JSON.stringify(o));
+      try{
+        localStorage.setItem(KT_CACHE_KEY, JSON.stringify(o));
+      }catch(e1){
+        /* 저장 공간 초과: 최근 기록만 남겨 다시 시도 (캐시를 통째로 버리면 다음 접속에 전체 재조회) */
+        try{ localStorage.setItem(KT_CACHE_KEY, JSON.stringify(ktCacheTrim_(o))); }
+        catch(e2){ try{ localStorage.removeItem(KT_CACHE_KEY); }catch(_){} }
+      }
     }catch(e){ try{ localStorage.removeItem(KT_CACHE_KEY); }catch(_){} }
   }, 600);
+}
+/* 용량 초과 시: 이번 시즌 + 최근 12개월 경기의 하위 기록만 남긴다 */
+function ktCacheTrim_(o){
+  try{
+    var curKey=seasonKeyOf_(attToday_());
+    var d=new Date(); d.setMonth(d.getMonth()-12);
+    var cut=d.toISOString().slice(0,10);
+    var keep={};
+    (o.matches||[]).forEach(function(m){ if(m.date && (seasonKeyOf_(m.date)===curKey || m.date>=cut)) keep[m.id]=1; });
+    o.stats=(o.stats||[]).filter(function(x){ return keep[x.matchId]; });
+    o.attendance=(o.attendance||[]).filter(function(x){ return keep[x.matchId]; });
+    var kl={}; Object.keys(o.kidLite||{}).forEach(function(id){ if(keep[id]) kl[id]=1; });
+    var km={}; Object.keys(o.kidMids||{}).forEach(function(id){ if(keep[id]) km[id]=1; });
+    o.kidLite=kl; o.kidMids=km; o.trimmed=1;
+  }catch(e){}
+  return o;
 }
 function ktCacheLoad_(){
   try{
     var o=JSON.parse(localStorage.getItem(KT_CACHE_KEY)||'null');
-    if(!o || o.v!==APP_VERSION || !o.ts || !o.cid) return null;
+    if(!o || o.s!==KT_CACHE_SCHEMA || !o.ts || !o.cid) return null;
     return o;
   }catch(e){ return null; }
 }
 function ktCacheBypass_(){
+  try{ if(sessionStorage.getItem('kt_fresh')==='1') careerCacheClear_(); }catch(e){}
   try{ if(sessionStorage.getItem('kt_fresh')==='1'){ sessionStorage.removeItem('kt_fresh'); return true; } }catch(e){}
   return false;
 }
@@ -5762,7 +5813,7 @@ FS.init = function(){
   if(/^#vote=/.test(String(location.hash||''))){ FS.voteOnly=true; authP.then(function(){ FS._resolve(); }); return; }
   // 캐시가 신선하면(30분) 조회 없이 즉시 시작 — 읽기 사용량 절감 + 빠른 로딩
   var cache = ktCacheLoad_();
-  if(cache && !ktCacheBypass_() && (Date.now()-cache.ts) < KT_CACHE_TTL){
+  if(cache && !ktCacheBypass_() && (Date.now()-cache.ts) < ktCacheTtl_()){
     ['clubs','players','matches','squads','members','notes','stats','attendance'].forEach(function(k){ if(cache[k]) DB[k]=cache[k]; });
     if(cache.config) DB.config=cache.config;
     FS._team[cache.cid]=Promise.resolve();
@@ -5954,6 +6005,27 @@ function seasonRangeLabel_(){
 function seasonKeys_(matches){
   var o={}; (matches||[]).forEach(function(m){ if(m.date && hasResult_(m)) o[seasonKeyOf_(m.date)]=1; });
   return Object.keys(o).sort().reverse();
+}
+/* 이번 접속에서 서버에서 읽어온 문서 수 (무료 한도 관리용) */
+function openUsage_(){
+  var R=window.__KJR||{n:0, byColl:{}, t0:Date.now()};
+  var mins=Math.max(1, Math.round((Date.now()-R.t0)/60000));
+  var rows=Object.keys(R.byColl||{}).sort(function(a,b){ return R.byColl[b]-R.byColl[a]; }).map(function(k){
+    return '<div class="rk-row"><span class="rk-name">'+esc(k)+'</span><span class="rk-val oswald">'+R.byColl[k]+'<small>건</small></span></div>';
+  }).join('') || '<div class="empty" style="padding:20px;">이번 접속에서 서버 조회 없이 캐시로 동작했어요 👍</div>';
+  var cacheAge='';
+  try{
+    var c=JSON.parse(localStorage.getItem(KT_CACHE_KEY)||'null');
+    if(c && c.ts) cacheAge=Math.round((Date.now()-c.ts)/60000)+'분 전 저장'+(c.trimmed?' (일부만 보관)':'');
+  }catch(e){}
+  showSheet('<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>📶 데이터 사용량</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<p style="font-size:13px;color:var(--steel);margin:0 0 12px;line-height:1.6;">이번 접속 '+mins+'분 동안 서버에서 읽은 문서 <b>'+(R.n||0)+'건</b>'
+   +   (cacheAge?'<br>기기 캐시 · '+esc(cacheAge):'')+'</p>'
+   +   '<div class="rk-list">'+rows+'</div>'
+   +   '<p style="font-size:12px;color:var(--steel-soft);margin:12px 2px 0;line-height:1.55;">무료 한도는 하루 5만 건이에요. 같은 기기에서 다시 열면 캐시로 동작해 조회가 거의 없고, <b>당겨서 새로고침</b>을 하면 최신 데이터를 다시 읽어옵니다.</p>'
+   + '</div>');
 }
 function editSeason_(){
   if(!requireAdmin()) return;
