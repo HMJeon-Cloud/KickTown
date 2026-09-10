@@ -652,6 +652,15 @@
 .b11-nm{grid-area:nm;font-size:14.5px;font-weight:800;}
 .b11-sub{grid-area:sub;font-size:11.5px;color:var(--steel-soft,#8b8f98);}
 .b11-sc{grid-area:sc;font-size:18px;font-weight:800;color:#9a7b23;}
+.auth-screen.vote{align-items:flex-start;justify-content:center;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:20px 16px 34px;
+  background:linear-gradient(180deg,rgba(8,9,13,.90) 0%,rgba(8,9,13,.96) 100%),var(--login-img,radial-gradient(120% 90% at 50% 0%,#201D28 0%,#111015 60%,#0C0B10 100%));}
+.auth-screen.vote .auth-logo{width:64px;height:64px;border-radius:16px;}
+.auth-screen.vote .auth-title{font-size:24px;margin-top:10px;}
+.vt-card{background:rgba(20,22,30,.86);border-color:rgba(255,255,255,.28);padding:13px 8px;}
+.vt-card.on{background:rgba(199,162,75,.30);}
+.vt-cnum{font-size:17px;}
+.vt-cnm{font-size:15.5px;color:#fff;}
+.vt-del{margin-left:8px;background:transparent;border:0;font-size:16px;cursor:pointer;padding:4px 6px;}
 </style>
 </head>
 <body>
@@ -787,7 +796,7 @@ var APPCHECK_SITE_KEY = '6Lfmi2AtAAAAAP1R-1JlYz1ht1WuQWp2RS_tibpT';
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '6.0';
+var APP_VERSION = '6.1';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -898,6 +907,11 @@ function mockHandler(fn, a){
     var dd=posDefaultXY(gpos, n);
     DB.members.push({squadId:a[0], playerId:gid, guest:true, gname:(a[1]||''), position:gpos, x:dd.x, y:dd.y});
     return buildSquadDetail_(a[0]);
+  }
+  if(fn==='addSquadMembers'){ // squadId, [playerId] — 미편성으로 추가
+    var asid=a[0], apids=a[1]||[];
+    apids.forEach(function(pid){ addPlayerToSquad_(asid, pid); });
+    return buildSquadDetail_(asid);
   }
   if(fn==='removeSquadMember'){ DB.members=DB.members.filter(function(x){return !(x.squadId===a[0] && x.playerId===a[1]);}); return buildSquadDetail_(a[0]); }
   if(fn==='addNote'){ DB.notes.push({id:'n'+Date.now(), squadId:a[0], phase:a[1], scope:a[2], body:a[3], author:a[4]||'', authorId:a[5]||''}); return buildSquadDetail_(a[0]); }
@@ -1428,6 +1442,7 @@ function viewForm(){
 
   var applyBtns = isAdmin() ? ('<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">'
     + '<button class="btn-ghost" style="flex:1;margin:0;" onclick="loadAllToSquadGo(\''+sid+'\')">👥 전체 팀원 불러오기</button>'
+    + '<button class="btn-ghost" style="flex:1;margin:0;" onclick="openAddMembers_(\''+sid+'\')">➕ 팀원 추가</button>'
     + '<button class="btn-ghost" style="flex:1;margin:0;" onclick="openGuestForm(\''+sid+'\')">➕ 게스트</button>'
     + '</div>') : '';
 
@@ -1484,6 +1499,51 @@ function viewForm(){
     + (isAdmin()?'<button class="btn-ghost" onclick="openMomVote_(\''+sid+'\')">🗳️ MOM 투표 만들기 (링크 공유)</button>':'')
     + '</div>' + reqPanel + rosterPanel
     + '<p class="hint">'+(isAdmin()?'선수를 끌어 위치를 옮기면 구역에 따라 포지션이 자동 지정됩니다. 명단의 포지션 선택은 위치를 유지한 채 이름만 바뀝니다.':'스쿼드 포메이션입니다.')+'</p>';
+}
+/* 스쿼드에 빠진 팀원 다시 추가 (실수로 제외한 인원 복구) */
+function openAddMembers_(sid){
+  if(!requireAdmin()) return;
+  var d=state.squadDetail; if(!d || !d.squad || d.squad.id!==sid){ toast('스쿼드를 먼저 선택하세요'); return; }
+  var inSquad={}; (d.members||[]).forEach(function(m){ inSquad[m.playerId]=1; });
+  var cand=(state.players||[]).filter(function(p){ return !inSquad[p.id]; }).slice().sort(numSort);
+  state._addSel={};
+  if(!cand.length){ toast('모든 팀원이 이미 편성되어 있습니다'); return; }
+  renderAddMembers_(sid, cand);
+}
+function renderAddMembers_(sid, cand){
+  var sel=state._addSel||{};
+  var n=Object.keys(sel).filter(function(k){ return sel[k]; }).length;
+  var rows=cand.map(function(p){
+    var on=!!sel[p.id];
+    return '<div class="vt-pick'+(on?' on':'')+'" onclick="addMemToggle_(\''+sid+'\',\''+p.id+'\')">'
+      + (p.photo?'<img class="vt-ava" src="'+p.photo+'" alt="">':'<div class="vt-ava vt-ava-e">👤</div>')
+      + '<span class="vt-num oswald">'+numDisp(p.num)+'</span>'
+      + '<span class="vt-nm">'+esc(p.name)+(p.status?' <span style="font-size:10.5px;color:var(--steel-soft);">'+esc(pStatusLabel_(p.status))+'</span>':'')+'</span>'
+      + '<span class="vt-ck">'+(on?'✓':'')+'</span></div>';
+  }).join('');
+  state._addCand=cand;
+  showSheet('<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>➕ 팀원 추가</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<p style="font-size:12.5px;color:var(--steel-soft);margin:0 0 10px;">스쿼드에 없는 팀원이에요. 탭해서 선택한 뒤 추가하면 <b>미편성</b>으로 들어옵니다.</p>'
+   +   '<div class="vt-list">'+rows+'</div>'
+   +   '<button class="btn-primary" style="margin-top:14px;" onclick="addMembersGo_(\''+sid+'\')">선택한 '+n+'명 추가</button>'
+   + '</div>');
+}
+function addMemToggle_(sid, pid){
+  state._addSel=state._addSel||{};
+  state._addSel[pid]=!state._addSel[pid];
+  renderAddMembers_(sid, state._addCand||[]);
+}
+function addMembersGo_(sid){
+  var sel=state._addSel||{};
+  var pids=Object.keys(sel).filter(function(k){ return sel[k]; });
+  if(!pids.length){ toast('추가할 팀원을 선택하세요'); return; }
+  API.run('addSquadMembers', sid, pids).then(function(res){
+    if(res){ SQUAD_CACHE[sid]=res; state.squadDetail=res; }
+    state.squadList=(state.squadList||[]).map(function(x){ return x.id===sid?Object.assign({},x,{count:res?res.members.length:x.count}):x; });
+    closeSheet(); render(); toast(pids.length+'명을 추가했습니다 (미편성)');
+  }).catch(function(){ toast('추가 실패 · 새로고침'); });
 }
 function setFormRosterQ(v){ state.formRosterQ=v; var box=document.querySelector('.rst-list'); /* 부분 갱신 */ render(); var el=document.querySelector('.rst-search'); if(el){ el.focus(); el.setSelectionRange(el.value.length,el.value.length); } }
 function setMemberPosOnly(pid, pos){
@@ -1613,7 +1673,6 @@ function doDeleteSquad(id, name){
   API.run('deleteSquad', id).then(function(list){ if(list){ state.squadList=list; if(state.currentSquadId && !SQUAD_CACHE[state.currentSquadId]) loadSquadDetail(state.currentSquadId); } }).catch(function(){ toast('삭제 저장 실패 · 새로고침'); });
 }
 function loadAllToSquadGo(sid){
-  if(!requireAdmin()) return;
   if(!requireAdmin()) return;
   API.run('loadAllToSquad', sid).then(function(res){
     if(res && res.detail){ SQUAD_CACHE[sid]=res.detail; state.squadDetail=res.detail; }
@@ -5440,7 +5499,7 @@ var WRITE_TOUCH = {
   addPlayer:['players'], updatePlayer:['players'], deletePlayer:['players','members','clubs'],
   addMatch:['matches'], updateMatch:['matches'], deleteMatch:['matches','squads','members','notes'], recordMatchResult:['matches'], setMatchMom:['matches'],
   createSquad:['squads'], deleteSquad:['squads','members','notes'], renameSquad:['squads'],
-  setSquadMember:['members'], setSquadMemberPos:['members'], removeSquadMember:['members'],
+  setSquadMember:['members'], setSquadMemberPos:['members'], removeSquadMember:['members'], addSquadMembers:['members'],
   loadAllToSquad:['members'], setSquadPos:['members'], addGuest:['members'],
   addNote:['notes'], deleteNote:['notes'],
   setMatchStats:['stats'], setMatchAttendance:['attendance'],
@@ -6133,13 +6192,37 @@ function momToggle_(pid){
   v.sel[pid]=!v.sel[pid];
   renderMomSetup_();
 }
-function momCreate_(){
+function momCreate_(force){
   var v=state._vote, d=state.squadDetail;
   if(!v||!d){ return; }
+  if(state._voteBusy){ return; }                 /* 버튼 연타로 중복 생성되는 것 방지 */
   var mems=(d.members||[]).filter(function(m){ return !m.guest && v.sel[m.playerId]; });
   if(mems.length<2){ toast('후보를 2명 이상 선택하세요'); return; }
   if(!v.matchId){ toast('대상 경기를 선택하세요'); return; }
   if(!window.db || !FS.enabled){ toast('네트워크 연결을 확인해주세요'); return; }
+  state._voteBusy=true;
+  var btn=document.querySelector('#sheetWrap .btn-primary'); if(btn){ btn.disabled=true; btn.textContent='만드는 중...'; }
+  if(!force){
+    /* 같은 경기에 이미 만들어진 투표가 있으면 새로 만들지 않고 알려준다 */
+    return db.collection(VOTE_COLL).where('matchId','==',v.matchId).limit(5).get().then(function(qs){
+      var ex=[]; qs.forEach(function(dd){ ex.push(dd.data()); });
+      state._voteBusy=false;
+      if(ex.length){
+        var open=ex.filter(function(x){ return !x.closed; })[0] || ex[0];
+        state._voteDoc=open;
+        showSheet('<div class="grabber"></div>'
+         + '<div class="sheet-head"><h3>이미 만든 투표가 있어요</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+         + '<div class="sheet-body">'
+         +   '<p style="font-size:13px;color:var(--steel);margin:0 0 14px;line-height:1.6;"><b>'+esc(open.title||'')+'</b><br>'+(open.closed?'마감된 투표':'진행 중 · '+Object.keys(open.votes||{}).length+'표')+'<br>같은 경기에 투표가 '+ex.length+'건 있습니다.</p>'
+         +   '<button class="btn-primary" onclick="openVoteAdmin_(\''+open.id+'\')">📊 기존 투표 열기</button>'
+         +   '<button class="btn-ghost" style="margin-top:8px;" onclick="momCopy_(\''+open.id+'\')">📋 기존 투표 링크 복사</button>'
+         +   '<button class="btn-ghost" style="margin-top:8px;" onclick="momCreateForce_()">➕ 그래도 새로 만들기</button>'
+         + '</div>');
+        return;
+      }
+      momCreate_(true);
+    }).catch(function(){ state._voteBusy=false; momCreate_(true); });
+  }
   var m=(state.matches||[]).filter(function(x){ return x.id===v.matchId; })[0]||{};
   var id='v'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
   var doc={
@@ -6151,12 +6234,14 @@ function momCreate_(){
   };
   toast('투표를 만드는 중...');
   voteRef_(id).set(doc).then(function(){
+    state._voteBusy=false;
     state._voteDoc=doc;
     closeSheet();
     momShareSheet_(doc);
     try{ logEvent_('vote','create','MOM 투표 · '+doc.title); }catch(e){}
-  }).catch(function(e){ if(window.console)console.warn(e); toast('투표 생성 실패 · 네트워크를 확인해주세요'); });
+  }).catch(function(e){ state._voteBusy=false; if(window.console)console.warn(e); toast('투표 생성 실패 · 네트워크를 확인해주세요'); });
 }
+function momCreateForce_(){ closeSheet(); setTimeout(function(){ momCreate_(true); }, 60); }
 function momShareSheet_(doc){
   var url=voteUrl_(doc.id);
   showSheet('<div class="grabber"></div>'
@@ -6197,9 +6282,10 @@ function openVoteList_(){
       var n=Object.keys(v.votes||{}).length;
       var st=v.closed?('<span class="vt-st done">마감 · MOM '+esc((v.winners||[]).map(voteName_).join('·')||'없음')+'</span>')
                      :('<span class="vt-st live">진행 중 · '+n+'표</span>');
-      return '<div class="rk-row" style="cursor:pointer;" onclick="openVoteAdmin_(\''+v.id+'\')">'
-        + '<span class="rk-name">'+esc(v.title||v.date||'')+'<br>'+st+'</span>'
-        + '<span class="rk-val oswald">'+n+'<small>표</small></span></div>';
+      return '<div class="rk-row" style="cursor:pointer;">'
+        + '<span class="rk-name" onclick="openVoteAdmin_(\''+v.id+'\')">'+esc(v.title||v.date||'')+'<br>'+st+'</span>'
+        + '<span class="rk-val oswald" onclick="openVoteAdmin_(\''+v.id+'\')">'+n+'<small>표</small></span>'
+        + '<button class="vt-del" onclick="voteDeleteId_(\''+v.id+'\')">🗑️</button></div>';
     }).join('') || '<div class="empty" style="padding:24px;">만든 투표가 없습니다.<br>스쿼드 탭에서 MOM 투표를 만들어보세요.</div>';
     showSheet('<div class="grabber"></div>'
      + '<div class="sheet-head"><h3>🗳️ MOM 투표</h3><button class="x" onclick="closeSheet()">✕</button></div>'
@@ -6243,7 +6329,8 @@ function renderVoteAdmin_(){
     ? '<p style="font-size:13px;color:var(--steel);margin:12px 2px 0;">마감된 투표입니다 · MOM '+esc((v.winners||[]).map(function(p){ return voteName_(p); }).join(' · ')||'없음')+'</p>'
     : '<button class="btn-primary" style="margin-top:14px;" onclick="voteClose_()">🏅 마감하고 MOM 기록</button>'
       + '<button class="btn-ghost" style="margin-top:8px;" onclick="momCopy_(\''+v.id+'\')">📋 링크 복사</button>'
-      + '<button class="btn-ghost" style="margin-top:8px;" onclick="renderVoteAdmin_refresh_()">↻ 현황 새로고침</button>';
+      + '<button class="btn-ghost" style="margin-top:8px;" onclick="renderVoteAdmin_refresh_()">↻ 현황 새로고침</button>'
+      + '<button class="btn-ghost" style="margin-top:8px;color:var(--red);" onclick="voteDelete_()">🗑️ 투표 취소 (삭제)</button>';
   showSheet('<div class="grabber"></div>'
    + '<div class="sheet-head"><h3>📊 '+esc(v.title||'MOM 투표')+'</h3><button class="x" onclick="closeSheet()">✕</button></div>'
    + '<div class="sheet-body">'
@@ -6274,8 +6361,16 @@ function voteClose_(){
 }
 function voteDelete_(){
   var v=state._voteDoc; if(!v) return;
-  appConfirm_('투표를 삭제할까요?\n경기 기록에 저장된 MOM은 그대로 남습니다.', function(){
-    voteRef_(v.id).delete().then(function(){ closeSheet(); toast('삭제되었습니다'); }).catch(function(){ toast('삭제 실패'); });
+  voteDeleteId_(v.id);
+}
+function voteDeleteId_(id){
+  if(!requireAdmin()) return;
+  appConfirm_('투표를 삭제(취소)할까요?\n마감 전이면 투표 내용이 사라지고, 이미 기록된 MOM은 그대로 남습니다.', function(){
+    voteRef_(id).delete().then(function(){
+      toast('투표가 삭제되었습니다');
+      try{ logEvent_('vote','delete','MOM 투표 삭제'); }catch(e){}
+      openVoteList_();
+    }).catch(function(){ toast('삭제 실패'); });
   });
 }
 
@@ -6283,7 +6378,7 @@ function voteDelete_(){
 function voteBoot_(){
   var id=voteHashId_();
   var el=document.getElementById('pinScreen');
-  if(el){ el.style.display='flex'; el.innerHTML='<div class="auth-inner"><div class="auth-title">MOM 투표</div><div class="auth-sub">불러오는 중...</div></div>'; }
+  if(el){ el.classList.add('vote'); el.style.display='flex'; el.innerHTML='<div class="auth-inner"><div class="auth-title">MOM 투표</div><div class="auth-sub">불러오는 중...</div></div>'; }
   var tb=document.getElementById('tabbar'); if(tb) tb.style.display='none';
   var fb=document.getElementById('fab'); if(fb) fb.style.display='none';
   FS.ready.then(function(){
@@ -6303,9 +6398,30 @@ function voteFail_(msg){
 function renderVoteScreen_(){
   var v=state._voteDoc; if(!v) return;
   var el=document.getElementById('pinScreen'); if(!el) return;
+  el.classList.add('vote');
   var my=(v.votes||{})[voteKey_()]||'';
   var t=voteTally_(v);
   var body;
+  if(!v.closed && my && !state._voteEdit){
+    /* 투표 완료 → 현재 결과를 보여주고 탭하면 창을 닫는다 */
+    var myName=((v.cands||[]).filter(function(c){ return c.pid===my; })[0]||{}).name||'';
+    body='<div class="vt-done">✅<br><b>'+esc(myName)+'</b><br><span>투표 완료</span></div>'
+      + '<div class="vt-reslist dark">'+t.rows.map(function(r){
+          var pct=t.total?Math.round(r.n/t.total*100):0;
+          return '<div class="vt-res'+(r.pid===my?' win':'')+'"><span class="vt-num oswald">'+esc(r.num)+'</span><span class="vt-nm">'+esc(r.name)+'</span>'
+            + '<span class="vt-bar"><i style="width:'+pct+'%"></i></span><span class="vt-cnt oswald">'+r.n+'</span></div>';
+        }).join('')+'</div>'
+      + '<p class="vt-hint">현재 '+t.total+'명 참여 · 최종 MOM은 관리자가 마감하면 확정돼요.</p>'
+      + '<button class="auth-btn" style="margin-top:14px;" onclick="voteFinish_()">완료 · 창 닫기</button>'
+      + '<button class="auth-btn ghost" style="margin-top:8px;" onclick="voteEdit_()">선택 바꾸기</button>';
+    el.innerHTML='<div class="auth-inner vt-wrap">'
+      + '<img class="auth-logo" src="'+APP_LOGO+'" alt="">'
+      + '<div class="auth-title">MOM 투표</div>'
+      + '<div class="auth-sub">'+esc(v.title||'')+'</div>'
+      + body + '</div>';
+    el.style.display='flex';
+    return;
+  }
   if(v.closed){
     var wn=(v.winners||[]).map(function(p){ var c=(v.cands||[]).filter(function(x){return x.pid===p;})[0]; return c?c.name:''; }).filter(Boolean);
     body='<div class="vt-done">🏅<br><b>'+esc(wn.join(' · ')||'미정')+'</b><br><span>'+esc(v.title||'')+' MOM</span></div>'
@@ -6322,7 +6438,7 @@ function renderVoteScreen_(){
         + (my===c.pid?'<span class="vt-chk">✓ 내 선택</span>':'')
         + '</button>';
     }).join('')+'</div>'
-      + '<p class="vt-hint">'+(my?'투표 완료! 다른 선수를 누르면 변경돼요.':'오늘 가장 잘한 선수를 한 번만 눌러주세요.')+'</p>';
+      + '<p class="vt-hint">'+(my?'다른 선수를 누르면 변경돼요.':'오늘 가장 잘한 선수를 한 번만 눌러주세요.')+'</p>';
   }
   el.innerHTML='<div class="auth-inner vt-wrap">'
     + '<img class="auth-logo" src="'+APP_LOGO+'" alt="">'
@@ -6332,10 +6448,22 @@ function renderVoteScreen_(){
     + '</div>';
   el.style.display='flex';
 }
+function voteEdit_(){ state._voteEdit=true; renderVoteScreen_(); }
+function voteFinish_(){
+  try{ window.close(); }catch(e){}
+  setTimeout(function(){
+    var el=document.getElementById('pinScreen'); if(!el) return;
+    el.innerHTML='<div class="auth-inner"><img class="auth-logo" src="'+APP_LOGO+'" alt="">'
+      + '<div class="auth-title">투표 완료</div>'
+      + '<div class="auth-sub">참여해 주셔서 감사합니다</div>'
+      + '<p class="vt-hint" style="margin-top:18px;">이 창은 닫으셔도 됩니다.</p></div>';
+  }, 350);
+}
 function voteCast_(pid){
   var v=state._voteDoc; if(!v || v.closed) return;
   var k=voteKey_();
   v.votes=v.votes||{}; v.votes[k]=pid;
+  state._voteEdit=false;
   renderVoteScreen_();
   var up={}; up['votes.'+k]=pid;
   voteRef_(v.id).update(up).then(function(){ toast('투표되었습니다'); })
