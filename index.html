@@ -664,6 +664,8 @@
 .vt-del{margin-left:8px;background:transparent;border:0;font-size:16px;cursor:pointer;padding:4px 6px;}
 .vt-actions{display:flex;gap:14px;margin-top:18px;}
 .vt-actions .auth-btn{flex:1 1 0;margin:0;padding:15px 8px;font-size:15px;white-space:nowrap;}
+.opt-chk{display:flex;align-items:center;gap:9px;margin:6px 2px 10px;font-size:13px;font-weight:700;color:var(--steel,#6B6E76);cursor:pointer;}
+.opt-chk input{width:19px;height:19px;accent-color:var(--red,#C8102E);}
 </style>
 </head>
 <body>
@@ -799,7 +801,7 @@ var APPCHECK_SITE_KEY = '6Lfmi2AtAAAAAP1R-1JlYz1ht1WuQWp2RS_tibpT';
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '6.5';
+var APP_VERSION = '6.6';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -1459,9 +1461,8 @@ function viewForm(){
       ? '<span class="t-photo" style="background-image:url('+mem.photo+')"><span class="t-pos oswald">'+esc(mem.position)+'</span></span>'
       : '<span class="t-num oswald">'+esc(mem.position)+'</span>';
     return '<div class="token pos-'+(mem.guest?'guest':mem.position)+'" data-pid="'+mem.playerId+'"'+(mem.guest?' data-guest="1"':'')+' style="left:'+(mem.x*100)+'%;top:'+(mem.y*100)+'%;">'
-      + face + '<span class="t-name">'+label+'</span>'+tokenBadges_(mem)+'</div>';
+      + face + '<span class="t-name">'+label+'</span></div>';
   }).join('');
-  ensureCareer_();
   var assignedN = d.members.filter(function(m){return m.position;}).length;
 
   var head = '<div class="eyebrow" style="display:flex;justify-content:space-between;align-items:center;">'
@@ -1502,6 +1503,7 @@ function viewForm(){
   var reqPanel = squadReqSection(d);
 
   return addBtn + tabs + applyBtns + '<div class="section">' + head + pitch
+    + '<label class="opt-chk"><input type="checkbox" id="sqbd_chk"'+(squadBadgeOn_()?' checked':'')+' onchange="squadBadgeSet_(this.checked)"><span>카드에 달성 뱃지 표시</span></label>'
     + '<button class="btn-ghost" onclick="shareSquadCard_()">🖼️ 스쿼드 카드 이미지 저장</button>'
     + (isAdmin()?'<button class="btn-ghost" onclick="openMomVote_(\''+sid+'\')">🗳️ MOM 투표 만들기 (링크 공유)</button>':'')
     + '</div>' + reqPanel + rosterPanel
@@ -3867,14 +3869,21 @@ function drawTokenLabel_(ctx,m,img,badges,cx,cy,r,sc){
     });
   }
 }
+/* 카드에 달성 뱃지를 넣을지 (기본 끔 · 켤 때만 통산 기록을 조회한다) */
+function squadBadgeOn_(){ try{ return localStorage.getItem('kt_sqbd')==='1'; }catch(e){ return false; } }
+function squadBadgeSet_(on){
+  try{ localStorage.setItem('kt_sqbd', on?'1':'0'); }catch(e){}
+  if(on) toast('카드에 달성 뱃지가 표시됩니다'); else toast('뱃지 없이 저장됩니다');
+}
 function shareSquadCard_(){
   var d=state.squadDetail;
   if(!d || !d.squad){ toast('스쿼드를 선택하세요'); return; }
-  toast('카드 만드는 중...');
+  var withBadge=squadBadgeOn_();
+  toast(withBadge?'카드 만드는 중... (뱃지 포함)':'카드 만드는 중...');
   var mems=(d.members||[]).filter(function(m){ return m.position; });
   var jobs=[loadImg_(teamEmblemSrc_()), loadImg_(teamBgSrc_())].concat(mems.map(function(m){ return loadImg_(m.photo||''); }));
   fontsReady_(function(){
-    Promise.all([Promise.all(jobs), careerReady_(), iconsReady_()]).then(function(rr){ var imgs=rr[0];
+    Promise.all([Promise.all(jobs), (withBadge?careerReady_():Promise.resolve(null)), iconsReady_()]).then(function(rr){ var imgs=rr[0];
       var emblem=imgs[0], bg=imgs[1];
       var W=1080, pad=50, pw=W-pad*2, ph=Math.round(pw*1.22);
       // 메모: 줄바꿈·자동 줄바꿈 반영해 높이 선계산 (내용 전체 표시 · 카드가 길어짐)
@@ -3897,7 +3906,7 @@ function shareSquadCard_(){
       var px=pad, py=CARD_HDR+48;
       var PJ=drawPitch_(ctx, px, py, pw, ph);
       // 먼 쪽(상대 골) 선수부터 그려 가까운 선수가 위에 겹치게
-      var toks=mems.map(function(m,i){ return {m:m, img:imgs[i+2], bd:(m.guest?null:earnedBadges_(m.playerId))}; })
+      var toks=mems.map(function(m,i){ return {m:m, img:imgs[i+2], bd:((!withBadge||m.guest)?null:earnedBadges_(m.playerId))}; })
         .sort(function(a,b){ return a.m.y-b.m.y; });
       toks.forEach(function(t){ drawToken_(ctx, PJ, t.m, t.img, t.bd, 'disc'); });
       toks.forEach(function(t){ drawToken_(ctx, PJ, t.m, t.img, t.bd, 'label'); });
