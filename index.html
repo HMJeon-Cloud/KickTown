@@ -799,7 +799,7 @@ var APPCHECK_SITE_KEY = '6Lfmi2AtAAAAAP1R-1JlYz1ht1WuQWp2RS_tibpT';
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '6.3';
+var APP_VERSION = '6.4';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -6513,9 +6513,15 @@ function voteFinish_(){
   /* ② 일반 브라우저: 스크립트로 연 창이면 바로 닫힌다 */
   try{ window.close(); }catch(e){}
   setTimeout(function(){ try{ window.open('','_self'); window.close(); }catch(e){} }, 150);
-  /* ③ 그래도 남아 있으면 빈 화면으로 종료 처리 */
+  /* ③ 창을 닫을 수 없는 브라우저(직접 접속 등)에서는 종료 안내 화면으로 마무리 */
   setTimeout(function(){
-    try{ if(!document.hidden) location.replace('about:blank'); }catch(e){}
+    if(document.hidden) return;
+    var el=document.getElementById('pinScreen'); if(!el) return;
+    el.innerHTML='<div class="auth-inner"><img class="auth-logo vt-logo" src="'+APP_LOGO+'" alt="">'
+      + '<div class="auth-title">투표 완료</div>'
+      + '<div class="auth-sub">참여해 주셔서 감사합니다</div>'
+      + '<p class="vt-hint" style="margin-top:18px;">이 창은 닫으셔도 됩니다.</p></div>';
+    voteSkin_();
   }, 700);
 }
 function voteCast_(pid){
