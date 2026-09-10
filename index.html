@@ -801,7 +801,7 @@ var APPCHECK_SITE_KEY = '6Lfmi2AtAAAAAP1R-1JlYz1ht1WuQWp2RS_tibpT';
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '6.6';
+var APP_VERSION = '6.7';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -1524,7 +1524,7 @@ function renderAddMembers_(sid, cand){
   var n=Object.keys(sel).filter(function(k){ return sel[k]; }).length;
   var rows=cand.map(function(p){
     var on=!!sel[p.id];
-    return '<div class="vt-pick'+(on?' on':'')+'" onclick="addMemToggle_(\''+sid+'\',\''+p.id+'\')">'
+    return '<div class="vt-pick'+(on?' on':'')+'" id="am_'+p.id+'" onclick="addMemToggle_(\''+sid+'\',\''+p.id+'\')">'
       + (p.photo?'<img class="vt-ava" src="'+p.photo+'" alt="">':'<div class="vt-ava vt-ava-e">👤</div>')
       + '<span class="vt-num oswald">'+numDisp(p.num)+'</span>'
       + '<span class="vt-nm">'+esc(p.name)+(p.status?' <span style="font-size:10.5px;color:var(--steel-soft);">'+esc(pStatusLabel_(p.status))+'</span>':'')+'</span>'
@@ -1536,13 +1536,19 @@ function renderAddMembers_(sid, cand){
    + '<div class="sheet-body">'
    +   '<p style="font-size:12.5px;color:var(--steel-soft);margin:0 0 10px;">스쿼드에 없는 팀원이에요. 탭해서 선택한 뒤 추가하면 <b>미편성</b>으로 들어옵니다.</p>'
    +   '<div class="vt-list">'+rows+'</div>'
-   +   '<button class="btn-primary" style="margin-top:14px;" onclick="addMembersGo_(\''+sid+'\')">선택한 '+n+'명 추가</button>'
+   +   '<button class="btn-primary" id="am_go" style="margin-top:14px;" onclick="addMembersGo_(\''+sid+'\')">선택한 <span id="am_n">'+n+'</span>명 추가</button>'
    + '</div>');
 }
 function addMemToggle_(sid, pid){
   state._addSel=state._addSel||{};
   state._addSel[pid]=!state._addSel[pid];
-  renderAddMembers_(sid, state._addCand||[]);
+  var row=document.getElementById('am_'+pid);
+  if(!row){ renderAddMembers_(sid, state._addCand||[]); return; }
+  var on=!!state._addSel[pid];
+  row.classList.toggle('on', on);
+  var ck=row.querySelector('.vt-ck'); if(ck) ck.textContent=on?'✓':'';
+  var n=Object.keys(state._addSel).filter(function(k){ return state._addSel[k]; }).length;
+  var el=document.getElementById('am_n'); if(el) el.textContent=n;
 }
 function addMembersGo_(sid){
   var sel=state._addSel||{};
@@ -6299,7 +6305,7 @@ function renderMomSetup_(){
   var n=mems.filter(function(m){ return v.sel[m.playerId]; }).length;
   var rows=mems.map(function(m){
     var on=!!v.sel[m.playerId];
-    return '<div class="vt-pick'+(on?' on':'')+'" onclick="momToggle_(\''+m.playerId+'\')">'
+    return '<div class="vt-pick'+(on?' on':'')+'" id="mp_'+m.playerId+'" onclick="momToggle_(\''+m.playerId+'\')">'
       + (m.photo?'<img class="vt-ava" src="'+m.photo+'" alt="">':'<div class="vt-ava vt-ava-e">👤</div>')
       + '<span class="vt-num oswald">'+numDisp(m.num)+'</span>'
       + '<span class="vt-nm">'+esc(m.name)+'</span>'
@@ -6309,16 +6315,24 @@ function renderMomSetup_(){
    + '<div class="sheet-head"><h3>🗳️ MOM 투표 만들기</h3><button class="x" onclick="closeSheet()">✕</button></div>'
    + '<div class="sheet-body">'
    +   '<div class="field"><label>대상 경기 (MOM이 기록될 경기)</label><select id="vt_match" onchange="state._vote.matchId=this.value">'+(opts||'<option value="">등록된 경기 없음</option>')+'</select></div>'
-   +   '<div class="eyebrow" style="margin:14px 0 6px;">후보 '+n+'명 · 탭해서 제외/추가</div>'
+   +   '<div class="eyebrow" style="margin:14px 0 6px;">후보 <span id="mp_n">'+n+'</span>명 · 탭해서 제외/추가</div>'
    +   '<div class="vt-list">'+rows+'</div>'
    +   '<button class="btn-primary" style="margin-top:14px;" onclick="momCreate_()">🔗 투표 링크 만들기</button>'
    +   '<p style="font-size:12px;color:var(--steel-soft);margin:10px 2px 0;line-height:1.5;">링크를 받은 팀원은 로그인 없이 한 번의 탭으로 투표합니다. 마감하면 MOM이 경기 기록에 저장돼요.</p>'
    + '</div>');
 }
+/* 목록을 다시 그리지 않고 해당 행만 갱신 — 아래쪽을 선택해도 스크롤이 맨 위로 튀지 않는다 */
 function momToggle_(pid){
   var v=state._vote; if(!v) return;
   v.sel[pid]=!v.sel[pid];
-  renderMomSetup_();
+  var row=document.getElementById('mp_'+pid);
+  if(!row){ renderMomSetup_(); return; }
+  var on=!!v.sel[pid];
+  row.classList.toggle('on', on);
+  var ck=row.querySelector('.vt-ck'); if(ck) ck.textContent=on?'✓':'';
+  var d=state.squadDetail||{};
+  var n=(d.members||[]).filter(function(m){ return !m.guest && v.sel[m.playerId]; }).length;
+  var el=document.getElementById('mp_n'); if(el) el.textContent=n;
 }
 function momCreate_(force){
   var v=state._vote, d=state.squadDetail;
