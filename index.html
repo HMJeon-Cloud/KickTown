@@ -806,7 +806,7 @@ var APPCHECK_SITE_KEY = '6Lfmi2AtAAAAAP1R-1JlYz1ht1WuQWp2RS_tibpT';
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '6.8';
+var APP_VERSION = '6.9';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -2591,6 +2591,7 @@ function photoErrMsg_(code){
 }
 function savePlayerPhotoL_(pid, dataUrl){
   if(!pid) return;
+  try{ fsBumpRev_(); }catch(e){}
   PHOTO_L[pid] = dataUrl || '';
   delete PHOTO_L_ERR[pid];
   if(!(window.db && FS.enabled)) return;
@@ -5492,7 +5493,7 @@ function ktCacheSave_(){
     try{
       var cid=window.ACTIVE_CLUB||state.activeClubId||'';
       if(!cid) return;
-      var o={v:APP_VERSION, s:KT_CACHE_SCHEMA, ts:Date.now(), cid:cid,
+      var o={v:APP_VERSION, s:KT_CACHE_SCHEMA, ts:Date.now(), cid:cid, rev:(FS._rev||''),
         clubs:DB.clubs, config:DB.config, players:DB.players, matches:DB.matches, squads:DB.squads,
         members:DB.members, notes:DB.notes, stats:DB.stats, attendance:DB.attendance,
         sk:Object.keys(FS._sk||{}),
@@ -5613,6 +5614,69 @@ function fsSyncDiff(k, beforeMap){
   }
   chain.catch(function(e){ if(window.console)console.warn('fs sync '+k, e); toast('저장 동기화 실패 · 새로고침'); });
 }
+/* ── 변경 표식(rev) ──
+ * 어떤 기기에서든 데이터를 바꾸면 config/app.rev 를 새 값으로 갱신한다.
+ * 다른 기기는 접속할 때 이 값 1건만 읽어보고, 다르면 캐시를 버리고 다시 불러온다.
+ * (캐시 유지 시간과 무관하게 '바뀐 내용은 바로' 반영되면서 읽기 사용량은 1건) */
+var _revT=null;
+function fsBumpRev_(){
+  if(!window.db || !FS.enabled) return;
+  clearTimeout(_revT);
+  _revT=setTimeout(function(){
+    var r='r'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+    FS._rev=r;
+    try{ DB.config=DB.config||{}; DB.config.rev=r; }catch(e){}
+    db.collection('config').doc('app').set({rev:r},{merge:true}).catch(function(){});
+    ktCacheSave_();
+  }, 1200);
+}
+/* 서버의 rev와 캐시의 rev를 비교해 다르면 전체를 다시 불러온다 */
+function fsRevCheck_(cachedRev){
+  if(!window.db || !FS.enabled) return;
+  db.collection('config').doc('app').get().then(function(sn){
+    kjRead_('config','변경 확인',1);
+    var rev=(sn && sn.exists && sn.data() && sn.data().rev) || '';
+    FS._rev=rev;
+    if(String(rev)===String(cachedRev||'')) return;      // 바뀐 것 없음 → 캐시 그대로
+    return fsRefreshAll_();
+  }).catch(function(){});
+}
+/* 앱을 다시 열었을 때(백그라운드 복귀)도 변경 여부만 1건 확인 — 최대 1분에 한 번 */
+var _revChk=0;
+function fsRevPoll_(){
+  if(!window.db || !FS.enabled || FS.voteOnly) return;
+  var now=Date.now();
+  if(now-_revChk < 60000) return;
+  _revChk=now;
+  fsRevCheck_(FS._rev||'');
+}
+try{
+  document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='visible') fsRevPoll_(); });
+  window.addEventListener('focus', function(){ fsRevPoll_(); });
+}catch(e){}
+/* 캐시를 버리고 팀 데이터를 다시 불러온다 (화면 갱신 포함) */
+function fsRefreshAll_(){
+  var cid=window.ACTIVE_CLUB||state.activeClubId||'';
+  FS._team={}; FS._sk={}; FS._kidsQ={}; FS._kidMids={}; FS._kidLite={};
+  recCacheClear_();
+  return fsLoadAll().then(function(){
+    if(!cid) return;
+    return fsLoadTeam(cid).then(function(){
+      return Promise.all([API.run('getPlayers'), API.run('getMatches')]).then(function(r){
+        if(r[0]) state.players=r[0];
+        if(r[1]) state.matches=r[1];
+        if(state.squadDetail && state.squadDetail.squad){
+          return API.run('getSquadDetail', state.squadDetail.squad.id).then(function(d){
+            if(d){ SQUAD_CACHE[d.squad.id]=d; state.squadDetail=d; }
+          }).catch(function(){});
+        }
+      });
+    });
+  }).then(function(){
+    if(state.recLoaded) { try{ ensureRecordPeriod(state.recPeriod); }catch(e){} }
+    ktCacheSave_(); try{ render(); }catch(e){}
+  }).catch(function(){});
+}
 function fsSyncConfig(){
   var c={}; for(var k in DB.config){ if(k==='staffPw'||k==='memberPw') continue; c[k]=DB.config[k]; }
   db.collection('config').doc('app').set(c,{merge:true}).catch(function(e){ if(window.console)console.warn('cfg sync',e); });
@@ -5693,6 +5757,7 @@ function fsLoadAll(){
     var cfg=(r[0]&&r[0].exists)?r[0].data():{};
     DB.config={ lateScore:0.5, absentScore:-1 };
     for(var k in cfg){ if(k!=='staffPw'&&k!=='memberPw') DB.config[k]=cfg[k]; }
+    FS._rev=cfg.rev||'';
     return (DB.clubs.length===0);
   });
 }
@@ -5804,7 +5869,7 @@ FS.run = function(fn, args){
   });
 };
 FS._dispatch = function(fn, args){
-    if(fn==='setConfig'){ var rc=mockHandler(fn, args); fsSyncConfig(); ktCacheSave_(); try{ logConfig_(args[0]); }catch(e){} return rc; }
+    if(fn==='setConfig'){ var rc=mockHandler(fn, args); fsSyncConfig(); fsBumpRev_(); ktCacheSave_(); try{ logConfig_(args[0]); }catch(e){} return rc; }
     var touched=WRITE_TOUCH[fn];
     if(touched){
       var before=fsSnapshot(touched);
@@ -5812,6 +5877,7 @@ FS._dispatch = function(fn, args){
       var res=mockHandler(fn, args);
       try{ recTouch_(touched); }catch(e){}
       touched.forEach(function(k){ fsSyncDiff(k, before[k]); });
+      fsBumpRev_();
       ktCacheSave_();
       if(ld){ try{ logWrite_(fn, args, res, ld); }catch(e){} }
       return res;
@@ -5841,7 +5907,10 @@ FS.init = function(){
     FS._kidMids[cache.cid]=cache.kidMids||{};
     FS._kidLite[cache.cid]=cache.kidLite||{};
     FS._fromCache=true;
+    FS._rev=cache.rev||'';
     FS._resolve();
+    /* 캐시로 즉시 시작하고, 곧바로 변경 여부만 1건 확인해 바뀌었으면 다시 불러온다 */
+    authP.then(function(){ _revChk=Date.now(); fsRevCheck_(cache.rev||''); });
     return;
   }
   authP.then(function(){ return fsLoadAll(); })
