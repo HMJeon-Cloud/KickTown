@@ -666,6 +666,11 @@
 .vt-actions .auth-btn{flex:1 1 0;margin:0;padding:15px 8px;font-size:15px;white-space:nowrap;}
 .opt-chk{display:flex;align-items:center;gap:9px;margin:6px 2px 10px;font-size:13px;font-weight:700;color:var(--steel,#6B6E76);cursor:pointer;}
 .opt-chk input{width:19px;height:19px;accent-color:var(--red,#C8102E);}
+.b11-help{background:#FAF8F3;border:1px solid #EAE4D6;border-radius:14px;padding:14px 15px;font-size:12.5px;line-height:1.75;color:var(--steel,#6B6E76);margin-bottom:14px;}
+.b11-help b{color:var(--ink,#111015);}
+.b11-top{display:inline-block;margin-left:6px;background:#FFF3D2;color:#8a6d1f;border-radius:6px;padding:1px 6px;font-size:10px;font-weight:900;vertical-align:middle;}
+.b11-row{align-items:start;}
+.b11-sub{line-height:1.6;}
 </style>
 </head>
 <body>
@@ -801,7 +806,7 @@ var APPCHECK_SITE_KEY = '6Lfmi2AtAAAAAP1R-1JlYz1ht1WuQWp2RS_tibpT';
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '6.7';
+var APP_VERSION = '6.8';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -6150,39 +6155,97 @@ function best11_(key, b){
     var v=agg[pid];
     var sc=0; ['mom','att','g','a'].forEach(function(k){ sc+=B11_W[k]*(mx[k]>0?Math.max(0,v[k])/mx[k]:0); });
     var p=pname_(pid);
-    var grp=POS_GRP[((p.positions||[])[0]||'')]||'';
-    return {pid:pid, name:p.name, num:p.num, photo:p.photo||'', pos:((p.positions||[])[0]||''), grp:grp,
-      g:v.g, a:v.a, att:Math.round(v.att*10)/10, mom:v.mom, score:Math.round(sc*1000)/10};
+    var pos0=((p.positions||[])[0]||'');
+    var grp=POS_GRP[pos0]||'MF';          /* 포지션 미등록 → 미드필더로 간주 */
+    return {pid:pid, name:p.name, num:p.num, photo:p.photo||'', pos:pos0, grp:grp,
+      g:v.g, a:v.a, att:Math.round(v.att*10)/10, mom:v.mom, score:Math.round(sc*1000)/10,
+      part:{mom:Math.round(B11_W.mom*(mx.mom>0?v.mom/mx.mom:0)*1000)/10,
+            att:Math.round(B11_W.att*(mx.att>0?Math.max(0,v.att)/mx.att:0)*1000)/10,
+            g:Math.round(B11_W.g*(mx.g>0?v.g/mx.g:0)*1000)/10,
+            a:Math.round(B11_W.a*(mx.a>0?v.a/mx.a:0)*1000)/10}};
   }).filter(function(r){ return r.score>0 && !/\(탈퇴\)/.test(r.name); })
     .sort(function(x,y){ return y.score-x.score; });
-  /* 슬롯 배정: 포지션 그룹 우선 → 남는 자리는 점수순으로 채움 */
-  var used={}, picks=[];
-  B11_SLOTS.forEach(function(sl){
-    var pool=rows.filter(function(r){ return !used[r.pid] && r.grp===sl.grp; });
-    var c=pool.filter(function(r){ return r.pos===sl.pos; })[0] || pool[0];
-    if(c){ used[c.pid]=1; picks.push(Object.assign({}, c, sl, {realPos:c.pos})); } else picks.push(Object.assign({}, sl, {pid:null}));
+  /* 항목별 1위 표시용 순위 */
+  ['mom','att','g','a'].forEach(function(k){
+    rows.slice().sort(function(x,y){ return y[k]-x[k]; }).forEach(function(r,i,arr){
+      if(r[k]>0 && r[k]===arr[0][k]) r['top_'+k]=1;
+    });
   });
-  picks.forEach(function(pk, i){
-    if(pk.pid) return;
-    var c=rows.filter(function(r){ return !used[r.pid]; })[0];
-    if(c){ used[c.pid]=1; picks[i]=Object.assign({}, c, B11_SLOTS[i], {realPos:c.pos}); }
+  /* 슬롯 배정
+   *  ① 포지션 그룹(GK/DF/MF/FW)별로 '점수 상위' 선수를 자리 수만큼 먼저 선발한다.
+   *  ② 선발된 선수끼리 자리를 나눌 때만 세부 포지션(LB·CB 등)을 맞춘다.
+   *     → 세부 포지션이 같다는 이유로 점수가 낮은 선수가 뽑히지 않는다.
+   *  ③ 그룹에 인원이 부족해 빈 자리는 남은 선수 중 점수순으로 채운다. */
+  var used={}, picks=new Array(B11_SLOTS.length);
+  function fit_(r, sl){ return Object.assign({}, r, sl, {realPos:r.pos}); }
+  var grpSlots={};
+  B11_SLOTS.forEach(function(sl, i){ (grpSlots[sl.grp]=grpSlots[sl.grp]||[]).push({sl:sl, idx:i}); });
+  Object.keys(grpSlots).forEach(function(g){
+    var slots=grpSlots[g];
+    var cand=rows.filter(function(r){ return r.grp===g; }).slice(0, slots.length);
+    cand.forEach(function(c){ used[c.pid]=1; });
+    var remain=cand.slice();
+    slots.forEach(function(o){                       /* 세부 포지션 일치 우선 */
+      for(var i=0;i<remain.length;i++){
+        if(remain[i].pos===o.sl.pos){ picks[o.idx]=fit_(remain.splice(i,1)[0], o.sl); return; }
+      }
+    });
+    slots.forEach(function(o){                       /* 남은 인원 점수순 배치 */
+      if(!picks[o.idx] && remain.length) picks[o.idx]=fit_(remain.shift(), o.sl);
+    });
   });
-  return {key:key, picks:picks.filter(function(p){ return p.pid; }), rows:rows, season:s};
+  B11_SLOTS.forEach(function(sl, i){                 /* 인원 부족으로 빈 자리 */
+    if(picks[i]) return;
+    for(var j=0;j<rows.length;j++){
+      if(!used[rows[j].pid]){ used[rows[j].pid]=1; picks[i]=fit_(rows[j], sl); return; }
+    }
+  });
+  picks=picks.filter(function(p){ return p && p.pid; });
+  var sel=picks;
+  /* 선발되지 못한 선수: 사유(같은 포지션 경쟁 / 점수 순위) */
+  var slotByGrp={}; B11_SLOTS.forEach(function(sl){ slotByGrp[sl.grp]=(slotByGrp[sl.grp]||0)+1; });
+  var out=rows.filter(function(r){ return !used[r.pid]; }).map(function(r){
+    var better=sel.filter(function(p){ return p.grp===r.grp && p.score>=r.score; }).length;
+    r.why = (better>=(slotByGrp[r.grp]||0) && better>0)
+      ? (r.grp+' 자리 '+(slotByGrp[r.grp]||0)+'명 마감 · 같은 포지션에 점수 높은 선수 '+better+'명')
+      : '점수 순위 밖';
+    return r;
+  });
+  return {key:key, picks:sel, rows:rows, out:out, season:s};
 }
 function openBest11_(key){
   var d=best11_(key);
   if(!d.picks.length){ toast('해당 시즌 기록이 없습니다'); return; }
-  var rows=d.picks.map(function(p){
-    return '<div class="b11-row"><span class="b11-pos">'+esc(p.pos)+'</span>'
-      + '<span class="b11-nm">'+esc(p.name)+(p.realPos&&p.realPos!==p.pos?' <span style="font-size:10.5px;color:var(--steel-soft);font-weight:700;">('+esc(p.realPos)+')</span>':'')+'</span>'
-      + '<span class="b11-sub">MOM '+p.mom+' · 출석 '+p.att+' · '+p.g+'골 '+p.a+'도움</span>'
+  function tops_(p){
+    var t='';
+    if(p.top_mom) t+='<span class="b11-top">MOM 1위</span>';
+    if(p.top_att) t+='<span class="b11-top">출석 1위</span>';
+    if(p.top_g) t+='<span class="b11-top">득점 1위</span>';
+    if(p.top_a) t+='<span class="b11-top">도움 1위</span>';
+    return t;
+  }
+  function line_(p, why){
+    return '<div class="b11-row"><span class="b11-pos">'+esc(p.pos||'-')+'</span>'
+      + '<span class="b11-nm">'+esc(p.name)+(p.realPos&&p.realPos!==p.pos?' <span style="font-size:10.5px;color:var(--steel-soft);font-weight:700;">('+esc(p.realPos)+')</span>':'')+tops_(p)+'</span>'
+      + '<span class="b11-sub">MOM '+p.mom+' · 출석 '+p.att+' · '+p.g+'골 '+p.a+'도움'
+      +   '<br><span style="color:#9a7b23;">점수 '+p.part.mom+' + '+p.part.att+' + '+p.part.g+' + '+p.part.a+'</span>'
+      +   (why?'<br><span style="color:var(--red);">'+esc(why)+'</span>':'')+'</span>'
       + '<span class="b11-sc oswald">'+p.score+'</span></div>';
-  }).join('');
+  }
+  var rows=d.picks.map(function(p){ return line_(p,''); }).join('');
+  var outRows=(d.out||[]).slice(0,5).map(function(p){ return line_(p, p.why); }).join('');
   showSheet('<div class="grabber"></div>'
    + '<div class="sheet-head"><h3>⭐ '+seasonLabel_(key)+' 베스트 11</h3><button class="x" onclick="closeSheet()">✕</button></div>'
    + '<div class="sheet-body">'
-   +   '<p style="font-size:12px;color:var(--steel-soft);margin:0 0 12px;line-height:1.5;">점수 비중 · MOM 40% > 출석 30% > 득점 20% > 도움 10% (시즌 최고값 대비)<br>포지션은 등록 포지션 기준으로 4-3-3에 배치돼요.</p>'
+   +   '<div class="b11-help">'
+   +     '<b>선정 기준</b><br>'
+   +     '① 항목별 <b>시즌 1위 선수를 100%</b>로 두고 내 기록의 비율을 계산해요.<br>'
+   +     '② 그 비율에 비중을 곱해 더합니다 — <b>MOM 40 · 출석 30 · 득점 20 · 도움 10</b> (만점 100).<br>'
+   +     '③ 점수가 높은 순서로 <b>4-3-3 포지션 자리</b>에 배치합니다. GK 1 · DF 4 · MF 3 · FW 3<br>'
+   +     '<span style="color:var(--steel-soft);">→ 출석 1위여도 MOM·득점·도움이 없으면 최대 30점이라, 같은 포지션에 점수가 더 높은 선수가 있으면 빠질 수 있어요.</span>'
+   +   '</div>'
    +   '<div class="b11-list">'+rows+'</div>'
+   +   (outRows?('<div class="eyebrow" style="margin:18px 0 8px;">아깝게 제외된 후보</div><div class="b11-list">'+outRows+'</div>'):'')
    +   '<button class="btn-primary" style="margin-top:14px;" onclick="shareBest11_(\''+key+'\')">🖼️ 베스트 11 카드 이미지 저장</button>'
    + '</div>');
 }
