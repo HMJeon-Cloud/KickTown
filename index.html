@@ -809,7 +809,7 @@ var APPCHECK_SITE_KEY = '6Lfmi2AtAAAAAP1R-1JlYz1ht1WuQWp2RS_tibpT';
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '7.1';
+var APP_VERSION = '7.2';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -1322,12 +1322,14 @@ function viewTeam(){
     + '<div class="list-row" style="cursor:pointer;" onclick="openVoteList_()"><span class="nm" style="flex:1;">MOM 투표 관리</span><span class="val" style="color:var(--red);font-size:14px;">🗳️ 목록 ›</span></div>'
     + cfgRow('시즌 기간', seasonRangeLabel_(), 'editSeason_')
     + '<div class="list-row" style="cursor:pointer;" onclick="openUsage_()"><span class="nm" style="flex:1;">데이터 사용량 (이번 접속)</span><span class="val" style="color:var(--red);font-size:14px;">📶 '+((window.__KJR&&window.__KJR.n)||0)+'건 ›</span></div>'
+    + (isOwner() ? ('<div class="list-row" style="cursor:pointer;" onclick="openPinAdmin_()"><span class="nm" style="flex:1;">PIN 관리 <span style="font-size:10.5px;color:var(--steel-soft);font-weight:700;">총관리자</span></span><span class="val" style="color:var(--red);font-size:14px;">🔐 설정 ›</span></div>') : '')
     + '<div class="list-row" style="cursor:pointer;" onclick="viewerSwitch_()"><span class="nm" style="flex:1;">조회 전용 모드로 전환</span><span class="val" style="color:var(--red);font-size:14px;">👀 팀원 모드 ›</span></div>'
     + '<input type="file" id="bk_file" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none;" onchange="importBackupPick_(this)">'
     + '</div>'
     + '<p style="font-size:11.5px;color:var(--steel-soft);margin:8px 2px 0;">출석·지각·불참 점수는 기록 탭 출석 순위 집계에 반영돼요. (미참석 0점)</p>'
     + '</div>';
   return dDayBanner_()
+    + '<div class="ro-bar" style="background:linear-gradient(135deg,#1b1f2b,#11141c);">'+(isOwner()?'👑 총관리자로 접속 중 · 모든 권한':'🛠️ 팀 관리자로 접속 중 · 데이터 입력·수정 가능')+'</div>'
     + '<div class="eyebrow">등록 선수 '+players.length+'명'+(players.some(function(p){return !isActiveP_(p);})?' · 활동 '+players.filter(isActiveP_).length+'명':'')+'</div>'
     + '<div class="squad">'+body+'</div>'
     + clubSec
@@ -3355,11 +3357,29 @@ function toast(msg){
 /* ================= 관리자 단독 모드 ================= */
 /* 팀원 로그인·계정·권한 시스템 제거 — 이 페이지는 관리자 전용. */
 function authId(){ return ''; }
-/* 접속 모드: 'admin'(PIN 통과) / 'viewer'(조회 전용) */
+/* 접속 모드
+ *  owner  = 총관리자 (PIN 관리 포함 모든 권한)
+ *  admin  = 팀 관리자 (데이터 입력·수정·삭제, PIN 관리는 불가)
+ *  viewer = 팀원 (조회 전용) */
 var ROLE_KEY='kt_role';
 function roleGet_(){ try{ return localStorage.getItem(ROLE_KEY)||''; }catch(e){ return ''; } }
 function roleSet_(r){ try{ localStorage.setItem(ROLE_KEY, r); }catch(e){} state.role=r; }
-function isAdmin(){ return (state.role||roleGet_())!=='viewer'; }
+function roleNow_(){ return state.role||roleGet_(); }
+function isAdmin(){ var r=roleNow_(); return r==='owner'||r==='admin'||r===''; }
+function isOwner(){ return roleNow_()==='owner'; }
+function requireOwner(){
+  if(isOwner()) return true;
+  toast('총관리자만 사용할 수 있습니다');
+  return false;
+}
+/* 입력한 PIN 해시 → 권한 (총관리자 PIN 미설정 상태면 기존 PIN 사용자가 총관리자) */
+function pinRoleFor_(h){
+  var c=state.cfg||{};
+  if(c.ownerPinHash && h===c.ownerPinHash) return 'owner';
+  if(c.adminPinHash && h===c.adminPinHash) return c.ownerPinHash ? 'admin' : 'owner';
+  return '';
+}
+function pinAnySet_(){ var c=state.cfg||{}; return !!(c.ownerPinHash||c.adminPinHash); }
 function requireAdmin(){
   if(isAdmin()) return true;
   toast('조회 전용 모드예요 · 수정은 관리자만 가능합니다');
@@ -3393,12 +3413,33 @@ var PIN_KEY = 'kt_pin_ok';
 function pinPass_(){ try{ return localStorage.getItem(PIN_KEY)||''; }catch(e){ return ''; } }
 function pinRemember_(h){ try{ localStorage.setItem(PIN_KEY, h); }catch(e){} }
 function pinGate_(done){
-  var h = state.cfg && state.cfg.adminPinHash;
   state.role = roleGet_();
   if(state.role==='viewer'){ pinHide_(); done(); return; }
-  if(!h){ renderPin_(true, done); return; }
-  if(pinPass_()===h){ state.role='admin'; done(); return; }
+  /* 설정(config)을 읽지 못한 상태에서는 절대 'PIN 설정' 화면을 띄우지 않는다.
+     (한도 초과·네트워크 오류 때 아무나 새 PIN을 등록해 버리는 사고 방지) */
+  if(!pinAnySet_() && !FS.cfgOk && FS.enabled){ renderPinErr_(done); return; }
+  if(!pinAnySet_()){ renderPin_(true, done); return; }
+  var r=pinRoleFor_(pinPass_());
+  if(r){ state.role=r; roleSet_(r); done(); return; }
   renderPin_(false, done);
+}
+/* 설정을 불러오지 못했을 때 — 재시도 안내 (PIN 등록 불가) */
+function renderPinErr_(done){
+  window._pinDone=done;
+  var el=document.getElementById('pinScreen'); if(!el){ done&&done(); return; }
+  el.classList.remove('vote');
+  el.innerHTML='<div class="auth-inner">'
+    + '<img class="auth-logo" src="'+APP_LOGO+'" alt="">'
+    + '<div class="auth-title">FC JEMIRO</div>'
+    + '<div class="auth-sub">'+APP_SUB+'</div>'
+    + '<div class="auth-form">'
+    +   '<div class="auth-team-name">⚠️ 설정을 불러오지 못했습니다<br><span style="font-size:12px;font-weight:400;color:rgba(255,255,255,.75);">네트워크 상태 또는 일일 사용량 한도를 확인해주세요. 보안을 위해 이 상태에서는 PIN을 새로 등록할 수 없습니다.</span></div>'
+    +   '<button class="auth-btn" onclick="location.reload()">다시 시도</button>'
+    +   '<button class="auth-btn ghost" onclick="viewerEnter_()">팀원으로 접속 (조회 전용)</button>'
+    + '</div></div>';
+  el.style.display='flex';
+  var tb=document.getElementById('tabbar'); if(tb) tb.style.display='none';
+  var fb=document.getElementById('fab'); if(fb) fb.style.display='none';
 }
 /* 팀원(조회 전용) 접속 */
 function viewerEnter_(){
@@ -3409,8 +3450,7 @@ function viewerEnter_(){
 }
 /* 조회 전용 → 관리자 전환 (PIN 재입력) */
 function adminSwitch_(){
-  var h=state.cfg&&state.cfg.adminPinHash;
-  if(!h){ toast('설정된 관리자 PIN이 없습니다'); return; }
+  if(!pinAnySet_()){ toast('설정된 관리자 PIN이 없습니다'); return; }
   showSheet('<div class="grabber"></div>'
    + '<div class="sheet-head"><h3>🔒 관리자 전환</h3><button class="x" onclick="closeSheet()">✕</button></div>'
    + '<div class="sheet-body">'
@@ -3423,8 +3463,72 @@ function adminSwitch_(){
 function adminSwitchGo_(){
   var v=(gv_('sw_pin')||'').trim(); if(!v){ toast('PIN을 입력하세요'); return; }
   fsHash(v).then(function(h){
-    if(h!==(state.cfg&&state.cfg.adminPinHash)){ toast('PIN이 올바르지 않습니다'); return; }
-    pinRemember_(h); roleSet_('admin'); closeSheet(); render(); toast('관리자로 전환되었습니다');
+    var r=pinRoleFor_(h);
+    if(!r){ toast('PIN이 올바르지 않습니다'); return; }
+    pinRemember_(h); roleSet_(r); closeSheet(); render();
+    toast(r==='owner'?'총관리자로 전환되었습니다':'팀 관리자로 전환되었습니다');
+  });
+}
+/* ── PIN 관리 (총관리자 전용) ── */
+function openPinAdmin_(){
+  if(!requireOwner()) return;
+  var c=state.cfg||{};
+  showSheet('<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>🔐 PIN 관리</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<div class="b11-help">'
+   +     '<b>총관리자</b> — PIN 변경을 포함한 모든 권한 (지금 이 기기)<br>'
+   +     '<b>팀 관리자</b> — 경기·기록·스쿼드 입력과 수정 (PIN 관리는 불가)<br>'
+   +     '<b>팀원</b> — 접속 화면의 <b>팀원으로 접속</b> 버튼 · 조회만 가능'
+   +   '</div>'
+   +   '<div class="eyebrow" style="margin:14px 0 8px;">총관리자 PIN '+(c.ownerPinHash?'<span style="color:#1E9E6A;">설정됨</span>':'<span style="color:var(--red);">미설정</span>')+'</div>'
+   +   '<div class="field"><label>현재 총관리자 PIN</label><input id="po_cur" type="password" placeholder="현재 PIN"></div>'
+   +   '<div class="field"><label>새 총관리자 PIN</label><input id="po_n1" type="password" placeholder="새 PIN (4자 이상)"></div>'
+   +   '<div class="field"><label>새 총관리자 PIN 확인</label><input id="po_n2" type="password" placeholder="한 번 더 입력"></div>'
+   +   '<button class="btn-primary" onclick="savePin_(\'owner\')">총관리자 PIN 변경</button>'
+   +   '<div class="eyebrow" style="margin:22px 0 8px;">팀 관리자 PIN '+(c.adminPinHash?'<span style="color:#1E9E6A;">설정됨</span>':'<span style="color:var(--steel-soft);">미설정</span>')+'</div>'
+   +   '<div class="field"><label>현재 총관리자 PIN</label><input id="pa_cur" type="password" placeholder="총관리자 PIN으로 확인"></div>'
+   +   '<div class="field"><label>새 팀 관리자 PIN</label><input id="pa_n1" type="password" placeholder="새 PIN (4자 이상)"></div>'
+   +   '<div class="field"><label>새 팀 관리자 PIN 확인</label><input id="pa_n2" type="password" placeholder="한 번 더 입력"></div>'
+   +   '<button class="btn-primary" onclick="savePin_(\'admin\')">팀 관리자 PIN 설정 / 변경</button>'
+   +   (c.adminPinHash?'<button class="btn-ghost" style="margin-top:8px;color:var(--red);" onclick="removeAdminPin_()">팀 관리자 PIN 삭제</button>':'')
+   +   '<p style="font-size:12px;color:var(--steel-soft);margin:14px 2px 0;line-height:1.6;">PIN을 바꾸면 그 PIN으로 접속했던 다른 기기는 다음 접속 때 다시 입력해야 합니다.</p>'
+   + '</div>');
+}
+function savePin_(kind){
+  if(!requireOwner()) return;
+  var pre=(kind==='owner')?'po':'pa';
+  var cur=(gv_(pre+'_cur')||'').trim(), n1=(gv_(pre+'_n1')||'').trim(), n2=(gv_(pre+'_n2')||'').trim();
+  if(!cur){ toast('현재 총관리자 PIN을 입력하세요'); return; }
+  if(n1.length<4){ toast('새 PIN은 4자 이상으로 정해주세요'); return; }
+  if(n1!==n2){ toast('새 PIN 확인이 일치하지 않습니다'); return; }
+  var c=state.cfg||{};
+  fsHash(cur).then(function(hc){
+    var ok = c.ownerPinHash ? (hc===c.ownerPinHash) : (hc===c.adminPinHash);
+    if(!ok){ toast('현재 총관리자 PIN이 올바르지 않습니다'); return; }
+    return fsHash(n1).then(function(hn){
+      if(kind==='admin' && hn===(state.cfg||{}).ownerPinHash){ toast('총관리자 PIN과 다른 값을 사용하세요'); return; }
+      if(kind==='owner' && hn===(state.cfg||{}).adminPinHash){ toast('팀 관리자 PIN과 다른 값을 사용하세요'); return; }
+      var key=(kind==='owner')?'ownerPinHash':'adminPinHash';
+      state.cfg[key]=hn;
+      if(kind==='owner'){ pinRemember_(hn); roleSet_('owner'); }
+      return API.run('setConfig', key, hn).then(function(cfg){
+        if(cfg) state.cfg=cfg;
+        closeSheet(); render();
+        toast(kind==='owner'?'총관리자 PIN을 변경했습니다':'팀 관리자 PIN을 설정했습니다');
+        try{ logEvent_('config','update', kind==='owner'?'총관리자 PIN 변경':'팀 관리자 PIN 변경'); }catch(e){}
+      });
+    });
+  }).catch(function(){ toast('저장 실패 · 새로고침'); });
+}
+function removeAdminPin_(){
+  if(!requireOwner()) return;
+  appConfirm_('팀 관리자 PIN을 삭제할까요?\n해당 PIN으로 접속하던 기기는 더 이상 관리자 권한을 쓸 수 없습니다.', function(){
+    state.cfg.adminPinHash='';
+    API.run('setConfig','adminPinHash','').then(function(cfg){
+      if(cfg) state.cfg=cfg;
+      closeSheet(); render(); toast('팀 관리자 PIN을 삭제했습니다');
+    }).catch(function(){ toast('삭제 실패 · 새로고침'); });
   });
 }
 /* 관리자 → 조회 전용 전환 */
@@ -3437,7 +3541,7 @@ function renderPin_(setup, done){
   window._pinDone = done;
   var el = document.getElementById('pinScreen'); if(!el){ done(); return; }
   var form = setup
-    ? '<div class="auth-team-name">🔒 관리자 PIN 설정<br><span style="font-size:12px;font-weight:400;color:rgba(255,255,255,.75);">처음 실행입니다. 사용할 PIN을 정해주세요 (숫자·문자 4자 이상)</span></div>'
+    ? '<div class="auth-team-name">🔒 총관리자 PIN 설정<br><span style="font-size:12px;font-weight:400;color:rgba(255,255,255,.75);">처음 실행입니다. 총관리자 PIN을 정해주세요 (숫자·문자 4자 이상)<br>이후에는 총관리자만 PIN을 변경할 수 있습니다.</span></div>'
       + '<input id="pin_1" type="password" placeholder="새 PIN">'
       + '<input id="pin_2" type="password" placeholder="새 PIN 확인" onkeydown="if(event.key===\'Enter\')pinSubmit_(true)">'
       + '<button class="auth-btn" onclick="pinSubmit_(true)">설정하고 시작</button>'
@@ -3464,21 +3568,23 @@ function pinSubmit_(setup){
     if(v1.length<4){ toast('PIN은 4자리 이상으로 정해주세요'); return; }
     if(v1!==v2){ toast('PIN 확인이 일치하지 않습니다'); return; }
     fsHash(v1).then(function(h){
-      state.cfg.adminPinHash=h;
+      state.cfg.ownerPinHash=h;
       pinRemember_(h);
-      roleSet_('admin');
-      API.run('setConfig','adminPinHash',h).catch(function(){});
-      pinHide_(); toast('PIN이 설정되었습니다');
+      roleSet_('owner');
+      API.run('setConfig','ownerPinHash',h).catch(function(){});
+      pinHide_(); toast('총관리자 PIN이 설정되었습니다');
       var d=window._pinDone; window._pinDone=null; if(d) d();
     });
     return;
   }
   if(!v1){ toast('PIN을 입력하세요'); return; }
   fsHash(v1).then(function(h){
-    if(h!==(state.cfg&&state.cfg.adminPinHash)){ toast('PIN이 올바르지 않습니다'); var i=document.getElementById('pin_1'); if(i){ i.value=''; i.focus(); } return; }
+    var r=pinRoleFor_(h);
+    if(!r){ toast('PIN이 올바르지 않습니다'); var i=document.getElementById('pin_1'); if(i){ i.value=''; i.focus(); } return; }
     pinRemember_(h);
-    roleSet_('admin');
+    roleSet_(r);
     pinHide_();
+    toast(r==='owner'?'총관리자로 접속했습니다':'팀 관리자로 접속했습니다');
     var d=window._pinDone; window._pinDone=null; if(d) d();
   });
 }
@@ -4753,7 +4859,7 @@ function logWrite_(fn, a, res, d){
   if(d[3]) logCoalesced_(d[0], d[1], d[2]); else logEvent_(d[0], d[1], d[2]);
 }
 function logConfig_(key){
-  var L={adminPinHash:'PIN 변경', presentScore:'출석 점수', lateScore:'지각 점수', absentScore:'불참 점수', honors:'MVP 지정'};
+  var L={ownerPinHash:'총관리자 PIN 변경', adminPinHash:'팀 관리자 PIN 변경', presentScore:'출석 점수', lateScore:'지각 점수', absentScore:'불참 점수', honors:'MVP 지정'};
   logEvent_('edit','설정 변경', L[key]||key);
 }
 /* ── 조회 화면 (최근 14일) ── */
@@ -5777,7 +5883,11 @@ function fsMerge(key, arr){
 function fsLoadAll(){
   // FS 모드: 목업 시드 제거 (모든 컬렉션 빈 상태에서 단계별 로드)
   ['players','matches','squads','members','notes','stats','attendance','clubs'].forEach(function(k){ DB[k]=[]; });
-  return Promise.all([ db.collection('config').doc('app').get().catch(function(){return {exists:false};}), fsColl('clubs') ])
+  return Promise.all([
+      db.collection('config').doc('app').get()
+        .then(function(d){ FS.cfgOk=true; return d; })
+        .catch(function(e){ FS.cfgOk=false; if(window.console)console.warn('config 읽기 실패', e); return {exists:false}; }),
+      fsColl('clubs') ])
   .then(function(r){
     DB.clubs=r[1]||[];
     var cfg=(r[0]&&r[0].exists)?r[0].data():{};
@@ -5927,7 +6037,7 @@ FS.init = function(){
   var cache = ktCacheLoad_();
   if(cache && !ktCacheBypass_() && (Date.now()-cache.ts) < ktCacheTtl_()){
     ['clubs','players','matches','squads','members','notes','stats','attendance'].forEach(function(k){ if(cache[k]) DB[k]=cache[k]; });
-    if(cache.config) DB.config=cache.config;
+    if(cache.config){ DB.config=cache.config; FS.cfgOk=true; }
     FS._team[cache.cid]=Promise.resolve();
     (cache.sk||[]).forEach(function(sid){ FS._sk[sid]=Promise.resolve(); });
     FS._kidMids[cache.cid]=cache.kidMids||{};
