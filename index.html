@@ -671,6 +671,9 @@
 .b11-top{display:inline-block;margin-left:6px;background:#FFF3D2;color:#8a6d1f;border-radius:6px;padding:1px 6px;font-size:10px;font-weight:900;vertical-align:middle;}
 .b11-row{align-items:start;}
 .b11-sub{line-height:1.6;}
+.mom-box{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;background:#FFF8E6;border:1px solid #EDD9A6;border-radius:14px;padding:12px 14px;margin:0 0 14px;font-size:14px;color:#7a5f12;}
+.mom-box b{font-weight:900;}
+.mom-sub{flex:1 1 100%;font-size:11.5px;color:#9a8449;}
 </style>
 </head>
 <body>
@@ -806,7 +809,7 @@ var APPCHECK_SITE_KEY = '6Lfmi2AtAAAAAP1R-1JlYz1ht1WuQWp2RS_tibpT';
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '6.9';
+var APP_VERSION = '7.1';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -3219,7 +3222,6 @@ function onRecordMatchTap(matchId){
 
 function openResultForm(matchId){
   if(!requireAdmin()) return;
-  if(!requireAdmin()) return;
 
   var m = state.recMatches.filter(function(x){return x.id===matchId;})[0];
   if(!m) return;
@@ -3267,6 +3269,8 @@ function openResultForm(matchId){
    + '<div class="sheet-head"><h3>경기 결과 · '+esc(m.opponent)+'</h3><button class="x" onclick="closeSheet()">✕</button></div>'
    + '<div class="sheet-body">'
    +   offNote
+   +   (m.momNames ? ('<div class="mom-box">🏅 <b>MOM · '+esc(m.momNames)+'</b>'
+   +     '<span class="mom-sub">투표로 확정된 기록입니다. 되돌리려면 팀 관리 → MOM 투표에서 확정 취소하세요.</span></div>') : '')
    +   (fMatch ? ('<div class="field"><label>스코어</label>'
    +     '<div style="display:flex;align-items:center;gap:12px;justify-content:center;">'
    +       '<span style="font-weight:700;font-size:13px;">'+esc(ourTeamName_())+'</span>'
@@ -4918,10 +4922,24 @@ function recCacheClear_(){ state._hofBundle=null; state._bundleP=null; state._ca
 /* 기록에 영향을 주는 쓰기면 파생 캐시 폐기 */
 function recTouch_(touched){
   if(!touched) return;
+  var hit=false;
   for(var i=0;i<touched.length;i++){
     var k=touched[i];
-    if(k==='matches'||k==='stats'||k==='attendance'||k==='players'){ recCacheClear_(); return; }
+    /* 선수 정보가 바뀌면 스쿼드 상세(사진·이름 사본)를 새로 만들어야 한다 */
+    if(k==='players'){ try{ SQUAD_CACHE={}; squadDetailRefresh_(); }catch(e){} }
+    if(k==='matches'||k==='stats'||k==='attendance'||k==='players') hit=true;
   }
+  if(hit) recCacheClear_();
+}
+/* 현재 보고 있는 스쿼드 상세를 최신 선수 정보로 다시 만든다 */
+function squadDetailRefresh_(){
+  var sid=(state.squadDetail && state.squadDetail.squad && state.squadDetail.squad.id) || state.currentSquadId;
+  if(!sid) return;
+  API.run('getSquadDetail', sid).then(function(d){
+    if(!d || !d.squad) return;
+    SQUAD_CACHE[d.squad.id]=d;
+    if(state.currentSquadId===d.squad.id){ state.squadDetail=d; if(state.screen==='form') render(); }
+  }).catch(function(){});
 }
 function ensureCareer_(){
   if(state._careerMap || state._careerLoading) return;
@@ -5637,7 +5655,15 @@ function fsRevCheck_(cachedRev){
     kjRead_('config','변경 확인',1);
     var rev=(sn && sn.exists && sn.data() && sn.data().rev) || '';
     FS._rev=rev;
-    if(String(rev)===String(cachedRev||'')) return;      // 바뀐 것 없음 → 캐시 그대로
+    if(!rev){
+      /* 서버에 아직 표식이 없다(이 기능 도입 직후). 관리자 기기에서 하나 발행해
+         다음부터는 1건 비교만으로 판별되게 하고, 구버전 캐시는 한 번 새로 받는다. */
+      try{ if(isAdmin()) fsBumpRev_(); }catch(e){}
+      if(!cachedRev) return fsRefreshAll_();
+      return;
+    }
+    if(!cachedRev) return fsRefreshAll_();               // 표식 없는 예전 캐시 → 새로 받기
+    if(String(rev)===String(cachedRev)) return;          // 바뀐 것 없음 → 캐시 그대로
     return fsRefreshAll_();
   }).catch(function(){});
 }
@@ -6601,6 +6627,7 @@ function renderVoteAdmin_(){
   }).join('');
   var actions = v.closed
     ? '<p style="font-size:13px;color:var(--steel);margin:12px 2px 0;">마감된 투표입니다 · MOM '+esc((v.winners||[]).map(function(p){ return voteName_(p); }).join(' · ')||'없음')+'</p>'
+      + '<button class="btn-ghost" style="margin-top:10px;" onclick="voteReopen_()">↩️ 확정 취소 (경기 기록의 MOM 삭제 · 투표 다시 열기)</button>'
     : '<button class="btn-primary" style="margin-top:14px;" onclick="voteClose_()">🏅 마감하고 MOM 기록</button>'
       + '<button class="btn-ghost" style="margin-top:8px;" onclick="momCopy_(\''+v.id+'\')">📋 링크 복사</button>'
       + '<button class="btn-ghost" style="margin-top:8px;" onclick="renderVoteAdmin_refresh_()">↻ 현황 새로고침</button>'
@@ -6631,6 +6658,24 @@ function voteClose_(){
       renderVoteAdmin_();
       if(state.screen==='record'||state.screen==='squad') render();
     }).catch(function(e){ if(window.console)console.warn(e); toast('마감 처리에 실패했습니다'); });
+  });
+}
+/* 마감(확정)을 되돌린다 — 경기 기록의 MOM을 지우고 투표를 다시 연다 */
+function voteReopen_(){
+  var v=state._voteDoc; if(!v || !v.closed) return;
+  if(!requireAdmin()) return;
+  appConfirm_('MOM 확정을 취소할까요?\n경기 기록의 MOM이 지워지고 투표가 다시 열립니다.\n(받은 표는 그대로 남아 다시 마감할 수 있어요)', function(){
+    voteRef_(v.id).update({closed:false, winners:[]}).then(function(){
+      v.closed=false; v.winners=[];
+      return API.run('setMatchMom', v.matchId, '', '');
+    }).then(function(list){
+      if(list) state.matches=list;
+      recCacheClear_();
+      try{ logEvent_('vote','reopen','MOM 확정 취소 · '+(v.title||'')); }catch(e){}
+      toast('확정을 취소했습니다 · 투표가 다시 열렸어요');
+      renderVoteAdmin_();
+      if(state.screen==='record') render();
+    }).catch(function(e){ if(window.console)console.warn(e); toast('확정 취소에 실패했습니다'); });
   });
 }
 function voteDelete_(){
