@@ -315,16 +315,16 @@
   .token .t-pos{position:absolute;top:-7px;right:-11px;font-size:9.5px;font-weight:600;letter-spacing:.02em;color:#fff;background:var(--ink);border-radius:6px;padding:1.5px 5px;line-height:1.2;border:1.2px solid #fff;}
   .pos-GK .t-pos{background:#E0A400;}
   .pos-DF .t-pos,.pos-CB .t-pos,.pos-LB .t-pos,.pos-RB .t-pos,.pos-LWB .t-pos,.pos-RWB .t-pos{background:#2563C9;}
-  .pos-MF .t-pos,.pos-DM .t-pos,.pos-CM .t-pos,.pos-AM .t-pos{background:#1E9E6A;}
+  .pos-MF .t-pos,.pos-DM .t-pos,.pos-CM .t-pos,.pos-AM .t-pos,.pos-LM .t-pos,.pos-RM .t-pos{background:#1E9E6A;}
   .pos-FW .t-pos,.pos-ST .t-pos,.pos-CF .t-pos,.pos-LW .t-pos,.pos-RW .t-pos{background:var(--red);}
   .token.drag .t-photo{transform:scale(1.12);}
   .pos-GK .t-photo{border-color:#E0A400;}
   .pos-DF .t-photo,.pos-CB .t-photo,.pos-LB .t-photo,.pos-RB .t-photo,.pos-LWB .t-photo,.pos-RWB .t-photo{border-color:#2563C9;}
-  .pos-MF .t-photo,.pos-DM .t-photo,.pos-CM .t-photo,.pos-AM .t-photo{border-color:#1E9E6A;}
+  .pos-MF .t-photo,.pos-DM .t-photo,.pos-CM .t-photo,.pos-AM .t-photo,.pos-LM .t-photo,.pos-RM .t-photo{border-color:#1E9E6A;}
   .pos-FW .t-photo,.pos-ST .t-photo,.pos-CF .t-photo,.pos-LW .t-photo,.pos-RW .t-photo{border-color:var(--red);}
   .pos-GK .t-num{background:#E0A400;}
   .pos-DF .t-num,.pos-CB .t-num,.pos-LB .t-num,.pos-RB .t-num,.pos-LWB .t-num,.pos-RWB .t-num{background:#2563C9;}
-  .pos-MF .t-num,.pos-DM .t-num,.pos-CM .t-num,.pos-AM .t-num{background:#1E9E6A;}
+  .pos-MF .t-num,.pos-DM .t-num,.pos-CM .t-num,.pos-AM .t-num,.pos-LM .t-num,.pos-RM .t-num{background:#1E9E6A;}
   .pos-FW .t-num,.pos-ST .t-num,.pos-CF .t-num,.pos-LW .t-num,.pos-RW .t-num{background:var(--red);}
   .pos-guest .t-num{background:#6B7280;}
   .rst-list{margin-top:4px;}
@@ -809,7 +809,7 @@ var APPCHECK_SITE_KEY = '6Lfmi2AtAAAAAP1R-1JlYz1ht1WuQWp2RS_tibpT';
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '7.2';
+var APP_VERSION = '7.3';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -998,7 +998,7 @@ function mockHandler(fn, a){
 var POS_XY = {
   GK:[0.50,0.92],
   DF:[0.50,0.74], CB:[0.50,0.74], LB:[0.15,0.73], RB:[0.85,0.73], LWB:[0.13,0.62], RWB:[0.87,0.62],
-  MF:[0.50,0.50], DM:[0.50,0.61], CM:[0.50,0.50], AM:[0.50,0.38],
+  MF:[0.50,0.50], DM:[0.50,0.61], CM:[0.50,0.50], AM:[0.50,0.38], LM:[0.14,0.48], RM:[0.86,0.48],
   FW:[0.50,0.24], ST:[0.50,0.22], CF:[0.50,0.24], LW:[0.17,0.27], RW:[0.83,0.27]
 };
 function posDefaultXY(pos, idx){
@@ -1016,7 +1016,7 @@ function posFromXY(x, y){
   if(y>=0.85) return 'GK';
   if(y>=0.66){ if(x<0.18) return 'LB'; if(x>0.82) return 'RB'; return 'CB'; }
   if(y>=0.56){ if(x<0.16) return 'LWB'; if(x>0.84) return 'RWB'; return 'DM'; }
-  if(y>=0.42){ return 'CM'; }
+  if(y>=0.42){ if(x<0.20) return 'LM'; if(x>0.80) return 'RM'; return 'CM'; }
   if(y>=0.32){ if(x<0.20) return 'LW'; if(x>0.80) return 'RW'; return 'AM'; }
   if(x<0.20) return 'LW'; if(x>0.80) return 'RW'; return 'ST';
 }
@@ -1358,7 +1358,7 @@ function playerCard(p){
 /* -------- 2. 경기 + 스쿼드 관리 (동작) -------- */
 var POS = [
   ['GK','골키퍼'],['DF','수비수'],['CB','센터백'],['LB','left back'],['RB','right back'],['LWB','left wing back'],['RWB','right wing back'],
-  ['MF','미드필더'],['DM','수비형 미드필더'],['CM','중앙 미드필더'],['AM','공격형 미드필더'],
+  ['MF','미드필더'],['DM','수비형 미드필더'],['CM','중앙 미드필더'],['AM','공격형 미드필더'],['LM','left midfielder'],['RM','right midfielder'],
   ['FW','공격수'],['ST','스트라이커'],['CF','센터 포워드'],['LW','left wing'],['RW','right wing']
 ];
 var SCOPES = ['전체','GK','DF','MF','FW'];
@@ -3825,7 +3825,7 @@ function downloadCardNow_(){ if(_cardBlob) dlBlob_(_cardBlob, _cardName); else t
 
 /* ── 스쿼드 카드 ── */
 var POS_COLORS={GK:'#E0A400',DF:'#2563C9',CB:'#2563C9',LB:'#2563C9',RB:'#2563C9',LWB:'#2563C9',RWB:'#2563C9',
-  MF:'#1E9E6A',DM:'#1E9E6A',CM:'#1E9E6A',AM:'#1E9E6A',FW:'#C8102E',ST:'#C8102E',CF:'#C8102E',LW:'#C8102E',RW:'#C8102E'};
+  MF:'#1E9E6A',DM:'#1E9E6A',CM:'#1E9E6A',AM:'#1E9E6A',LM:'#1E9E6A',RM:'#1E9E6A',FW:'#C8102E',ST:'#C8102E',CF:'#C8102E',LW:'#C8102E',RW:'#C8102E'};
 /* ── 3D 원근 경기장 (스쿼드 카드) ──
  * 평면 좌표 (u: 0~1 가로, v: 0=상대 골(먼 쪽) ~ 1=우리 골(가까운 쪽)) → 원근 투영
  * 지평선(yh) 기준으로 화면 y에 비례해 너비가 커지는 실제 원근 (같은 간격의 v가 멀수록 촘촘해짐) */
@@ -6333,7 +6333,7 @@ function seasonMatches_(b, key){
  * 점수 = MOM 0.40 + 출석 0.30 + 득점 0.20 + 도움 0.10 (각 항목은 시즌 최고값 대비 비율) */
 var B11_W={mom:0.40, att:0.30, g:0.20, a:0.10};
 var POS_GRP={GK:'GK',DF:'DF',CB:'DF',LB:'DF',RB:'DF',LWB:'DF',RWB:'DF',
-  MF:'MF',DM:'MF',CM:'MF',AM:'MF',FW:'FW',ST:'FW',CF:'FW',LW:'FW',RW:'FW'};
+  MF:'MF',DM:'MF',CM:'MF',AM:'MF',LM:'MF',RM:'MF',FW:'FW',ST:'FW',CF:'FW',LW:'FW',RW:'FW'};
 var B11_SLOTS=[
   {pos:'GK',grp:'GK',x:0.50,y:0.92},
   {pos:'LB',grp:'DF',x:0.15,y:0.74},{pos:'CB',grp:'DF',x:0.38,y:0.78},{pos:'CB',grp:'DF',x:0.62,y:0.78},{pos:'RB',grp:'DF',x:0.85,y:0.74},
