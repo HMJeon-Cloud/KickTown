@@ -674,6 +674,9 @@
 .mom-box{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;background:#FFF8E6;border:1px solid #EDD9A6;border-radius:14px;padding:12px 14px;margin:0 0 14px;font-size:14px;color:#7a5f12;}
 .mom-box b{font-weight:900;}
 .mom-sub{flex:1 1 100%;font-size:11.5px;color:#9a8449;}
+.mom-card-btn{margin-left:auto;background:linear-gradient(135deg,#E7CE86,#C7A24B);color:#1a1508;border:0;border-radius:9px;padding:7px 11px;font-size:12px;font-weight:900;cursor:pointer;}
+.mom-line{display:flex;align-items:center;gap:8px;}
+.mom-card-mini{margin-left:auto;background:transparent;border:1px solid #D9BE74;color:#9a7b23;border-radius:8px;padding:3px 8px;font-size:11px;font-weight:800;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -809,7 +812,7 @@ var APPCHECK_SITE_KEY = '6Lfmi2AtAAAAAP1R-1JlYz1ht1WuQWp2RS_tibpT';
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '7.3';
+var APP_VERSION = '7.4';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -1790,7 +1793,7 @@ function viewRecord(){
     var mid = has
       ? '<div class="score oswald">'+m.ourScore+'<span class="vs">:</span>'+m.oppScore+'</div>'
       : '<div class="oswald" style="font-size:15px;color:var(--steel-soft);">VS</div>';
-    var momTag = m.momNames ? '<div class="mom-line">🏅 MOM · '+esc(m.momNames)+'</div>' : '';
+    var momTag = m.momNames ? '<div class="mom-line">🏅 MOM · '+esc(m.momNames)+'<button class="mom-card-mini" onclick="event.stopPropagation();shareMomCard_(\''+m.id+'\')">🖼️ 카드</button></div>' : '';
     return '<div class="match" onclick="onRecordMatchTap(\''+m.id+'\')">'
       + '<div class="match-top"><span>'+m.date.replace(/-/g,'.')+'</span>'+right+'</div>'
       + '<div class="match-mid"><div class="team-side"><span class="cn">'+esc(ourTeamName_())+'</span></div>'+mid
@@ -3272,6 +3275,7 @@ function openResultForm(matchId){
    + '<div class="sheet-body">'
    +   offNote
    +   (m.momNames ? ('<div class="mom-box">🏅 <b>MOM · '+esc(m.momNames)+'</b>'
+   +     '<button class="mom-card-btn" onclick="shareMomCard_(\''+matchId+'\')">🖼️ MOM 카드</button>'
    +     '<span class="mom-sub">투표로 확정된 기록입니다. 되돌리려면 팀 관리 → MOM 투표에서 확정 취소하세요.</span></div>') : '')
    +   (fMatch ? ('<div class="field"><label>스코어</label>'
    +     '<div style="display:flex;align-items:center;gap:12px;justify-content:center;">'
@@ -6494,6 +6498,155 @@ function shareBest11_(key){
   });
 }
 
+/* ================= MOM 카드 (경기 최우수 선수 · 원본 사진) ================= */
+/* 이미지를 영역에 꽉 채워(cover) 라운드 클립으로 그린다. focusY: 세로 초점(0=위, .5=중앙) */
+function coverImg_(ctx,img,x,y,w,h,r,focusY){
+  if(!img) return;
+  var iw=img.width||img.naturalWidth||1, ih=img.height||img.naturalHeight||1;
+  var sc=Math.max(w/iw, h/ih), dw=iw*sc, dh=ih*sc;
+  var fy=(focusY==null?0.42:focusY);
+  var dx=x+(w-dw)/2, dy=y-(dh-h)*fy;
+  ctx.save(); rr_(ctx,x,y,w,h,r); ctx.clip();
+  ctx.drawImage(img, dx, dy, dw, dh);
+  ctx.restore();
+}
+/* 이 경기의 MOM 선수들에 대한 정보 수집 (사진 원본·경기 기록·득표·시즌 몇 번째) */
+function momCardData_(matchId, voteDoc){
+  var m=(state.matches||[]).concat(state.recMatches||[]).filter(function(x){ return x.id===matchId; })[0] || null;
+  if(!m || !m.momIds) return Promise.resolve(null);
+  var pids=String(m.momIds).split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+  var tally=null;
+  if(voteDoc && voteDoc.matchId===matchId){ tally=voteTally_(voteDoc); }
+  /* 경기 기록(득점·도움) 선로딩 후 DB에서 읽는다 */
+  return API.run('getMatchReport', matchId).catch(function(){ return null; }).then(function(){
+    var st={}; (DB.stats||[]).forEach(function(x){ if(x.matchId===matchId) st[x.playerId]=x; });
+    /* 시즌 몇 번째 MOM인지 */
+    var key=seasonKeyOf_(m.date||''), asc=(state.matches||[]).filter(function(x){ return x.date && seasonKeyOf_(x.date)===key; })
+      .slice().sort(function(a,b){ return String(a.date).localeCompare(String(b.date)); });
+    function nth(pid){ var n=0; for(var i=0;i<asc.length;i++){ var ids=String(asc[i].momIds||'').split(','); if(ids.indexOf(pid)>-1){ n++; if(asc[i].id===matchId) break; } } return n; }
+    var players=pids.map(function(pid){
+      var p=pname_(pid);
+      var votes=0; if(tally){ var r=tally.rows.filter(function(x){ return x.pid===pid; })[0]; votes=r?r.n:0; }
+      return {pid:pid, name:p.name||'', num:p.num, pos:((p.positions||[])[0]||''), thumb:p.photo||'',
+        g:Number((st[pid]||{}).goals)||0, a:Number((st[pid]||{}).assists)||0, votes:votes, nth:nth(pid)};
+    });
+    return Promise.all(players.map(function(pl){ return loadPlayerPhotoL_(pl.pid).then(function(big){ pl.big=big||''; return pl; }); }))
+      .then(function(list){ return {match:m, players:list, total:tally?tally.total:0}; });
+  });
+}
+/* 경기 결과 화면 등에서 호출: 투표 문서가 없으면 조회해 득표를 함께 넣는다 */
+function shareMomCard_(matchId, voteDoc){
+  toast('MOM 카드 만드는 중...');
+  var vp=Promise.resolve(voteDoc||null);
+  if(!voteDoc && window.db && FS.enabled && isAdmin()){
+    vp=db.collection(VOTE_COLL).where('matchId','==',matchId).limit(5).get().then(function(qs){
+      var arr=[]; qs.forEach(function(d){ arr.push(d.data()); });
+      return arr.filter(function(v){ return v.closed; })[0] || arr[0] || null;
+    }).catch(function(){ return null; });
+  }
+  vp.then(function(vd){ return momCardData_(matchId, vd); }).then(function(d){
+    if(!d){ toast('이 경기에 확정된 MOM이 없습니다'); return; }
+    return Promise.all([loadImg_(teamEmblemSrc_()), iconsReady_()].concat(d.players.map(function(p){ return loadImg_(p.big||p.thumb||''); })))
+      .then(function(rs){ fontsReady_(function(){ drawMomCard_(d, rs[0], rs.slice(2)); }); });
+  }).catch(function(e){ if(window.console)console.warn(e); toast('카드를 만들지 못했습니다'); });
+}
+function drawMomCard_(d, emblem, faces){
+  var m=d.match, ps=d.players, n=ps.length;
+  var W=1080;
+  /* 레이아웃 선계산 → 카드 높이를 내용에 맞춘다 */
+  var cy=(n===1)?690:640;
+  var fw=(n===1)?640:(n===2?440:320), fh=Math.round(fw*1.2), gap=30;
+  var totalW=n*fw+(n-1)*gap, x0=(W-totalW)/2, fy=cy-fh/2;
+  var ty=fy+fh+112, th=170;
+  var ny=ty+th+64;
+  var H=ny+(n>1?(n*42):0)+50+150;
+  var c=document.createElement('canvas'); c.width=W; c.height=H;
+  var ctx=c.getContext('2d');
+  darkBase_(ctx,W,H);
+  starField_(ctx,0,H*0.35,W,H*0.5,71,70);
+  if(emblem){ ctx.save(); ctx.globalAlpha=0.09; var es=1180; ctx.drawImage(emblemCut_(emblem)||emblem,(W-es)/2,H*0.30,es,es); ctx.restore(); }
+  ctx.fillStyle=CARD_GOLD; ctx.fillRect(0,0,W,6);
+  /* 타이틀 */
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillStyle=CARD_GOLD; ctx.font='600 26px Oswald, sans-serif'; ctx.letterSpacing='4px';
+  ctx.fillText(ourTeamName_().toUpperCase()+' · FOOTBALL CLUB', W/2, 78); ctx.letterSpacing='0px';
+  ctx.save(); ctx.shadowColor='rgba(199,162,75,.6)'; ctx.shadowBlur=26;
+  ctx.fillStyle='#fff'; ctx.font='700 84px Oswald, sans-serif'; ctx.letterSpacing='3px';
+  ctx.fillText('MAN OF THE MATCH', W/2, 152); ctx.restore(); ctx.letterSpacing='0px';
+  var res=(m.result==='W'?'승':(m.result==='L'?'패':'무'));
+  var sc=(m.ourScore!=null&&m.ourScore!=='')?(m.ourScore+' : '+m.oppScore+' '+res):'';
+  ctx.fillStyle='rgba(255,255,255,.78)'; ctx.font='600 30px Pretendard, sans-serif';
+  ctx.fillText(fmtDateDot(m.date||'')+'  ·  vs '+(m.opponent||'상대')+(sc?'  ·  '+sc:''), W/2, 214);
+  /* 방사광 */
+  ctx.save(); ctx.translate(W/2,cy);
+  var rg=ctx.createRadialGradient(0,0,80,0,0,560); rg.addColorStop(0,'rgba(199,162,75,.40)'); rg.addColorStop(1,'rgba(199,162,75,0)');
+  ctx.fillStyle=rg;
+  for(var ri=0;ri<24;ri++){ var ra=ri*Math.PI/12, rw=Math.PI/12*0.42; ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,560,ra-rw,ra+rw); ctx.closePath(); ctx.fill(); }
+  ctx.restore();
+  /* 인물 프레임 */
+  ps.forEach(function(p,i){
+    var x=x0+i*(fw+gap);
+    /* 금테 + 그림자 */
+    ctx.save(); ctx.shadowColor='rgba(0,0,0,.6)'; ctx.shadowBlur=40; ctx.shadowOffsetY=18;
+    rr_(ctx,x-10,fy-10,fw+20,fh+20,34); ctx.fillStyle='#1a1408'; ctx.fill(); ctx.restore();
+    var gg=ctx.createLinearGradient(x,fy,x+fw,fy+fh); gg.addColorStop(0,'#F3DFA0'); gg.addColorStop(0.5,'#C7A24B'); gg.addColorStop(1,'#8a6d1f');
+    rr_(ctx,x-10,fy-10,fw+20,fh+20,34); ctx.lineWidth=8; ctx.strokeStyle=gg; ctx.stroke();
+    rr_(ctx,x,fy,fw,fh,26); ctx.fillStyle='#161a26'; ctx.fill();
+    var img=faces[i];
+    if(img){ coverImg_(ctx,img,x,fy,fw,fh,26,0.38); }
+    else {
+      ctx.fillStyle='rgba(255,255,255,.12)'; ctx.font='700 '+Math.round(fw*0.32)+'px Oswald, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(String(p.num||''), x+fw/2, fy+fh/2);
+    }
+    /* 하단 이름 그라데이션 */
+    ctx.save(); rr_(ctx,x,fy,fw,fh,26); ctx.clip();
+    var ng=ctx.createLinearGradient(0,fy+fh*0.55,0,fy+fh); ng.addColorStop(0,'rgba(8,10,16,0)'); ng.addColorStop(1,'rgba(8,10,16,.92)');
+    ctx.fillStyle=ng; ctx.fillRect(x,fy+fh*0.55,fw,fh*0.45);
+    ctx.restore();
+    /* 번호 배지 */
+    var bn=String(p.num!=null?p.num:'');
+    if(bn){ ctx.save(); ctx.shadowColor='rgba(0,0,0,.5)'; ctx.shadowBlur=10;
+      ctx.beginPath(); ctx.arc(x+fw-44,fy+44,(n===1?40:32),0,Math.PI*2); ctx.fillStyle=CARD_RED; ctx.fill(); ctx.restore();
+      ctx.fillStyle='#fff'; ctx.font='700 '+(n===1?36:28)+'px Oswald, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(bn, x+fw-44, fy+46); }
+    /* 이름·포지션 (프레임 안 하단) */
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.save(); ctx.shadowColor='rgba(0,0,0,.7)'; ctx.shadowBlur=12;
+    ctx.fillStyle='#fff'; ctx.font='700 '+(n===1?74:(n===2?54:40))+'px Pretendard, sans-serif';
+    ctx.fillText(cardEllipsis_(ctx,p.name,fw-40), x+fw/2, fy+fh-(n===1?92:70)); ctx.restore();
+    ctx.fillStyle=CARD_GOLD; ctx.font='600 '+(n===1?28:22)+'px Oswald, sans-serif'; ctx.letterSpacing='3px';
+    ctx.fillText((p.pos?p.pos+'  ·  ':'')+'MOM', x+fw/2, fy+fh-(n===1?38:30)); ctx.letterSpacing='0px';
+  });
+  /* 별 장식 (프레임 아래 한 줄) */
+  var sy=fy+fh+58;
+  [-2,-1,0,1,2].forEach(function(k){ goldStar_(ctx,W/2+k*64,sy,(k===0?22:(Math.abs(k)===1?15:11)),-Math.PI/2,CARD_GOLD); });
+  /* 기록 타일 */
+  var tiles=[];
+  if(n===1){
+    var p=ps[0];
+    tiles=[['득점',p.g+'골','#FF9DAD'],['도움',p.a+'도움','#9DC1FF'],[d.total?'득표':'시즌 MOM', d.total?(p.votes+' / '+d.total+'표'):(p.nth+'회'),'#FFE9A8']];
+  } else {
+    tiles=ps.map(function(p){ return [p.name, p.g+'골 '+p.a+'도움'+(d.total?(' · '+p.votes+'표'):''), '#FFE9A8']; });
+  }
+  var pad=54, tw=(W-pad*2-20*(tiles.length-1))/tiles.length;
+  tiles.forEach(function(t,i){
+    var x=pad+i*(tw+20);
+    glass_(ctx,x,ty,tw,th,22);
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillStyle=CARD_GOLD; ctx.font='700 26px Pretendard, sans-serif'; ctx.fillText(cardEllipsis_(ctx,t[0],tw-30), x+tw/2, ty+48);
+    ctx.fillStyle=t[2]; ctx.font='700 '+(String(t[1]).length>8?36:46)+'px Oswald, sans-serif'; ctx.fillText(cardEllipsis_(ctx,t[1],tw-30), x+tw/2, ty+112);
+  });
+  /* 시즌 몇 번째 (공동 수상은 한 줄씩) */
+  ctx.fillStyle='rgba(255,255,255,.72)'; ctx.font='600 30px Pretendard, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  var sl=seasonLabel_(seasonKeyOf_(m.date||''));
+  var yy=ny;
+  ps.forEach(function(p){ ctx.fillText(cardEllipsis_(ctx, p.name+' · '+sl+' 시즌 '+p.nth+'번째 MOM', W-120), W/2, yy); yy+=42; });
+  ctx.fillStyle=CARD_GOLD; ctx.font='600 24px Oswald, sans-serif'; ctx.letterSpacing='4px';
+  ctx.fillText('CHOSEN BY TEAMMATES', W/2, yy+12); ctx.letterSpacing='0px';
+  cardFooterW_(ctx,W,H);
+  showCardPreview_(c,'FCJEMIRO_MOM_'+String(m.date||'').replace(/-/g,'')+'.png');
+}
+
 /* ================= MOM 투표 =================
  * 흐름: 스쿼드 인원으로 후보 생성 → 링크 공유(카톡) → 팀원 1탭 투표 → 관리자 마감 →
  *       경기 기록에 MOM 확정 저장(수정 불가). 투표 문서가 사라져도 경기 기록의 MOM은 남는다.
@@ -6737,6 +6890,7 @@ function renderVoteAdmin_(){
   }).join('');
   var actions = v.closed
     ? '<p style="font-size:13px;color:var(--steel);margin:12px 2px 0;">마감된 투표입니다 · MOM '+esc((v.winners||[]).map(function(p){ return voteName_(p); }).join(' · ')||'없음')+'</p>'
+      + '<button class="btn-primary" style="margin-top:12px;" onclick="shareMomCard_(state._voteDoc.matchId, state._voteDoc)">🏆 MOM 카드 만들기 (단톡방 공유)</button>'
       + '<button class="btn-ghost" style="margin-top:10px;" onclick="voteReopen_()">↩️ 확정 취소 (경기 기록의 MOM 삭제 · 투표 다시 열기)</button>'
     : '<button class="btn-primary" style="margin-top:14px;" onclick="voteClose_()">🏅 마감하고 MOM 기록</button>'
       + '<button class="btn-ghost" style="margin-top:8px;" onclick="momCopy_(\''+v.id+'\')">📋 링크 복사</button>'
