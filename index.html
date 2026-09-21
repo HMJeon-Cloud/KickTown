@@ -812,7 +812,7 @@ var APPCHECK_SITE_KEY = '6Lfmi2AtAAAAAP1R-1JlYz1ht1WuQWp2RS_tibpT';
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '8.1';
+var APP_VERSION = '8.2';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -6639,6 +6639,35 @@ function personCut_(img){
     }
     var fr=rm/N;
     if(fr<0.12 || fr>0.9) return null;   // 배경이 복잡하면 포기 → 소프트 사진으로
+    /* ── 가장자리 다듬기 ①: 경계에 남은 잔여 얼룩 제거 (주변 8칸 중 5칸 이상이 투명하면 제거) ── */
+    var A=new Uint8ClampedArray(N); for(var q=0;q<N;q++) A[q]=px[q*4+3];
+    for(var it=0; it<2; it++){
+      var B=new Uint8ClampedArray(A);
+      for(var yy2=1; yy2<h-1; yy2++){ for(var xx2=1; xx2<w-1; xx2++){
+        var p2=yy2*w+xx2; if(!A[p2]) continue;
+        var t0=0;
+        if(!A[p2-1])t0++; if(!A[p2+1])t0++; if(!A[p2-w])t0++; if(!A[p2+w])t0++;
+        if(!A[p2-w-1])t0++; if(!A[p2-w+1])t0++; if(!A[p2+w-1])t0++; if(!A[p2+w+1])t0++;
+        if(t0>=5) B[p2]=0;
+      } }
+      A=B;
+    }
+    /* ── 가장자리 다듬기 ②: 알파 블러 2회 후 안쪽으로 부드럽게 (안티앨리어싱, 바깥 번짐 없음) ── */
+    for(var bp2=0; bp2<2; bp2++){
+      var C=new Uint8ClampedArray(N);
+      for(var yy3=0; yy3<h; yy3++){ for(var xx3=0; xx3<w; xx3++){
+        var s3=0,n3=0,dy,dx2,ny2,nx2;
+        for(dy=-1;dy<=1;dy++){ ny2=yy3+dy; if(ny2<0||ny2>=h) continue;
+          for(dx2=-1;dx2<=1;dx2++){ nx2=xx3+dx2; if(nx2<0||nx2>=w) continue; s3+=A[ny2*w+nx2]; n3++; } }
+        C[yy3*w+xx3]=s3/n3;
+      } }
+      A=C;
+    }
+    for(var q2=0;q2<N;q2++){
+      if(!px[q2*4+3]) continue;                         // 이미 투명한 곳은 그대로 (색 번짐 방지)
+      var a3=A[q2];
+      px[q2*4+3] = a3<=60?0 : (a3>=185?255:Math.round((a3-60)*255/125));
+    }
     x.putImageData(d,0,0);
     return c;
   }catch(e){ return null; }
