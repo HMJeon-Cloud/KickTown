@@ -812,7 +812,7 @@ var APPCHECK_SITE_KEY = '6Lfmi2AtAAAAAP1R-1JlYz1ht1WuQWp2RS_tibpT';
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '7.7';
+var APP_VERSION = '7.8';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -5793,7 +5793,7 @@ function fsRefreshAll_(){
 }
 function fsSyncConfig(){
   var c={}; for(var k in DB.config){ if(k==='staffPw'||k==='memberPw') continue; c[k]=DB.config[k]; }
-  db.collection('config').doc('app').set(c,{merge:true}).catch(function(e){ if(window.console)console.warn('cfg sync',e); });
+  return db.collection('config').doc('app').set(c,{merge:true});
 }
 
 /* 해시 (Apps Script와 동일한 salt로 → 비밀번호 호환) */
@@ -5987,7 +5987,17 @@ FS.run = function(fn, args){
   });
 };
 FS._dispatch = function(fn, args){
-    if(fn==='setConfig'){ var rc=mockHandler(fn, args); fsSyncConfig(); fsBumpRev_(); ktCacheSave_(); try{ logConfig_(args[0]); }catch(e){} return rc; }
+    if(fn==='setConfig'){
+      var ck=args[0], had=Object.prototype.hasOwnProperty.call(DB.config,ck), prev=DB.config[ck];
+      var rc=mockHandler(fn, args);
+      return fsSyncConfig().then(function(){
+        fsBumpRev_(); ktCacheSave_(); try{ logConfig_(ck); }catch(e){} return rc;
+      }).catch(function(e){
+        if(had) DB.config[ck]=prev; else delete DB.config[ck];
+        state.cfg=JSON.parse(JSON.stringify(DB.config)); ktCacheSave_();
+        if(window.console)console.warn('cfg sync fail',e); throw e;
+      });
+    }
     var touched=WRITE_TOUCH[fn];
     if(touched){
       var before=fsSnapshot(touched);
@@ -6541,9 +6551,10 @@ function editStaff_(){
 function saveStaff_(){
   var h=gv_('st_head'), c=gv_('st_coach');
   state.cfg.staffHeadPid=h; state.cfg.staffCoachPid=c;
+  closeSheet(); render();
   API.run('setConfig','staffHeadPid',h).then(function(){ return API.run('setConfig','staffCoachPid',c); })
-    .then(function(cfg){ if(cfg) state.cfg=cfg; }).catch(function(){ toast('저장 실패 · 새로고침'); });
-  closeSheet(); render(); toast('감독·코치를 저장했습니다');
+    .then(function(cfg){ if(cfg) state.cfg=cfg; toast('감독·코치를 저장했습니다'); })
+    .catch(function(){ render(); toast('저장 실패 · 네트워크 확인 후 다시 시도해주세요'); });
 }
 
 /* ── 라인업 카드 진입: 스쿼드 선택 ── */
@@ -6594,7 +6605,7 @@ function shareLineupCard_(matchId, squadId){
   }).catch(function(){ toast('카드를 만들지 못했습니다'); });
 }
 function drawLineupCard_(m, d, starters, subs, emblem, oppImg, faces){
-  var W=1080, H=1528;
+  var W=1080, H=1420;
   var c=document.createElement('canvas'); c.width=W; c.height=H;
   var ctx=c.getContext('2d');
   var RED='#C8102E', RED2='#FF3B57', GOLD='#E7CE86';
@@ -6656,7 +6667,7 @@ function drawLineupCard_(m, d, starters, subs, emblem, oppImg, faces){
   ctx.fillStyle=tl; ctx.fillRect(0,0,W,7);
 
   /* ── 2) 좌측 유리 패널 ── */
-  var LX=34, LY=34, LW2=352, LH=H-68;
+  var LX=28, LY=28, LW2=312, LH=H-56;
   ctx.save(); ctx.shadowColor='rgba(0,0,0,.6)'; ctx.shadowBlur=40; ctx.shadowOffsetY=16;
   rr_(ctx,LX,LY,LW2,LH,28); ctx.fillStyle='rgba(14,13,18,.72)'; ctx.fill(); ctx.restore();
   ctx.save(); rr_(ctx,LX,LY,LW2,LH,28); ctx.clip();
@@ -6683,84 +6694,85 @@ function drawLineupCard_(m, d, starters, subs, emblem, oppImg, faces){
       ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('?', cx, cy+2);
     }
   }
-  var by=LY+178;
-  badge(LX+96,by,64,emblem,true);
-  badge(LX+284,by,52,oppImg,false);
+  var by=LY+170;
+  badge(LX+78,by,52,emblem,true);
+  badge(LX+LW2-78,by,52,oppImg,false);
   ctx.save(); ctx.shadowColor='rgba(200,16,46,.8)'; ctx.shadowBlur=14;
   ctx.fillStyle='#fff'; ctx.font='700 24px Oswald, sans-serif'; ctx.letterSpacing='2px';
-  ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('VS', LX+196, by+2); ctx.restore(); ctx.letterSpacing='0px';
+  ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('VS', LX+LW2/2, by+2); ctx.restore(); ctx.letterSpacing='0px';
   /* 팀명 */
   ctx.textAlign='left';
   ctx.save(); ctx.shadowColor='rgba(0,0,0,.6)'; ctx.shadowBlur=8;
-  ctx.fillStyle='#fff'; ctx.font='700 46px Oswald, sans-serif';
-  ctx.fillText(cardEllipsis_(ctx, ourTeamName_().toUpperCase(), LW2-60), LX+30, by+146);
-  ctx.fillStyle='rgba(255,255,255,.66)'; ctx.font='700 36px Oswald, sans-serif';
-  ctx.fillText(cardEllipsis_(ctx, String(m.opponent||'상대 미정').toUpperCase(), LW2-60), LX+30, by+200);
+  ctx.fillStyle='#fff'; ctx.font='700 42px Oswald, sans-serif';
+  ctx.fillText(cardEllipsis_(ctx, ourTeamName_().toUpperCase(), LW2-56), LX+28, by+140);
+  ctx.fillStyle='rgba(255,255,255,.66)'; ctx.font='700 32px Oswald, sans-serif';
+  ctx.fillText(cardEllipsis_(ctx, String(m.opponent||'상대 미정').toUpperCase(), LW2-56), LX+28, by+192);
   ctx.restore();
   var ul=ctx.createLinearGradient(LX+30,0,LX+230,0); ul.addColorStop(0,RED2); ul.addColorStop(1,'rgba(255,59,87,0)');
-  ctx.fillStyle=ul; ctx.fillRect(LX+30, by+238, 200, 3);
+  ctx.fillStyle=ul; ctx.fillRect(LX+28, by+228, 190, 3);
   /* 일정 — 레드 리본 */
   var wd=dowOf(m.date);
   var when=fmtDateDot(m.date)+(wd?' ('+wd+')':'')+(cleanTime(m.time)?'  '+cleanTime(m.time):'');
-  ctx.font='700 26px Pretendard, sans-serif';
-  var rw=Math.min(LW2-60, ctx.measureText(when).width+40);
+  var whFs=26, rbMax=LW2-52;
+  do{ ctx.font='700 '+whFs+'px Pretendard, sans-serif'; if(ctx.measureText(when).width+34<=rbMax) break; whFs-=1; }while(whFs>17);
+  var rw=Math.min(rbMax, ctx.measureText(when).width+34);
   ctx.save(); ctx.shadowColor='rgba(200,16,46,.55)'; ctx.shadowBlur=18; ctx.shadowOffsetY=6;
-  var rg2=ctx.createLinearGradient(LX+30,0,LX+30+rw,0); rg2.addColorStop(0,'#E01B3B'); rg2.addColorStop(1,'#9C0C24');
-  rr_(ctx,LX+30,by+270,rw,46,10); ctx.fillStyle=rg2; ctx.fill(); ctx.restore();
-  ctx.fillStyle='#fff'; ctx.textBaseline='middle'; ctx.fillText(cardEllipsis_(ctx,when,rw-24), LX+50, by+294);
-  ctx.fillStyle='rgba(255,255,255,.66)'; ctx.font='500 24px Pretendard, sans-serif';
-  wrapText_(ctx, '📍 '+(m.venue||'경기장 미정'), LW2-56).slice(0,2).forEach(function(ln,i){ ctx.fillText(ln, LX+30, by+352+i*32); });
+  var rg2=ctx.createLinearGradient(LX+28,0,LX+28+rw,0); rg2.addColorStop(0,'#E01B3B'); rg2.addColorStop(1,'#9C0C24');
+  rr_(ctx,LX+28,by+258,rw,46,10); ctx.fillStyle=rg2; ctx.fill(); ctx.restore();
+  ctx.fillStyle='#fff'; ctx.textBaseline='middle'; ctx.fillText(when, LX+28+17, by+282);
+  ctx.fillStyle='rgba(255,255,255,.66)'; ctx.font='500 23px Pretendard, sans-serif';
+  wrapText_(ctx, '📍 '+(m.venue||'경기장 미정'), LW2-52).slice(0,2).forEach(function(ln,i){ ctx.fillText(ln, LX+28, by+340+i*32); });
 
   /* SUBSTITUTES */
-  var sy=by+444;
+  var sy=by+430;
   function head(tt, y){
-    ctx.fillStyle=RED2; ctx.fillRect(LX+30, y-15, 4, 30);
+    ctx.fillStyle=RED2; ctx.fillRect(LX+28, y-15, 4, 30);
     ctx.save(); ctx.shadowColor='rgba(0,0,0,.6)'; ctx.shadowBlur=6;
     ctx.fillStyle='#fff'; ctx.font='700 25px Oswald, sans-serif'; ctx.letterSpacing='3px'; ctx.textBaseline='middle';
-    ctx.fillText(tt, LX+48, y); ctx.restore(); ctx.letterSpacing='0px';
+    ctx.fillText(tt, LX+46, y); ctx.restore(); ctx.letterSpacing='0px';
   }
   head('SUBSTITUTES', sy);
   var subNames=subs.map(function(x){ return x.name; });
   if(subNames.length){
     var cols=subNames.length>12?3:(subNames.length>6?2:1);
-    var perCol=Math.ceil(subNames.length/cols), colW=(LW2-70)/cols;
+    var perCol=Math.ceil(subNames.length/cols), colW=(LW2-64)/cols;
     ctx.font='500 24px Pretendard, sans-serif';
     subNames.forEach(function(nm,i){
-      var ci=Math.floor(i/perCol), ri=i%perCol, xx=LX+30+ci*colW, yy=sy+44+ri*38;
+      var ci=Math.floor(i/perCol), ri=i%perCol, xx=LX+28+ci*colW, yy=sy+44+ri*38;
       ctx.fillStyle='rgba(255,59,87,.9)'; ctx.beginPath(); ctx.arc(xx+5, yy, 3.5, 0, Math.PI*2); ctx.fill();
       ctx.fillStyle='rgba(255,255,255,.82)'; ctx.fillText(cardEllipsis_(ctx,nm,colW-22), xx+18, yy);
     });
     sy+=44+perCol*38;
   } else {
-    ctx.fillStyle='rgba(255,255,255,.4)'; ctx.font='500 24px Pretendard, sans-serif'; ctx.fillText('없음', LX+30, sy+44); sy+=84;
+    ctx.fillStyle='rgba(255,255,255,.4)'; ctx.font='500 24px Pretendard, sans-serif'; ctx.fillText('없음', LX+28, sy+44); sy+=84;
   }
   /* HEAD COACH */
   var hName=staffName_((state.cfg||{}).staffHeadPid), cName=staffName_((state.cfg||{}).staffCoachPid);
   if(hName||cName){
     sy+=46; head('HEAD COACH', sy);
     ctx.font='600 26px Pretendard, sans-serif'; ctx.fillStyle='#fff';
-    if(hName) ctx.fillText(hName, LX+30, sy+46);
-    if(cName){ ctx.fillStyle='rgba(255,255,255,.6)'; ctx.font='500 23px Pretendard, sans-serif'; ctx.fillText('COACH · '+cName, LX+30, sy+(hName?86:46)); }
+    if(hName) ctx.fillText(hName, LX+28, sy+46);
+    if(cName){ ctx.fillStyle='rgba(255,255,255,.6)'; ctx.font='500 23px Pretendard, sans-serif'; ctx.fillText('COACH · '+cName, LX+28, sy+(hName?86:46)); }
   }
   /* 패널 하단 팀 표기 */
-  if(emblem){ ctx.save(); var e2=emblemCut_(emblem)||emblem; ctx.drawImage(e2, LX+30, LY+LH-92, 50, 50); ctx.restore(); }
+  if(emblem){ ctx.save(); var e2=emblemCut_(emblem)||emblem; ctx.drawImage(e2, LX+28, LY+LH-92, 50, 50); ctx.restore(); }
   ctx.fillStyle='rgba(255,255,255,.55)'; ctx.font='600 20px Oswald, sans-serif'; ctx.letterSpacing='2px'; ctx.textBaseline='middle';
-  ctx.fillText(ourTeamName_().toUpperCase(), LX+92, LY+LH-76);
-  ctx.fillStyle='rgba(255,255,255,.35)'; ctx.font='600 16px Oswald, sans-serif';
-  ctx.fillText('OFFICIAL MATCHDAY LINEUP', LX+92, LY+LH-52); ctx.letterSpacing='0px';
+  ctx.fillText(ourTeamName_().toUpperCase(), LX+90, LY+LH-76);
+  ctx.fillStyle='rgba(255,255,255,.35)'; ctx.font='600 14px Oswald, sans-serif'; ctx.letterSpacing='1px';
+  ctx.fillText('OFFICIAL MATCHDAY LINEUP', LX+90, LY+LH-52); ctx.letterSpacing='0px';
 
   /* ── 3) 우측: 타이틀 ── */
-  var RX=LX+LW2+30, RW2=W-RX-34;
+  var RX=LX+LW2+26, RW2=W-RX-30;
   ctx.textAlign='left'; ctx.textBaseline='middle';
   ctx.save(); ctx.transform(1,0,-0.12,1,0,0);              /* 살짝 기울인 스포츠 타이포 */
   ctx.font='700 96px Oswald, sans-serif'; ctx.letterSpacing='1px';
   var t1='STARTING ', t2='XI', w1=ctx.measureText(t1).width, w2=ctx.measureText(t2).width;
   var tx=(RX+RW2/2)-(w1+w2)/2+14;
   ctx.shadowColor='rgba(0,0,0,.7)'; ctx.shadowBlur=18; ctx.shadowOffsetY=6;
-  ctx.fillStyle='#fff'; ctx.fillText(t1, tx, 126);
+  ctx.fillStyle='#fff'; ctx.fillText(t1, tx, 118);
   ctx.shadowColor='rgba(255,59,87,.95)'; ctx.shadowBlur=30;
-  var xg=ctx.createLinearGradient(0,86,0,166); xg.addColorStop(0,'#FF6B80'); xg.addColorStop(0.5,'#E81E3F'); xg.addColorStop(1,'#9C0C24');
-  ctx.fillStyle=xg; ctx.fillText(t2, tx+w1, 126);
+  var xg=ctx.createLinearGradient(0,78,0,158); xg.addColorStop(0,'#FF6B80'); xg.addColorStop(0.5,'#E81E3F'); xg.addColorStop(1,'#9C0C24');
+  ctx.fillStyle=xg; ctx.fillText(t2, tx+w1, 118);
   ctx.restore(); ctx.letterSpacing='0px';
   /* 포메이션 필 */
   var form=lineupFormation_(starters);
@@ -6768,13 +6780,13 @@ function drawLineupCard_(m, d, starters, subs, emblem, oppImg, faces){
     ctx.font='700 40px Oswald, sans-serif'; ctx.letterSpacing='6px';
     var fw2=ctx.measureText(form).width+70, fx=RX+RW2/2-fw2/2;
     ctx.save(); ctx.shadowColor='rgba(200,16,46,.55)'; ctx.shadowBlur=20; ctx.shadowOffsetY=6;
-    rr_(ctx,fx,168,fw2,56,14); ctx.fillStyle='rgba(20,12,15,.9)'; ctx.fill(); ctx.restore();
-    rr_(ctx,fx,168,fw2,56,14); ctx.lineWidth=2; ctx.strokeStyle='rgba(255,59,87,.75)'; ctx.stroke();
-    ctx.textAlign='center'; ctx.fillStyle='#FF5A72'; ctx.fillText(form, RX+RW2/2+3, 197); ctx.letterSpacing='0px';
+    rr_(ctx,fx,158,fw2,56,14); ctx.fillStyle='rgba(20,12,15,.9)'; ctx.fill(); ctx.restore();
+    rr_(ctx,fx,158,fw2,56,14); ctx.lineWidth=2; ctx.strokeStyle='rgba(255,59,87,.75)'; ctx.stroke();
+    ctx.textAlign='center'; ctx.fillStyle='#FF5A72'; ctx.fillText(form, RX+RW2/2+3, 187); ctx.letterSpacing='0px';
   }
   /* ── 4) 3D 원근 경기장 ── */
-  var px=RX+4, py=252, pw2=RW2-8, ph2=H-py-58;
-  var topW=pw2*0.66, cxp=px+pw2/2;
+  var px=RX+4, py=244, pw2=RW2-8, ph2=H-py-52;
+  var topW=pw2*0.74, cxp=px+pw2/2;
   function P(nx,ny){ var hw2=(topW+(pw2-topW)*ny)/2; return {x:cxp+(nx-0.5)*2*hw2, y:py+ny*ph2, s:0.70+0.30*ny}; }
   /* 잔디(어두운 유리) 트라페조이드 + 스트라이프 */
   ctx.save();
