@@ -812,7 +812,7 @@ var APPCHECK_SITE_KEY = '6Lfmi2AtAAAAAP1R-1JlYz1ht1WuQWp2RS_tibpT';
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '8.4';
+var APP_VERSION = '8.6';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -6706,52 +6706,41 @@ function drawLineupCard_(m, d, starters, subs, emblem, oppImg, faces){
   try{ ctx.imageSmoothingQuality='high'; }catch(e){}
   var RED='#C8102E', RED2='#FF3B57';
 
-  /* ── 1) 배경: 심야 경기장 · 스포트라이트 · 레드 광선 ── */
-  var bg=ctx.createLinearGradient(0,0,0,H); bg.addColorStop(0,'#1c1216'); bg.addColorStop(0.5,'#0f0d12'); bg.addColorStop(1,'#07070a');
+  /* ── 1) 배경: 딥 차콜 그라데이션 (장식 최소화) ── */
+  var bg=ctx.createLinearGradient(0,0,0,H); bg.addColorStop(0,'#191014'); bg.addColorStop(0.5,'#100d11'); bg.addColorStop(1,'#0a090c');
   ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
-  ctx.save(); ctx.strokeStyle='rgba(255,255,255,.045)'; ctx.lineWidth=1;
-  var hs=26, hw=hs*Math.sqrt(3);
-  for(var row=-1; row<H/(hs*1.5)+2; row++){
-    for(var col2=-1; col2<W/hw+2; col2++){
-      var hx=col2*hw+((row%2)?hw/2:0), hy=row*hs*1.5;
-      ctx.beginPath();
-      for(var k=0;k<6;k++){ var a=Math.PI/6+k*Math.PI/3; var vx=hx+Math.cos(a)*hs, vy=hy+Math.sin(a)*hs; if(k) ctx.lineTo(vx,vy); else ctx.moveTo(vx,vy); }
-      ctx.closePath(); ctx.stroke();
-    }
-  }
+  /* 좌상단 은은한 레드 톤 */
+  var cg0=ctx.createRadialGradient(W*0.16,-60,40,W*0.16,-60,760);
+  cg0.addColorStop(0,'rgba(200,16,46,.14)'); cg0.addColorStop(1,'rgba(200,16,46,0)');
+  ctx.fillStyle=cg0; ctx.fillRect(0,0,W,900);
+  /* 포인트: 좌상단 레이어드 코너 리본 */
+  ctx.save();
+  ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(322,0); ctx.lineTo(0,204); ctx.closePath();
+  ctx.fillStyle='#3d0a15'; ctx.fill();
+  var rb1=ctx.createLinearGradient(0,0,250,160);
+  rb1.addColorStop(0,'#E8203F'); rb1.addColorStop(1,'#8E0B21');
+  ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(252,0); ctx.lineTo(0,160); ctx.closePath();
+  ctx.shadowColor='rgba(0,0,0,.45)'; ctx.shadowBlur=18; ctx.shadowOffsetY=6;
+  ctx.fillStyle=rb1; ctx.fill();
+  ctx.shadowColor='transparent';
+  ctx.strokeStyle='rgba(255,255,255,.30)'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(282,0); ctx.lineTo(0,179); ctx.stroke();
   ctx.restore();
-  ctx.save(); ctx.globalCompositeOperation='screen';
-  function cone(x0,y0,x1,y1,spread,alpha,color){
-    ctx.save(); ctx.translate(x0,y0);
-    var ang=Math.atan2(y1-y0,x1-x0), len=Math.hypot(x1-x0,y1-y0);
-    ctx.rotate(ang);
-    var g=ctx.createLinearGradient(0,0,len,0); g.addColorStop(0,color.replace('A',String(alpha))); g.addColorStop(1,color.replace('A','0'));
-    ctx.fillStyle=g; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(len,-spread); ctx.lineTo(len,spread); ctx.closePath(); ctx.fill();
-    ctx.restore();
-  }
-  cone(-60,-80, 560,1100, 260, .16, 'rgba(255,240,230,A)');
-  cone(W+60,-120, 520,1200, 300, .12, 'rgba(255,225,225,A)');
-  function streak(x,y,len,wid,rot,alpha,col){
-    ctx.save(); ctx.translate(x,y); ctx.rotate(rot);
-    var g=ctx.createLinearGradient(-len/2,0,len/2,0);
-    g.addColorStop(0,col.replace('A','0')); g.addColorStop(0.5,col.replace('A',String(alpha))); g.addColorStop(1,col.replace('A','0'));
-    ctx.fillStyle=g; ctx.fillRect(-len/2,-wid/2,len,wid); ctx.restore();
-  }
-  streak(180,300,1500,70,Math.PI/4,.55,'rgba(200,16,46,A)');
-  streak(240,420,1600,26,Math.PI/4,.7,'rgba(255,90,110,A)');
-  streak(120,180,1300,140,Math.PI/4,.22,'rgba(200,16,46,A)');
-  streak(W-160,H-260,1500,60,Math.PI/4,.5,'rgba(200,16,46,A)');
-  streak(W-220,H-380,1600,22,Math.PI/4,.7,'rgba(255,110,125,A)');
-  streak(W-90,H-160,1300,150,Math.PI/4,.2,'rgba(200,16,46,A)');
+  /* 우상단 작은 에코 리본 */
+  ctx.save();
+  ctx.beginPath(); ctx.moveTo(W,0); ctx.lineTo(W-150,0); ctx.lineTo(W,96); ctx.closePath();
+  ctx.fillStyle='#3d0a15'; ctx.fill();
+  var rb2=ctx.createLinearGradient(W-110,0,W,70);
+  rb2.addColorStop(0,'#8E0B21'); rb2.addColorStop(1,'#E8203F');
+  ctx.beginPath(); ctx.moveTo(W,0); ctx.lineTo(W-112,0); ctx.lineTo(W,72); ctx.closePath();
+  ctx.fillStyle=rb2; ctx.fill();
   ctx.restore();
-  starField_(ctx,0,0,W,H*0.5,17,90);
-  ctx.save(); ctx.globalAlpha=0.035; ctx.fillStyle='#fff';
-  var sd=97; function rnd(){ sd=(sd*9301+49297)%233280; return sd/233280; }
-  for(var i=0;i<2600;i++){ ctx.fillRect(rnd()*W, rnd()*H, 1.2, 1.2); }
-  ctx.restore();
-  if(emblem){ ctx.save(); ctx.globalAlpha=0.07; var es=980; ctx.drawImage(emblemCut_(emblem)||emblem, W-es*0.62, H-es*0.78, es, es); ctx.restore(); }
-  var vg=ctx.createRadialGradient(W/2,H*0.42,H*0.25,W/2,H*0.42,H*0.95); vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,.55)');
+  /* 엠블럼 워터마크 (브랜딩, 아주 옅게) */
+  if(emblem){ ctx.save(); ctx.globalAlpha=0.05; var es=980; ctx.drawImage(emblemCut_(emblem)||emblem, W-es*0.62, H-es*0.78, es, es); ctx.restore(); }
+  /* 비네트 */
+  var vg=ctx.createRadialGradient(W/2,H*0.42,H*0.25,W/2,H*0.42,H*0.95); vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,.42)');
   ctx.fillStyle=vg; ctx.fillRect(0,0,W,H);
+  /* 상단 레드 라인 */
   var tl=ctx.createLinearGradient(0,0,W,0); tl.addColorStop(0,RED); tl.addColorStop(0.6,RED2); tl.addColorStop(1,'rgba(200,16,46,0)');
   ctx.fillStyle=tl; ctx.fillRect(0,0,W,7);
 
@@ -6805,8 +6794,48 @@ function drawLineupCard_(m, d, starters, subs, emblem, oppImg, faces){
       var iw=img.width||1, ih=img.height||1, sc=Math.min((R*2-22)/iw,(R*2-22)/ih), dw=iw*sc, dh=ih*sc;
       ctx.drawImage(img, cx-dw/2, cy-dh/2, dw, dh); ctx.restore();
     } else {
-      ctx.fillStyle='#9aa0ab'; ctx.font='700 '+Math.round(R*0.8)+'px Oswald, sans-serif';
-      ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('?', cx, cy+2);
+      /* 기본 엠블럼: 실버 크레스트 (방패 + 별 + 축구공) */
+      ctx.save();
+      var sw2=R*1.06, sh2=R*1.24, sx=cx-sw2/2, syy=cy-sh2*0.52, rr2=sw2*0.16;
+      function shield(inset){
+        var l=sx+inset, r2=sx+sw2-inset, t=syy+inset, b3=syy+sh2-inset, mx2=cx;
+        ctx.beginPath();
+        ctx.moveTo(l+rr2,t); ctx.lineTo(r2-rr2,t); ctx.quadraticCurveTo(r2,t,r2,t+rr2);
+        ctx.lineTo(r2, t+(b3-t)*0.55); ctx.quadraticCurveTo(r2, t+(b3-t)*0.82, mx2, b3);
+        ctx.quadraticCurveTo(l, t+(b3-t)*0.82, l, t+(b3-t)*0.55);
+        ctx.lineTo(l,t+rr2); ctx.quadraticCurveTo(l,t,l+rr2,t); ctx.closePath();
+      }
+      shield(0);
+      var sg2=ctx.createLinearGradient(sx,syy,sx,syy+sh2);
+      sg2.addColorStop(0,'#4b515d'); sg2.addColorStop(0.5,'#262b33'); sg2.addColorStop(1,'#14171c');
+      ctx.fillStyle=sg2; ctx.fill();
+      var bd3=ctx.createLinearGradient(sx,syy,sx+sw2,syy+sh2);
+      bd3.addColorStop(0,'#eceef2'); bd3.addColorStop(0.5,'#9aa2ad'); bd3.addColorStop(1,'#e4e7ec');
+      ctx.lineWidth=Math.max(2,R*0.075); ctx.strokeStyle=bd3; ctx.stroke();
+      shield(R*0.11); ctx.lineWidth=1; ctx.strokeStyle='rgba(255,255,255,.28)'; ctx.stroke();
+      ctx.save(); shield(0); ctx.clip();
+      var shn=ctx.createLinearGradient(0,syy,0,syy+sh2*0.42);
+      shn.addColorStop(0,'rgba(255,255,255,.18)'); shn.addColorStop(1,'rgba(255,255,255,0)');
+      ctx.fillStyle=shn; ctx.fillRect(sx,syy,sw2,sh2*0.42);
+      ctx.restore();
+      /* 별 */
+      var stR=R*0.135, stY=cy-R*0.27;
+      ctx.beginPath();
+      for(var si2=0;si2<10;si2++){ var ra2=(si2%2?stR*0.42:stR), aa2=-Math.PI/2+si2*Math.PI/5;
+        var px2=cx+Math.cos(aa2)*ra2, py2=stY+Math.sin(aa2)*ra2; si2?ctx.lineTo(px2,py2):ctx.moveTo(px2,py2); }
+      ctx.closePath(); ctx.fillStyle='#e8eaee'; ctx.fill();
+      /* 미니 축구공 */
+      var br2=R*0.30, bcy=cy+R*0.16;
+      ctx.beginPath(); ctx.arc(cx,bcy,br2,0,Math.PI*2); ctx.fillStyle='#f4f5f7'; ctx.fill();
+      ctx.lineWidth=Math.max(1.2,br2*0.09); ctx.strokeStyle='#20242b'; ctx.stroke();
+      var pr2=br2*0.42, pts2=[];
+      for(var pi2=0;pi2<5;pi2++){ var pa2=-Math.PI/2+pi2*2*Math.PI/5; pts2.push([cx+Math.cos(pa2)*pr2, bcy+Math.sin(pa2)*pr2]); }
+      ctx.beginPath(); pts2.forEach(function(pp,ii){ ii?ctx.lineTo(pp[0],pp[1]):ctx.moveTo(pp[0],pp[1]); }); ctx.closePath();
+      ctx.fillStyle='#20242b'; ctx.fill();
+      ctx.lineWidth=Math.max(1,br2*0.07); ctx.strokeStyle='#20242b';
+      pts2.forEach(function(pp){ var vx2=pp[0]-cx, vy2=pp[1]-bcy, L2=Math.hypot(vx2,vy2)||1;
+        ctx.beginPath(); ctx.moveTo(pp[0],pp[1]); ctx.lineTo(cx+vx2/L2*br2*0.95, bcy+vy2/L2*br2*0.95); ctx.stroke(); });
+      ctx.restore();
     }
   }
   var by=150;
