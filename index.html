@@ -812,7 +812,7 @@ var APPCHECK_SITE_KEY = '6Lfmi2AtAAAAAP1R-1JlYz1ht1WuQWp2RS_tibpT';
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '8.0';
+var APP_VERSION = '8.1';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -6596,7 +6596,10 @@ function shareLineupCard_(matchId, squadId){
     if(!d || !d.squad){ toast('스쿼드를 불러오지 못했습니다'); return; }
     var starters=(d.members||[]).filter(function(x){ return x.position; });
     var subs=(d.members||[]).filter(function(x){ return !x.position; });
-    var jobs=[loadImg_(teamEmblemSrc_()), loadImg_(oppLogo_(m.opponent))].concat(starters.map(function(x){ return loadImg_(x.photo||''); }));
+    var jobs=[loadImg_(teamEmblemSrc_()), loadImg_(oppLogo_(m.opponent))].concat(starters.map(function(x){
+      var pr=(x.guest||!x.playerId)?Promise.resolve(''):loadPlayerPhotoL_(x.playerId).catch(function(){ return ''; });
+      return pr.then(function(big){ return loadImg_(big || x.photo || ''); });
+    }));
     fontsReady_(function(){
       Promise.all(jobs).then(function(imgs){
         drawLineupCard_(m, d, starters, subs, imgs[0], imgs[1], imgs.slice(2));
@@ -6608,7 +6611,7 @@ function shareLineupCard_(matchId, squadId){
 function personCut_(img){
   try{
     var cw=img.width||img.naturalWidth||1, chh=img.height||img.naturalHeight||1;
-    var S=300, sc=Math.min(S/cw,S/chh), w=Math.max(2,Math.round(cw*sc)), h=Math.max(2,Math.round(chh*sc));
+    var S=720, sc=Math.min(S/cw,S/chh), w=Math.max(2,Math.round(cw*sc)), h=Math.max(2,Math.round(chh*sc));
     var c=document.createElement('canvas'); c.width=w; c.height=h;
     var x=c.getContext('2d'); x.drawImage(img,0,0,w,h);
     var d=x.getImageData(0,0,w,h), px=d.data, N=w*h;
@@ -6642,12 +6645,14 @@ function personCut_(img){
 }
 /* 프레임 없는 소프트 사진: 가장자리를 부드럽게 녹여서 그리기 (배경 제거 실패 시) */
 function softPhoto_(ctx,img,x,y,wid,hei){
-  var oc=document.createElement('canvas'); oc.width=Math.round(wid); oc.height=Math.round(hei);
-  var o=oc.getContext('2d');
+  var Q=2, W2=Math.round(wid*Q), H2=Math.round(hei*Q);
+  var oc=document.createElement('canvas'); oc.width=W2; oc.height=H2;
+  var o=oc.getContext('2d'); try{ o.imageSmoothingQuality='high'; }catch(e){}
   var iw=img.width||img.naturalWidth||1, ih=img.height||img.naturalHeight||1;
-  var sc=Math.max(wid/iw, hei/ih), dw=iw*sc, dh=ih*sc;
-  o.drawImage(img,(wid-dw)/2,-(dh-hei)*0.25,dw,dh);
+  var sc=Math.max(W2/iw, H2/ih), dw=iw*sc, dh=ih*sc;
+  o.drawImage(img,(W2-dw)/2,-(dh-H2)*0.25,dw,dh);
   o.globalCompositeOperation='destination-out';
+  var wid0=wid, hei0=hei; wid=W2; hei=H2;
   var f=wid*0.14;
   var gL=o.createLinearGradient(0,0,f,0); gL.addColorStop(0,'rgba(0,0,0,1)'); gL.addColorStop(1,'rgba(0,0,0,0)');
   o.fillStyle=gL; o.fillRect(0,0,f,hei);
@@ -6655,12 +6660,13 @@ function softPhoto_(ctx,img,x,y,wid,hei){
   o.fillStyle=gR; o.fillRect(wid-f,0,f,hei);
   var gT=o.createLinearGradient(0,0,0,f); gT.addColorStop(0,'rgba(0,0,0,1)'); gT.addColorStop(1,'rgba(0,0,0,0)');
   o.fillStyle=gT; o.fillRect(0,0,wid,f);
-  ctx.drawImage(oc,x,y);
+  ctx.drawImage(oc,x,y,wid0,hei0);
 }
 function drawLineupCard_(m, d, starters, subs, emblem, oppImg, faces){
-  var W=1080, H=1420;
-  var c=document.createElement('canvas'); c.width=W; c.height=H;
-  var ctx=c.getContext('2d');
+  var W=1080, H=1420, SS=1.5;
+  var c=document.createElement('canvas'); c.width=Math.round(W*SS); c.height=Math.round(H*SS);
+  var ctx=c.getContext('2d'); ctx.scale(SS,SS);
+  try{ ctx.imageSmoothingQuality='high'; }catch(e){}
   var RED='#C8102E', RED2='#FF3B57';
 
   /* ── 1) 배경: 심야 경기장 · 스포트라이트 · 레드 광선 ── */
