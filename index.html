@@ -338,6 +338,45 @@
   .pos-MF .t-num,.pos-DM .t-num,.pos-CM .t-num,.pos-AM .t-num,.pos-LM .t-num,.pos-RM .t-num{background:#1E9E6A;}
   .pos-FW .t-num,.pos-ST .t-num,.pos-CF .t-num,.pos-LW .t-num,.pos-RW .t-num{background:var(--red);}
   .pos-guest .t-num{background:#6B7280;}
+  /* ===== 카드형 토큰 (주간 경기 카드 스타일) ===== */
+  .token.tcard{width:64px;gap:0;align-items:stretch;border-radius:9px;overflow:hidden;
+    background:linear-gradient(180deg,#2c1219,#150d12);
+    border:1.5px solid var(--red);box-shadow:0 10px 22px rgba(0,0,0,.5);}
+  .token.tcard.pos-GK{border-color:#2E9E6A;}
+  .token.tcard.pos-guest{border-color:#6B7280;}
+  .tcard .t-photo{position:relative;width:100%;height:58px;border-radius:0;border:none;box-shadow:none;
+    background-color:#1c1016;background-size:cover;background-position:center 22%;display:block;}
+  .tcard .t-ph-e{display:flex;align-items:center;justify-content:center;font-size:22px;color:#57414d;
+    width:100%;height:58px;background:#1c1016;}
+  .tcard .t-top{position:absolute;top:3px;left:5px;z-index:2;display:flex;flex-direction:column;gap:1px;line-height:1;text-align:left;}
+  .tcard .t-tn{font-family:'Oswald';font-size:12.5px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.9);}
+  .tcard .t-pos{position:static;display:block;background:none !important;border:none;padding:0;
+    font-size:8.5px;font-weight:700;color:#FF7A8E;text-shadow:0 1px 2px rgba(0,0,0,.85);letter-spacing:.03em;}
+  .token.tcard.pos-GK .t-pos{color:#8FE3BD;}
+  .tcard .t-name{width:100%;max-width:none;border-radius:0;background:rgba(8,6,8,.93);
+    text-align:center;font-size:10px;padding:3px 2px;}
+  .token.tcard.drag{box-shadow:0 18px 34px rgba(0,0,0,.65);}
+  /* ===== PC: 스쿼드 탭 확장 + 2단 배치 ===== */
+  .drag-ghost{position:fixed;z-index:99;pointer-events:none;transform:translate(-50%,-130%);
+    background:var(--red);color:#fff;font-size:13px;font-weight:700;padding:6px 12px;border-radius:9px;
+    box-shadow:0 10px 24px rgba(0,0,0,.45);white-space:nowrap;}
+  .no-sel, .no-sel *{user-select:none !important;}
+  #arena.drop-hot .pitch{outline:3px solid rgba(255,59,87,.85);outline-offset:-3px;}
+  .rst-row.dragging{opacity:.45;}
+  @media(min-width:1024px){
+    body.pc-form .phone{max-width:min(96vw,1240px);}
+    .form-cols{display:grid;grid-template-columns:340px minmax(0,1fr);gap:0 22px;align-items:start;}
+    .fc-right{grid-column:2;grid-row:1;}
+    .fc-left{grid-column:1;grid-row:1;}
+    .fc-mid{grid-column:1 / 3;grid-row:2;}
+    .fc-left .rst-list{max-height:calc(100vh - 330px);overflow:auto;}
+    .rst-row{cursor:grab;}
+    .token.tcard{width:86px;}
+    .tcard .t-photo,.tcard .t-ph-e{height:78px;}
+    .tcard .t-tn{font-size:15px;}
+    .tcard .t-pos{font-size:10px;}
+    .tcard .t-name{font-size:11.5px;padding:4px 2px;}
+  }
   .rst-list{margin-top:4px;}
   .rst-row{display:flex;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px solid var(--line);}
   .rst-num{font-weight:700;font-size:16px;width:34px;text-align:center;color:var(--ink);}
@@ -823,7 +862,7 @@ var APPCHECK_SITE_KEY = '6Lfmi2AtAAAAAP1R-1JlYz1ht1WuQWp2RS_tibpT';
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '8.7';
+var APP_VERSION = '8.8';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -1240,7 +1279,8 @@ function render(){
   var tb=document.getElementById('tabbar'); if(tb) tb.style.display='flex';
   state._rScreen = state.screen;
   renderTabs();
-  if(state.screen==='form') initPitchDrag();
+  try{ document.body.classList.toggle('pc-form', state.screen==='form'); }catch(e){}
+  if(state.screen==='form'){ initPitchDrag(); initRosterDrag_(); }
 }
 
 /* 칩 줄 가로 스크롤 위치 저장 (렌더 시 복원용) */
@@ -1282,17 +1322,24 @@ function initPitchDrag(){
       var y = Math.max(0.03, Math.min(0.97, pt.y));
       tok.style.left = (x*100)+'%';
       tok.style.top = (y*100)+'%';
-      tok._x = x; tok._y = y; moved=true;
+      tok._x = x; tok._y = y; tok._cx=e.clientX; tok._cy=e.clientY; moved=true;
       if(!tok.getAttribute('data-guest')){   // 이동 중 실시간 포지션 표기
         var lp = posFromXY(x,y);
         var nn = tok.querySelector('.t-num'); if(nn && nn.textContent!==lp){ nn.textContent = lp; }
         var np = tok.querySelector('.t-pos'); if(np && np.textContent!==lp){ np.textContent = lp; }
-        tok.className = 'token pos-'+lp+' drag';
+        tok.className = 'token tcard pos-'+lp+' drag';
       }
     });
     var end = function(){
       if(!dragging) return;
       dragging=false; tok.classList.remove('drag');
+      /* PC: 스쿼드판 밖으로 끌어내면 미편성(명단)으로 이동 */
+      if(moved && tok._cx!=null && window.matchMedia && window.matchMedia('(min-width:1024px)').matches){
+        var RA=arena.getBoundingClientRect();
+        if(tok._cx<RA.left-6 || tok._cx>RA.right+6 || tok._cy<RA.top-6 || tok._cy>RA.bottom+6){
+          setMemberPosOnly(pid, ''); toast('미편성으로 이동했습니다'); return;
+        }
+      }
       if(moved && tok._x!=null){
         var newPos = posFromXY(tok._x, tok._y);
         var isGuest=false;
@@ -1305,6 +1352,58 @@ function initPitchDrag(){
     };
     tok.addEventListener('pointerup', end);
     tok.addEventListener('pointercancel', end);
+  });
+}
+
+/* 편성 명단 → 스쿼드판 드래그 배치 (PC 전용) */
+function initRosterDrag_(){
+  if(!isAdmin()) return;
+  if(!(window.matchMedia && window.matchMedia('(min-width:1024px)').matches)) return;
+  var arena=document.getElementById('arena'); if(!arena) return;
+  Array.prototype.forEach.call(document.querySelectorAll('.rst-row[data-pid]'), function(row){
+    row.addEventListener('pointerdown', function(e){
+      if(e.button!==undefined && e.button!==0) return;
+      if(e.target && e.target.closest && e.target.closest('select,.rst-x,input')) return;
+      var pid=row.getAttribute('data-pid');
+      var sx=e.clientX, sy=e.clientY, started=false, ghost=null;
+      function mv(ev){
+        if(!started){
+          if(Math.hypot(ev.clientX-sx, ev.clientY-sy)<7) return;
+          started=true;
+          ghost=document.createElement('div'); ghost.className='drag-ghost';
+          var nmEl=row.querySelector('.rst-name');
+          ghost.textContent=nmEl?nmEl.textContent:'선수';
+          document.body.appendChild(ghost);
+          row.classList.add('dragging'); document.body.classList.add('no-sel');
+        }
+        ghost.style.left=ev.clientX+'px'; ghost.style.top=ev.clientY+'px';
+        var R=arena.getBoundingClientRect();
+        var inA=ev.clientX>=R.left&&ev.clientX<=R.right&&ev.clientY>=R.top&&ev.clientY<=R.bottom;
+        arena.classList.toggle('drop-hot', inA);
+        ev.preventDefault();
+      }
+      function up(ev){
+        document.removeEventListener('pointermove', mv);
+        document.removeEventListener('pointerup', up);
+        document.body.classList.remove('no-sel'); row.classList.remove('dragging');
+        arena.classList.remove('drop-hot');
+        if(ghost) ghost.remove();
+        if(!started) return;
+        var R=arena.getBoundingClientRect();
+        if(ev.clientX>=R.left&&ev.clientX<=R.right&&ev.clientY>=R.top&&ev.clientY<=R.bottom){
+          var pt=pitch3dPt_(arena, ev.clientX, ev.clientY);
+          var x=Math.max(0.05, Math.min(0.95, pt.x));
+          var y=Math.max(0.03, Math.min(0.97, pt.y));
+          var pos=posFromXY(x,y);
+          if(state.squadDetail){ state.squadDetail.members.forEach(function(mm){ if(mm.playerId===pid){ mm.x=x; mm.y=y; mm.position=pos; } }); cacheSquad_(state.squadDetail); render(); }
+          API.run('setSquadMemberPos', state.currentSquadId, pid, x, y, pos)
+            .then(function(res){ if(res&&res.squad){ cacheSquad_(res); if(state.screen==='form') render(); } })
+            .catch(function(){ toast('배치 실패 · 새로고침'); });
+        }
+      }
+      document.addEventListener('pointermove', mv);
+      document.addEventListener('pointerup', up);
+    });
   });
 }
 
@@ -1484,12 +1583,12 @@ function viewForm(){
     + '</div>') : '';
 
   var tokens = d.members.filter(function(m){ return m.position; }).map(function(mem){
-    var label = (mem.guest?mem.num:numTok(mem.num)) + ' ' + esc(mem.name);
     var face = mem.photo
-      ? '<span class="t-photo" style="background-image:url('+mem.photo+')"><span class="t-pos oswald">'+esc(mem.position)+'</span></span>'
-      : '<span class="t-num oswald">'+esc(mem.position)+'</span>';
-    return '<div class="token pos-'+(mem.guest?'guest':mem.position)+'" data-pid="'+mem.playerId+'"'+(mem.guest?' data-guest="1"':'')+' style="left:'+(mem.x*100)+'%;top:'+(mem.y*100)+'%;">'
-      + face + '<span class="t-name">'+label+'</span></div>';
+      ? '<span class="t-photo" style="background-image:url('+mem.photo+')"></span>'
+      : '<span class="t-ph-e">👤</span>';
+    return '<div class="token tcard pos-'+(mem.guest?'guest':mem.position)+'" data-pid="'+mem.playerId+'"'+(mem.guest?' data-guest="1"':'')+' style="left:'+(mem.x*100)+'%;top:'+(mem.y*100)+'%;">'
+      + '<span class="t-top"><span class="t-tn">'+(mem.guest?esc(mem.num):numDisp(mem.num))+'</span><span class="t-pos">'+esc(mem.position)+'</span></span>'
+      + face + '<span class="t-name">'+esc(mem.name)+'</span></div>';
   }).join('');
   var assignedN = d.members.filter(function(m){return m.position;}).length;
 
@@ -1516,7 +1615,7 @@ function viewForm(){
     var sel = isAdmin() ? '<select class="rst-pos" onchange="setMemberPosOnly(\''+mem.playerId+'\',this.value)">'+opts+'</select>' : '<span class="rst-postag">'+(mem.position?esc(mem.position):'미편성')+'</span>';
     var rm = isAdmin() ? '<button class="rst-x" onclick="removeMemberConfirm(\''+mem.playerId+'\',\''+jsq(mem.name)+'\')">×</button>' : '';
     var ava = mem.photo ? '<img class="rst-ava" src="'+mem.photo+'" alt="">' : '<div class="rst-ava rst-ava-empty">👤</div>';
-    return '<div class="rst-row">'
+    return '<div class="rst-row" data-pid="'+mem.playerId+'">'
       + ava
       + '<span class="rst-num oswald'+(mem.guest?' guest':'')+'">'+(mem.guest?mem.num:numDisp(mem.num))+'</span>'
       + '<span class="rst-name">'+esc(mem.name)+(mem.guest?' <span class="rst-g">게스트</span>':'')+'</span>'
@@ -1530,12 +1629,17 @@ function viewForm(){
   // #5 요청사항 (전체 + 선수별)
   var reqPanel = squadReqSection(d);
 
-  return addBtn + tabs + applyBtns + '<div class="section">' + head + pitch
-    + '<label class="opt-chk"><input type="checkbox" id="sqbd_chk"'+(squadBadgeOn_()?' checked':'')+' onchange="squadBadgeSet_(this.checked)"><span>카드에 달성 뱃지 표시</span></label>'
-    + '<button class="btn-ghost" onclick="shareSquadCard_()">🖼️ 스쿼드 카드 이미지 저장</button>'
-    + (isAdmin()?'<button class="btn-ghost" onclick="openMomVote_(\''+sid+'\')">🗳️ MOM 투표 만들기 (링크 공유)</button>':'')
-    + '</div>' + reqPanel + rosterPanel
-    + '<p class="hint">'+(isAdmin()?'선수를 끌어 위치를 옮기면 구역에 따라 포지션이 자동 지정됩니다. 명단의 포지션 선택은 위치를 유지한 채 이름만 바뀝니다.':'스쿼드 포메이션입니다.')+'</p>';
+  return addBtn + tabs + applyBtns
+    + '<div class="form-cols">'
+    +   '<div class="fc-right"><div class="section">' + head + pitch
+    +     '<label class="opt-chk"><input type="checkbox" id="sqbd_chk"'+(squadBadgeOn_()?' checked':'')+' onchange="squadBadgeSet_(this.checked)"><span>카드에 달성 뱃지 표시</span></label>'
+    +     '<button class="btn-ghost" onclick="shareSquadCard_()">🖼️ 스쿼드 카드 이미지 저장</button>'
+    +     (isAdmin()?'<button class="btn-ghost" onclick="openMomVote_(\''+sid+'\')">🗳️ MOM 투표 만들기 (링크 공유)</button>':'')
+    +   '</div></div>'
+    +   '<div class="fc-mid">' + reqPanel + '</div>'
+    +   '<div class="fc-left">' + rosterPanel + '</div>'
+    + '</div>'
+    + '<p class="hint">'+(isAdmin()?'선수를 끌어 위치를 옮기면 구역에 따라 포지션이 자동 지정됩니다. PC에서는 명단의 선수를 스쿼드판으로 끌어 배치하고, 카드를 판 밖으로 끌면 미편성으로 돌아갑니다.':'스쿼드 포메이션입니다.')+'</p>';
 }
 /* 스쿼드에 빠진 팀원 다시 추가 (실수로 제외한 인원 복구) */
 function openAddMembers_(sid){
