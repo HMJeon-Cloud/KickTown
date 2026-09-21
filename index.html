@@ -812,7 +812,7 @@ var APPCHECK_SITE_KEY = '6Lfmi2AtAAAAAP1R-1JlYz1ht1WuQWp2RS_tibpT';
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '7.4';
+var APP_VERSION = '7.5';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -5147,7 +5147,6 @@ function raceData_(){
   var today=attToday_();
   var msDesc=ms.filter(function(m){ return m.date && m.date<=today && attByM[m.id]; })
     .slice().sort(function(a,c){ return c.date.localeCompare(a.date); });
-  var best=bestStreaks_(ms, state.recStats||[], state.recAtt||[]);
   var out={};
   ['g','a','att'].forEach(function(key){
     var rc=ranks(cur,key), rp=ranks(prev,key);
@@ -5155,8 +5154,7 @@ function raceData_(){
     out[key]=rc.map(function(r,i){
       var pr=prevRank[r.pid];
       return {pid:r.pid, name:pname_(r.pid).name, v:r.v, rank:i+1,
-        mv:(pr==null)?null:(pr-(i+1)),
-        streak:(best[r.pid]||{})[key]||0};
+        mv:(pr==null)?null:(pr-(i+1))};
     });
   });
   return out;
@@ -5172,9 +5170,8 @@ function openRace_(){
   function sec(key){
     var cat=MS_CATS[key];
     var rows=d[key].slice(0,8).map(function(r){
-      var stk=streakChip_(r.streak, key, 14);
       return '<div class="rk-row"><span class="rk-rank'+(r.rank<=3?(' r'+r.rank):'')+'">'+(r.rank<=3?MEDAL[r.rank-1]:r.rank)+'</span>'
-        + '<span class="rk-name">'+esc(r.name)+stk+'</span>'
+        + '<span class="rk-name">'+esc(r.name)+'</span>'
         + mvHtml_(r)
         + '<span class="rk-val oswald">'+r.v+'<small>'+(key==='att'?'점':cat.unit)+'</small></span></div>';
     }).join('') || '<div class="empty" style="padding:16px;">기록이 없습니다.</div>';
@@ -5183,7 +5180,7 @@ function openRace_(){
   showSheet('<div class="grabber"></div>'
    + '<div class="sheet-head"><h3>🏁 랭킹 레이스</h3><button class="x" onclick="closeSheet()">✕</button></div>'
    + '<div class="sheet-body">'
-   +   '<p style="font-size:12px;color:var(--steel-soft);margin:0;">'+recPeriodLabel_()+' · 순위 변동은 이번 달 시작 전 대비<br>'+svgIcon_('crown','gold',15)+' 왕관은 <b>기간 내 최고 연속 기록</b> — 출석 3·5·10·20경기 / 득점·도움 2·3·5·10경기 (동·은·금·다이아)</p>'
+   +   '<p style="font-size:12px;color:var(--steel-soft);margin:0;">'+recPeriodLabel_()+' · 순위 변동은 이번 달 시작 전 대비</p>'
    +   sec('g') + sec('a') + sec('att')
    +   '<button class="btn-primary" style="margin-top:16px;" onclick="shareRaceCard_()">🖼️ 레이스 카드 이미지 저장</button>'
    + '</div>');
@@ -5226,20 +5223,9 @@ function shareRaceCard_(){
             ctx.fillStyle='rgba(255,255,255,.55)'; ctx.font='700 28px Oswald, sans-serif'; ctx.textAlign='center';
             ctx.fillText(String(r.rank), pad+52, ry+42);
           }
-          // 이름 (+스트릭)
+          // 이름
           ctx.textAlign='left'; ctx.fillStyle='#fff'; ctx.font='700 32px Pretendard, sans-serif';
-          var nmTxt=cardEllipsis_(ctx,r.name,pw-520);
-          ctx.fillText(nmTxt, pad+100, ry+41);
-          var sT2=streakTier_(r.streak, key);
-          if(sT2){
-            var nw2=ctx.measureText(nmTxt).width;
-            ctx.font='700 26px Oswald, sans-serif';
-            var sTxt=String(r.streak), sw2=ctx.measureText(sTxt).width+58;
-            rr_(ctx, pad+100+nw2+14, ry+20, sw2, 42, 12); ctx.fillStyle='rgba(255,255,255,.10)'; ctx.fill();
-            ctx.strokeStyle=sT2.c; ctx.lineWidth=1.5; ctx.stroke();
-            drawIcon_(ctx,'crown',pad+100+nw2+14+22,ry+41,28,sT2.key);
-            ctx.fillStyle='#fff'; ctx.textAlign='left'; ctx.fillText(sTxt, pad+100+nw2+14+42, ry+42);
-          }
+          ctx.fillText(cardEllipsis_(ctx,r.name,pw-420), pad+100, ry+41);
           // 변동
           var mvTxt, mvCol;
           if(r.mv==null){ mvTxt='NEW'; mvCol='#7FD4E8'; }
@@ -5398,8 +5384,6 @@ function renderHall_(){
     var s=seasonData_(y,(b.matches||[]),(b.stats||[]),(b.attendance||[]));
     var mvp=hofMvp_(y, s.ms, hon);
     var mvpId=mvp.pid, mvpName=mvp.names.join(' · ');
-    var stk=bestStreaks_(s.ms, b.stats||[], b.attendance||[]);
-    function sline(icon,k,t,unit){ return '<div class="hf-line"><span class="hf-i">'+icon+'</span><span class="hf-k">'+k+'</span><span class="hf-n">'+(t?esc(t.names.join(' · '))+' <b class="oswald">'+t.v+unit+'</b>':'<span style="color:var(--steel-soft);">기록 없음</span>')+'</span></div>'; }
     function line(icon,k,t,unit){ return '<div class="hf-line"><span class="hf-i">'+icon+'</span><span class="hf-k">'+k+'</span><span class="hf-n">'+(t?esc(t.names.join(' · '))+' <b class="oswald">'+t.v+unit+'</b>':'<span style="color:var(--steel-soft);">기록 없음</span>')+'</span></div>'; }
     return '<div class="hf-card">'
       + '<div class="hf-year"><span><span class="oswald">'+seasonLabel_(y)+'</span> 시즌</span>'
@@ -5407,10 +5391,6 @@ function renderHall_(){
       + '</div>'
       + '<div class="hf-line mvp"><span class="hf-i">'+svgIcon_('trophy','gold',24)+'</span><span class="hf-k">MVP</span><span class="hf-n">'+(mvpName?('<b>'+esc(mvpName)+'</b>'+(mvp.auto?' <span style="font-size:10.5px;color:var(--steel-soft);font-weight:700;">MOM 투표 최다</span>':'')):'<span style="color:var(--steel-soft);">미지정</span>')+'</span></div>'
       + line(svgIcon_('boot','gold',24),'득점왕',s.scorer,'골') + line(svgIcon_('ball','gold',24),'도움왕',s.assister,'도움') + line(svgIcon_('stadium','gold',24),'출석왕',s.attKing,'점')
-      + '<div class="hf-sep">최고 연속 기록</div>'
-      + sline(svgIcon_('crown','gold',24),'연속 득점',streakTop_(stk,'g'),'경기')
-      + sline(svgIcon_('crown','gold',24),'연속 도움',streakTop_(stk,'a'),'경기')
-      + sline(svgIcon_('crown','gold',24),'연속 출석',streakTop_(stk,'att'),'경기')
       + '<button class="btn-ghost" style="margin-top:10px;" onclick="shareHofCard_(\''+y+'\')">🖼️ '+seasonLabel_(y)+' 시상 카드 만들기</button>'
       + '<button class="btn-ghost" style="margin-top:8px;" onclick="openBest11_(\''+y+'\')">⭐ '+seasonLabel_(y)+' 베스트 11</button>'
       + '</div>';
@@ -5480,7 +5460,6 @@ function shareHofCard_(year){
   var b=state._hofBundle||{};
   var s=seasonData_(year,(b.matches||[]),(b.stats||[]),(b.attendance||[]));
   var hon=honors_(); var mv=hofMvp_(year, s.ms, hon); var mvpId=mv.pid;
-  var stk=bestStreaks_(s.ms, b.stats||[], b.attendance||[]);
   var mvp=mvpId?((state.players||[]).filter(function(x){return x.id===mvpId;})[0]||pname_(mvpId)):null;
   var mvpLabel=(mv.names.length>1)?mv.names.join(' · '):(mvp?String(mvp.name||''):'');
   toast('카드 만드는 중...');
@@ -5489,7 +5468,7 @@ function shareHofCard_(year){
     var emblem=rs[0], big=rs[1]||'';
     return loadImg_(big||(mvp&&mvp.photo)||'').then(function(face){
       fontsReady_(function(){
-        var W=1080, H=1810;
+        var W=1080, H=1500;
         var c=document.createElement('canvas'); c.width=W; c.height=H;
         var ctx=c.getContext('2d');
         darkBase_(ctx,W,H);
@@ -5557,22 +5536,6 @@ function shareHofCard_(year){
           ctx.fillText(t?cardEllipsis_(ctx,t.names.join('·'),cw-30):'—', x+cw/2, py+152);
           ctx.fillStyle=cd[4]; ctx.font='700 40px Oswald, sans-serif';
           ctx.fillText(t?(t.v+cd[3]):'', x+cw/2, py+204);
-        });
-        /* 최고 연속 기록 */
-        var sy=1400;
-        sectionTitleW_(ctx, pad, sy, '최고 연속 기록', 'BEST STREAK');
-        var scols=[['g','연속 득점','#FF9DAD'],['a','연속 도움','#9DC1FF'],['att','연속 출석','#8FE3BD']];
-        var sw=(W-pad*2-40)/3, sh=230, spy=sy+46;
-        scols.forEach(function(cd,i){
-          var x=pad+i*(sw+20), t=streakTop_(stk, cd[0]);
-          glass_(ctx,x,spy,sw,sh,20);
-          ctx.textAlign='center'; ctx.textBaseline='middle';
-          drawIcon_(ctx,'crown',x+sw/2,spy+52,58,'gold');
-          ctx.fillStyle=CARD_GOLD; ctx.font='700 27px Pretendard, sans-serif'; ctx.fillText(cd[1], x+sw/2, spy+100);
-          ctx.fillStyle='#fff'; ctx.font='700 32px Pretendard, sans-serif';
-          ctx.fillText(t?cardEllipsis_(ctx,t.names.join('·'),sw-30):'—', x+sw/2, spy+146);
-          ctx.fillStyle=cd[2]; ctx.font='700 40px Oswald, sans-serif';
-          ctx.fillText(t?(t.v+'경기'):'', x+sw/2, spy+196);
         });
         cardFooterW_(ctx,W,H);
         showCardPreview_(c,'FCJEMIRO_HOF_'+year+'.png');
