@@ -888,7 +888,7 @@ var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '10.7';
+var APP_VERSION = '10.9';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -2630,7 +2630,7 @@ var _hdrCache={};
 function graphicHeader_(c){
   var tone=(c&&c.hdrTone&&HDR_TONES[c.hdrTone])?c.hdrTone:'red';
   var key=(c&&c.id||'')+'|'+tone+'|'+String((c&&c.emblem)||'').length;
-  if(_hdrCache[key]){ setHeaderBg_(_hdrCache[key][0], _hdrCache[key][1]); return; }
+  if(_hdrCache[key]){ setHeaderBg_((c&&c.bg)||_hdrCache[key][0], _hdrCache[key][1]); return; }
   var done=false;
   function paint(W,H,emblem){
     var T=HDR_TONES[tone];
@@ -2676,7 +2676,8 @@ function graphicHeader_(c){
       var pUrl=paint(1680,204,emblem);    /* PC (≈8.24:1) — 위 라인·포인트가 잘리지 않음 */
       _hdrCache[key]=[mUrl,pUrl];
       var cur=activeClub();
-      if(cur && c && cur.id===c.id && !cur.bg) setHeaderBg_(mUrl, pUrl);
+      /* PC는 항상 기본 양식 · 모바일은 사진이 있으면 사진 */
+      if(cur && c && cur.id===c.id) setHeaderBg_(cur.bg||mUrl, pUrl);
     }catch(e){}
   }
   if(c && c.emblem){ loadImg_(c.emblem).then(draw).catch(function(){ draw(null); }); setTimeout(function(){ draw(null); }, 1500); }
@@ -2685,8 +2686,8 @@ function graphicHeader_(c){
 function applyClubHeader(){
   var c = activeClub(); if(!c){ applyAppHeader(); return; }
   setHeader_(c.emblem||APP_LOGO, esc(c.name)+(c.region?' <span class="rg">'+esc(c.region)+'</span>':''), c.note||'');
-  if(c.bg){ setHeaderBg_(c.bg, c.bgPc||''); }        // 등록한 배경 (신규 등록은 블러 앰비언트)
-  else { setHeaderBg_('',''); graphicHeader_(c); }   // 기본: 그래픽 헤더
+  setHeaderBg_(c.bg||'', '');   // 모바일: 사진(있으면) · PC는 아래에서 기본 양식으로 채움
+  graphicHeader_(c);            // PC는 항상 기본 양식 · 모바일 사진 없으면 기본 양식
 }
 var clubEmblemData = '';
 var clubBgData = '';
@@ -2727,12 +2728,12 @@ function openClubForm(clubId){
            }).join('')
    +     '</div>'
    +     '<p style="font-size:11.5px;color:var(--steel-soft);margin:6px 2px 10px;">사진이 없으면 팀 컬러와 엠블럼으로 헤더를 자동으로 그려줘요.</p>'
-   +     '<label style="font-size:13px;font-weight:700;">헤더 사진 <span style="color:var(--steel-soft);font-weight:600;">(선택 · 모바일은 사진 그대로, PC는 블러 배경)</span></label>'
+   +     '<label style="font-size:13px;font-weight:700;">헤더 사진 <span style="color:var(--steel-soft);font-weight:600;">(선택 · 모바일에만 표시, PC는 기본 양식)</span></label>'
    +     '<div id="cb_bgprev" style="width:100%;height:76px;margin-top:8px;border-radius:12px;border:1px solid var(--line-strong);background:#15131b '+(clubBgData?('center/cover no-repeat url('+clubBgData+')'):'')+';overflow:hidden;position:relative;">'
    +       '<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,9,14,.35),rgba(10,9,14,.6));"></div>'
    +       '<span id="cb_bghint" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:'+(clubBgData?'#fff':'var(--steel-soft)')+';font-size:12px;font-weight:600;z-index:1;">'+(clubBgData?'적용된 배경':'그래픽 헤더 사용 중')+'</span></div>'
    +     '<label class="btn-ghost" style="display:block;width:100%;margin:8px 0 0;text-align:center;cursor:pointer;">사진 선택 (자동 블러)<input id="cb_bgfile" type="file" accept="image/*" style="display:none;" onchange="pickClubBg(this)"></label>'
-   +     '<button class="btn-ghost" type="button" style="width:100%;margin-top:8px;" onclick="clearClubBg()">사진 제거 · 그래픽 헤더로</button>'
+   +     '<button class="btn-ghost" type="button" style="width:100%;margin-top:8px;" onclick="clearClubBg()">사진 제거 · 기본 양식으로</button>'
    +   '</div>'
    +   '<div class="field"><label>팀명<span class="req">*</span></label><input id="cb_name" type="text" value="'+(c?esc(c.name):'')+'"></div>'
    +   '<div class="field"><label>지역</label><select id="cb_region">'+regOpts+'</select></div>'
@@ -2829,10 +2830,16 @@ function pickClubBg(input){
   reader.onload = function(e){
     var img = new Image();
     img.onload = function(){
-      clubBgData = encodeImgUnder_(img, 1440, 960, 700000);   /* 모바일: 사진 그대로 (기존 방식) */
-      clubBgPcData = blurAmbient_(img);                        /* PC: 블러 앰비언트 */
-      var pv=document.getElementById('cb_bgprev'); if(pv){ pv.style.background='#15131b center/cover no-repeat url('+clubBgData+')'; }
-      var hint=document.getElementById('cb_bghint'); if(hint){ hint.textContent='적용된 배경 · 모바일은 사진, PC는 블러 배경'; hint.style.color='#fff'; }
+      /* 모바일 표시 영역만 네모칸으로 지정 · PC는 원본 전체로 블러 자동 생성 */
+      openCropper_(img, { aspect:2.6, round:false,
+        title:'헤더 사진 · 모바일 표시 영역',
+        sub:'드래그로 이동 · 슬라이더로 확대·축소<br>박스 안 영역이 <b>모바일</b> 헤더에 표시됩니다 (PC는 기본 양식)',
+        onApply:function(im, rect){
+          clubBgData = cropEncode_(im, rect, 1080, 400000);
+          clubBgPcData = '';                       /* PC는 항상 기본 양식 */
+          var pv=document.getElementById('cb_bgprev'); if(pv){ pv.style.background='#15131b center/cover no-repeat url('+clubBgData+')'; }
+          var hint=document.getElementById('cb_bghint'); if(hint){ hint.textContent='적용된 배경 · 모바일에 표시 (PC는 기본 양식)'; hint.style.color='#fff'; }
+        }});
     };
     img.src = e.target.result;
   };
