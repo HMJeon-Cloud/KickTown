@@ -882,7 +882,7 @@ var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '10.1';
+var APP_VERSION = '10.2';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -1433,7 +1433,7 @@ function initRosterDrag_(){
 }
 
 /* ================= Firebase → Supabase 1회 데이터 이전 (총관리자) ================= */
-var MIG_COLLS=['clubs','members','matches','squads','squadMembers','squadNotes','stats','attendance','momVotes','logs','memberPhotos'];
+var MIG_COLLS=['clubs','members','matches','squads','squadMembers','squadNotes','playerStats','attendance','momVotes','logs','memberPhotos'];
 function migLog_(t){
   var el=document.getElementById('migLog');
   if(el){ el.innerHTML+='<div>'+esc(t)+'</div>'; el.scrollTop=el.scrollHeight; }
