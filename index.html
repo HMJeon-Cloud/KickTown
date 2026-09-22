@@ -111,6 +111,12 @@
       background-repeat:no-repeat;
       background-color:#100D13;
     }
+    /* PC 표시 영역을 따로 지정한 경우: 상단 전체를 꽉 채운다 */
+    .topbar.has-bgpc::before{
+      background-image:var(--hero-img-pc);
+      background-size:cover;
+      background-position:center center;
+    }
   }
   /* 글자 가독성용 어두운 오버레이 */
   .topbar::after{
@@ -798,8 +804,8 @@
 
   <!-- 프로필 사진 영역 조절 -->
   <div class="crop-wrap" id="cropWrap">
-    <div class="crop-title">프로필 사진 영역 조절</div>
-    <div class="crop-sub">드래그로 위치 이동 · 두 손가락(또는 슬라이더)으로 확대·축소<br>원 안에 보이는 부분이 프로필 사진이 됩니다</div>
+    <div class="crop-title" id="cropTitle">프로필 사진 영역 조절</div>
+    <div class="crop-sub" id="cropSub">드래그로 위치 이동 · 두 손가락(또는 슬라이더)으로 확대·축소<br>원 안에 보이는 부분이 프로필 사진이 됩니다</div>
     <div class="crop-box"><canvas id="cropCv" width="600" height="600"></canvas></div>
     <div class="crop-zoom"><span>－</span><input type="range" id="cropZoom" min="100" max="400" value="100" oninput="cropSlider_(this.value)"><span>＋</span></div>
     <div class="crop-btns"><button class="btn-ghost" onclick="cropCancel_()">취소</button><button class="crop-ok" onclick="cropApply_()">이 영역으로 적용</button></div>
@@ -882,7 +888,7 @@ var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '10.2';
+var APP_VERSION = '10.3';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -1540,18 +1546,12 @@ function viewTeam(){
     + cfgRow('출석 점수 (기록 집계)', '1점 고정', 'scoreFixedNotice')
     + cfgRow('지각 점수', scoreLabel_(lateScore), 'editLateScore')
     + cfgRow('불참 점수', scoreLabel_(absentScore), 'editAbsentScore')
-    + '<div class="list-row" style="cursor:pointer;" onclick="exportBackup_()"><span class="nm" style="flex:1;">데이터 백업 (엑셀)</span><span class="val" style="color:var(--red);font-size:14px;">📥 내보내기 ›</span></div>'
-    + '<div class="list-row" style="cursor:pointer;" onclick="importBackup_()"><span class="nm" style="flex:1;">데이터 복구 (백업 엑셀 업로드)</span><span class="val" style="color:var(--red);font-size:14px;">📤 가져오기 ›</span></div>'
-    + '<div class="list-row" style="cursor:pointer;" onclick="openLogView_()"><span class="nm" style="flex:1;">활동 로그</span><span class="val" style="color:var(--red);font-size:14px;">🗒️ 보기 ›</span></div>'
     + cfgRow('내 이름', esc(whoName_()||'미설정'), 'editWho_')
     + '<div class="list-row" style="cursor:pointer;" onclick="openVoteList_()"><span class="nm" style="flex:1;">MOM 투표 관리</span><span class="val" style="color:var(--red);font-size:14px;">🗳️ 목록 ›</span></div>'
-    + ((typeof KT_BACKEND!=='undefined' && KT_BACKEND==='supabase' && isOwner() && !(state.cfg&&state.cfg.fbMigratedAt)) ? '<div class="list-row" style="cursor:pointer;" onclick="migrateFromFirebase_()"><span class="nm" style="flex:1;">데이터 이전 (Firebase → Supabase)</span><span class="val" style="color:var(--red);font-size:14px;">🚚 1회 실행 ›</span></div>' : '')
     + cfgRow('감독 · 코치', staffLabel_(), 'editStaff_')
     + cfgRow('시즌 기간', seasonRangeLabel_(), 'editSeason_')
-    + '<div class="list-row" style="cursor:pointer;" onclick="openUsage_()"><span class="nm" style="flex:1;">데이터 사용량 (이번 접속)</span><span class="val" style="color:var(--red);font-size:14px;">📶 '+((window.__KJR&&window.__KJR.n)||0)+'건 ›</span></div>'
-    + (isOwner() ? ('<div class="list-row" style="cursor:pointer;" onclick="openPinAdmin_()"><span class="nm" style="flex:1;">PIN 관리 <span style="font-size:10.5px;color:var(--steel-soft);font-weight:700;">총관리자</span></span><span class="val" style="color:var(--red);font-size:14px;">🔐 설정 ›</span></div>') : '')
+    + (isOwner() ? ('<div class="list-row" style="cursor:pointer;" onclick="openSystem_()"><span class="nm" style="flex:1;">시스템 <span style="font-size:10.5px;color:var(--steel-soft);font-weight:700;">총관리자</span></span><span class="val" style="color:var(--red);font-size:14px;">🛠️ 관리 ›</span></div>') : '')
     + '<div class="list-row" style="cursor:pointer;" onclick="viewerSwitch_()"><span class="nm" style="flex:1;">조회 전용 모드로 전환</span><span class="val" style="color:var(--red);font-size:14px;">👀 팀원 모드 ›</span></div>'
-    + '<input type="file" id="bk_file" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none;" onchange="importBackupPick_(this)">'
     + '</div>'
     + '<p style="font-size:11.5px;color:var(--steel-soft);margin:8px 2px 0;">출석·지각·불참 점수는 기록 탭 출석 순위 집계에 반영돼요. (미참석 0점)</p>'
     + '</div>';
@@ -2616,12 +2616,15 @@ function setHeader_(emblem, name, sub){
   var tagEl=document.querySelector('.club .tag'); if(tagEl) tagEl.textContent=sub;
 }
 /* 헤더 배경(엠블럼 뒤): 팀 전용 이미지 있으면 사용, 없으면 기본(APP_BG) */
-function setHeaderBg_(url){
+function setHeaderBg_(url, pcUrl){
   var v = url ? ('url("'+url+'")') : (APP_BG ? ('url("'+APP_BG+'")') : '');
   if(v) document.documentElement.style.setProperty('--hero-img', v);
   else document.documentElement.style.removeProperty('--hero-img');
+  if(pcUrl) document.documentElement.style.setProperty('--hero-img-pc', 'url("'+pcUrl+'")');
+  else document.documentElement.style.removeProperty('--hero-img-pc');
   // 팀 전용 배경 사진이 있을 때만 헤더를 키움 (기본 배경은 짧은 헤더 유지)
-  var tb=document.querySelector('.topbar'); if(tb) tb.classList.toggle('has-bg', !!url);
+  var tb=document.querySelector('.topbar');
+  if(tb){ tb.classList.toggle('has-bg', !!url); tb.classList.toggle('has-bgpc', !!pcUrl); }
 }
 function applyAppHeader(){ setHeader_(APP_LOGO, esc(APP_NAME), APP_SUB); setHeaderBg_(''); }
 function activeClub(){ return (state.clubs||[]).filter(function(c){return c.id===state.activeClubId;})[0] || null; }
@@ -2630,10 +2633,11 @@ function ourTeamName_(){ var c=activeClub(); return (c&&c.name) ? c.name : APP_N
 function applyClubHeader(){
   var c = activeClub(); if(!c){ applyAppHeader(); return; }
   setHeader_(c.emblem||APP_LOGO, esc(c.name)+(c.region?' <span class="rg">'+esc(c.region)+'</span>':''), c.note||'');
-  setHeaderBg_(c.bg||'');   // 팀 전용 헤더 배경 (없으면 기본)
+  setHeaderBg_(c.bg||'', c.bgPc||'');   // 팀 전용 헤더 배경 (없으면 기본) · PC 범위 별도
 }
 var clubEmblemData = '';
 var clubBgData = '';
+var clubBgPcData = '';
 function openClubForm(clubId){
   if(!requireAdmin()) return;
   clubId = clubId || state.activeClubId;
@@ -2642,6 +2646,7 @@ function openClubForm(clubId){
   state.editClubId = clubId;
   clubEmblemData = c && c.emblem ? c.emblem : '';
   clubBgData = c && c.bg ? c.bg : '';
+  clubBgPcData = c && c.bgPc ? c.bgPc : '';
   var regList = REGIONS.slice();
   if(c && c.region && regList.indexOf(c.region)<0) regList.unshift(c.region);
   var regOpts = '<option value="">지역 선택</option>' + regList.map(function(r){ return '<option value="'+esc(r)+'"'+(c&&c.region===r?' selected':'')+'>'+esc(r)+'</option>'; }).join('');
@@ -2703,30 +2708,57 @@ function encodeImgUnder_(img, maxW, maxH, budgetChars){
   }
   return url;
 }
-/* 팀 헤더 배경 이미지: 원본 비율 유지·고해상도(가로 최대 1440)로 저장 → 선명하게, 덜 잘리게 */
+/* 선택 영역을 잘라 JPEG로 인코딩 (가로 maxW 이내 · budgetChars 이내) */
+function cropEncode_(img, rect, maxW, budgetChars){
+  var w=Math.min(maxW, Math.round(rect.sw)), h=Math.max(1, Math.round(w*rect.sh/rect.sw));
+  var url='';
+  for(var attempt=0; attempt<6; attempt++){
+    var c=document.createElement('canvas'); c.width=w; c.height=h;
+    var ctx=c.getContext('2d'); try{ ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high'; }catch(e){}
+    ctx.drawImage(img, rect.sx, rect.sy, rect.sw, rect.sh, 0, 0, w, h);
+    var q=0.86; url=c.toDataURL('image/jpeg', q);
+    while(url.length>budgetChars && q>0.5){ q-=0.08; url=c.toDataURL('image/jpeg', q); }
+    if(url.length<=budgetChars) break;
+    w=Math.round(w*0.85); h=Math.round(h*0.85);
+  }
+  return url;
+}
+/* 팀 헤더 배경: 이미지 선택 → 모바일 표시 영역 → PC 표시 영역 순서로 범위 지정 */
 function pickClubBg(input){
   var file = input.files && input.files[0]; if(!file) return;
   var reader = new FileReader();
   reader.onload = function(e){
     var img = new Image();
     img.onload = function(){
-      clubBgData = encodeImgUnder_(img, 1440, 960, 820000);   // ≈0.8MB 이내로 유지
-      var pv=document.getElementById('cb_bgprev'); if(pv){ pv.style.background='#15131b center/cover no-repeat url('+clubBgData+')'; }
-      var hint=document.getElementById('cb_bghint'); if(hint){ hint.textContent='적용된 배경'; hint.style.color='#fff'; }
+      openCropper_(img, { aspect:2.6, round:false,
+        title:'헤더 배경 · 모바일 표시 영역',
+        sub:'드래그로 이동 · 슬라이더로 확대·축소<br>박스 안 영역이 <b>모바일</b> 헤더에 표시됩니다',
+        onApply:function(im, rect){
+          clubBgData = cropEncode_(im, rect, 1080, 400000);
+          openCropper_(im, { aspect:8.27, round:false,
+            title:'헤더 배경 · PC 표시 영역',
+            sub:'박스 안 영역이 <b>PC</b> 헤더에 표시됩니다<br>가로로 넓게 잡을수록 PC에서 꽉 차 보여요',
+            onApply:function(im2, rect2){
+              clubBgPcData = cropEncode_(im2, rect2, 1680, 320000);
+              var pv=document.getElementById('cb_bgprev'); if(pv){ pv.style.background='#15131b center/cover no-repeat url('+clubBgData+')'; }
+              var hint=document.getElementById('cb_bghint'); if(hint){ hint.textContent='적용된 배경 · 모바일/PC 범위 지정됨'; hint.style.color='#fff'; }
+            }});
+        }});
     };
     img.src = e.target.result;
   };
   reader.readAsDataURL(file);
+  try{ input.value=''; }catch(err){}
 }
 function clearClubBg(){
-  clubBgData = '';
+  clubBgData = ''; clubBgPcData = '';
   var pv=document.getElementById('cb_bgprev'); if(pv){ pv.style.background='#15131b'; }
   var hint=document.getElementById('cb_bghint'); if(hint){ hint.textContent='기본 배경 사용 중'; hint.style.color='var(--steel-soft)'; }
 }
 function saveClub(){
   var name=(document.getElementById('cb_name')||{}).value||'';
   if(!name.trim()){ toast('팀명을 입력하세요'); return; }
-  var data={ name:name.trim(), region:(document.getElementById('cb_region')||{}).value||'', note:((document.getElementById('cb_note')||{}).value||'').trim(), emblem:clubEmblemData||'', bg:clubBgData||'' };
+  var data={ name:name.trim(), region:(document.getElementById('cb_region')||{}).value||'', note:((document.getElementById('cb_note')||{}).value||'').trim(), emblem:clubEmblemData||'', bg:clubBgData||'', bgPc:clubBgPcData||'' };
   if(state.editClubId){
     // 수정
     var id=state.editClubId;
@@ -2786,6 +2818,7 @@ function openPlayerForm(id){
   state.formSize = p ? p.size : null;
   state.formPositions = (p && p.positions) ? p.positions.slice() : [];
   state.formPhoto = (p && p.photo) ? p.photo : '';
+  state.formPhotoRect = (p && p.photoRect) ? p.photoRect : '';
   state.formPhotoL = undefined;   // undefined = 변경 없음
   state.formStatus = (p && p.status) ? p.status : '';
   var title = id ? '팀원 정보 수정' : '팀원 등록';
@@ -2908,37 +2941,57 @@ function pickPlayerPhoto(input){
   try{ input.value=''; }catch(err){}   // 같은 파일 재선택 허용
 }
 /* ── 프로필 사진 영역 조절: 이동(드래그) + 확대·축소(핀치/슬라이더/휠) ── */
-var CROP={img:null,V:600,scale:1,min:1,ox:0,oy:0,ptrs:{},dist:0,bound:false};
-function openCropper_(img){
-  var V=CROP.V;
+var CROP={img:null,V:600,VH:600,round:true,onApply:null,scale:1,min:1,ox:0,oy:0,ptrs:{},dist:0,bound:false};
+/* opt: {aspect(가로/세로), round(원형 마스크), title, sub, onApply(img,{sx,sy,sw,sh})} — 생략 시 프로필용 */
+function openCropper_(img, opt){
+  opt=opt||{};
+  var aspect=opt.aspect||1;
   CROP.img=img;
-  CROP.min=Math.max(V/img.width, V/img.height);
+  CROP.V=600; CROP.VH=Math.max(72, Math.round(600/aspect));
+  CROP.round=(opt.round!==undefined)?!!opt.round:true;
+  CROP.onApply=opt.onApply||null;
+  CROP.min=Math.max(CROP.V/img.width, CROP.VH/img.height);
   CROP.scale=CROP.min;
-  CROP.ox=(V-img.width*CROP.scale)/2; CROP.oy=(V-img.height*CROP.scale)/2;
+  CROP.ox=(CROP.V-img.width*CROP.scale)/2; CROP.oy=(CROP.VH-img.height*CROP.scale)/2;
+  var cv=document.getElementById('cropCv'); if(cv){ cv.width=CROP.V; cv.height=CROP.VH; }
+  var box=document.querySelector('.crop-box');
+  if(box){
+    box.style.width=(aspect>1.5)?'min(560px,88vw)':'min(300px,78vw)';
+    box.style.height='auto'; box.style.aspectRatio=String(aspect);
+  }
+  var tt=document.getElementById('cropTitle'); if(tt) tt.textContent=opt.title||'프로필 사진 영역 조절';
+  var sb=document.getElementById('cropSub'); if(sb) sb.innerHTML=opt.sub||'드래그로 위치 이동 · 두 손가락(또는 슬라이더)으로 확대·축소<br>원 안에 보이는 부분이 프로필 사진이 됩니다';
   var z=document.getElementById('cropZoom'); if(z) z.value=100;
   cropBind_();
   cropDraw_();
   var w=document.getElementById('cropWrap'); if(w) w.classList.add('open');
 }
 function cropClamp_(){
-  var V=CROP.V, w=CROP.img.width*CROP.scale, h=CROP.img.height*CROP.scale;
-  CROP.ox=Math.min(0, Math.max(V-w, CROP.ox));
-  CROP.oy=Math.min(0, Math.max(V-h, CROP.oy));
+  var w=CROP.img.width*CROP.scale, h=CROP.img.height*CROP.scale;
+  CROP.ox=Math.min(0, Math.max(CROP.V-w, CROP.ox));
+  CROP.oy=Math.min(0, Math.max(CROP.VH-h, CROP.oy));
 }
 function cropDraw_(){
   var cv=document.getElementById('cropCv'); if(!cv||!CROP.img) return;
-  var V=CROP.V, ctx=cv.getContext('2d');
+  var V=CROP.V, VH=CROP.VH, ctx=cv.getContext('2d');
   try{ ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high'; }catch(e){}
-  ctx.clearRect(0,0,V,V);
-  ctx.fillStyle='#111'; ctx.fillRect(0,0,V,V);
+  ctx.clearRect(0,0,V,VH);
+  ctx.fillStyle='#111'; ctx.fillRect(0,0,V,VH);
   ctx.drawImage(CROP.img, CROP.ox, CROP.oy, CROP.img.width*CROP.scale, CROP.img.height*CROP.scale);
-  // 원 밖은 어둡게
   ctx.save();
-  ctx.beginPath(); ctx.rect(0,0,V,V); ctx.arc(V/2,V/2,V/2-6,0,Math.PI*2,true);
-  ctx.fillStyle='rgba(0,0,0,.62)'; ctx.fill('evenodd');
-  ctx.restore();
-  ctx.beginPath(); ctx.arc(V/2,V/2,V/2-6,0,Math.PI*2);
-  ctx.lineWidth=4; ctx.strokeStyle='rgba(255,255,255,.9)'; ctx.stroke();
+  if(CROP.round){
+    ctx.beginPath(); ctx.rect(0,0,V,VH); ctx.arc(V/2,VH/2,Math.min(V,VH)/2-6,0,Math.PI*2,true);
+    ctx.fillStyle='rgba(0,0,0,.62)'; ctx.fill('evenodd');
+    ctx.restore();
+    ctx.beginPath(); ctx.arc(V/2,VH/2,Math.min(V,VH)/2-6,0,Math.PI*2);
+    ctx.lineWidth=4; ctx.strokeStyle='rgba(255,255,255,.9)'; ctx.stroke();
+  } else {
+    ctx.beginPath(); ctx.rect(0,0,V,VH); rr_(ctx,5,5,V-10,VH-10,10);
+    ctx.fillStyle='rgba(0,0,0,.62)'; ctx.fill('evenodd');
+    ctx.restore();
+    rr_(ctx,5,5,V-10,VH-10,10);
+    ctx.lineWidth=4; ctx.strokeStyle='rgba(255,255,255,.9)'; ctx.stroke();
+  }
 }
 function cropZoomTo_(ns, cx, cy){
   ns=Math.max(CROP.min, Math.min(CROP.min*4, ns));
@@ -2947,7 +3000,7 @@ function cropZoomTo_(ns, cx, cy){
   CROP.scale=ns; cropClamp_(); cropDraw_();
   var z=document.getElementById('cropZoom'); if(z) z.value=Math.round(CROP.scale/CROP.min*100);
 }
-function cropSlider_(v){ if(!CROP.img) return; cropZoomTo_(CROP.min*(parseInt(v,10)||100)/100, CROP.V/2, CROP.V/2); }
+function cropSlider_(v){ if(!CROP.img) return; cropZoomTo_(CROP.min*(parseInt(v,10)||100)/100, CROP.V/2, CROP.VH/2); }
 function cropPt_(ev){
   var cv=document.getElementById('cropCv'), r=cv.getBoundingClientRect(), k=CROP.V/(r.width||1);
   return {x:(ev.clientX-r.left)*k, y:(ev.clientY-r.top)*k};
@@ -2985,7 +3038,18 @@ function cropBind_(){
 function cropCancel_(){ var w=document.getElementById('cropWrap'); if(w) w.classList.remove('open'); CROP.img=null; CROP.ptrs={}; }
 function cropApply_(){
   var img=CROP.img; if(!img) return;
+  if(CROP.onApply){
+    var cb=CROP.onApply;
+    var rect={ sx:-CROP.ox/CROP.scale, sy:-CROP.oy/CROP.scale, sw:CROP.V/CROP.scale, sh:CROP.VH/CROP.scale };
+    cropCancel_();
+    cb(img, rect);
+    return;
+  }
   var V=CROP.V, sx=-CROP.ox/CROP.scale, sy=-CROP.oy/CROP.scale, sw=V/CROP.scale, sh=V/CROP.scale;
+  /* 선택 영역을 원본 대비 비율로 저장 → 카드류가 원본(photoL)을 쓸 때도 같은 범위를 보여준다 */
+  state.formPhotoRect={ x:Math.max(0,Math.min(1,sx/img.width)), y:Math.max(0,Math.min(1,sy/img.height)),
+                        w:Math.max(0.01,Math.min(1,sw/img.width)), h:Math.max(0.01,Math.min(1,sh/img.height)) };
+  ['x','y','w','h'].forEach(function(k){ state.formPhotoRect[k]=Math.round(state.formPhotoRect[k]*1000)/1000; });
   // 썸네일: 원 안에 보이는 영역 → 128px 정사각 JPEG (선수 목록·스쿼드 토큰용)
   var sz=128, c=document.createElement('canvas'); c.width=sz; c.height=sz;
   var ctx=c.getContext('2d'); try{ ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high'; }catch(err){}
@@ -3009,7 +3073,7 @@ function cropApply_(){
   cropCancel_();
 }
 function clearPlayerPhoto(){
-  state.formPhoto=''; state.formPhotoL='';
+  state.formPhoto=''; state.formPhotoL=''; state.formPhotoRect='';
   var pv=document.getElementById('pp_prev'); if(pv){ pv.style.background='var(--paper)'; pv.textContent='👤'; }
   var bt=document.getElementById('pp_btn'); if(bt) bt.textContent='📷 사진 등록';
 }
@@ -3046,7 +3110,8 @@ function savePlayer(){
     weight: (function(v){ v=String(v||'').trim(); return v===''?'':parseInt(v); })((document.getElementById('f_weight')||{}).value),
     region: document.getElementById('f_region').value.trim(),
     status: state.formStatus || '',
-    photo: state.formPhoto || ''
+    photo: state.formPhoto || '',
+    photoRect: state.formPhotoRect || ''
   };
   var btn = document.querySelector('#sheetWrap .btn-primary');
   if(btn){ btn.textContent = '저장 중...'; btn.disabled = true; }
@@ -3862,10 +3927,25 @@ function loadImg_(src){
 }
 function imgCacheDrop_(src){ try{ var k=String(src||''); if(k && _imgCache[k]) delete _imgCache[k]; }catch(e){} }
 function rr_(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
-function circImg_(ctx,img,cx,cy,r){
+/* 등록 시 선택한 사진 영역(photoRect)을 기준으로, 대상 비율(aw:ah)에 맞는 원본 크롭 사각형 계산 */
+function photoSrc_(img, rect, aw, ah){
+  if(!rect || !(rect.w>0) || !(rect.h>0)) return null;
+  var iw=img.width||img.naturalWidth||1, ih=img.height||img.naturalHeight||1, a=aw/ah;
+  var X=rect.x*iw, Y=rect.y*ih, RW=rect.w*iw, RH=rect.h*ih, sw, sh;
+  if(RW/RH<a){ sh=RH; sw=sh*a; } else { sw=RW; sh=sw/a; }
+  if(sw>iw){ sw=iw; sh=sw/a; }
+  if(sh>ih){ sh=ih; sw=sh*a; }
+  var sx=X+RW/2-sw/2, sy=Y+RH/2-sh/2;
+  return { sx:Math.max(0,Math.min(iw-sw,sx)), sy:Math.max(0,Math.min(ih-sh,sy)), sw:sw, sh:sh };
+}
+function circImg_(ctx,img,cx,cy,r,rect){
   ctx.save(); ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.clip();
-  var iw=img.width||img.naturalWidth||1, ih=img.height||img.naturalHeight||1, side=Math.min(iw,ih);
-  ctx.drawImage(img,(iw-side)/2,(ih-side)/2,side,side,cx-r,cy-r,r*2,r*2);   // 비율 유지 · 중앙 크롭
+  var ps=photoSrc_(img,rect,1,1);
+  if(ps){ ctx.drawImage(img,ps.sx,ps.sy,ps.sw,ps.sh,cx-r,cy-r,r*2,r*2); }
+  else {
+    var iw=img.width||img.naturalWidth||1, ih=img.height||img.naturalHeight||1, side=Math.min(iw,ih);
+    ctx.drawImage(img,(iw-side)/2,(ih-side)/2,side,side,cx-r,cy-r,r*2,r*2);   // 비율 유지 · 중앙 크롭
+  }
   ctx.restore();
 }
 function drawCover_(ctx,img,x,y,w,h){
@@ -4593,7 +4673,7 @@ function sharePlayerCard_(pid){
         ctx.save(); ctx.shadowColor='rgba(0,0,0,.6)'; ctx.shadowBlur=40; ctx.shadowOffsetY=14;
         ctx.beginPath(); ctx.arc(cx,cy,r+12,0,Math.PI*2); ctx.fillStyle=CARD_GOLD; ctx.fill(); ctx.restore();
         ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fillStyle='#1F1D25'; ctx.fill();
-        if(face){ circImg_(ctx,face,cx,cy,r); }
+        if(face){ circImg_(ctx,face,cx,cy,r, big?(p.photoRect||null):null); }
         else { ctx.fillStyle='rgba(255,255,255,.35)'; ctx.font='500 200px Pretendard, sans-serif'; ctx.textAlign='center'; ctx.fillText('👤', cx, cy+10); }
         // 등번호 뱃지
         var numTxt=numLabel(p.num);
@@ -5601,7 +5681,7 @@ function shareMilestone_(pid, key, tier){
         if(face){
           ctx.save(); ctx.shadowColor='rgba(0,0,0,.5)'; ctx.shadowBlur=20; ctx.shadowOffsetY=8;
           ctx.beginPath(); ctx.arc(W/2-160,fy,74,0,Math.PI*2); ctx.fillStyle=CARD_GOLD; ctx.fill(); ctx.restore();
-          circImg_(ctx,face,W/2-160,fy,68);
+          circImg_(ctx,face,W/2-160,fy,68, big?(p.photoRect||null):null);
         }
         ctx.textAlign=face?'left':'center'; ctx.fillStyle='#fff'; ctx.font='700 62px Pretendard, sans-serif';
         ctx.fillText(String(p.name||''), face?(W/2-64):(W/2), fy-24);
@@ -5773,7 +5853,7 @@ function shareHofCard_(year){
           if(face){
             ctx.save(); ctx.shadowColor='rgba(199,162,75,.7)'; ctx.shadowBlur=34;
             ctx.beginPath(); ctx.arc(W/2,my+96,110,0,Math.PI*2); ctx.fillStyle=CARD_GOLD; ctx.fill(); ctx.restore();
-            circImg_(ctx,face,W/2,my+96,102);
+            circImg_(ctx,face,W/2,my+96,102, (big&&mvp)?(mvp.photoRect||null):null);
             ctx.fillStyle='#fff'; ctx.font='700 58px Pretendard, sans-serif'; ctx.fillText(mvpLabel, W/2, my+270);
             if(mv.auto){ ctx.fillStyle='rgba(255,255,255,.6)'; ctx.font='600 26px Pretendard, sans-serif'; ctx.fillText('MOM 투표 최다 · '+mv.momN+'회', W/2, my+318); }
           } else {
@@ -6390,6 +6470,8 @@ function makeSupaDb(){
     _logAppend:function(coll, id, items, extra){
       return call('POST','/rpc/kt_arr_append',{ _coll:coll, _id:String(id), _key:'items', _items:items, _extra:extra||{} }).then(function(){});
     },
+    /* 시스템 화면: 컬렉션별 문서 수·용량 (kt_usage RPC) */
+    _usage:function(){ return call('POST','/rpc/kt_usage',{}); },
     /* 이전 도구용: 행 일괄 업서트 */
     _bulkUpsert:function(rows){
       if(!rows || !rows.length) return Promise.resolve();
@@ -6618,6 +6700,33 @@ function seasonKeys_(matches){
   return Object.keys(o).sort().reverse();
 }
 /* 이번 접속에서 서버에서 읽어온 문서 수 (무료 한도 관리용) */
+/* ── 시스템 (총관리자 전용): 데이터 사용량·백업·복구·로그·이전·PIN ── */
+function openSystem_(){
+  if(!requireOwner()) return;
+  var migRow=(typeof KT_BACKEND!=='undefined' && KT_BACKEND==='supabase' && !(state.cfg&&state.cfg.fbMigratedAt))
+    ? '<div class="list-row" style="cursor:pointer;" onclick="migrateFromFirebase_()"><span class="nm" style="flex:1;">데이터 이전 (Firebase → Supabase)</span><span class="val" style="color:var(--red);font-size:14px;">🚚 1회 실행 ›</span></div>' : '';
+  showSheet('<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>🛠️ 시스템</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<p style="font-size:12.5px;color:var(--steel-soft);margin:0 0 12px;">총관리자 전용 · 데이터 관리와 보안 설정</p>'
+   +   '<div class="card" style="padding:4px 0;">'
+   +     '<div class="list-row" style="cursor:pointer;" onclick="openUsage_()"><span class="nm" style="flex:1;">데이터 사용량</span><span class="val" style="color:var(--red);font-size:14px;">📊 보기 ›</span></div>'
+   +     '<div class="list-row" style="cursor:pointer;" onclick="exportBackup_()"><span class="nm" style="flex:1;">데이터 백업 (엑셀)</span><span class="val" style="color:var(--red);font-size:14px;">📥 내보내기 ›</span></div>'
+   +     '<div class="list-row" style="cursor:pointer;" onclick="importBackup_()"><span class="nm" style="flex:1;">데이터 복구 (백업 엑셀 업로드)</span><span class="val" style="color:var(--red);font-size:14px;">📤 가져오기 ›</span></div>'
+   +     '<div class="list-row" style="cursor:pointer;" onclick="openLogView_()"><span class="nm" style="flex:1;">활동 로그</span><span class="val" style="color:var(--red);font-size:14px;">🗒️ 보기 ›</span></div>'
+   +     migRow
+   +     '<div class="list-row" style="cursor:pointer;" onclick="openPinAdmin_()"><span class="nm" style="flex:1;">PIN 관리</span><span class="val" style="color:var(--red);font-size:14px;">🔐 설정 ›</span></div>'
+   +   '</div>'
+   +   '<input type="file" id="bk_file" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none;" onchange="importBackupPick_(this)">'
+   + '</div>');
+}
+function fmtBytes_(n){
+  n=Number(n)||0;
+  if(n>=1024*1024*1024) return (Math.round(n/1024/1024/1024*100)/100)+' GB';
+  if(n>=1024*1024) return (Math.round(n/1024/1024*10)/10)+' MB';
+  if(n>=1024) return Math.round(n/1024)+' KB';
+  return n+' B';
+}
 function openUsage_(){
   var R=window.__KJR||{n:0, byColl:{}, t0:Date.now()};
   var mins=Math.max(1, Math.round((Date.now()-R.t0)/60000));
@@ -6634,9 +6743,37 @@ function openUsage_(){
    + '<div class="sheet-body">'
    +   '<p style="font-size:13px;color:var(--steel);margin:0 0 12px;line-height:1.6;">이번 접속 '+mins+'분 동안 서버에서 읽은 문서 <b>'+(R.n||0)+'건</b>'
    +   (cacheAge?'<br>기기 캐시 · '+esc(cacheAge):'')+'</p>'
+   +   ((window.db&&db._supa)?'<div id="usageSrv"><div class="eyebrow" style="margin:16px 0 8px;">서버 저장 용량</div><div class="empty" style="padding:16px;">불러오는 중...</div></div>':'')
+   +   '<div class="eyebrow" style="margin:16px 0 8px;">이번 접속 읽기</div>'
    +   '<div class="rk-list">'+rows+'</div>'
-   +   '<p style="font-size:12px;color:var(--steel-soft);margin:12px 2px 0;line-height:1.55;">무료 한도는 하루 5만 건이에요. 같은 기기에서 다시 열면 캐시로 동작해 조회가 거의 없고, <b>당겨서 새로고침</b>을 하면 최신 데이터를 다시 읽어옵니다.</p>'
+   +   '<p style="font-size:12px;color:var(--steel-soft);margin:12px 2px 0;line-height:1.55;">같은 기기에서 다시 열면 캐시로 동작해 조회가 거의 없고, <b>당겨서 새로고침</b>을 하면 최신 데이터를 다시 읽어옵니다.</p>'
    + '</div>');
+  if(window.db && db._supa && db._usage){
+    db._usage().then(function(list){
+      var el=document.getElementById('usageSrv'); if(!el) return;
+      list=list||[];
+      var total=0, docs=0;
+      list.forEach(function(r){ total+=Number(r.bytes)||0; docs+=Number(r.docs)||0; });
+      var LIMIT=500*1024*1024;                       /* Supabase 무료 500MB */
+      var pct=Math.min(100, Math.round(total/LIMIT*1000)/10);
+      var barC=pct>=80?'#E8203F':(pct>=50?'#E0A400':'#3DBB77');
+      var srows=list.map(function(r){
+        return '<div class="rk-row"><span class="rk-name">'+esc(String(r.coll||''))+' <small style="color:var(--steel-soft);">'+(Number(r.docs)||0)+'건</small></span><span class="rk-val oswald" style="font-size:15px;">'+fmtBytes_(r.bytes)+'</span></div>';
+      }).join('');
+      el.innerHTML='<div class="eyebrow" style="margin:16px 0 8px;">서버 저장 용량</div>'
+       + '<div class="card" style="padding:14px 16px;margin-bottom:10px;">'
+       +   '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;"><b style="font-size:20px;">'+fmtBytes_(total)+'</b><span style="font-size:12px;color:var(--steel-soft);">무료 한도 500 MB의 '+pct+'%</span></div>'
+       +   '<div style="height:8px;border-radius:4px;background:var(--paper);overflow:hidden;"><div style="height:100%;width:'+Math.max(1,pct)+'%;background:'+barC+';border-radius:4px;"></div></div>'
+       +   '<div style="font-size:11.5px;color:var(--steel-soft);margin-top:8px;">문서 '+docs+'건 · 한도 안에서는 추가 요금이 없어요</div>'
+       + '</div>'
+       + '<div class="rk-list">'+srows+'</div>';
+    }).catch(function(e){
+      var el=document.getElementById('usageSrv'); if(!el) return;
+      var need=(e&&e.code==='not-configured');
+      el.innerHTML='<div class="eyebrow" style="margin:16px 0 8px;">서버 저장 용량</div>'
+       + '<div class="empty" style="padding:16px;font-size:12.5px;">'+(need?'최신 supabase_setup.sql을 SQL Editor에서 한 번 더 실행하면 표시됩니다':'불러오지 못했습니다')+'</div>';
+    });
+  }
 }
 function editSeason_(){
   if(!requireAdmin()) return;
@@ -6844,40 +6981,291 @@ function shareBest11_(key){
   var d=best11_(key);
   if(!d.picks.length){ toast('해당 시즌 기록이 없습니다'); return; }
   toast('카드 만드는 중...');
-  var jobs=[loadImg_(teamEmblemSrc_()), loadImg_(teamBgSrc_())].concat(d.picks.map(function(p){ return loadImg_(p.photo||''); }));
+  var jobs=[loadImg_(teamEmblemSrc_())].concat(d.picks.map(function(p){
+    return loadPlayerPhotoL_(p.pid).catch(function(){ return ''; }).then(function(big){
+      return loadImg_(big || p.photo || '').then(function(im){
+        if(im && big){ var pp=pname_(p.pid)||{}; if(pp.photoRect) im._kjRect=pp.photoRect; }
+        return im;
+      });
+    });
+  }));
   fontsReady_(function(){
-    Promise.all([Promise.all(jobs), careerReady_(), iconsReady_()]).then(function(rr){
-      var imgs=rr[0], emblem=imgs[0], bg=imgs[1];
-      var W=1080, pad=50, pw=W-pad*2, ph=Math.round(pw*1.22);
-      var H=CARD_HDR+48+ph+64+300;
-      var c=document.createElement('canvas'); c.width=W; c.height=H;
-      var ctx=c.getContext('2d');
-      darkBase_(ctx,W,H);
-      cardWatermark_(ctx,W,H,emblem,0.10);
-      cardHeader_(ctx,W,ourTeamName_(),'BEST XI · '+seasonLabel_(key)+' SEASON',emblem,bg);
-      var py=CARD_HDR+48;
-      var PJ=drawPitch_(ctx, pad, py, pw, ph);
-      var toks=d.picks.map(function(p,i){
-        return {m:{playerId:p.pid, name:p.name, num:p.num, position:p.pos, x:p.x, y:p.y},
-                img:imgs[i+2], bd:earnedBadges_(p.pid)};
-      }).sort(function(a,b){ return a.m.y-b.m.y; });
-      toks.forEach(function(t){ drawToken_(ctx, PJ, t.m, t.img, t.bd, 'disc'); });
-      toks.forEach(function(t){ drawToken_(ctx, PJ, t.m, t.img, t.bd, 'label'); });
-      /* 하단: 선정 기준 + MVP 요약 */
-      var by=py+ph+56;
-      sectionTitleW_(ctx, pad, by, '선정 기준', 'SELECTION');
-      ctx.textAlign='left'; ctx.textBaseline='middle';
-      ctx.fillStyle='rgba(255,255,255,.78)'; ctx.font='500 26px Pretendard, sans-serif';
-      ctx.fillText('MOM 40%  ·  출석 30%  ·  득점 20%  ·  도움 10%  (시즌 최고값 대비 환산)', pad, by+62);
-      var mt=momTop_(seasonMatches_(state._hofBundle||{}, key));
-      if(mt){
-        ctx.fillStyle=CARD_GOLD; ctx.font='700 30px Pretendard, sans-serif';
-        ctx.fillText('시즌 MOM 최다 · '+mt.names.join(' · ')+' ('+mt.v+'회)', pad, by+112);
-      }
-      cardFooterW_(ctx,W,H);
-      showCardPreview_(c,'FCJEMIRO_BEST11_'+key+'.png');
+    Promise.all(jobs).then(function(imgs){
+      drawBest11Card_(key, d, imgs[0], imgs.slice(1));
     }).catch(function(){ toast('카드를 만들지 못했습니다'); });
   });
+}
+/* 시즌 베스트 11 카드 — 주간 경기 카드와 같은 구도, 시즌 시상용 골드 트림 */
+function drawBest11Card_(key, d, emblem, faces){
+  var W=1080, H=1420, SS=1.5;
+  var c=document.createElement('canvas'); c.width=Math.round(W*SS); c.height=Math.round(H*SS);
+  var ctx=c.getContext('2d'); ctx.scale(SS,SS);
+  try{ ctx.imageSmoothingQuality='high'; }catch(e){}
+  var GOLD='#C7A24B', GOLD2='#F3DFA0', GOLD3='#8a6d1f';
+
+  /* ── 1) 배경: 딥 차콜 + 골드 톤 ── */
+  var bg=ctx.createLinearGradient(0,0,0,H); bg.addColorStop(0,'#191408'); bg.addColorStop(0.5,'#110e0d'); bg.addColorStop(1,'#0a0909');
+  ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+  var cg0=ctx.createRadialGradient(W*0.16,-60,40,W*0.16,-60,760);
+  cg0.addColorStop(0,'rgba(199,162,75,.16)'); cg0.addColorStop(1,'rgba(199,162,75,0)');
+  ctx.fillStyle=cg0; ctx.fillRect(0,0,W,900);
+  starField_(ctx,0,0,W,H*0.30,41,60);
+  /* 좌상단 레이어드 코너 리본 (골드) */
+  ctx.save();
+  ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(322,0); ctx.lineTo(0,204); ctx.closePath();
+  ctx.fillStyle='#332608'; ctx.fill();
+  var rb1=ctx.createLinearGradient(0,0,250,160);
+  rb1.addColorStop(0,GOLD2); rb1.addColorStop(0.55,GOLD); rb1.addColorStop(1,GOLD3);
+  ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(252,0); ctx.lineTo(0,160); ctx.closePath();
+  ctx.shadowColor='rgba(0,0,0,.45)'; ctx.shadowBlur=18; ctx.shadowOffsetY=6;
+  ctx.fillStyle=rb1; ctx.fill();
+  ctx.shadowColor='transparent';
+  ctx.strokeStyle='rgba(255,255,255,.35)'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(282,0); ctx.lineTo(0,179); ctx.stroke();
+  ctx.restore();
+  /* 우상단 에코 리본 */
+  ctx.save();
+  ctx.beginPath(); ctx.moveTo(W,0); ctx.lineTo(W-150,0); ctx.lineTo(W,96); ctx.closePath();
+  ctx.fillStyle='#332608'; ctx.fill();
+  var rb2=ctx.createLinearGradient(W-110,0,W,70);
+  rb2.addColorStop(0,GOLD3); rb2.addColorStop(1,GOLD2);
+  ctx.beginPath(); ctx.moveTo(W,0); ctx.lineTo(W-112,0); ctx.lineTo(W,72); ctx.closePath();
+  ctx.fillStyle=rb2; ctx.fill();
+  ctx.restore();
+  if(emblem){ ctx.save(); ctx.globalAlpha=0.05; var es=980; ctx.drawImage(emblemCut_(emblem)||emblem, W-es*0.62, H-es*0.78, es, es); ctx.restore(); }
+  var vg=ctx.createRadialGradient(W/2,H*0.42,H*0.25,W/2,H*0.42,H*0.95); vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,.42)');
+  ctx.fillStyle=vg; ctx.fillRect(0,0,W,H);
+  var tl=ctx.createLinearGradient(0,0,W,0); tl.addColorStop(0,GOLD); tl.addColorStop(0.6,GOLD2); tl.addColorStop(1,'rgba(199,162,75,0)');
+  ctx.fillStyle=tl; ctx.fillRect(0,0,W,7);
+
+  /* ── 2) 3D 원근 경기장 (주간 카드와 동일 지오메트리, 라인 광택은 골드) ── */
+  var PTY=236, PBY=H-36;
+  var xTL=452, xTR=1042, xBL=138, xBR=1074;
+  function P(nx,ny){
+    var xa=xTL+(xBL-xTL)*ny, xb=xTR+(xBR-xTR)*ny;
+    return { x: xa+(xb-xa)*nx, y: PTY+(PBY-PTY)*ny };
+  }
+  ctx.save();
+  ctx.beginPath(); ctx.moveTo(P(0,0).x,P(0,0).y); ctx.lineTo(P(1,0).x,P(1,0).y); ctx.lineTo(P(1,1).x,P(1,1).y); ctx.lineTo(P(0,1).x,P(0,1).y); ctx.closePath();
+  ctx.shadowColor='rgba(0,0,0,.7)'; ctx.shadowBlur=50; ctx.shadowOffsetY=20;
+  var tg=ctx.createLinearGradient(0,PTY,0,PBY); tg.addColorStop(0,'#1b2a22'); tg.addColorStop(0.5,'#16241d'); tg.addColorStop(1,'#0f1a15');
+  ctx.fillStyle=tg; ctx.fill(); ctx.shadowColor='transparent';
+  ctx.clip();
+  for(var sI=0;sI<10;sI++){ if(sI%2){ var a0=P(0,sI/10), a1=P(1,sI/10), b0=P(0,(sI+1)/10), b1=P(1,(sI+1)/10);
+    ctx.beginPath(); ctx.moveTo(a0.x,a0.y); ctx.lineTo(a1.x,a1.y); ctx.lineTo(b1.x,b1.y); ctx.lineTo(b0.x,b0.y); ctx.closePath();
+    ctx.fillStyle='rgba(255,255,255,.05)'; ctx.fill(); } }
+  var cxm=(P(0,0.3).x+P(1,0.3).x)/2;
+  var sh=ctx.createRadialGradient(cxm,PTY+(PBY-PTY)*0.3,20,cxm,PTY+(PBY-PTY)*0.3,(xBR-xBL)*0.9);
+  sh.addColorStop(0,'rgba(255,244,205,.11)'); sh.addColorStop(1,'rgba(255,244,205,0)');
+  ctx.fillStyle=sh; ctx.fillRect(0,PTY-60,W,PBY-PTY+120);
+  ctx.restore();
+  function seg(a,b){ ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke(); }
+  ctx.save(); ctx.shadowColor='rgba(243,223,160,.85)'; ctx.shadowBlur=10;
+  ctx.strokeStyle='rgba(235,210,140,.72)'; ctx.lineWidth=2.5;
+  seg(P(0,0),P(1,0)); seg(P(1,0),P(1,1)); seg(P(1,1),P(0,1)); seg(P(0,1),P(0,0));
+  seg(P(0,0.5),P(1,0.5));
+  ctx.beginPath(); for(var k2=0;k2<=48;k2++){ var an=k2/48*Math.PI*2; var q=P(0.5+Math.cos(an)*0.16, 0.5+Math.sin(an)*0.105); if(k2) ctx.lineTo(q.x,q.y); else ctx.moveTo(q.x,q.y); } ctx.stroke();
+  function pbox(top){
+    var y0=top?0:1, y1=top?0.12:0.88, y2=top?0.05:0.95;
+    seg(P(0.19,y0),P(0.19,y1)); seg(P(0.81,y0),P(0.81,y1)); seg(P(0.19,y1),P(0.81,y1));
+    seg(P(0.34,y0),P(0.34,y2)); seg(P(0.66,y0),P(0.66,y2)); seg(P(0.34,y2),P(0.66,y2));
+    ctx.beginPath(); for(var j=0;j<=24;j++){ var t=j/24, an2=(top?0:Math.PI)+t*Math.PI; var qq=P(0.5+Math.cos(an2)*0.11, y1+(top?1:-1)*Math.abs(Math.sin(an2))*0.045); if(j) ctx.lineTo(qq.x,qq.y); else ctx.moveTo(qq.x,qq.y); } ctx.stroke();
+  }
+  pbox(true); pbox(false);
+  ctx.restore();
+
+  /* ── 3) 좌측 정보 ── */
+  var LX=44;
+  var by=150;
+  /* 엠블럼 배지 (골드 글로우) */
+  (function(cx,cy,R){
+    ctx.save(); var rg=ctx.createRadialGradient(cx,cy,R*0.6,cx,cy,R*2.1); rg.addColorStop(0,'rgba(199,162,75,.6)'); rg.addColorStop(1,'rgba(199,162,75,0)');
+    ctx.fillStyle=rg; ctx.beginPath(); ctx.arc(cx,cy,R*2.1,0,Math.PI*2); ctx.fill(); ctx.restore();
+    ctx.save(); ctx.shadowColor='rgba(0,0,0,.6)'; ctx.shadowBlur=22; ctx.shadowOffsetY=8;
+    ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.fill(); ctx.restore();
+    var ring=ctx.createLinearGradient(cx-R,cy-R,cx+R,cy+R); ring.addColorStop(0,GOLD2); ring.addColorStop(0.5,GOLD); ring.addColorStop(1,GOLD3);
+    ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.lineWidth=4; ctx.strokeStyle=ring; ctx.stroke();
+    if(emblem){
+      ctx.save(); ctx.beginPath(); ctx.arc(cx,cy,R-8,0,Math.PI*2); ctx.clip();
+      var iw=emblem.width||1, ih=emblem.height||1, sc=Math.min((R*2-24)/iw,(R*2-24)/ih), dw=iw*sc, dh=ih*sc;
+      ctx.drawImage(emblem, cx-dw/2, cy-dh/2, dw, dh); ctx.restore();
+    }
+  })(LX+64, by, 58);
+  /* 별 5개 (배지 오른쪽) */
+  [0,1,2,3,4].forEach(function(k){ goldStar_(ctx, LX+156+k*34, by-14, (k===2?15:11), -Math.PI/2, GOLD); });
+  ctx.save(); ctx.shadowColor='rgba(0,0,0,.7)'; ctx.shadowBlur=8;
+  ctx.fillStyle=GOLD2; ctx.font='600 21px Oswald, sans-serif'; ctx.letterSpacing='4px';
+  ctx.textAlign='left'; ctx.textBaseline='middle';
+  ctx.fillText('SEASON HONOURS', LX+142, by+22); ctx.restore(); ctx.letterSpacing='0px';
+  var TXW=352;
+  ctx.save(); ctx.shadowColor='rgba(0,0,0,.75)'; ctx.shadowBlur=10;
+  ctx.fillStyle='#fff'; ctx.font='700 44px Oswald, sans-serif';
+  ctx.fillText(cardEllipsis_(ctx, ourTeamName_().toUpperCase(), TXW), LX, by+142);
+  var sg2=ctx.createLinearGradient(LX,0,LX+300,0); sg2.addColorStop(0,GOLD2); sg2.addColorStop(1,GOLD);
+  ctx.fillStyle=sg2; ctx.font='700 34px Oswald, sans-serif'; ctx.letterSpacing='2px';
+  ctx.fillText(cardEllipsis_(ctx, 'BEST ELEVEN', TXW), LX, by+196); ctx.restore(); ctx.letterSpacing='0px';
+  var ul=ctx.createLinearGradient(LX,0,LX+200,0); ul.addColorStop(0,GOLD); ul.addColorStop(1,'rgba(199,162,75,0)');
+  ctx.fillStyle=ul; ctx.fillRect(LX, by+232, 190, 3);
+  /* 시즌 라벨 리본 */
+  var when=seasonLabel_(key)+' 시즌';
+  ctx.font='700 26px Pretendard, sans-serif';
+  var rw=Math.min(TXW, ctx.measureText(when).width+34);
+  ctx.save(); ctx.shadowColor='rgba(199,162,75,.5)'; ctx.shadowBlur=18; ctx.shadowOffsetY=6;
+  var rg2=ctx.createLinearGradient(LX,0,LX+rw,0); rg2.addColorStop(0,GOLD); rg2.addColorStop(1,GOLD3);
+  rr_(ctx,LX,by+262,rw,46,10); ctx.fillStyle=rg2; ctx.fill(); ctx.restore();
+  ctx.fillStyle='#17120a'; ctx.fillText(when, LX+17, by+286);
+
+  var sy=by+380;
+  function head(tt, y){
+    ctx.fillStyle=GOLD; ctx.fillRect(LX, y-15, 4, 30);
+    ctx.save(); ctx.shadowColor='rgba(0,0,0,.75)'; ctx.shadowBlur=8;
+    ctx.fillStyle='#fff'; ctx.font='700 25px Oswald, sans-serif'; ctx.letterSpacing='3px'; ctx.textBaseline='middle';
+    ctx.fillText(tt, LX+18, y); ctx.restore(); ctx.letterSpacing='0px';
+  }
+  ctx.save(); ctx.shadowColor='rgba(0,0,0,.8)'; ctx.shadowBlur=8;
+  /* 시즌 요약 */
+  var ms=seasonMatches_(state._hofBundle||{}, key);
+  var wdl={W:0,D:0,L:0}; ms.forEach(function(m){ if(m.result==='W')wdl.W++; else if(m.result==='L')wdl.L++; else if(m.result==='D')wdl.D++; });
+  head('SEASON', sy);
+  ctx.font='600 26px Pretendard, sans-serif'; ctx.fillStyle='#fff';
+  ctx.fillText(ms.length+'경기 · '+wdl.W+'승 '+wdl.D+'무 '+wdl.L+'패', LX, sy+46);
+  var mt=momTop_(ms);
+  if(mt){
+    ctx.fillStyle='rgba(255,255,255,.66)'; ctx.font='500 23px Pretendard, sans-serif';
+    wrapText_(ctx, 'MOM 최다 · '+mt.names.join(' · ')+' ('+mt.v+'회)', TXW).slice(0,2).forEach(function(ln,i){ ctx.fillText(ln, LX, sy+86+i*32); });
+  }
+  /* 선정 기준 */
+  sy+=176; head('SELECTION', sy);
+  ctx.fillStyle='rgba(255,255,255,.72)'; ctx.font='500 23px Pretendard, sans-serif';
+  ctx.fillText('MOM 40% · 출석 30%', LX, sy+44);
+  ctx.fillText('득점 20% · 도움 10%', LX, sy+80);
+  ctx.fillStyle='rgba(255,255,255,.45)'; ctx.font='500 20px Pretendard, sans-serif';
+  ctx.fillText('시즌 최고값 대비 환산', LX, sy+116);
+  ctx.restore();
+  /* 좌하단 브랜드 */
+  ctx.save(); ctx.shadowColor='rgba(0,0,0,.8)'; ctx.shadowBlur=10;
+  if(emblem){ var e2=emblemCut_(emblem)||emblem; ctx.drawImage(e2, LX, H-104, 52, 52); }
+  ctx.fillStyle='rgba(255,255,255,.6)'; ctx.font='600 20px Oswald, sans-serif'; ctx.letterSpacing='2px'; ctx.textBaseline='middle';
+  ctx.fillText(ourTeamName_().toUpperCase(), LX+64, H-88);
+  ctx.fillStyle='rgba(199,162,75,.75)'; ctx.font='600 14px Oswald, sans-serif'; ctx.letterSpacing='1px';
+  ctx.fillText('OFFICIAL SEASON BEST XI', LX+64, H-64); ctx.letterSpacing='0px';
+  ctx.restore();
+
+  /* ── 4) 타이틀 ── */
+  var TCX=(xTL+xTR)/2;
+  ctx.textAlign='left'; ctx.textBaseline='middle';
+  ctx.save(); ctx.transform(1,0,-0.12,1,0,0);
+  ctx.font='700 96px Oswald, sans-serif'; ctx.letterSpacing='1px';
+  var t1='BEST ', t2='XI', w1=ctx.measureText(t1).width, w2=ctx.measureText(t2).width;
+  var tx=TCX-(w1+w2)/2+14;
+  ctx.shadowColor='rgba(0,0,0,.7)'; ctx.shadowBlur=18; ctx.shadowOffsetY=6;
+  ctx.fillStyle='#fff'; ctx.fillText(t1, tx, 112);
+  ctx.shadowColor='rgba(243,223,160,.95)'; ctx.shadowBlur=30;
+  var xg=ctx.createLinearGradient(0,72,0,152); xg.addColorStop(0,GOLD2); xg.addColorStop(0.5,GOLD); xg.addColorStop(1,GOLD3);
+  ctx.fillStyle=xg; ctx.fillText(t2, tx+w1, 112);
+  ctx.restore(); ctx.letterSpacing='0px';
+  var form=lineupFormation_(d.picks.map(function(p){ return {position:p.pos, x:p.x, y:p.y}; }));
+  if(form){
+    ctx.font='700 38px Oswald, sans-serif'; ctx.letterSpacing='6px';
+    var fw2=ctx.measureText(form).width+66, fx=TCX-fw2/2;
+    ctx.save(); ctx.shadowColor='rgba(199,162,75,.5)'; ctx.shadowBlur=20; ctx.shadowOffsetY=6;
+    rr_(ctx,fx,152,fw2,54,14); ctx.fillStyle='rgba(18,14,7,.9)'; ctx.fill(); ctx.restore();
+    rr_(ctx,fx,152,fw2,54,14); ctx.lineWidth=2; ctx.strokeStyle='rgba(199,162,75,.8)'; ctx.stroke();
+    ctx.textAlign='center'; ctx.fillStyle=GOLD2; ctx.fillText(form, TCX+3, 180); ctx.letterSpacing='0px';
+  }
+
+  /* ── 5) 선수 카드 (골드 트림) ── */
+  var toks=d.picks.map(function(p,i2){ return {m:{playerId:p.pid, name:p.name, num:p.num, position:p.pos, x:p.x, y:p.y},
+    img:faces[i2], star:!!(p.top_mom||p.top_att||p.top_g||p.top_a)}; });
+  var gks=toks.filter(function(t){ return t.m.position==='GK'; });
+  var rest=toks.filter(function(t){ return t.m.position!=='GK'; }).sort(function(a,b){ return (b.m.y||0)-(a.m.y||0); });
+  var bands=[];
+  if(rest.length){ var cur=[rest[0]];
+    for(var bi=1;bi<rest.length;bi++){ if((cur[cur.length-1].m.y||0)-(rest[bi].m.y||0)>0.085){ bands.push(cur); cur=[rest[bi]]; } else cur.push(rest[bi]); }
+    bands.push(cur); }
+  var R=bands.length;
+  bands.forEach(function(bd,i2){
+    var fy2=(R<=1)?0.40:(0.72 - i2*(0.58/(R-1)));
+    bd.sort(function(a,b){ return (a.m.x!=null?a.m.x:0.5)-(b.m.x!=null?b.m.x:0.5); });
+    bd.forEach(function(t,j2){ t._fx=(j2+1)/(bd.length+1); t._fy=fy2; });
+  });
+  gks.forEach(function(t,j2){ t._fx=(j2+1)/(gks.length+1); t._fy=0.905; });
+  var rowsInfo=bands.map(function(bd){ return {fy:bd[0]._fy, n:bd.length}; });
+  if(gks.length) rowsInfo.push({fy:0.905, n:gks.length});
+  var cw=100;
+  rowsInfo.forEach(function(r){ var rw2=P(1,r.fy).x-P(0,r.fy).x; cw=Math.min(cw, (rw2-14)/r.n-8); });
+  cw=Math.max(70, Math.min(cw, 100)); cw=Math.round(cw);
+  var ch=Math.round(cw*1.32), NB=Math.round(cw*0.235);
+  var drawList=[]; bands.forEach(function(bd){ drawList=drawList.concat(bd); }); drawList=drawList.concat(gks);
+  drawList.forEach(function(t){
+    var mm=t.m, p=P(t._fx, t._fy), isGK=(mm.position==='GK');
+    var cx=p.x, byy=p.y+ch*0.30;
+    var x=Math.round(cx-cw/2), y=Math.round(byy-ch), rad=Math.round(cw*0.09);
+    ctx.save(); ctx.translate(cx, byy+6); ctx.scale(1,0.22);
+    var sg=ctx.createRadialGradient(0,0,cw*0.1,0,0,cw*0.72); sg.addColorStop(0,'rgba(0,0,0,.6)'); sg.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=sg; ctx.beginPath(); ctx.arc(0,0,cw*0.72,0,Math.PI*2); ctx.fill(); ctx.restore();
+    /* 골드 메탈릭 테두리 */
+    ctx.save(); ctx.shadowColor='rgba(0,0,0,.6)'; ctx.shadowBlur=18; ctx.shadowOffsetY=8;
+    var bd2=ctx.createLinearGradient(x,y,x+cw,y+ch);
+    bd2.addColorStop(0,GOLD2); bd2.addColorStop(0.5,GOLD); bd2.addColorStop(1,GOLD3);
+    rr_(ctx,x-2.5,y-2.5,cw+5,ch+5,rad+2); ctx.fillStyle=bd2; ctx.fill(); ctx.restore();
+    var cg=ctx.createLinearGradient(x,y,x,y+ch);
+    cg.addColorStop(0,'#241c0e'); cg.addColorStop(0.55,'#171209'); cg.addColorStop(1,'#100c07');
+    rr_(ctx,x,y,cw,ch,rad); ctx.fillStyle=cg; ctx.fill();
+    ctx.save(); rr_(ctx,x,y,cw,ch,rad); ctx.clip();
+    var ig=ctx.createRadialGradient(cx,y+ch*0.34,8,cx,y+ch*0.34,cw*0.95);
+    ig.addColorStop(0,'rgba(199,162,75,.30)'); ig.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=ig; ctx.fillRect(x,y,cw,ch);
+    var phB=y+ch-NB;
+    if(t.img){
+      var cut=t.img._kjCut!==undefined ? t.img._kjCut : (t.img._kjCut=personCut_(t.img));
+      if(cut){
+        var maxH=ch-NB-6, maxW=cw-6;
+        var sc3=Math.min(maxW/cut.width, maxH/cut.height), dw3=cut.width*sc3, dh3=cut.height*sc3;
+        ctx.save(); ctx.shadowColor='rgba(0,0,0,.5)'; ctx.shadowBlur=10; ctx.shadowOffsetY=4;
+        ctx.drawImage(cut, cx-dw3/2, phB-dh3, dw3, dh3); ctx.restore();
+      } else {
+        var im=t.img, iw3=im.width||im.naturalWidth||1, ih3=im.height||im.naturalHeight||1;
+        var pH=ch-NB, ps3=photoSrc_(im, im._kjRect||null, cw, pH);
+        if(ps3){ ctx.drawImage(im, ps3.sx,ps3.sy,ps3.sw,ps3.sh, x, y, cw, pH); }
+        else { var sc4=Math.max(cw/iw3, pH/ih3), dw4=iw3*sc4, dh4=ih3*sc4;
+          ctx.drawImage(im, cx-dw4/2, y-(dh4-pH)*0.2, dw4, dh4); }
+        var fg2=ctx.createLinearGradient(0,y,0,y+pH*0.42); fg2.addColorStop(0,'rgba(23,18,9,.55)'); fg2.addColorStop(1,'rgba(23,18,9,0)');
+        ctx.fillStyle=fg2; ctx.fillRect(x,y,cw,pH*0.42);
+      }
+    } else {
+      ctx.fillStyle='#3a3020';
+      ctx.beginPath(); ctx.arc(cx, y+ch*0.36, cw*0.17, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(cx-cw*0.31, phB); ctx.quadraticCurveTo(cx, y+ch*0.44, cx+cw*0.31, phB); ctx.closePath(); ctx.fill();
+    }
+    /* 좌상단: 등번호 · 포지션 */
+    ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+    ctx.save(); ctx.shadowColor='rgba(0,0,0,.85)'; ctx.shadowBlur=8; ctx.shadowOffsetY=2;
+    ctx.fillStyle='#fff'; ctx.font='700 '+Math.round(cw*0.21)+'px Oswald, sans-serif';
+    ctx.fillText(String(mm.num!=null?mm.num:''), x+Math.round(cw*0.075), y+Math.round(cw*0.255));
+    ctx.fillStyle=isGK?'#8FE3BD':GOLD2; ctx.font='700 '+Math.round(cw*0.115)+'px Oswald, sans-serif'; ctx.letterSpacing='1px';
+    ctx.fillText(String(mm.position||''), x+Math.round(cw*0.075), y+Math.round(cw*0.39)); ctx.letterSpacing='0px';
+    ctx.restore();
+    /* 항목 1위 별 (우상단) */
+    if(t.star){ ctx.save(); ctx.shadowColor='rgba(0,0,0,.7)'; ctx.shadowBlur=6;
+      goldStar_(ctx, x+cw-Math.round(cw*0.14), y+Math.round(cw*0.15), Math.round(cw*0.085), -Math.PI/2, GOLD2); ctx.restore(); }
+    var hl=ctx.createLinearGradient(0,y,0,y+ch*0.3); hl.addColorStop(0,'rgba(255,255,255,.13)'); hl.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle=hl; ctx.fillRect(x,y,cw,ch*0.3);
+    /* 이름 밴드 */
+    var nb=ctx.createLinearGradient(0,phB,0,y+ch); nb.addColorStop(0,'rgba(10,8,5,.92)'); nb.addColorStop(1,'rgba(15,12,7,.92)');
+    ctx.fillStyle=nb; ctx.fillRect(x,phB,cw,NB);
+    ctx.fillStyle=isGK?'rgba(46,158,106,.9)':'rgba(199,162,75,.95)'; ctx.fillRect(x,phB,cw,2);
+    ctx.fillStyle='#fff'; ctx.font='700 '+Math.round(cw*0.145)+'px Pretendard, sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(cardEllipsis_(ctx, String(mm.name||''), cw-12), cx, phB+NB/2+1);
+    ctx.restore();
+    rr_(ctx,x,y,cw,ch,rad); ctx.lineWidth=1.2; ctx.strokeStyle='rgba(255,244,205,.22)'; ctx.stroke();
+  });
+  /* 하단 워드마크 */
+  ctx.textAlign='right'; ctx.textBaseline='middle';
+  ctx.fillStyle='rgba(199,162,75,.5)'; ctx.font='600 20px Oswald, sans-serif'; ctx.letterSpacing='4px';
+  ctx.fillText('SEASON BEST XI', W-40, H-30); ctx.letterSpacing='0px';
+  showCardPreview_(c,'FCJEMIRO_BEST11_'+key+'.png');
 }
 
 /* ================= 주간 경기 카드 · STARTING XI 포스터 ================= */
@@ -6992,7 +7380,10 @@ function shareLineupCard_(matchId, squadId){
     var subs=(d.members||[]).filter(function(x){ return !x.position; });
     var jobs=[loadImg_(teamEmblemSrc_()), loadImg_(oppLogo_(m.opponent))].concat(starters.map(function(x){
       var pr=(x.guest||!x.playerId)?Promise.resolve(''):loadPlayerPhotoL_(x.playerId).catch(function(){ return ''; });
-      return pr.then(function(big){ return loadImg_(big || x.photo || ''); });
+      return pr.then(function(big){ return loadImg_(big || x.photo || '').then(function(im){
+        if(im&&big&&x.playerId){ var pp=pname_(x.playerId)||{}; if(pp.photoRect) im._kjRect=pp.photoRect; }
+        return im;
+      }); });
     }));
     fontsReady_(function(){
       Promise.all(jobs).then(function(imgs){
@@ -7381,8 +7772,10 @@ function drawLineupCard_(m, d, starters, subs, emblem, oppImg, faces){
         ctx.drawImage(cut, cx-dw3/2, phB-dh3, dw3, dh3); ctx.restore();
       } else {
         var im=t.img, iw3=im.width||im.naturalWidth||1, ih3=im.height||im.naturalHeight||1;
-        var pH=ch-NB, sc4=Math.max(cw/iw3, pH/ih3), dw4=iw3*sc4, dh4=ih3*sc4;
-        ctx.drawImage(im, cx-dw4/2, y-(dh4-pH)*0.2, dw4, dh4);
+        var pH=ch-NB, ps3=photoSrc_(im, im._kjRect||null, cw, pH);
+        if(ps3){ ctx.drawImage(im, ps3.sx,ps3.sy,ps3.sw,ps3.sh, x, y, cw, pH); }
+        else { var sc4=Math.max(cw/iw3, pH/ih3), dw4=iw3*sc4, dh4=ih3*sc4;
+        ctx.drawImage(im, cx-dw4/2, y-(dh4-pH)*0.2, dw4, dh4); }
         var fg2=ctx.createLinearGradient(0,y,0,y+pH*0.42); fg2.addColorStop(0,'rgba(26,14,19,.55)'); fg2.addColorStop(1,'rgba(26,14,19,0)');
         ctx.fillStyle=fg2; ctx.fillRect(x,y,cw,pH*0.42);   // 위쪽을 살짝 눌러 오버레이 글자 확보
       }
@@ -7422,14 +7815,17 @@ function drawLineupCard_(m, d, starters, subs, emblem, oppImg, faces){
 
 /* ================= MOM 카드 (경기 최우수 선수 · 원본 사진) ================= */
 /* 이미지를 영역에 꽉 채워(cover) 라운드 클립으로 그린다. focusY: 세로 초점(0=위, .5=중앙) */
-function coverImg_(ctx,img,x,y,w,h,r,focusY){
+function coverImg_(ctx,img,x,y,w,h,r,focusY,rect){
   if(!img) return;
-  var iw=img.width||img.naturalWidth||1, ih=img.height||img.naturalHeight||1;
-  var sc=Math.max(w/iw, h/ih), dw=iw*sc, dh=ih*sc;
-  var fy=(focusY==null?0.42:focusY);
-  var dx=x+(w-dw)/2, dy=y-(dh-h)*fy;
   ctx.save(); rr_(ctx,x,y,w,h,r); ctx.clip();
-  ctx.drawImage(img, dx, dy, dw, dh);
+  var ps=photoSrc_(img,rect,w,h);
+  if(ps){ ctx.drawImage(img,ps.sx,ps.sy,ps.sw,ps.sh,x,y,w,h); }
+  else {
+    var iw=img.width||img.naturalWidth||1, ih=img.height||img.naturalHeight||1;
+    var sc=Math.max(w/iw, h/ih), dw=iw*sc, dh=ih*sc;
+    var fy=(focusY==null?0.42:focusY);
+    ctx.drawImage(img, x+(w-dw)/2, y-(dh-h)*fy, dw, dh);
+  }
   ctx.restore();
 }
 /* 이 경기의 MOM 선수들에 대한 정보 수집 (사진 원본·경기 기록·득표·시즌 몇 번째) */
@@ -7449,7 +7845,7 @@ function momCardData_(matchId, voteDoc){
     var players=pids.map(function(pid){
       var p=pname_(pid);
       var votes=0; if(tally){ var r=tally.rows.filter(function(x){ return x.pid===pid; })[0]; votes=r?r.n:0; }
-      return {pid:pid, name:p.name||'', num:p.num, pos:((p.positions||[])[0]||''), thumb:p.photo||'',
+      return {pid:pid, name:p.name||'', num:p.num, pos:((p.positions||[])[0]||''), thumb:p.photo||'', rect:(p.photoRect||null),
         g:Number((st[pid]||{}).goals)||0, a:Number((st[pid]||{}).assists)||0, votes:votes, nth:nth(pid)};
     });
     return Promise.all(players.map(function(pl){ return loadPlayerPhotoL_(pl.pid).then(function(big){ pl.big=big||''; return pl; }); }))
@@ -7515,7 +7911,7 @@ function drawMomCard_(d, emblem, faces){
     rr_(ctx,x-10,fy-10,fw+20,fh+20,34); ctx.lineWidth=8; ctx.strokeStyle=gg; ctx.stroke();
     rr_(ctx,x,fy,fw,fh,26); ctx.fillStyle='#161a26'; ctx.fill();
     var img=faces[i];
-    if(img){ coverImg_(ctx,img,x,fy,fw,fh,26,0.38); }
+    if(img){ coverImg_(ctx,img,x,fy,fw,fh,26,0.38, p.big?(p.rect||null):null); }
     else {
       ctx.fillStyle='rgba(255,255,255,.12)'; ctx.font='700 '+Math.round(fw*0.32)+'px Oswald, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
       ctx.fillText(String(p.num||''), x+fw/2, fy+fh/2);
