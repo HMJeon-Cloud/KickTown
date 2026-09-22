@@ -882,7 +882,7 @@ var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '10.0';
+var APP_VERSION = '10.1';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -1441,7 +1441,7 @@ function migLog_(t){
 function migLoadFirebaseSdk_(){
   return new Promise(function(res, rej){
     if(window.firebase && firebase.firestore){ res(); return; }
-    var srcs=['firebase-app-compat.js','firebase-auth-compat.js','firebase-firestore-compat.js'];
+    var srcs=['firebase-app-compat.js','firebase-auth-compat.js','firebase-app-check-compat.js','firebase-firestore-compat.js'];
     var n=0;
     (function next(){
       if(n>=srcs.length){ res(); return; }
@@ -1469,7 +1469,16 @@ function migrateRun_(){
   migLog_('Firebase SDK 불러오는 중...');
   migLoadFirebaseSdk_().then(function(){
     try{ firebase.initializeApp(FIREBASE_CONFIG); }catch(e){}
-    var authP=firebase.auth ? firebase.auth().signInAnonymously().catch(function(){}) : Promise.resolve();
+    try{
+      if(firebase.appCheck && typeof APPCHECK_SITE_KEY!=='undefined' && APPCHECK_SITE_KEY){
+        firebase.appCheck().activate(APPCHECK_SITE_KEY, true);
+        migLog_('App Check 활성화');
+      }
+    }catch(e){ migLog_('App Check 건너뜀: '+((e&&e.message)||e)); }
+    var authP=firebase.auth
+      ? firebase.auth().signInAnonymously().then(function(){ migLog_('Firebase 로그인 완료'); },
+          function(e){ migLog_('⚠ 익명 로그인 실패: '+((e&&e.message)||e)); })
+      : Promise.resolve();
     return authP.then(function(){ return firebase.firestore(); });
   }).then(function(fdb){
     var chain=Promise.resolve();
@@ -1502,7 +1511,7 @@ function migrateRun_(){
     try{ localStorage.removeItem('kt_cache_v1'); localStorage.removeItem('kt_career_v1'); }catch(e){}
     setTimeout(function(){ location.reload(); }, 3000);
   }).catch(function(e){
-    migLog_('❌ 실패: '+((e&&e.message)||e));
+    migLog_('❌ 실패: '+((e&&e.message)||e)+(e&&e.code?(' ['+e.code+']'):''));
     if(btn){ btn.disabled=false; btn.textContent='다시 시도'; }
   });
 }
