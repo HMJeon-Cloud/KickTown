@@ -867,7 +867,7 @@ var APPCHECK_SITE_KEY = '6Lfmi2AtAAAAAP1R-1JlYz1ht1WuQWp2RS_tibpT';
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '9.1';
+var APP_VERSION = '9.3';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -4426,8 +4426,8 @@ function sharePlayerCard_(pid){
         var attTotC=(tt.present||0)+(tt.late||0);
         // 우상단 뱃지 (항목별 최고 단계만)
         var myBadges=[];
-        [['g','boot',tt.g||0],['a','ball',tt.a||0],['att','stadium',attTotC]].forEach(function(q){
-          var e=msEarned_(q[2]); if(e) myBadges.push({icon:q[1], tier:MS_TIER[e], th:e});
+        [['g','boot',tt.g||0],['a','ball',tt.a||0],['att','stadium',attTotC],['cs','glove',tt.cs||0]].forEach(function(q){
+          var e=msEarned_(q[2], q[0]); if(e) myBadges.push({icon:q[1], tier:msTierFor_(q[0], e), th:e});
         });
         // 수상 이력 (연도별)
         var titles=playerTitles_(pid);
@@ -5077,7 +5077,7 @@ function renderLogView_(){
 /* ================= 뱃지 아이콘 (트로피 이미지 스프라이트) =================
  * badges.jpg = 4열(동·은·금·다이아) × 4행(골든볼·골든부츠·운동장·왕관)
  * 화면은 CSS background-position, 카드는 canvas drawImage로 같은 이미지를 사용 */
-var BADGE_SRC='badges.jpg?v=4', BADGE_COLS=4, BADGE_ROWS=6;
+var BADGE_SRC='badges.jpg?v=6', BADGE_COLS=4, BADGE_ROWS=6;
 var HOF_TROPHY_SRC='trophy.png?v=1', HOF_TROPHY=null, _hofTrP=null;
 function hofTrophyReady_(){
   if(HOF_TROPHY) return Promise.resolve(HOF_TROPHY);
@@ -5133,6 +5133,9 @@ function drawIcon_(ctx, name, cx, cy, size, tier, opt){
 /* ── 공통 상수 ── */
 var MS_TH=[10,50,100,200];
 var MS_TIER={10:{name:'동',key:'bronze',c:'#B0793F'},50:{name:'은',key:'silver',c:'#8E9BAC'},100:{name:'금',key:'gold',c:'#D9A62E'},200:{name:'다이아',key:'diamond',c:'#3EB6E0'}};
+var MS_TH_CS=[5,10,50,100];                        // 무실점 전용 기준
+function msThFor_(key){ return key==='cs' ? MS_TH_CS : MS_TH; }
+function msTierFor_(key, t){ var th=msThFor_(key), i=th.indexOf(t); return MS_TIER[MS_TH[i<0?0:i]]; }
 var MS_CATS={g:{label:'득점',icon:'boot',item:'축구화',unit:'골',accent:'#C8102E'},a:{label:'도움',icon:'ball',item:'축구공',unit:'도움',accent:'#2563C9'},att:{label:'출석',icon:'stadium',item:'운동장',unit:'경기',accent:'#1E9E6A'},cs:{label:'무실점',icon:'glove',item:'골키퍼 장갑',unit:'경기',accent:'#E0A400'}};
 /* 스트릭 단계: 출석 3·5·10·20 / 득점·도움 2·3·5·10 (연속 경기) → 동·은·금·다이아 왕관 */
 var STREAK_TIERS=[[20,'다이아','diamond','#3EB6E0'],[10,'금','gold','#D9A62E'],[5,'은','silver','#8E9BAC'],[3,'동','bronze','#B0793F']];
@@ -5159,8 +5162,8 @@ function streakStatOf_(pid, msDesc, attByM, statByM, key){
   }
   return n;
 }
-function msEarned_(v){ var e=0; MS_TH.forEach(function(t){ if(v>=t) e=t; }); return e; }
-function msNext_(v){ for(var i=0;i<MS_TH.length;i++){ if(v<MS_TH[i]) return MS_TH[i]; } return null; }
+function msEarned_(v, key){ var e=0; msThFor_(key).forEach(function(t){ if(v>=t) e=t; }); return e; }
+function msNext_(v, key){ var th=msThFor_(key); for(var i=0;i<th.length;i++){ if(v<th[i]) return th[i]; } return null; }
 
 /* ── 통산 집계 캐시 (스쿼드판 뱃지용) ── */
 function careerMap_(b){
@@ -5248,7 +5251,7 @@ function earnedBadges_(pid){
   var c=(state._careerMap||{})[pid]; if(!c) return [];
   var out=[];
   [['g','boot'],['a','ball'],['att','stadium'],['cs','glove']].forEach(function(p){
-    var e=msEarned_(c[p[0]]||0); if(e) out.push([p[1], MS_TIER[e].key]);
+    var e=msEarned_(c[p[0]]||0, p[0]); if(e) out.push([p[1], msTierFor_(p[0], e).key]);
   });
   return out;
 }
@@ -5257,7 +5260,7 @@ function tokenBadges_(mem){
   var c=state._careerMap[mem.playerId]; if(!c) return '';
   var out='';
   [['g','boot'],['a','ball'],['att','stadium'],['cs','glove']].forEach(function(p){
-    var e=msEarned_(c[p[0]]||0); if(e) out+=svgIcon_(p[1], MS_TIER[e].key, 20);
+    var e=msEarned_(c[p[0]]||0, p[0]); if(e) out+=svgIcon_(p[1], msTierFor_(p[0], e).key, 20);
   });
   return out ? '<span class="t-bd">'+out+'</span>' : '';
 }
@@ -5432,18 +5435,18 @@ function medal_(ctx,cx,cy,R,tier,icon){
 }
 function msBadgeChips_(pid, key, v){
   var cat=MS_CATS[key];
-  var chips=MS_TH.map(function(t){
-    var tier=MS_TIER[t];
+  var chips=msThFor_(key).map(function(t){
+    var tier=msTierFor_(key, t);
     if(v>=t) return '<span class="msb on" style="border-color:'+tier.c+';" onclick="shareMilestone_(\''+pid+'\',\''+key+'\','+t+')">'+svgIcon_(cat.icon,tier.key,42)+'<small>'+t+'</small></span>';
     return '<span class="msb">'+svgIcon_(cat.icon,'grey',42)+'<small>'+t+'</small></span>';
   }).join('');
-  var nx=msNext_(v);
+  var nx=msNext_(v, key);
   var prog = nx!=null ? ('<span class="msb-prog">'+v+' / '+nx+cat.unit+'</span>') : '<span class="msb-prog" style="color:'+MS_TIER[200].c+';">MAX!</span>';
   return '<div class="msb-row"><div class="msb-top"><span class="msb-k" style="display:flex;align-items:center;gap:6px;">'+svgIcon_(cat.icon,'gold',20)+cat.label+'</span>'+prog+'</div><div class="msb-grid">'+chips+'</div></div>';
 }
 function shareMilestone_(pid, key, tier){
   var p=(state.players||[]).filter(function(x){ return x.id===pid; })[0] || pname_(pid);
-  var cat=MS_CATS[key], T=MS_TIER[tier];
+  var cat=MS_CATS[key], T=msTierFor_(key, tier);
   toast('카드 만드는 중...');
   Promise.all([ API.run('getPlayerCareer', pid), loadPlayerPhotoL_(pid), loadImg_(teamEmblemSrc_()), iconsReady_() ]).then(function(rs){
     var tt=(rs[0]&&rs[0].total)||{}, big=rs[1]||'', emblem=rs[2];
@@ -5499,7 +5502,7 @@ function shareMilestone_(pid, key, tier){
         ctx.fillStyle='rgba(255,255,255,.85)'; ctx.font='600 34px Pretendard, sans-serif';
         ctx.fillText('통산 '+tier+cat.unit+' 달성!', face?(W/2-64):(W/2), fy+34);
         // 진행 바 (다음 목표)
-        var nx=msNext_(v), bx=140, bw=W-280, by=1130;
+        var nx=msNext_(v, key), bx=140, bw=W-280, by=1130;
         ctx.textAlign='left'; ctx.fillStyle='rgba(255,255,255,.7)'; ctx.font='600 26px Pretendard, sans-serif';
         ctx.fillText('현재 통산 '+v+cat.unit, bx, by-30);
         ctx.textAlign='right';
