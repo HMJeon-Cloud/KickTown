@@ -888,7 +888,7 @@ var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '10.3';
+var APP_VERSION = '10.4';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -1543,17 +1543,11 @@ function viewTeam(){
   var clubSec = '<div class="section" style="margin-top:24px;"><div class="eyebrow">팀 관리</div>'
     + '<div class="card" style="padding:4px 0;">'
     + '<div class="list-row" style="cursor:pointer;" onclick="openClubForm()"><span class="nm" style="flex:1;">팀 정보 수정</span><span class="val" style="color:var(--red);font-size:14px;">'+esc(ourTeamName_())+' ›</span></div>'
-    + cfgRow('출석 점수 (기록 집계)', '1점 고정', 'scoreFixedNotice')
-    + cfgRow('지각 점수', scoreLabel_(lateScore), 'editLateScore')
-    + cfgRow('불참 점수', scoreLabel_(absentScore), 'editAbsentScore')
     + cfgRow('내 이름', esc(whoName_()||'미설정'), 'editWho_')
-    + '<div class="list-row" style="cursor:pointer;" onclick="openVoteList_()"><span class="nm" style="flex:1;">MOM 투표 관리</span><span class="val" style="color:var(--red);font-size:14px;">🗳️ 목록 ›</span></div>'
-    + cfgRow('감독 · 코치', staffLabel_(), 'editStaff_')
-    + cfgRow('시즌 기간', seasonRangeLabel_(), 'editSeason_')
+    + '<div class="list-row" style="cursor:pointer;" onclick="openTeamAdmin_()"><span class="nm" style="flex:1;">팀 관리 <span style="font-size:10.5px;color:var(--steel-soft);font-weight:700;">팀관리자</span></span><span class="val" style="color:var(--red);font-size:14px;">⚙️ 설정 ›</span></div>'
     + (isOwner() ? ('<div class="list-row" style="cursor:pointer;" onclick="openSystem_()"><span class="nm" style="flex:1;">시스템 <span style="font-size:10.5px;color:var(--steel-soft);font-weight:700;">총관리자</span></span><span class="val" style="color:var(--red);font-size:14px;">🛠️ 관리 ›</span></div>') : '')
     + '<div class="list-row" style="cursor:pointer;" onclick="viewerSwitch_()"><span class="nm" style="flex:1;">조회 전용 모드로 전환</span><span class="val" style="color:var(--red);font-size:14px;">👀 팀원 모드 ›</span></div>'
     + '</div>'
-    + '<p style="font-size:11.5px;color:var(--steel-soft);margin:8px 2px 0;">출석·지각·불참 점수는 기록 탭 출석 순위 집계에 반영돼요. (미참석 0점)</p>'
     + '</div>';
   return dDayBanner_()
     + '<div class="ro-bar" style="background:linear-gradient(135deg,#1b1f2b,#11141c);">'+(isOwner()?'👑 총관리자로 접속 중 · 모든 권한':'🛠️ 팀 관리자로 접속 중 · 데이터 입력·수정 가능')+'</div>'
@@ -6700,6 +6694,26 @@ function seasonKeys_(matches){
   return Object.keys(o).sort().reverse();
 }
 /* 이번 접속에서 서버에서 읽어온 문서 수 (무료 한도 관리용) */
+/* ── 팀 관리 (팀관리자 이상): 점수·투표·감독·시즌 설정 묶음 ── */
+function openTeamAdmin_(){
+  if(!requireAdmin()) return;
+  var lateScore=(state.cfg&&state.cfg.lateScore!=null)?Number(state.cfg.lateScore):0.5;
+  var absentScore=(state.cfg&&state.cfg.absentScore!=null)?Number(state.cfg.absentScore):-1;
+  showSheet('<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>⚙️ 팀 관리</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<p style="font-size:12.5px;color:var(--steel-soft);margin:0 0 12px;">팀관리자 이상 · 기록 집계와 팀 운영 설정</p>'
+   +   '<div class="card" style="padding:4px 0;">'
+   +     cfgRow('출석 점수 (기록 집계)', '1점 고정', 'scoreFixedNotice')
+   +     cfgRow('지각 점수', scoreLabel_(lateScore), 'editLateScore')
+   +     cfgRow('불참 점수', scoreLabel_(absentScore), 'editAbsentScore')
+   +     '<div class="list-row" style="cursor:pointer;" onclick="openVoteList_()"><span class="nm" style="flex:1;">MOM 투표 관리</span><span class="val" style="color:var(--red);font-size:14px;">🗳️ 목록 ›</span></div>'
+   +     cfgRow('감독 · 코치', staffLabel_(), 'editStaff_')
+   +     cfgRow('시즌 기간', seasonRangeLabel_(), 'editSeason_')
+   +   '</div>'
+   +   '<p style="font-size:11.5px;color:var(--steel-soft);margin:10px 2px 0;">출석·지각·불참 점수는 기록 탭 출석 순위 집계에 반영돼요. (미참석 0점)</p>'
+   + '</div>');
+}
 /* ── 시스템 (총관리자 전용): 데이터 사용량·백업·복구·로그·이전·PIN ── */
 function openSystem_(){
   if(!requireOwner()) return;
@@ -6871,14 +6885,14 @@ function best11_(key, b){
   var midSet={}; ms.forEach(function(m){ midSet[m.id]=1; });
   var agg={};
   function bk(p){ if(!agg[p]) agg[p]={g:0,a:0,att:0,mom:0}; return agg[p]; }
-  (b.stats||[]).forEach(function(x){ if(!midSet[x.matchId]) return; var k=bk(x.playerId); k.g+=Number(x.goals)||0; k.a+=Number(x.assists)||0; });
+  (b.stats||[]).forEach(function(x){ if(!midSet[x.matchId]) return; var k=bk(x.playerId); k.g+=Number(x.goals)||0; k.a+=Number(x.assists)||0; k.cs=(k.cs||0)+(Number(x.cs)||0); });
   var lateScore=(state.cfg&&state.cfg.lateScore!=null)?Number(state.cfg.lateScore):0.5;
   var absentScore=(state.cfg&&state.cfg.absentScore!=null)?Number(state.cfg.absentScore):-1;
   (b.attendance||[]).forEach(function(x){ if(!midSet[x.matchId]) return; var k=bk(x.playerId);
     if(x.status==='present') k.att+=1; else if(x.status==='late') k.att+=lateScore; else if(x.status==='absent') k.att+=absentScore; });
   Object.keys(mom).forEach(function(p){ bk(p).mom=mom[p]; });
-  var mx={g:0,a:0,att:0,mom:0};
-  Object.keys(agg).forEach(function(p){ ['g','a','att','mom'].forEach(function(k){ if(agg[p][k]>mx[k]) mx[k]=agg[p][k]; }); });
+  var mx={g:0,a:0,att:0,mom:0,cs:0};
+  Object.keys(agg).forEach(function(p){ ['g','a','att','mom','cs'].forEach(function(k){ if((agg[p][k]||0)>mx[k]) mx[k]=agg[p][k]||0; }); });
   var rows=Object.keys(agg).map(function(pid){
     var v=agg[pid];
     var sc=0; ['mom','att','g','a'].forEach(function(k){ sc+=B11_W[k]*(mx[k]>0?Math.max(0,v[k])/mx[k]:0); });
@@ -6886,7 +6900,7 @@ function best11_(key, b){
     var pos0=((p.positions||[])[0]||'');
     var grp=POS_GRP[pos0]||'MF';          /* 포지션 미등록 → 미드필더로 간주 */
     return {pid:pid, name:p.name, num:p.num, photo:p.photo||'', pos:pos0, grp:grp,
-      g:v.g, a:v.a, att:Math.round(v.att*10)/10, mom:v.mom, score:Math.round(sc*1000)/10,
+      g:v.g, a:v.a, att:Math.round(v.att*10)/10, mom:v.mom, cs:(v.cs||0), score:Math.round(sc*1000)/10,
       part:{mom:Math.round(B11_W.mom*(mx.mom>0?v.mom/mx.mom:0)*1000)/10,
             att:Math.round(B11_W.att*(mx.att>0?Math.max(0,v.att)/mx.att:0)*1000)/10,
             g:Math.round(B11_W.g*(mx.g>0?v.g/mx.g:0)*1000)/10,
@@ -6894,9 +6908,9 @@ function best11_(key, b){
   }).filter(function(r){ return r.score>0 && !/\(탈퇴\)/.test(r.name); })
     .sort(function(x,y){ return y.score-x.score; });
   /* 항목별 1위 표시용 순위 */
-  ['mom','att','g','a'].forEach(function(k){
-    rows.slice().sort(function(x,y){ return y[k]-x[k]; }).forEach(function(r,i,arr){
-      if(r[k]>0 && r[k]===arr[0][k]) r['top_'+k]=1;
+  ['mom','att','g','a','cs'].forEach(function(k){
+    rows.slice().sort(function(x,y){ return (y[k]||0)-(x[k]||0); }).forEach(function(r,i,arr){
+      if((r[k]||0)>0 && r[k]===arr[0][k]) r['top_'+k]=1;
     });
   });
   /* 슬롯 배정
@@ -6990,7 +7004,8 @@ function shareBest11_(key){
     });
   }));
   fontsReady_(function(){
-    Promise.all(jobs).then(function(imgs){
+    Promise.all([Promise.all(jobs), iconsReady_()]).then(function(rr){
+      var imgs=rr[0];
       drawBest11Card_(key, d, imgs[0], imgs.slice(1));
     }).catch(function(){ toast('카드를 만들지 못했습니다'); });
   });
@@ -7175,8 +7190,15 @@ function drawBest11Card_(key, d, emblem, faces){
   }
 
   /* ── 5) 선수 카드 (골드 트림) ── */
-  var toks=d.picks.map(function(p,i2){ return {m:{playerId:p.pid, name:p.name, num:p.num, position:p.pos, x:p.x, y:p.y},
-    img:faces[i2], star:!!(p.top_mom||p.top_att||p.top_g||p.top_a)}; });
+  var toks=d.picks.map(function(p,i2){
+    var bd=[];                                  /* 시즌 1위 항목: 다이아 뱃지로 표시 */
+    if(p.top_mom) bd.push('trophy');
+    if(p.top_g)   bd.push('boot');
+    if(p.top_a)   bd.push('ball');
+    if(p.top_att) bd.push('stadium');
+    if(p.top_cs)  bd.push('glove');
+    return {m:{playerId:p.pid, name:p.name, num:p.num, position:p.pos, x:p.x, y:p.y}, img:faces[i2], bd:bd};
+  });
   var gks=toks.filter(function(t){ return t.m.position==='GK'; });
   var rest=toks.filter(function(t){ return t.m.position!=='GK'; }).sort(function(a,b){ return (b.m.y||0)-(a.m.y||0); });
   var bands=[];
@@ -7246,9 +7268,11 @@ function drawBest11Card_(key, d, emblem, faces){
     ctx.fillStyle=isGK?'#8FE3BD':GOLD2; ctx.font='700 '+Math.round(cw*0.115)+'px Oswald, sans-serif'; ctx.letterSpacing='1px';
     ctx.fillText(String(mm.position||''), x+Math.round(cw*0.075), y+Math.round(cw*0.39)); ctx.letterSpacing='0px';
     ctx.restore();
-    /* 항목 1위 별 (우상단) */
-    if(t.star){ ctx.save(); ctx.shadowColor='rgba(0,0,0,.7)'; ctx.shadowBlur=6;
-      goldStar_(ctx, x+cw-Math.round(cw*0.14), y+Math.round(cw*0.15), Math.round(cw*0.085), -Math.PI/2, GOLD2); ctx.restore(); }
+    /* 항목 1위 뱃지 (우상단 세로 스택 · 다이아: 트로피=MOM, 축구화=득점, 축구공=도움, 경기장=출석, 글러브=무실점) */
+    if(t.bd && t.bd.length){
+      var bs=Math.round(cw*0.20), bx4=x+cw-Math.round(bs*0.66), by4=y+Math.round(bs*0.66);
+      t.bd.slice(0,4).forEach(function(nm4,bi4){ drawIcon_(ctx, nm4, bx4, by4+bi4*Math.round(bs*1.14), bs, 'diamond'); });
+    }
     var hl=ctx.createLinearGradient(0,y,0,y+ch*0.3); hl.addColorStop(0,'rgba(255,255,255,.13)'); hl.addColorStop(1,'rgba(255,255,255,0)');
     ctx.fillStyle=hl; ctx.fillRect(x,y,cw,ch*0.3);
     /* 이름 밴드 */
@@ -7407,23 +7431,38 @@ function personCut_(img){
     var mr=0,mg=0,mb=0; bps.forEach(function(p){ mr+=px[p*4]; mg+=px[p*4+1]; mb+=px[p*4+2]; });
     mr/=bps.length; mg/=bps.length; mb/=bps.length;
     var dev=0; bps.forEach(function(p){ dev+=Math.abs(px[p*4]-mr)+Math.abs(px[p*4+1]-mg)+Math.abs(px[p*4+2]-mb); });
-    if(dev/bps.length>30) return null;
+    var lum=(mr+mg+mb)/3;
+    /* 밝은 스튜디오(흰 배경)는 JPEG 압축 잡음이 커도 배경이 확실하므로 관용치를 높인다 */
+    var devLimit=(lum>180)?60:30;
+    if(dev/bps.length>devLimit) return null;
     var seeds=[col(0), col(w-1), col(Math.floor(h*0.35)*w), col(Math.floor(h*0.35)*w+w-1)];
-    function isBg(p){ var r=px[p*4],g=px[p*4+1],b=px[p*4+2];
-      for(var i2=0;i2<seeds.length;i2++){ var s2=seeds[i2];
-        if(Math.abs(r-s2[0])+Math.abs(g-s2[1])+Math.abs(b-s2[2])<62) return true; } return false; }
-    var vis=new Uint8Array(N), st=[], rm=0;
-    for(var i=0;i<w;i++){ if(!vis[i]&&isBg(i)){ vis[i]=1; st.push(i); } }           // 윗변
-    for(var j=0;j<h;j++){ [j*w, j*w+w-1].forEach(function(p){ if(!vis[p]&&isBg(p)){ vis[p]=1; st.push(p); } }); } // 양옆
-    while(st.length){ var p=st.pop(); px[p*4+3]=0; rm++;
-      var xx=p%w, yy=(p/w)|0;
-      if(xx>0){ var a2=p-1; if(!vis[a2]&&isBg(a2)){vis[a2]=1;st.push(a2);} }
-      if(xx<w-1){ var b2=p+1; if(!vis[b2]&&isBg(b2)){vis[b2]=1;st.push(b2);} }
-      if(yy>0){ var e2=p-w; if(!vis[e2]&&isBg(e2)){vis[e2]=1;st.push(e2);} }
-      if(yy<h-1){ var f2=p+w; if(!vis[f2]&&isBg(f2)){vis[f2]=1;st.push(f2);} }
+    function runFill(tol){
+      var vis=new Uint8Array(N), st=[], rm=0;
+      function isBg(p){ var r=px[p*4],g=px[p*4+1],b=px[p*4+2];
+        for(var i2=0;i2<seeds.length;i2++){ var s2=seeds[i2];
+          if(Math.abs(r-s2[0])+Math.abs(g-s2[1])+Math.abs(b-s2[2])<tol) return true; } return false; }
+      for(var i=0;i<w;i++){ if(!vis[i]&&isBg(i)){ vis[i]=1; st.push(i); } }           // 윗변
+      for(var j=0;j<h;j++){ [j*w, j*w+w-1].forEach(function(p){ if(!vis[p]&&isBg(p)){ vis[p]=1; st.push(p); } }); } // 양옆
+      while(st.length){ var p=st.pop(); rm++;
+        var xx=p%w, yy=(p/w)|0;
+        if(xx>0){ var a2=p-1; if(!vis[a2]&&isBg(a2)){vis[a2]=1;st.push(a2);} }
+        if(xx<w-1){ var b2=p+1; if(!vis[b2]&&isBg(b2)){vis[b2]=1;st.push(b2);} }
+        if(yy>0){ var e2=p-w; if(!vis[e2]&&isBg(e2)){vis[e2]=1;st.push(e2);} }
+        if(yy<h-1){ var f2=p+w; if(!vis[f2]&&isBg(f2)){vis[f2]=1;st.push(f2);} }
+      }
+      return {vis:vis, fr:rm/N};
     }
-    var fr=rm/N;
-    if(fr<0.12 || fr>0.9) return null;   // 배경이 복잡하면 포기 → 소프트 사진으로
+    /* 관용치 사다리: 기본 62 → 제거량이 너무 적으면 90 → 밝은 배경이면 120까지 */
+    var tols=(lum>180)?[62,90,120]:[62,90];
+    var fill=null;
+    for(var ti=0; ti<tols.length; ti++){
+      var f0=runFill(tols[ti]);
+      if(f0.fr>=0.12 && f0.fr<=0.9){ fill=f0; break; }
+      if(f0.fr>0.9) break;                              /* 사람까지 지워짐 → 더 높여봤자 악화 */
+    }
+    if(!fill) return null;   // 배경이 복잡하면 포기 → 소프트 사진으로
+    for(var pv=0; pv<N; pv++){ if(fill.vis[pv]) px[pv*4+3]=0; }
+    var fr=fill.fr;
     /* ── 가장자리 다듬기 ①: 경계에 남은 잔여 얼룩 제거 (주변 8칸 중 5칸 이상이 투명하면 제거) ── */
     var A=new Uint8ClampedArray(N); for(var q=0;q<N;q++) A[q]=px[q*4+3];
     for(var it=0; it<2; it++){
