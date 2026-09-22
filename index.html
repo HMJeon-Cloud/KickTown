@@ -888,7 +888,7 @@ var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '10.6';
+var APP_VERSION = '10.7';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -928,7 +928,7 @@ function mockHandler(fn, a){
   if(fn==='setOppLogo'){ var onm=String(a[0]||'').trim();
     DB.clubs.forEach(function(c){ if(c.id===AC){ c.oppLogos=c.oppLogos||{}; if(a[1]) c.oppLogos[onm]=a[1]; else delete c.oppLogos[onm]; } });
     return mockHandler('getClubs',[]); }
-  if(fn==='updateClub'){ DB.clubs.forEach(function(c){ if(c.id===a[0].id) Object.assign(c, {name:a[0].name, region:a[0].region, note:a[0].note, emblem:a[0].emblem, bg:(a[0].bg!=null?a[0].bg:c.bg)}); }); return mockHandler('getClubs',[]); }
+  if(fn==='updateClub'){ DB.clubs.forEach(function(c){ if(c.id===a[0].id) Object.assign(c, {name:a[0].name, region:a[0].region, note:a[0].note, emblem:a[0].emblem, bg:(a[0].bg!=null?a[0].bg:c.bg), bgPc:(a[0].bgPc!=null?a[0].bgPc:c.bgPc), hdrTone:(a[0].hdrTone!=null?a[0].hdrTone:c.hdrTone)}); }); return mockHandler('getClubs',[]); }
   // --- 독립 스쿼드 (포메이션 템플릿) ---
   if(fn==='getSquads'){ return DB.squads.filter(inClub).slice().sort(function(x,y){return String(x.createdAt||'').localeCompare(String(y.createdAt||''));}).map(function(sq){ return {id:sq.id, name:sq.name, count:DB.members.filter(function(m){return m.squadId===sq.id;}).length}; }); }
   if(fn==='renameSquad'){ DB.squads.forEach(function(sq){ if(sq.id===a[0]) sq.name=a[1]; }); return mockHandler('getSquads',[]); }
@@ -2630,46 +2630,53 @@ var _hdrCache={};
 function graphicHeader_(c){
   var tone=(c&&c.hdrTone&&HDR_TONES[c.hdrTone])?c.hdrTone:'red';
   var key=(c&&c.id||'')+'|'+tone+'|'+String((c&&c.emblem)||'').length;
-  if(_hdrCache[key]){ setHeaderBg_(_hdrCache[key], _hdrCache[key]); return; }
+  if(_hdrCache[key]){ setHeaderBg_(_hdrCache[key][0], _hdrCache[key][1]); return; }
   var done=false;
+  function paint(W,H,emblem){
+    var T=HDR_TONES[tone];
+    var cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+    var ctx=cv.getContext('2d');
+    var bg=ctx.createLinearGradient(0,0,W*0.4,H*1.4);
+    bg.addColorStop(0,'#1b1721'); bg.addColorStop(0.55,'#131018'); bg.addColorStop(1,'#0d0c11');
+    ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+    /* 좌측 톤 글로우 */
+    var cg=ctx.createRadialGradient(W*0.10,H*0.1,20,W*0.10,H*0.1,Math.max(H*1.9,W*0.34));
+    cg.addColorStop(0,T[0]+'44'); cg.addColorStop(1,T[0]+'00');
+    ctx.fillStyle=cg; ctx.fillRect(0,0,W,H);
+    /* 포인트: 우측 스피드 라인 3줄 (기울어진 바) */
+    var sx0=W*0.585, bw=Math.max(10,H*0.10), gap=bw*2.1, skew=H*0.85;
+    for(var i=0;i<3;i++){
+      var x0=sx0+i*gap, al=[0.42,0.26,0.14][i];
+      var lg2=ctx.createLinearGradient(x0,0,x0-skew,H);
+      lg2.addColorStop(0,T[1]); lg2.addColorStop(1,T[0]);
+      ctx.save(); ctx.globalAlpha=al;
+      ctx.beginPath();
+      ctx.moveTo(x0,H*0.12); ctx.lineTo(x0+bw,H*0.12); ctx.lineTo(x0+bw-skew*0.76,H*0.88); ctx.lineTo(x0-skew*0.76,H*0.88); ctx.closePath();
+      ctx.fillStyle=lg2; ctx.fill(); ctx.restore();
+    }
+    /* 우측 엠블럼 워터마크 */
+    if(emblem){
+      ctx.save(); ctx.globalAlpha=0.10;
+      var es=H*2.0, e2=emblemCut_(emblem)||emblem;
+      ctx.drawImage(e2, W-es*0.70, H*0.5-es*0.42, es, es);
+      ctx.restore();
+    }
+    /* 하단 은은한 어둠 (글자 대비) */
+    var og=ctx.createLinearGradient(0,H*0.55,0,H); og.addColorStop(0,'rgba(0,0,0,0)'); og.addColorStop(1,'rgba(0,0,0,.30)');
+    ctx.fillStyle=og; ctx.fillRect(0,0,W,H);
+    /* 상단 톤 라인 (양쪽 비율 모두 그대로 보이도록 각 이미지에 직접) */
+    var tl=ctx.createLinearGradient(0,0,W,0); tl.addColorStop(0,T[0]); tl.addColorStop(0.5,T[1]); tl.addColorStop(1,T[0]+'00');
+    ctx.fillStyle=tl; ctx.fillRect(0,0,W,Math.max(4,Math.round(H*0.016)));
+    return cv.toDataURL('image/jpeg',0.82);
+  }
   function draw(emblem){
     if(done) return; done=true;
     try{
-      var T=HDR_TONES[tone], W=1680, H=420;
-      var cv=document.createElement('canvas'); cv.width=W; cv.height=H;
-      var ctx=cv.getContext('2d');
-      var bg=ctx.createLinearGradient(0,0,W*0.4,H*1.4);
-      bg.addColorStop(0,'#1b1721'); bg.addColorStop(0.55,'#131018'); bg.addColorStop(1,'#0d0c11');
-      ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
-      /* 좌측 톤 글로우 */
-      var cg=ctx.createRadialGradient(W*0.12,-40,30,W*0.12,-40,H*1.7);
-      cg.addColorStop(0,T[0]+'3d'); cg.addColorStop(1,T[0]+'00');
-      ctx.fillStyle=cg; ctx.fillRect(0,0,W,H);
-      /* 은은한 사선 밴드 2줄 */
-      ctx.save(); ctx.globalAlpha=0.10;
-      [ [W*0.58,180], [W*0.72,90] ].forEach(function(b,i){
-        var g2=ctx.createLinearGradient(b[0],0,b[0]+b[1],H);
-        g2.addColorStop(0,T[i?1:0]); g2.addColorStop(1,T[i?0:1]);
-        ctx.beginPath(); ctx.moveTo(b[0],0); ctx.lineTo(b[0]+b[1],0); ctx.lineTo(b[0]-H*0.55+b[1],H); ctx.lineTo(b[0]-H*0.55,H); ctx.closePath();
-        ctx.fillStyle=g2; ctx.fill();
-      });
-      ctx.restore();
-      starField_(ctx, 0, 0, W, H*0.7, 29, 46);
-      /* 우측 엠블럼 워터마크 */
-      if(emblem){
-        ctx.save(); ctx.globalAlpha=0.09;
-        var es=H*2.1, e2=emblemCut_(emblem)||emblem;
-        ctx.drawImage(e2, W-es*0.72, H-es*0.62, es, es);
-        ctx.restore();
-      }
-      /* 상단 톤 라인 */
-      var tl=ctx.createLinearGradient(0,0,W,0); tl.addColorStop(0,T[0]); tl.addColorStop(0.5,T[1]); tl.addColorStop(1,T[0]+'00');
-      ctx.fillStyle=tl; ctx.fillRect(0,0,W,6);
-      var url=cv.toDataURL('image/jpeg',0.82);
-      _hdrCache[key]=url;
-      /* 그 사이 팀이 바뀌었으면 적용하지 않음 */
+      var mUrl=paint(1080,416,emblem);    /* 모바일 (≈2.6:1) */
+      var pUrl=paint(1680,204,emblem);    /* PC (≈8.24:1) — 위 라인·포인트가 잘리지 않음 */
+      _hdrCache[key]=[mUrl,pUrl];
       var cur=activeClub();
-      if(cur && c && cur.id===c.id && !cur.bg) setHeaderBg_(url, url);
+      if(cur && c && cur.id===c.id && !cur.bg) setHeaderBg_(mUrl, pUrl);
     }catch(e){}
   }
   if(c && c.emblem){ loadImg_(c.emblem).then(draw).catch(function(){ draw(null); }); setTimeout(function(){ draw(null); }, 1500); }
@@ -2720,7 +2727,7 @@ function openClubForm(clubId){
            }).join('')
    +     '</div>'
    +     '<p style="font-size:11.5px;color:var(--steel-soft);margin:6px 2px 10px;">사진이 없으면 팀 컬러와 엠블럼으로 헤더를 자동으로 그려줘요.</p>'
-   +     '<label style="font-size:13px;font-weight:700;">헤더 사진 <span style="color:var(--steel-soft);font-weight:600;">(선택 · 은은한 블러 배경으로 적용)</span></label>'
+   +     '<label style="font-size:13px;font-weight:700;">헤더 사진 <span style="color:var(--steel-soft);font-weight:600;">(선택 · 모바일은 사진 그대로, PC는 블러 배경)</span></label>'
    +     '<div id="cb_bgprev" style="width:100%;height:76px;margin-top:8px;border-radius:12px;border:1px solid var(--line-strong);background:#15131b '+(clubBgData?('center/cover no-repeat url('+clubBgData+')'):'')+';overflow:hidden;position:relative;">'
    +       '<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,9,14,.35),rgba(10,9,14,.6));"></div>'
    +       '<span id="cb_bghint" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:'+(clubBgData?'#fff':'var(--steel-soft)')+';font-size:12px;font-weight:600;z-index:1;">'+(clubBgData?'적용된 배경':'그래픽 헤더 사용 중')+'</span></div>'
@@ -2822,10 +2829,10 @@ function pickClubBg(input){
   reader.onload = function(e){
     var img = new Image();
     img.onload = function(){
-      var amb=blurAmbient_(img);
-      clubBgData=amb; clubBgPcData=amb;   /* 모바일·PC 동일 앰비언트 (cover) */
-      var pv=document.getElementById('cb_bgprev'); if(pv){ pv.style.background='#15131b center/cover no-repeat url('+amb+')'; }
-      var hint=document.getElementById('cb_bghint'); if(hint){ hint.textContent='적용된 배경 · 은은한 블러로 깔립니다'; hint.style.color='#fff'; }
+      clubBgData = encodeImgUnder_(img, 1440, 960, 700000);   /* 모바일: 사진 그대로 (기존 방식) */
+      clubBgPcData = blurAmbient_(img);                        /* PC: 블러 앰비언트 */
+      var pv=document.getElementById('cb_bgprev'); if(pv){ pv.style.background='#15131b center/cover no-repeat url('+clubBgData+')'; }
+      var hint=document.getElementById('cb_bghint'); if(hint){ hint.textContent='적용된 배경 · 모바일은 사진, PC는 블러 배경'; hint.style.color='#fff'; }
     };
     img.src = e.target.result;
   };
