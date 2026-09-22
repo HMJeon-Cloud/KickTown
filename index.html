@@ -103,9 +103,14 @@
   /* 팀 배경 사진이 있으면 헤더를 사진 비율에 가깝게 키워 잘림을 최소화 */
   .topbar.has-bg{ min-height:150px; }
   .topbar.has-bg::before{ background-position:center center; }
-  /* PC: 헤더 높이는 모바일과 동일 유지(작업공간 확보) · 사진은 얼굴 라인이 보이도록 초점만 조정 */
+  /* PC: 헤더 높이는 그대로, 사진은 '전체가 보이도록' 축소(contain) · 남는 좌우는 어두운 배경 */
   @media(min-width:1024px){
-    .topbar.has-bg::before{ background-position:center 26%; }
+    .topbar.has-bg::before{
+      background-size:contain;
+      background-position:center center;
+      background-repeat:no-repeat;
+      background-color:#100D13;
+    }
   }
   /* 글자 가독성용 어두운 오버레이 */
   .topbar::after{
@@ -811,11 +816,8 @@
 
 </div>
 
-<!-- Firebase: 스플래시/셸이 먼저 그려진 뒤 로드 (head 차단 제거 → 첫 화면 표시 가속) -->
-<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-check-compat.js"></script>
+<!-- v10: 기본 백엔드 = Supabase (REST 어댑터 · 외부 SDK 불필요)
+     Firebase SDK는 '데이터 이전' 실행 시에만 동적으로 로드됩니다. -->
 <script>
 /* ================= State ================= */
 var state = {
@@ -872,10 +874,15 @@ var FIREBASE_CONFIG = {
 // (비밀 키가 아니라 사이트 키입니다. 사이트 키는 공개돼도 됩니다.)
 var APPCHECK_SITE_KEY = '6Lfmi2AtAAAAAP1R-1JlYz1ht1WuQWp2RS_tibpT';
 
+/* ===== Supabase (v10: 기본 백엔드) ===== */
+var KT_BACKEND = 'supabase';   // 'supabase' | 'firebase'
+var SUPA_URL = 'https://ktloyedgbngqvnflagjc.supabase.co';
+var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0bG95ZWRnYm5ncXZuZmxhZ2pjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwMjAzMjksImV4cCI6MjEwNTU5NjMyOX0.p7-GbAocbDLRiMItTfFDBYSSQj5ZNPoC74jo5m6xx-4';
+
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '9.5';
+var APP_VERSION = '10.0';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -1425,6 +1432,81 @@ function initRosterDrag_(){
   });
 }
 
+/* ================= Firebase → Supabase 1회 데이터 이전 (총관리자) ================= */
+var MIG_COLLS=['clubs','members','matches','squads','squadMembers','squadNotes','stats','attendance','momVotes','logs','memberPhotos'];
+function migLog_(t){
+  var el=document.getElementById('migLog');
+  if(el){ el.innerHTML+='<div>'+esc(t)+'</div>'; el.scrollTop=el.scrollHeight; }
+}
+function migLoadFirebaseSdk_(){
+  return new Promise(function(res, rej){
+    if(window.firebase && firebase.firestore){ res(); return; }
+    var srcs=['firebase-app-compat.js','firebase-auth-compat.js','firebase-firestore-compat.js'];
+    var n=0;
+    (function next(){
+      if(n>=srcs.length){ res(); return; }
+      var sc=document.createElement('script');
+      sc.src='https://www.gstatic.com/firebasejs/10.12.5/'+srcs[n++];
+      sc.onload=next; sc.onerror=function(){ rej(new Error('Firebase SDK 로드 실패')); };
+      document.head.appendChild(sc);
+    })();
+  });
+}
+function migrateFromFirebase_(){
+  if(!requireOwner()) return;
+  showSheet('<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>🚚 데이터 이전</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<p style="font-size:13px;color:var(--steel);line-height:1.6;margin:0 0 12px;">기존 Firebase의 모든 데이터(팀·기록·사진·투표·설정)를 Supabase로 복사합니다.<br>1회만 실행하면 되고, 기존 데이터는 삭제되지 않습니다.</p>'
+   +   '<div id="migLog" style="font-size:12px;line-height:1.7;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;max-height:300px;overflow:auto;color:var(--steel);"></div>'
+   +   '<button class="btn-primary" id="migGo" style="margin-top:14px;" onclick="migrateRun_()">이전 시작</button>'
+   + '</div>');
+}
+function migrateRun_(){
+  var btn=document.getElementById('migGo');
+  if(btn){ btn.disabled=true; btn.textContent='이전 중... (창을 닫지 마세요)'; }
+  var total=0;
+  migLog_('Firebase SDK 불러오는 중...');
+  migLoadFirebaseSdk_().then(function(){
+    try{ firebase.initializeApp(FIREBASE_CONFIG); }catch(e){}
+    var authP=firebase.auth ? firebase.auth().signInAnonymously().catch(function(){}) : Promise.resolve();
+    return authP.then(function(){ return firebase.firestore(); });
+  }).then(function(fdb){
+    var chain=Promise.resolve();
+    chain=chain.then(function(){
+      migLog_('config 읽는 중...');
+      return fdb.collection('config').doc('app').get().then(function(d){
+        if(d && d.exists){ total++; return db.collection('config').doc('app').set(d.data()||{}); }
+      }).then(function(){ migLog_('config · 완료'); });
+    });
+    MIG_COLLS.forEach(function(coll){
+      chain=chain.then(function(){
+        migLog_(coll+' 읽는 중...');
+        return fdb.collection(coll).get().then(function(snap){
+          var rows=[]; snap.forEach(function(d){ rows.push({coll:coll, id:d.id, data:d.data()||{}}); });
+          total+=rows.length;
+          var chunk=(coll==='memberPhotos'||coll==='logs')?5:100;
+          var p=Promise.resolve();
+          for(var i=0;i<rows.length;i+=chunk){
+            (function(part){ p=p.then(function(){ return db._bulkUpsert(part); }); })(rows.slice(i,i+chunk));
+          }
+          return p.then(function(){ migLog_(coll+' · '+rows.length+'건 완료'); });
+        });
+      });
+    });
+    return chain;
+  }).then(function(){
+    return db.collection('config').doc('app').set({fbMigratedAt:new Date().toISOString()},{merge:true});
+  }).then(function(){
+    migLog_('✅ 총 '+total+'건 이전 완료! 3초 후 새로고침합니다.');
+    try{ localStorage.removeItem('kt_cache_v1'); localStorage.removeItem('kt_career_v1'); }catch(e){}
+    setTimeout(function(){ location.reload(); }, 3000);
+  }).catch(function(e){
+    migLog_('❌ 실패: '+((e&&e.message)||e));
+    if(btn){ btn.disabled=false; btn.textContent='다시 시도'; }
+  });
+}
+
 /* -------- 1. 팀원 관리 (동작) -------- */
 function viewTeam(){
   if(state.loading){
@@ -1454,6 +1536,7 @@ function viewTeam(){
     + '<div class="list-row" style="cursor:pointer;" onclick="openLogView_()"><span class="nm" style="flex:1;">활동 로그</span><span class="val" style="color:var(--red);font-size:14px;">🗒️ 보기 ›</span></div>'
     + cfgRow('내 이름', esc(whoName_()||'미설정'), 'editWho_')
     + '<div class="list-row" style="cursor:pointer;" onclick="openVoteList_()"><span class="nm" style="flex:1;">MOM 투표 관리</span><span class="val" style="color:var(--red);font-size:14px;">🗳️ 목록 ›</span></div>'
+    + ((typeof KT_BACKEND!=='undefined' && KT_BACKEND==='supabase' && isOwner() && !(state.cfg&&state.cfg.fbMigratedAt)) ? '<div class="list-row" style="cursor:pointer;" onclick="migrateFromFirebase_()"><span class="nm" style="flex:1;">데이터 이전 (Firebase → Supabase)</span><span class="val" style="color:var(--red);font-size:14px;">🚚 1회 실행 ›</span></div>' : '')
     + cfgRow('감독 · 코치', staffLabel_(), 'editStaff_')
     + cfgRow('시즌 기간', seasonRangeLabel_(), 'editSeason_')
     + '<div class="list-row" style="cursor:pointer;" onclick="openUsage_()"><span class="nm" style="flex:1;">데이터 사용량 (이번 접속)</span><span class="val" style="color:var(--red);font-size:14px;">📶 '+((window.__KJR&&window.__KJR.n)||0)+'건 ›</span></div>'
@@ -3966,7 +4049,7 @@ function showCardPreview_(canvas, name){
   showSheet('<div class="grabber"></div>'
    + '<div class="sheet-head"><h3>카드 미리보기</h3><button class="x" onclick="closeSheet()">✕</button></div>'
    + '<div class="sheet-body">'
-   +   '<img src="'+url+'" style="width:100%;border-radius:14px;border:1px solid var(--line-strong);display:block;box-shadow:var(--shadow-sm);" alt="card">'
+   +   '<img src="'+url+'" style="display:block;margin:0 auto;width:auto;max-width:100%;max-height:66vh;border-radius:14px;border:1px solid var(--line-strong);box-shadow:var(--shadow-sm);" alt="card">'
    +   '<button class="btn-primary" style="margin-top:14px;" onclick="shareCardNow_()">📤 공유 · 사진첩에 저장</button>'
    +   '<button class="btn-ghost" onclick="downloadCardNow_()">⬇️ 파일로 다운로드</button>'
    + '</div>');
@@ -4964,13 +5047,19 @@ function logFlush_(){
   var items=_logPending; _logPending=[];
   if(!items.length || !(window.db && FS.enabled)) return;
   // 인증 준비 전/오프라인이면 잠시 후 재시도 (최대 5회) — 기록 유실 방지
-  var authed=false; try{ authed=!!(firebase.auth&&firebase.auth().currentUser); }catch(e){}
+  var authed=true;
+  if(!(window.db && db._supa)){ try{ authed=!!(firebase.auth&&firebase.auth().currentUser); }catch(e){ authed=false; } }
   var online=(typeof navigator.onLine==='boolean') ? navigator.onLine : true;
   if(!authed || !online){ _logRetry_(items); return; }
   try{
-    var FV=firebase.firestore.FieldValue;
-    db.collection('logs').doc(LOG_DOC).set({id:LOG_DOC, items:FV.arrayUnion.apply(FV, items), updatedAt:new Date().toISOString()}, {merge:true})
-      .catch(function(e){ try{ console.warn('log write', e); }catch(_){} _logRetry_(items); });
+    var wp;
+    if(db._logAppend){
+      wp=db._logAppend('logs', LOG_DOC, items, {id:LOG_DOC, updatedAt:new Date().toISOString()});
+    } else {
+      var FV=firebase.firestore.FieldValue;
+      wp=db.collection('logs').doc(LOG_DOC).set({id:LOG_DOC, items:FV.arrayUnion.apply(FV, items), updatedAt:new Date().toISOString()}, {merge:true});
+    }
+    wp.catch(function(e){ try{ console.warn('log write', e); }catch(_){} _logRetry_(items); });
   }catch(e){ _logRetry_(items); }
 }
 /* 스쿼드 편집처럼 잦은 작업: 같은 행위·대상이 10분 내 이미 있으면 생략 */
@@ -5805,8 +5894,10 @@ function fsWriteProbe_(){
         var msg;
         if(code==='resource-exhausted'){
           msg='⚠️ 일일 사용량 한도 초과\n\n오늘 사용할 수 있는 데이터 한도를 모두 소진했습니다.\n한도는 매일 한국시간 오후 4시경 자동으로 초기화됩니다.\n그때까지 저장·조회가 실패할 수 있습니다.';
+        } else if(code==='not-configured'){
+          msg='⚠️ 서버 준비 안 됨\n\nSupabase SQL 설정(supabase_setup.sql)이 아직 실행되지 않았습니다.\nSupabase 대시보드 → SQL Editor에서 설정 파일을 실행해주세요.';
         } else if(code==='permission-denied'){
-          msg='⚠️ 데이터 저장 권한 오류\n\n지금 상태에서는 팀·경기 등 모든 저장이 실패합니다.\nFirebase 콘솔에서 (1) Firestore 규칙, (2) Authentication의 익명 로그인 사용 설정을 확인해주세요.';
+          msg='⚠️ 데이터 저장 권한 오류\n\n지금 상태에서는 팀·경기 등 모든 저장이 실패합니다.\n서버 접근 규칙(정책)을 확인해주세요.';
         } else if(code==='unavailable' || code==='deadline-exceeded'){
           msg='⚠️ 네트워크 연결 불안정\n\n서버에 연결하지 못했습니다.\n잠시 후 다시 시도해주세요.';
         } else {
@@ -5981,8 +6072,9 @@ function fsErr_(e, name){
   if(window.__fsReadErr) return [];
   window.__fsReadErr=1;
   var msg;
-  if(code==='resource-exhausted') msg='⚠️ 일일 사용량 한도 초과 · 오후 4시경 자동 복구';
-  else if(code==='permission-denied') msg='⚠️ 데이터 읽기 권한 오류 · Firestore 규칙 확인 필요';
+  if(code==='resource-exhausted') msg='⚠️ 사용량 한도 초과 · 잠시 후 다시 시도해주세요';
+  else if(code==='not-configured') msg='⚠️ 서버 준비 안 됨 · Supabase SQL 설정(supabase_setup.sql)을 먼저 실행해주세요';
+  else if(code==='permission-denied') msg='⚠️ 데이터 읽기 권한 오류 · 서버 접근 규칙 확인 필요';
   else if(code==='unavailable'||code==='deadline-exceeded') msg='⚠️ 네트워크 연결이 불안정합니다';
   else msg='⚠️ 데이터를 불러오지 못했습니다 ('+(code||'원인 불명')+')';
   setTimeout(function(){ toast(msg); }, 800);
@@ -6160,17 +6252,162 @@ FS._dispatch = function(fn, args){
     }
     return mockHandler(fn, args);   // 읽기 (메모리 즉시)
 };
-FS.init = function(){
-  if(!window.firebase){ return; }
-  try{ firebase.initializeApp(FIREBASE_CONFIG); }catch(e){}
-  try{
-    if(firebase.appCheck){
-      firebase.appCheck().activate(APPCHECK_SITE_KEY, true);
+/* ================= Supabase(PostgREST) 어댑터 =================
+ * Firestore 호환 최소 API를 fetch로 구현 (외부 SDK 불필요)
+ *  - collection(c).doc(id).set / set(merge) / update(점표기) / get / delete
+ *  - collection(c).where('==','in').limit(n).get()
+ *  - batch().set/.delete/.commit
+ * 저장 모델: 단일 테이블 kt_docs(coll text, id text, data jsonb) */
+function makeSupaDb(){
+  var BASE=String(SUPA_URL).replace(/\/+$/,'')+'/rest/v1';
+  function hd(extra){
+    var h={ 'apikey':SUPA_KEY, 'Authorization':'Bearer '+SUPA_KEY, 'Content-Type':'application/json' };
+    for(var k in (extra||{})) h[k]=extra[k];
+    return h;
+  }
+  function mkErr(res, txt){
+    var code='unavailable';
+    if(res){
+      if(res.status===401||res.status===403) code='permission-denied';
+      else if(res.status===404) code='not-configured';        // 테이블/함수 없음 → SQL 미실행
+      else if(res.status===429) code='resource-exhausted';
+      else if(res.status>=400) code='invalid-argument';
     }
-  }catch(e){ if(window.console)console.warn('AppCheck', e); }
-  window.db = firebase.firestore();
-  FS.enabled = true;
-  var authP = firebase.auth ? firebase.auth().signInAnonymously().catch(function(){}) : Promise.resolve();
+    var e=new Error('supabase '+(res?res.status:'network')+(txt?(' '+String(txt).slice(0,180)):''));
+    e.code=code; return e;
+  }
+  function call(method, path, body, extraHd){
+    var opt={ method:method, headers:hd(extraHd) };
+    if(body!==undefined) opt.body=JSON.stringify(body);
+    return fetch(BASE+path, opt).then(function(res){
+      if(res.status===204) return null;
+      return res.text().then(function(t){
+        if(!res.ok) throw mkErr(res, t);
+        if(!t) return null;
+        try{ return JSON.parse(t); }catch(e){ return null; }
+      });
+    }, function(){ throw mkErr(null); });
+  }
+  function eq(f,v){ return 'data-%3E%3E'+encodeURIComponent(f)+'=eq.'+encodeURIComponent(String(v)); }
+  function inQ(f,vs){
+    var body=(vs||[]).map(function(x){ return '"'+String(x).replace(/"/g,'')+'"'; }).join(',');
+    return 'data-%3E%3E'+encodeURIComponent(f)+'=in.('+encodeURIComponent(body)+')';
+  }
+  function rowsSnap(rows){
+    rows=rows||[];
+    return {
+      size:rows.length,
+      forEach:function(f){ rows.forEach(function(r){ f({ id:r.id, exists:true, data:function(){ return r.data||{}; } }); }); }
+    };
+  }
+  function docRef(coll, id){
+    id=String(id);
+    return {
+      _coll:coll, _id:id,
+      get:function(){
+        return call('GET','/kt_docs?select=id,data&coll=eq.'+encodeURIComponent(coll)+'&id=eq.'+encodeURIComponent(id))
+          .then(function(rows){ var r=(rows||[])[0];
+            return { exists:!!r, id:id, data:function(){ return r?(r.data||{}):undefined; } }; });
+      },
+      set:function(obj, opt){
+        if(opt && opt.merge){
+          return call('POST','/rpc/kt_merge',{ _coll:coll, _id:id, _patch:obj }).then(function(){});
+        }
+        return call('POST','/kt_docs',[{coll:coll,id:id,data:obj}],{ 'Prefer':'resolution=merge-duplicates,return=minimal' }).then(function(){});
+      },
+      update:function(patch){
+        var nest={};
+        Object.keys(patch||{}).forEach(function(k){
+          var parts=String(k).split('.'), cur=nest;
+          for(var i=0;i<parts.length-1;i++){ cur=cur[parts[i]]=cur[parts[i]]||{}; }
+          cur[parts[parts.length-1]]=patch[k];
+        });
+        return call('POST','/rpc/kt_merge',{ _coll:coll, _id:id, _patch:nest }).then(function(){});
+      },
+      delete:function(){
+        return call('DELETE','/kt_docs?coll=eq.'+encodeURIComponent(coll)+'&id=eq.'+encodeURIComponent(id)).then(function(){});
+      }
+    };
+  }
+  function collRef(coll){
+    function builder(flt, lim){
+      return {
+        where:function(f,op,v){
+          var nf=flt.slice();
+          if(op==='in') nf.push(inQ(f,v)); else nf.push(eq(f,v));
+          return builder(nf, lim);
+        },
+        limit:function(n){ return builder(flt, n); },
+        get:function(){
+          var p='/kt_docs?select=id,data&coll=eq.'+encodeURIComponent(coll);
+          if(flt.length) p+='&'+flt.join('&');
+          if(lim) p+='&limit='+lim;
+          return call('GET', p).then(rowsSnap);
+        }
+      };
+    }
+    var base=builder([],0);
+    return {
+      doc:function(id){ return docRef(coll,id); },
+      where:base.where, limit:base.limit, get:base.get
+    };
+  }
+  return {
+    _supa:true,
+    collection:collRef,
+    batch:function(){
+      var ops=[];
+      return {
+        set:function(ref, obj, opt){ ops.push(['set', ref._coll, ref._id, obj]); },
+        delete:function(ref){ ops.push(['del', ref._coll, ref._id]); },
+        commit:function(){
+          var ups=ops.filter(function(o){return o[0]==='set';}).map(function(o){ return {coll:o[1], id:o[2], data:o[3]}; });
+          var dels=ops.filter(function(o){return o[0]==='del';});
+          var p=Promise.resolve();
+          for(var i=0;i<ups.length;i+=100){
+            (function(part){ p=p.then(function(){ return call('POST','/kt_docs',part,{ 'Prefer':'resolution=merge-duplicates,return=minimal' }); }); })(ups.slice(i,i+100));
+          }
+          var by={};
+          dels.forEach(function(o){ (by[o[1]]=by[o[1]]||[]).push(o[2]); });
+          Object.keys(by).forEach(function(coll){
+            var ids=by[coll].map(function(x){ return '"'+String(x).replace(/"/g,'')+'"'; }).join(',');
+            p=p.then(function(){ return call('DELETE','/kt_docs?coll=eq.'+encodeURIComponent(coll)+'&id=in.('+encodeURIComponent(ids)+')'); });
+          });
+          return p.then(function(){});
+        }
+      };
+    },
+    /* 로그 문서: items 배열에 원자적으로 추가 */
+    _logAppend:function(coll, id, items, extra){
+      return call('POST','/rpc/kt_arr_append',{ _coll:coll, _id:String(id), _key:'items', _items:items, _extra:extra||{} }).then(function(){});
+    },
+    /* 이전 도구용: 행 일괄 업서트 */
+    _bulkUpsert:function(rows){
+      if(!rows || !rows.length) return Promise.resolve();
+      return call('POST','/kt_docs',rows,{ 'Prefer':'resolution=merge-duplicates,return=minimal' }).then(function(){});
+    }
+  };
+}
+
+FS.init = function(){
+  var authP;
+  if(typeof KT_BACKEND!=='undefined' && KT_BACKEND==='supabase'){
+    /* Supabase: 익명 키(REST)로 바로 시작 — 인증 대기 없음 */
+    window.db = makeSupaDb();
+    FS.enabled = true;
+    authP = Promise.resolve();
+  } else {
+    if(!window.firebase){ return; }
+    try{ firebase.initializeApp(FIREBASE_CONFIG); }catch(e){}
+    try{
+      if(firebase.appCheck){
+        firebase.appCheck().activate(APPCHECK_SITE_KEY, true);
+      }
+    }catch(e){ if(window.console)console.warn('AppCheck', e); }
+    window.db = firebase.firestore();
+    FS.enabled = true;
+    authP = firebase.auth ? firebase.auth().signInAnonymously().catch(function(){}) : Promise.resolve();
+  }
   /* MOM 투표 링크로 들어온 경우: 투표 문서 1건만 읽으면 되므로 전체 로딩을 하지 않는다 */
   if(/^#vote=/.test(String(location.hash||''))){ FS.voteOnly=true; authP.then(function(){ FS._resolve(); }); return; }
   // 캐시가 신선하면(30분) 조회 없이 즉시 시작 — 읽기 사용량 절감 + 빠른 로딩
