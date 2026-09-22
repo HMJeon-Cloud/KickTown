@@ -70,12 +70,17 @@
   /* ===== PC(데스크톱): 폰 프레임 대신 브라우저 크기에 맞춰 넓게 ===== */
   @media(min-width:1024px){
     .phone{
-      max-width:min(94vw, 820px);
+      max-width:min(96vw, 1240px);
       height:calc(100vh - 44px);
       height:calc(100dvh - 44px);
       margin:22px 0;
       border-radius:26px;
       border:1px solid #221f27;
+    }
+    /* 목록형 탭: 셸 폭은 동일하게 두고 내용만 중앙 정렬 (탭 전환 시 폭 튐 없음) */
+    body:not(.pc-form) .content{
+      padding-left:max(16px, calc((100% - 828px)/2));
+      padding-right:max(16px, calc((100% - 828px)/2));
     }
   }
 
@@ -98,10 +103,9 @@
   /* 팀 배경 사진이 있으면 헤더를 사진 비율에 가깝게 키워 잘림을 최소화 */
   .topbar.has-bg{ min-height:150px; }
   .topbar.has-bg::before{ background-position:center center; }
-  /* PC: 셸이 넓어진 만큼 헤더를 키워 사진 확대(세로 잘림)를 줄인다 — 모바일 규칙은 그대로 */
+  /* PC: 헤더 높이는 모바일과 동일 유지(작업공간 확보) · 사진은 얼굴 라인이 보이도록 초점만 조정 */
   @media(min-width:1024px){
-    .topbar.has-bg{ min-height:228px; }
-    .topbar.has-bg::before{ background-position:center 32%; }
+    .topbar.has-bg::before{ background-position:center 26%; }
   }
   /* 글자 가독성용 어두운 오버레이 */
   .topbar::after{
@@ -371,7 +375,6 @@
   .rst-drag{cursor:grab;touch-action:none;padding:6px 8px;margin-left:2px;color:var(--steel-soft);font-size:15px;line-height:1;user-select:none;flex:0 0 auto;}
   .rst-drag:active{cursor:grabbing;color:var(--red);}
   @media(min-width:1024px){
-    body.pc-form .phone{max-width:min(96vw,1240px);}
     .form-cols{position:relative;}
     .fc-right{margin-left:362px;}
     .fc-actions{margin-left:362px;}
@@ -872,7 +875,7 @@ var APPCHECK_SITE_KEY = '6Lfmi2AtAAAAAP1R-1JlYz1ht1WuQWp2RS_tibpT';
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '9.4';
+var APP_VERSION = '9.5';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
