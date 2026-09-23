@@ -888,7 +888,7 @@ var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '10.9';
+var APP_VERSION = '11.0';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -2732,7 +2732,7 @@ function openClubForm(clubId){
    +     '<div id="cb_bgprev" style="width:100%;height:76px;margin-top:8px;border-radius:12px;border:1px solid var(--line-strong);background:#15131b '+(clubBgData?('center/cover no-repeat url('+clubBgData+')'):'')+';overflow:hidden;position:relative;">'
    +       '<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,9,14,.35),rgba(10,9,14,.6));"></div>'
    +       '<span id="cb_bghint" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:'+(clubBgData?'#fff':'var(--steel-soft)')+';font-size:12px;font-weight:600;z-index:1;">'+(clubBgData?'적용된 배경':'그래픽 헤더 사용 중')+'</span></div>'
-   +     '<label class="btn-ghost" style="display:block;width:100%;margin:8px 0 0;text-align:center;cursor:pointer;">사진 선택 (자동 블러)<input id="cb_bgfile" type="file" accept="image/*" style="display:none;" onchange="pickClubBg(this)"></label>'
+   +     '<label class="btn-ghost" style="display:block;width:100%;margin:8px 0 0;text-align:center;cursor:pointer;">사진 선택 (모바일 표시 범위 지정)<input id="cb_bgfile" type="file" accept="image/*" style="display:none;" onchange="pickClubBg(this)"></label>'
    +     '<button class="btn-ghost" type="button" style="width:100%;margin-top:8px;" onclick="clearClubBg()">사진 제거 · 기본 양식으로</button>'
    +   '</div>'
    +   '<div class="field"><label>팀명<span class="req">*</span></label><input id="cb_name" type="text" value="'+(c?esc(c.name):'')+'"></div>'
@@ -2748,7 +2748,7 @@ function pickEmblem(input){
   reader.onload = function(e){
     var img = new Image();
     img.onload = function(){
-      var c=document.createElement('canvas'); var sz=96; c.width=sz; c.height=sz;
+      var c=document.createElement('canvas'); var sz=320; c.width=sz; c.height=sz; try{ c.getContext('2d').imageSmoothingQuality='high'; }catch(e){}
       var ctx=c.getContext('2d');
       var r=Math.min(sz/img.width, sz/img.height);
       var w=img.width*r, h=img.height*r;
@@ -4386,11 +4386,19 @@ function drawCardToken_(ctx,PJ,m,img,badges){
   ctx.fillRect(x,y,cw,ch);
   var phB=y+ch-NB;
   if(img){
-    var iw3=img.width||img.naturalWidth||1, ih3=img.height||img.naturalHeight||1;
-    var pH=ch-NB, sc4=Math.max(cw/iw3, pH/ih3), dw4=iw3*sc4, dh4=ih3*sc4;
-    ctx.drawImage(img, cx-dw4/2, y-(dh4-pH)*0.2, dw4, dh4);
-    var fg2=ctx.createLinearGradient(0,y,0,y+pH*0.42); fg2.addColorStop(0,'rgba(16,12,18,.55)'); fg2.addColorStop(1,'rgba(16,12,18,0)');
-    ctx.fillStyle=fg2; ctx.fillRect(x,y,cw,pH*0.42);
+    var cut=img._kjCut!==undefined ? img._kjCut : (img._kjCut=personCut_(img));
+    if(cut){
+      var maxH=ch-NB-4, maxW=cw-4, sc3=Math.min(maxW/cut.width, maxH/cut.height), dw3=cut.width*sc3, dh3=cut.height*sc3;
+      ctx.save(); ctx.shadowColor='rgba(0,0,0,.5)'; ctx.shadowBlur=8; ctx.shadowOffsetY=3;
+      ctx.drawImage(cut, cx-dw3/2, phB-dh3, dw3, dh3); ctx.restore();
+    } else {
+      var iw3=img.width||img.naturalWidth||1, ih3=img.height||img.naturalHeight||1, pH=ch-NB;
+      var ps3=photoSrc_(img, img._kjRect||null, cw, pH);
+      if(ps3){ ctx.drawImage(img, ps3.sx,ps3.sy,ps3.sw,ps3.sh, x, y, cw, pH); }
+      else { var sc4=Math.max(cw/iw3, pH/ih3), dw4=iw3*sc4, dh4=ih3*sc4; ctx.drawImage(img, cx-dw4/2, y-(dh4-pH)*0.2, dw4, dh4); }
+    }
+    var fg2=ctx.createLinearGradient(0,y,0,y+(ch-NB)*0.42); fg2.addColorStop(0,'rgba(16,12,18,.55)'); fg2.addColorStop(1,'rgba(16,12,18,0)');
+    ctx.fillStyle=fg2; ctx.fillRect(x,y,cw,(ch-NB)*0.42);
   } else {
     ctx.fillStyle='rgba(255,255,255,.14)';
     ctx.beginPath(); ctx.arc(cx, y+ch*0.36, cw*0.17, 0, Math.PI*2); ctx.fill();
@@ -4401,9 +4409,15 @@ function drawCardToken_(ctx,PJ,m,img,badges){
   ctx.save(); ctx.shadowColor='rgba(0,0,0,.85)'; ctx.shadowBlur=8; ctx.shadowOffsetY=2;
   ctx.fillStyle='#fff'; ctx.font='700 '+Math.round(cw*0.21)+'px Oswald, sans-serif';
   ctx.fillText(String(m.guest?m.num:(m.num!=null?m.num:'')), x+Math.round(cw*0.075), y+Math.round(cw*0.255));
-  ctx.fillStyle=shade_(col,0.5); ctx.font='700 '+Math.round(cw*0.115)+'px Oswald, sans-serif'; ctx.letterSpacing='1px';
-  ctx.fillText(String(m.position||''), x+Math.round(cw*0.075), y+Math.round(cw*0.39)); ctx.letterSpacing='0px';
   ctx.restore();
+  if(m.position){
+    ctx.font='700 '+Math.round(cw*0.115)+'px Oswald, sans-serif';
+    var ptx=String(m.position), pw5=ctx.measureText(ptx).width+Math.round(cw*0.09), ph5=Math.round(cw*0.15);
+    var px5=x+Math.round(cw*0.06), py5=y+Math.round(cw*0.30);
+    rr_(ctx,px5,py5,pw5,ph5,Math.round(ph5*0.3)); ctx.fillStyle=col; ctx.fill();
+    ctx.fillStyle='#fff'; ctx.textAlign='left'; ctx.textBaseline='middle';
+    ctx.fillText(ptx, px5+Math.round(cw*0.045), py5+ph5/2+1);
+  }
   /* 달성 뱃지 (우상단 세로 스택) */
   if(badges && badges.length){
     var bs=Math.round(cw*0.20), bx4=x+cw-Math.round(bs*0.66), by4=y+Math.round(bs*0.66);
@@ -4495,7 +4509,13 @@ function shareSquadCard_(){
   var withBadge=squadBadgeOn_();
   toast(withBadge?'카드 만드는 중... (뱃지 포함)':'카드 만드는 중...');
   var mems=(d.members||[]).filter(function(m){ return m.position; });
-  var jobs=[loadImg_(teamEmblemSrc_()), loadImg_(teamBgSrc_())].concat(mems.map(function(m){ return loadImg_(m.photo||''); }));
+  var jobs=[loadImg_(teamEmblemSrc_()), loadImg_(teamBgSrc_())].concat(mems.map(function(m){
+    var pr=(m.guest||!m.playerId)?Promise.resolve(''):loadPlayerPhotoL_(m.playerId).catch(function(){ return ''; });
+    return pr.then(function(big){ return loadImg_(big || m.photo || '').then(function(im){
+      if(im&&big&&m.playerId){ var pp=pname_(m.playerId)||{}; if(pp.photoRect) im._kjRect=pp.photoRect; }
+      return im;
+    }); });
+  }));
   fontsReady_(function(){
     Promise.all([Promise.all(jobs), (withBadge?careerReady_():Promise.resolve(null)), iconsReady_()]).then(function(rr){ var imgs=rr[0];
       var emblem=imgs[0], bg=imgs[1];
@@ -7308,7 +7328,8 @@ function drawBest11Card_(key, d, emblem, faces){
   var mt=momTop_(ms);
   if(mt){
     ctx.fillStyle='rgba(255,255,255,.66)'; ctx.font='500 23px Pretendard, sans-serif';
-    wrapText_(ctx, 'MOM 최다 · '+mt.names.join(' · ')+' ('+mt.v+'회)', TXW).slice(0,2).forEach(function(ln,i){ ctx.fillText(ln, LX, sy+86+i*32); });
+    var mw=Math.min(TXW, P(0,(sy+86-PTY)/(PBY-PTY)).x-LX-18);   /* 경기장 왼쪽 사선 안쪽까지만 */
+    wrapText_(ctx, 'MOM 최다 · '+mt.names.join(' · ')+' ('+mt.v+'회)', mw).slice(0,2).forEach(function(ln,i){ ctx.fillText(ln, LX, sy+86+i*32); });
   }
   /* 선정 기준 */
   sy+=176; head('SELECTION', sy);
@@ -7591,12 +7612,17 @@ function personCut_(img){
     for(var byv=0;byv<h*0.4;byv+=3){ var r0=Math.floor(byv)*w; bps.push(r0); bps.push(r0+w-1); }
     var mr=0,mg=0,mb=0; bps.forEach(function(p){ mr+=px[p*4]; mg+=px[p*4+1]; mb+=px[p*4+2]; });
     mr/=bps.length; mg/=bps.length; mb/=bps.length;
-    var dev=0; bps.forEach(function(p){ dev+=Math.abs(px[p*4]-mr)+Math.abs(px[p*4+1]-mg)+Math.abs(px[p*4+2]-mb); });
-    var lum=(mr+mg+mb)/3;
-    /* 밝은 스튜디오(흰 배경)는 JPEG 압축 잡음이 커도 배경이 확실하므로 관용치를 높인다 */
-    var devLimit=(lum>180)?60:30;
-    if(dev/bps.length>devLimit) return null;
-    var seeds=[col(0), col(w-1), col(Math.floor(h*0.35)*w), col(Math.floor(h*0.35)*w+w-1)];
+    /* 중앙값 기반 판정: 테두리 표본 중 과반이 같은 색이면 배경으로 본다 (모자·머리가 윗변에 닿아도 OK) */
+    function med(arr){ arr=arr.slice().sort(function(a,b){return a-b;}); return arr[arr.length>>1]; }
+    var Rm=med(bps.map(function(p){return px[p*4];})), Gm=med(bps.map(function(p){return px[p*4+1];})), Bm=med(bps.map(function(p){return px[p*4+2];}));
+    var lum=(Rm+Gm+Bm)/3, near=0;
+    bps.forEach(function(p){ if(Math.abs(px[p*4]-Rm)+Math.abs(px[p*4+1]-Gm)+Math.abs(px[p*4+2]-Bm)<48) near++; });
+    var nearFr=near/bps.length;
+    if(nearFr<((lum>180)?0.5:0.7)) return null;
+    var bgc=[Rm,Gm,Bm];
+    var seeds=[bgc];
+    [col(0), col(w-1), col(Math.floor(h*0.35)*w), col(Math.floor(h*0.35)*w+w-1)].forEach(function(cc){
+      if(Math.abs(cc[0]-Rm)+Math.abs(cc[1]-Gm)+Math.abs(cc[2]-Bm)<48) seeds.push(cc); });
     function runFill(tol){
       var vis=new Uint8Array(N), st=[], rm=0;
       function isBg(p){ var r=px[p*4],g=px[p*4+1],b=px[p*4+2];
