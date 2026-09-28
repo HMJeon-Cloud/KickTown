@@ -252,33 +252,73 @@
   .fab:active{transform:scale(.92);}
 
   /* 영상 탭 */
-  .vd-actions{display:flex;gap:8px;margin-bottom:14px;}
-  .vd-grid{display:grid;grid-template-columns:1fr;gap:14px;margin-bottom:22px;}
+  .vd-actions{display:flex;gap:8px;margin-bottom:12px;}
+  .vd-act{flex:1;height:42px;border:1px solid var(--line-strong);background:#fff;border-radius:12px;font-family:inherit;font-size:13.5px;font-weight:700;color:var(--ink);cursor:pointer;}
+  .vd-act.main{flex:1.3;background:var(--ink);border-color:var(--ink);color:#fff;}
+  .vd-seg{display:flex;background:var(--paper);border-radius:12px;padding:4px;margin-bottom:10px;}
+  .vd-seg button{flex:1;border:none;background:none;font-family:inherit;font-size:13.5px;font-weight:700;color:var(--steel);padding:9px 4px;border-radius:9px;cursor:pointer;white-space:nowrap;}
+  .vd-seg button b{font-family:'Oswald';font-weight:500;font-size:12.5px;color:var(--steel-soft);margin-left:2px;}
+  .vd-seg button.on{background:#fff;color:var(--ink);box-shadow:var(--shadow-sm);}
+  .vd-seg button.on b{color:var(--red);}
+  .vd-chiprow{display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+  .vd-chips{flex:1;min-width:0;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;}
+  .vd-chips::-webkit-scrollbar{display:none;}
+  .vd-chip{flex:0 0 auto;border:none;background:none;font-family:inherit;font-size:12.5px;font-weight:600;color:var(--steel-soft);padding:6px 9px;border-radius:99px;cursor:pointer;white-space:nowrap;}
+  .vd-chip.on{background:var(--ink);color:#fff;}
+  .vd-sort{flex:0 0 auto;display:flex;border:1px solid var(--line-strong);border-radius:99px;padding:2px;}
+  .vd-sort button{border:none;background:none;font-family:inherit;font-size:11.5px;font-weight:700;color:var(--steel-soft);padding:4px 9px;border-radius:99px;cursor:pointer;white-space:nowrap;}
+  .vd-sort button.on{background:var(--ink);color:#fff;}
+  .vd-h{font-size:13px;font-weight:800;color:var(--ink);margin:4px 2px 9px;display:flex;align-items:center;gap:6px;}
+  .vd-h span{font-family:'Oswald';font-weight:500;color:var(--steel-soft);}
+  .vd-h .pin{color:var(--red);font-family:inherit;font-weight:800;}
+  .vd-grid{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:20px;}
+  .vd-list{display:grid;grid-template-columns:1fr;gap:0;margin-bottom:20px;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;}
   @media(min-width:600px){ .vd-grid{grid-template-columns:repeat(2,minmax(0,1fr));} }
-  @media(min-width:1024px){ .vd-grid{grid-template-columns:repeat(3,minmax(0,1fr));} .vd-grid.vd-pin{grid-template-columns:repeat(2,minmax(0,1fr));} }
+  @media(min-width:1024px){ .vd-list{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:0;} .vd-list .vd-row:nth-child(odd){border-right:1px solid var(--line);} }
   .vd-card{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;cursor:pointer;box-shadow:var(--shadow-sm);transition:transform .12s ease;}
-  .vd-card:active{transform:scale(.985);}
-  .vd-card.big{border-color:rgba(200,16,46,.35);box-shadow:0 8px 24px rgba(200,16,46,.10);}
-  .vd-thumb{position:relative;aspect-ratio:16/9;background:#111;}
+  .vd-card:active,.vd-row:active{transform:scale(.985);}
+  .vd-card.big{border-color:rgba(200,16,46,.3);}
+  .vd-thumb{position:relative;aspect-ratio:16/9;background:#111;overflow:hidden;}
   .vd-thumb img,.vs-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
-  .vd-play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:50px;height:50px;border-radius:50%;background:rgba(200,16,46,.92);color:#fff;display:flex;align-items:center;justify-content:center;font-size:17px;padding-left:3px;box-shadow:0 6px 18px rgba(0,0,0,.4);}
+  .vd-play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:48px;height:48px;border-radius:50%;background:rgba(200,16,46,.92);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;padding-left:3px;box-shadow:0 6px 18px rgba(0,0,0,.4);}
   .vd-play.sm{width:32px;height:32px;font-size:11px;}
-  .vd-dur{position:absolute;right:7px;bottom:7px;background:rgba(0,0,0,.8);color:#fff;font-size:11.5px;font-weight:600;padding:1px 6px;border-radius:5px;font-family:'Oswald';letter-spacing:.03em;}
+  .vd-dur{position:absolute;right:5px;bottom:5px;background:rgba(0,0,0,.82);color:#fff;font-size:11px;font-weight:600;padding:1px 5px;border-radius:4px;font-family:'Oswald';letter-spacing:.03em;}
+  .vd-seen{position:absolute;left:5px;top:5px;width:20px;height:20px;border-radius:50%;background:#1E9E6A;color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.3);}
   .vd-cat{position:absolute;left:8px;top:8px;background:rgba(17,16,21,.8);color:#fff;font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;}
-  .vd-seen{position:absolute;right:8px;top:8px;background:#1E9E6A;color:#fff;font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;}
   .vd-meta{padding:11px 13px 12px;}
-  .vd-title{font-size:14.5px;font-weight:700;line-height:1.4;color:var(--ink);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .vd-row{display:flex;gap:12px;padding:12px;cursor:pointer;border-bottom:1px solid var(--line);transition:transform .12s ease;}
+  .vd-list .vd-row:last-child{border-bottom:none;}
+  @media(min-width:1024px){ .vd-list .vd-row:nth-last-child(2):nth-child(odd){border-bottom:none;} }
+  .vd-row .vd-thumb{flex:0 0 132px;width:132px;border-radius:9px;align-self:flex-start;}
+  .vd-rmeta{flex:1;min-width:0;display:flex;flex-direction:column;}
+  .vd-tags{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:3px;}
+  .vd-bd{font-size:10.5px;font-weight:800;padding:2px 6px;border-radius:5px;line-height:1.3;}
+  .vd-bd.coach{background:var(--ink);color:var(--gold-soft);}
+  .vd-bd.member{background:rgba(30,158,106,.12);color:#15875A;}
+  .vd-catx{font-size:11px;font-weight:600;color:var(--steel-soft);}
+  .vd-title{font-size:14px;font-weight:700;line-height:1.38;color:var(--ink);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
   .vd-card.big .vd-title{font-size:16px;}
-  .vd-sub{font-size:12px;color:var(--steel-soft);margin-top:4px;}
-  .vd-note{font-size:13px;line-height:1.55;color:var(--steel);background:var(--paper);border-radius:10px;padding:8px 11px;margin-top:9px;}
+  .vd-rnote{font-size:12px;color:var(--steel);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .vd-sub{font-size:11.5px;color:var(--steel-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+  .vd-bot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:auto;padding-top:6px;}
+  .vd-card .vd-bot{margin-top:8px;}
+  .vd-stats{flex:0 0 auto;display:flex;gap:7px;font-size:11.5px;color:var(--steel-soft);white-space:nowrap;}
+  .vd-row .vd-bot{min-width:0;}
+  .vd-stats .vd-new{color:var(--red);font-weight:700;}
+  .vd-stats i{font-style:normal;font-size:9.5px;font-weight:800;background:var(--red);color:#fff;border-radius:4px;padding:0 3px;margin-left:1px;}
+  .vd-note{font-size:13px;line-height:1.55;color:var(--steel);background:var(--paper);border-radius:10px;padding:8px 11px;margin-top:8px;}
   .vd-note b{color:var(--ink);font-weight:700;}
   .vd-foot{font-size:12px;color:var(--steel-soft);margin-top:9px;display:flex;gap:12px;align-items:center;}
-  .vd-foot .vd-new{color:var(--red);font-weight:700;}
-  .vd-chiprow{display:flex;align-items:flex-start;gap:8px;}
-  .vd-chiprow .chips{flex:1;min-width:0;}
-  .vd-sort{flex:0 0 auto;display:flex;background:var(--paper);border-radius:99px;padding:3px;margin-top:1px;}
-  .vd-sort button{border:none;background:none;font-family:inherit;font-size:12px;font-weight:700;color:var(--steel-soft);padding:6px 10px;border-radius:99px;cursor:pointer;white-space:nowrap;}
-  .vd-sort button.on{background:#fff;color:var(--ink);box-shadow:var(--shadow-sm);}
+  .vd-opt{display:flex;flex-direction:column;border:1px solid var(--line-strong);border-radius:12px;overflow:hidden;margin:0 0 14px;}
+  .vd-opt label{display:flex;align-items:center;gap:10px;padding:12px 13px;font-size:14px;font-weight:600;cursor:pointer;border-bottom:1px solid var(--line);}
+  .vd-opt label:last-child{border-bottom:none;}
+  .vd-opt input{width:19px;height:19px;accent-color:var(--red);margin:0;flex:0 0 auto;}
+  .vd-opt small{margin-left:auto;font-size:11.5px;color:var(--steel-soft);font-weight:600;}
+  .vs-preset{display:flex;flex-direction:column;gap:6px;margin-top:8px;}
+  .vs-preset button{display:flex;align-items:center;gap:8px;text-align:left;border:1px solid var(--line-strong);background:#fff;border-radius:10px;padding:9px 11px;font-family:inherit;cursor:pointer;}
+  .vs-preset b{font-size:13.5px;color:var(--ink);}
+  .vs-preset span{font-size:11.5px;color:var(--steel-soft);flex:1;min-width:0;}
+  .vs-preset em{font-style:normal;font-size:12px;font-weight:800;color:var(--red);}
   .vd-react{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:14px;}
   .vd-rx{border:1.5px solid var(--line-strong);background:#fff;border-radius:12px;padding:8px 2px 7px;font-family:inherit;font-size:11.5px;font-weight:700;color:var(--steel);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:transform .1s ease;}
   .vd-rx:active{transform:scale(.94);}
@@ -1023,7 +1063,7 @@ var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '11.9';
+var APP_VERSION = '12.0';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -7145,56 +7185,72 @@ function ytDetails_(ids){
 }
 
 /* ── 화면 ── */
+var VREC=[['all','전체'],['coach','감독 추천'],['member','팀원 추천']];
+function videoRecOk_(v,r){ return r==='coach'?!!v.recCoach : r==='member'?!!v.recMember : true; }
 function viewVideos(){
   if(!state.videoLoaded) return '<div class="empty"><div class="ei">🎬</div>영상 불러오는 중...</div>';
   var all=(state.videos||[]).slice().sort(function(a,b){ return String(b.at||'').localeCompare(String(a.at||'')); });
   if(state.videoSort==='hot') all.sort(function(a,b){ return videoScore_(b)-videoScore_(a); });
-  var cat=state.videoCat||'all', my=voteKey_();
-  var counts={}; all.forEach(function(v){ counts[v.cat||'etc']=(counts[v.cat||'etc']||0)+1; });
-  var chips='<button class="chip'+(cat==='all'?' on':'')+'" onclick="videoCat_(\'all\')">전체 '+all.length+'</button>'
-    + VIDEO_CATS.filter(function(c){ return counts[c[0]]; }).map(function(c){
-      return '<button class="chip'+(cat===c[0]?' on':'')+'" onclick="videoCat_(\''+c[0]+'\')">'+c[1]+' '+counts[c[0]]+'</button>'; }).join('');
-  var list=all.filter(function(v){ return cat==='all' || (v.cat||'etc')===cat; });
-  var pins=cat==='all' ? list.filter(function(v){ return v.pin; }) : [];
-  var rest=list.filter(function(v){ return !(cat==='all' && v.pin); });
+  var rec=state.videoRec||'all', cat=state.videoCat||'all', my=voteKey_();
   var adminBar=isAdmin()
-    ? '<div class="vd-actions"><button class="btn-primary" style="margin:0;flex:1.3;" onclick="openVideoSearch_()">🔍 유튜브에서 찾기</button>'
-      + '<button class="btn-ghost" style="margin:0;flex:1;" onclick="openVideoLink_()">🔗 링크로 추가</button></div>'
-    : '';
-  var body;
+    ? '<div class="vd-actions"><button class="vd-act main" onclick="openVideoSearch_()">🔍 유튜브에서 찾기</button><button class="vd-act" onclick="openVideoLink_()">🔗 링크로 추가</button></div>' : '';
   if(!all.length){
-    body='<div class="empty"><div class="ei">🎬</div>아직 공유된 영상이 없어요.'
+    return adminBar+'<div class="empty"><div class="ei">🎬</div>아직 공유된 영상이 없어요.'
       + (isAdmin()?'<br>위 버튼으로 팀에 추천할 영상을 찾아보세요.':'<br>운영진이 추천 영상을 올리면 여기에 모여요.')+'</div>';
-  } else {
-    body=(pins.length?'<div class="eyebrow">📌 이번 주 추천</div><div class="vd-grid vd-pin">'+pins.map(function(v){ return videoCard_(v,my,true); }).join('')+'</div>':'')
-      + (rest.length?'<div class="eyebrow">'+(cat==='all'?'공유된 영상':videoCatName_(cat))+' · '+rest.length+'</div><div class="vd-grid">'+rest.map(function(v){ return videoCard_(v,my,false); }).join('')+'</div>'
-        : (pins.length?'':'<div class="empty">이 분류의 영상이 없어요.</div>'));
   }
-  var sortBar=all.length>1?'<div class="vd-sort"><button type="button" class="'+(state.videoSort!=='hot'?'on':'')+'" onclick="videoSort_(\'new\')">최신순</button><button type="button" class="'+(state.videoSort==='hot'?'on':'')+'" onclick="videoSort_(\'hot\')">🔥 인기순</button></div>':'';
-  return adminBar + (all.length?'<div class="vd-chiprow"><div class="chips" data-sk="vdcat" onscroll="saveChipScroll_(\'vdcat\',this)">'+chips+'</div>'+sortBar+'</div>':'') + body;
+  /* 1단: 추천 구분 (전체 / 감독 추천 / 팀원 추천) */
+  var seg='<div class="vd-seg">'+VREC.map(function(r){
+    var n=all.filter(function(v){ return videoRecOk_(v,r[0]); }).length;
+    return '<button type="button" class="'+(rec===r[0]?'on':'')+'" onclick="videoRec_(\''+r[0]+'\')">'+r[1]+' <b>'+n+'</b></button>'; }).join('')+'</div>';
+  var byRec=all.filter(function(v){ return videoRecOk_(v,rec); });
+  /* 2단: 분류 + 정렬 */
+  var counts={}; byRec.forEach(function(v){ counts[v.cat||'etc']=(counts[v.cat||'etc']||0)+1; });
+  if(cat!=='all' && !counts[cat]) cat='all';
+  var chips='<button class="vd-chip'+(cat==='all'?' on':'')+'" onclick="videoCat_(\'all\')">전체 분류</button>'
+    + VIDEO_CATS.filter(function(c){ return counts[c[0]]; }).map(function(c){
+      return '<button class="vd-chip'+(cat===c[0]?' on':'')+'" onclick="videoCat_(\''+c[0]+'\')">'+c[1]+' '+counts[c[0]]+'</button>'; }).join('');
+  var sortBar='<div class="vd-sort"><button type="button" class="'+(state.videoSort!=='hot'?'on':'')+'" onclick="videoSort_(\'new\')">최신</button><button type="button" class="'+(state.videoSort==='hot'?'on':'')+'" onclick="videoSort_(\'hot\')">인기</button></div>';
+  var list=byRec.filter(function(v){ return cat==='all' || (v.cat||'etc')===cat; });
+  var pins=list.filter(function(v){ return v.pin; });
+  var rest=list.filter(function(v){ return !v.pin; });
+  var body='';
+  if(pins.length) body+='<div class="vd-h"><span class="pin">📌 이번 주 추천</span></div><div class="vd-grid vd-pin">'+pins.map(function(v){ return videoCard_(v,my,true); }).join('')+'</div>';
+  if(rest.length) body+='<div class="vd-h">'+(pins.length?'그 외 영상':'영상')+' <span>'+rest.length+'</span></div><div class="vd-list">'+rest.map(function(v){ return videoCard_(v,my,false); }).join('')+'</div>';
+  if(!list.length) body='<div class="empty" style="padding:36px 10px;">'+(rec==='coach'?'감독 추천':rec==='member'?'팀원 추천':'이 분류의')+' 영상이 아직 없어요.</div>';
+  return adminBar + seg
+    + '<div class="vd-chiprow"><div class="vd-chips" data-sk="vdcat" onscroll="saveChipScroll_(\'vdcat\',this)">'+chips+'</div>'+sortBar+'</div>'
+    + body;
 }
-
+/* 추천 표시 뱃지 */
+function videoBadges_(v){
+  return (v.recCoach?'<span class="vd-bd coach">감독 추천</span>':'')+(v.recMember?'<span class="vd-bd member">팀원 추천</span>':'');
+}
 function videoCard_(v, my, big){
   var seenN=seenN_(v), mine=!!(v.seen||{})[my], cm=cmtN_(v), rx=reactSum_(v);
-  var d=String(v.at||'').slice(0,10).replace(/-/g,'.');
+  var d=String(v.at||'').slice(5,10).replace('-','.');
   var fresh=cm>vcSeenGet_(v.id);
-  return '<div class="vd-card'+(big?' big':'')+'" onclick="openVideo_(\''+v.id+'\')">'
-    + '<div class="vd-thumb"><img src="'+esc(v.thumb||ytThumb_(v.vid))+'" alt="" loading="lazy">'
-    +   '<span class="vd-play">▶</span>'
-    +   (v.dur?'<span class="vd-dur">'+fmtDur_(v.dur)+'</span>':'')
-    +   '<span class="vd-cat">'+esc(videoCatName_(v.cat))+'</span>'
-    +   (mine?'<span class="vd-seen">✓ 시청함</span>':'')
-    + '</div>'
-    + '<div class="vd-meta"><div class="vd-title">'+esc(v.title||'제목 없음')+'</div>'
-    +   '<div class="vd-sub">'+esc(v.channel||'')+(v.channel?' · ':'')+d+'</div>'
-    +   (v.note?'<div class="vd-note">“'+esc(v.note)+'”'+(v.by?' <b>— '+esc(v.by)+'</b>':'')+'</div>':'')
-    +   '<div class="vd-foot">'
-    +     '<span>'+(rx.n?rx.icons+' '+rx.n:'<span style="opacity:.55;">🤍 0</span>')+'</span>'
-    +     '<span'+(fresh?' class="vd-new"':'')+'>💬 '+cm+(fresh?' · 새 댓글':'')+'</span>'
-    +     '<span>👀 '+seenN+'</span>'
-    +   '</div>'
+  /* 0 은 숨겨서 깔끔하게 · 새 댓글은 강조 */
+  var stats='<div class="vd-stats">'+(rx.n?'<span>❤️ '+rx.n+'</span>':'')+(cm?'<span'+(fresh?' class="vd-new"':'')+'>💬 '+cm+(fresh?' <i>N</i>':'')+'</span>':'')+(seenN?'<span>👀 '+seenN+'</span>':'')+'</div>';
+  var thumb='<div class="vd-thumb"><img src="'+esc(v.thumb||ytThumb_(v.vid))+'" alt="" loading="lazy">'
+    + (big?'<span class="vd-play">▶</span>':'')
+    + (v.dur?'<span class="vd-dur">'+fmtDur_(v.dur)+'</span>':'')
+    + (mine?'<span class="vd-seen" title="시청함">✓</span>':'')
+    + '</div>';
+  var tags='<div class="vd-tags">'+videoBadges_(v)+'<span class="vd-catx">'+esc(videoCatName_(v.cat))+'</span></div>';
+  if(big){
+    return '<div class="vd-card big" onclick="openVideo_(\''+v.id+'\')">'+thumb
+      + '<div class="vd-meta">'+tags+'<div class="vd-title">'+esc(v.title||'제목 없음')+'</div>'
+      +   (v.note?'<div class="vd-note">“'+esc(v.note)+'”'+(v.by?' <b>— '+esc(v.by)+'</b>':'')+'</div>':'')
+      +   '<div class="vd-bot"><span class="vd-sub">'+esc(v.channel||'')+(v.channel?' · ':'')+d+'</span>'+stats+'</div>'
+      + '</div></div>';
+  }
+  return '<div class="vd-row" onclick="openVideo_(\''+v.id+'\')">'+thumb
+    + '<div class="vd-rmeta">'+tags+'<div class="vd-title">'+esc(v.title||'제목 없음')+'</div>'
+    +   (v.note?'<div class="vd-rnote">“'+esc(v.note)+'”</div>':'')
+    +   '<div class="vd-bot"><span class="vd-sub">'+esc(v.channel||'')+(v.channel?' · ':'')+d+'</span>'+stats+'</div>'
     + '</div></div>';
 }
+function videoRec_(k){ state.videoRec=k; state.videoCat='all'; render(); }
 function videoCat_(k){ state.videoCat=k; render(); }
 function videoSort_(k){ state.videoSort=k; render(); }
 
@@ -7245,7 +7301,7 @@ function openVideo_(id){
    + '<div class="sheet-head"><h3 style="font-size:15px;line-height:1.35;padding-right:10px;">'+esc(v.title||'영상')+'</h3><button class="x" onclick="closeSheet()">✕</button></div>'
    + '<div class="sheet-body">'
    +   '<div class="vd-player"><iframe id="vd_ifr" data-yt="1" onload="ytListen_(this)" src="https://www.youtube-nocookie.com/embed/'+esc(v.vid)+'?autoplay=1&rel=0&playsinline=1&modestbranding=1&enablejsapi=1&origin='+encodeURIComponent(location.origin)+'" title="'+esc(v.title||'유튜브 영상')+'" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>'
-   +   '<div style="font-size:12.5px;color:var(--steel-soft);margin:10px 2px 0;">'+esc(v.channel||'')+' · '+esc(videoCatName_(v.cat))+(v.dur?' · '+fmtDur_(v.dur):'')+'</div>'
+   +   '<div style="font-size:12.5px;color:var(--steel-soft);margin:10px 2px 0;display:flex;align-items:center;gap:5px;flex-wrap:wrap;">'+videoBadges_(v)+esc(v.channel||'')+' · '+esc(videoCatName_(v.cat))+(v.dur?' · '+fmtDur_(v.dur):'')+'</div>'
    +   (v.note?'<div class="vd-note" style="margin:12px 0 0;font-size:14px;">“'+esc(v.note)+'”'+(v.by?' <b>— '+esc(v.by)+'</b>':'')+'</div>':'')
    +   '<div id="vd_react" class="vd-react"></div>'
    +   '<div id="vd_seenbox"></div>'
@@ -7565,7 +7621,12 @@ function openVideoShare_(item, editId){
    +   '</div></div>'
    +   '<div class="field"><label>운영진 한마디 <span style="color:var(--steel-soft);font-weight:600;">(선택 · 왜 봐야 하는지)</span></label>'
    +     '<textarea id="vd_note" maxlength="140" rows="3" style="width:100%;padding:12px 13px;border:1.5px solid var(--line-strong);border-radius:12px;font-family:inherit;font-size:14.5px;resize:vertical;" placeholder="예) 이번 주 빌드업 연습 전에 꼭 보고 오세요. 3:20부터 핵심!">'+esc((cur&&cur.note)||'')+'</textarea></div>'
-   +   '<label style="display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600;margin:0 0 14px;cursor:pointer;"><input id="vd_pin" type="checkbox" style="width:18px;height:18px;accent-color:var(--red);"'+((cur&&cur.pin)?' checked':'')+'> 📌 이번 주 추천으로 맨 위에 고정</label>'
+   +   '<div class="field" style="margin-bottom:6px;"><label>추천 표시</label></div>'
+   +   '<div class="vd-opt">'
+   +     '<label><input id="vd_pin" type="checkbox"'+((cur&&cur.pin)?' checked':'')+'> 📌 이번 주 추천 <small>맨 위에 고정</small></label>'
+   +     '<label><input id="vd_rc" type="checkbox"'+((cur&&cur.recCoach)?' checked':'')+'> 🧢 감독 추천</label>'
+   +     '<label><input id="vd_rm" type="checkbox"'+((cur&&cur.recMember)?' checked':'')+'> 🙋 팀원 추천</label>'
+   +   '</div>'
    +   '<button class="btn-primary" onclick="videoShareSave_()">'+(editId?'수정 완료':'팀에 공유')+'</button>'
    + '</div>');
   state._vdCat=cat;
@@ -7576,19 +7637,20 @@ function videoShareSave_(){
   var it=state._vdDraft; if(!it) return;
   var note=((document.getElementById('vd_note')||{}).value||'').trim();
   var pin=!!(document.getElementById('vd_pin')||{}).checked;
+  var rc=!!(document.getElementById('vd_rc')||{}).checked, rm=!!(document.getElementById('vd_rm')||{}).checked;
   var tIn=document.getElementById('vd_title'); var title=tIn?tIn.value.trim():it.title;
   if(!title){ toast('영상 제목을 입력하세요'); return; }
   if(state._vdEdit){
     var v=videoById_(state._vdEdit); if(!v) return;
-    v.note=note; v.cat=state._vdCat||v.cat; v.pin=pin; v.title=title;
+    v.note=note; v.cat=state._vdCat||v.cat; v.pin=pin; v.recCoach=rc; v.recMember=rm; v.title=title;
     closeSheet(); videoSave_(v); logEvent_('edit','영상 수정', v.title); toast('수정했어요'); return;
   }
   var dup=(state.videos||[]).filter(function(x){ return x.vid===it.vid; })[0];
   if(dup){ toast('이미 공유된 영상이에요'); return; }
   var nv={ id:'yv'+Date.now().toString(36)+Math.random().toString(36).slice(2,5), clubId:state.activeClubId||'',
     vid:it.vid, title:title, channel:it.channel||'', thumb:it.thumb||ytThumb_(it.vid), dur:it.dur||0,
-    cat:state._vdCat||'etc', note:note, by:whoName_()||'운영진', at:new Date().toISOString(), pin:pin, seen:{} };
-  closeSheet(); state.videoCat='all';
+    cat:state._vdCat||'etc', note:note, by:whoName_()||'운영진', at:new Date().toISOString(), pin:pin, recCoach:rc, recMember:rm, seen:{} };
+  closeSheet(); state.videoCat='all'; state.videoRec='all';
   if(state.screen!=='video') go('video');
   videoSave_(nv).then(function(){ videoSharedDone_(nv.id); });
   logEvent_('add','영상 공유', nv.title);
@@ -7906,6 +7968,12 @@ function openVsManage_(){
            :'<div class="list-row"><span class="nm" style="color:var(--steel-soft);">없음</span></div>')+'</div>'
      +   '<form onsubmit="event.preventDefault();vsAddChannel_();" style="display:flex;gap:8px;"><input id="vm_ch" class="vs-input" style="flex:1;min-width:0;" placeholder="@채널핸들 또는 채널 주소"><button class="btn-primary" style="width:auto;margin:0;padding:0 14px;">추가</button></form>'
      +   '<p class="vs-hint" style="margin-top:6px;">유튜브 채널 페이지 주소의 @로 시작하는 이름을 넣으세요 · 등록 1단위 · 검색 결과의 “📺 채널 등록”으로도 추가돼요</p>'
+     +   (function(){
+           var have={}; cf.channels.forEach(function(c){ have[c.title]=1; });
+           var left=YT_PRESET.filter(function(p){ return !have[p[0]]; });
+           return left.length?'<div class="eyebrow" style="margin-top:16px;">💡 추천 채널 빠르게 추가</div><div class="vs-preset">'+left.map(function(p){
+             return '<button type="button" onclick="vsAddPreset_(\''+p[1]+'\')"><b>'+esc(p[0])+'</b><span>'+esc(p[2])+'</span><em>+ 추가</em></button>'; }).join('')+'</div>':'';
+         })()
      +   '<div class="eyebrow" style="margin-top:18px;">⭐ 추천 키워드 · '+cf.keywords.length+'</div>'
      +   '<div class="chips" style="flex-wrap:wrap;">'+cf.keywords.map(function(k,i){ return '<span class="chip" style="cursor:default;">'+esc(k)+' <button type="button" onclick="vsDelKeyword_('+i+')" style="border:none;background:none;color:var(--steel-soft);cursor:pointer;font-size:13px;padding:0 0 0 4px;">✕</button></span>'; }).join('')+'</div>'
      +   '<form onsubmit="event.preventDefault();vsAddKeyword_();" style="display:flex;gap:8px;"><input id="vm_kw" class="vs-input" style="flex:1;min-width:0;" maxlength="30" placeholder="예) 압박 수비 전술"><button class="btn-primary" style="width:auto;margin:0;padding:0 14px;">추가</button></form>'
@@ -7916,6 +7984,18 @@ function openVsManage_(){
 function vsAddChannel_(){
   var v=((document.getElementById('vm_ch')||{}).value||'').trim(); var q=ytChannelParse_(v);
   if(!q){ toast('@채널핸들이나 채널 주소를 넣어주세요'); return; }
+  ytChannelFetch_(q).then(function(ch){ if(vsChannelAdd_(ch)) openVsManage_(); }).catch(function(e){ toast(e.message||'채널 등록 실패'); });
+}
+/* 팀 운영에 도움이 되는 추천 채널 (이름, @핸들/채널ID, 설명) */
+var YT_PRESET=[
+  ['고알레','@GoAle','아마추어 실전 · 포지션별 움직임 꿀팁'],
+  ['엘미하의 전술노트','@ELMIHA_TacticalNote','포지셔닝 · 팀 전술 구조 쉽게 설명'],
+  ['새벽의 축구 전문가','@새벽의축구전문가','경기·전술 분석'],
+  ['김진짜 Real KIM','UChb4gtsgSdwMDktdLukfrfw','선수 움직임 · 전술 분석'],
+  ['이스타TV','@leestartv','해외축구 종합 · 전문가 해설']
+];
+function vsAddPreset_(h){
+  var q=ytChannelParse_(h); if(!q) return;
   ytChannelFetch_(q).then(function(ch){ if(vsChannelAdd_(ch)) openVsManage_(); }).catch(function(e){ toast(e.message||'채널 등록 실패'); });
 }
 function vsDelChannel_(i){ var cf=state._ytconf; var c=cf.channels.splice(i,1)[0]; ytConfSave_(); if(c){ logEvent_('del','추천 채널 삭제', c.title); if(vsState_().chId===c.id){ vsState_().chId=''; vsState_().src=''; } } openVsManage_(); }
