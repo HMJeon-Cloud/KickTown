@@ -1088,7 +1088,7 @@ var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '12.1';
+var APP_VERSION = '12.2';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -7760,65 +7760,86 @@ function ytCacheSet_(key, items, next){
   if(window.db && FS.enabled) db.collection('ytcache').doc(key).set({id:key, at:new Date().toISOString(), items:items, next:next||''}).catch(function(){});
 }
 /* 팀 설정: 추천 키워드 · 추천 채널 */
-/* 기본 추천 채널 50곳 [이름, @핸들, 채널ID, 분류, 설명] — 팀별로 처음 한 번만 등록, 이후 관리자가 삭제·추가 */
+/* 기본 추천 채널 50곳 (한국 채널) [이름, @핸들, 채널ID, 분류, 설명, (2=v2에서 새로 추가)]
+ * 팀별로 한 번만 반영 · 이후 관리자가 지운 채널은 다시 생기지 않음 */
 var YT_SEED=[
+  ["TOTAL FOOTBALL", "@total_football", "UCAm0D0ecAXeZ2WWBPabI68A", "전술", "아마추어 경기 드론 분석", 2],
   ["엘미하의 전술노트", "@ELMIHA_TacticalNote", "UCZYnvjUBmzayx5SnYgtGPvg", "전술", "게임모델·포지셔닝 전술 강의"],
   ["GEDFOOTBALL", "@GEDFUTBOL", "UCTVb1dVa7yXrgAZHBn49jlA", "전술", "프로 코치의 미시 전술·1대1"],
   ["새벽의 축구 전문가", "@새벽의축구전문가", "UCdh5nloZ9eo5YpZ2DRWwIew", "전술", "경기 전술 분석·해설"],
   ["Real KIM (김진짜)", "@realkim10", "UChb4gtsgSdwMDktdLukfrfw", "전술", "쉬운 전술·선수 분석"],
+  ["문도그", "@moondog10", "UCIJD-n6RnrFkO45qBjbdoVA", "전술", "UEFA B 코치의 전술 분석", 2],
+  ["축구일타 Football IQLab", "@축구일타_FootballIQLab", "UCh-tnFB8WYdO2PpW4auqiGw", "전술", "오프더볼·축구 지능 강의", 2],
   ["GOALE (고알레)", "@GOALE", "UCI0FxD0282RxDk193_RJcJg", "기본기", "아마추어 맞춤 기술·레슨"],
   ["사커 튜토리얼", "@soccer_tutorial", "UCkVrJ_8X-ZMMkP7sek7n08w", "기본기", "초보용 체계적 기술 강좌"],
   ["축구도사 메기 Megi", "@축구도사메기Megi", "UCsmfvvOOIV0rdxOD98Q_3qw", "기본기", "조기축구 왕초보 근본 강좌"],
   ["Taepoong TV", "@taepoongfc", "UCc-oM1-t8Cd694Xh3Q1dEKw", "기본기", "슈팅·기본 동작 강좌"],
   ["서벤사커", "@seobensoccer", "UCr22Sun_aTdXsJmTu0-tLww", "기본기", "축구 강의·풋살 영상"],
+  ["JK 아트사커 온라인", "@JKartsoccer", "UCT8DsZlac7D1_dx6d8Kh_Qw", "기본기", "기초~고급 개인기 강좌", 2],
+  ["이지풋", "@이지풋", "UC-d3VuITIe3YMpEZqPs93fA", "기본기", "쉬운 축구·풋살 기술 강좌", 2],
+  ["더투탑", "@the_2top", "UC-VWpTsHaT4eqqrUjLvR6Qg", "기본기", "드리블·슈팅·퍼스트터치", 2],
+  ["강코치 풋볼", "@Kangcoach_futbol", "UC9sNEYJBPICq6c2-c5jo2dg", "기본기", "포지션별 원포인트 레슨", 2],
+  ["Tiago Kim", "@tiago_kim", "UCMRBpjWih9n4earmJEg2pSw", "기본기", "기본 드리블부터 레슨", 2],
   ["센터백류뚱", "@센터백류뚱", "UCwn9ceOe8T1T_92KfOmpNmg", "훈련·피지컬", "센터백의 피지컬 훈련"],
+  ["KFATV ACADEMY", "@kfatv_academy", "UCkSPmGmWR_Xu0vP8yxcWOlg", "훈련·피지컬", "협회 공식 훈련·부상예방", 2],
+  ["부스트 풋볼", "@boostfootball", "UCt2MJ424HHBqT_eYH1k8WIw", "훈련·피지컬", "기본기·피지컬 트레이닝", 2],
+  ["습관 교육자 호남두", "@xx.honamdo", "UCiUGAEAdFdVklbAuNr4pBjA", "훈련·피지컬", "전 K리거의 스피드·체력", 2],
+  ["동네축구 고수 DONGO", "@dongo_77", "UCZ2D51A5CpqPTTJaJ-_teEw", "훈련·피지컬", "아마추어 성장기·훈련", 2],
   ["꽁병지tv", "@kkongbyungji", "UCKgYRjFGgvj7aS8y4EhH2CA", "골키퍼", "김병지의 골키퍼 레슨"],
   ["베리나히쑤", "@berrynahessu1006", "UCpyJI8Oi6Ylol3Y2sb519NA", "골키퍼", "조수혁의 골키퍼 교실"],
+  ["GK오코치", "@gkocoach", "UC3-HgxUM8HNok5BzFBFNftw", "골키퍼", "AFC 코치의 아마추어 GK 팁", 2],
+  ["GK 열혈강호", "@kangho_gk", "UC2hFLpY4m2U9dpOUnAf3SYg", "골키퍼", "다이빙·장갑 등 GK 팁", 2],
+  ["골키퍼튜브", "@goalkeepertube6012", "UCAcE2XHjstVrVNMyyu-AFEg", "골키퍼", "GK 코치의 훈련법", 2],
   ["풋살러브 FUTSAL LOVE", "@TV-gr5mc", "UCGb5aUUtFZ2deWAKxKtscWg", "풋살", "풋살 전문 채널"],
   ["풋살은 시홍스쿨", "@풋살은시홍스쿨", "UCmFn3UQIdTSrkQ2e3579Wfg", "풋살", "풋살 규칙·기술·GK 팁"],
   ["Samba Futsal Class", "@SambaFutsalClass", "UC2AKksZvQPH8XLIwgLiNhJQ", "풋살", "쌈바풋살 초·중급 강의"],
+  ["셀풋살TV", "@sailormoon_fs", "UCGOxY0g6tHBuVQcYnh6XHAQ", "풋살", "풋살팀의 경기와 기술", 2],
+  ["구미FS", "@fs-lq5cr", "UCbUNvzw0PhlmMxYm9oJwkIg", "풋살", "풋살 움직임 정석", 2],
+  ["풋봉 : 풋살덕후", "@futbong", "UCHiTosovyMEUtSiRRXwa-ZA", "풋살", "풋살 로테이션·전술 꿀팁", 2],
   ["이스타TV", "@leestartv", "UCn9mJ4htO64-1osMWYu9k5Q", "경기·하이라이트", "대표팀·해외축구 리뷰"],
   ["KFATV 대한축구협회", "@thekfa", "UCpjOmwiy88a9EV3Rv8ukJgw", "경기·하이라이트", "대한축구협회 공식"],
   ["K LEAGUE", "@kleague", "UCak5ZEX4BjijJcf7fdppuIQ", "경기·하이라이트", "K리그 공식 하이라이트"],
   ["쿠팡플레이 스포츠", "@CoupangPlaySports", "UCnBht7BrOx-A328KFXgysqQ", "경기·하이라이트", "국내외 축구 하이라이트"],
   ["SPOTV", "@SPOTV", "UCtm_QoN2SIxwCE-59shX7Qg", "경기·하이라이트", "유럽 축구 하이라이트"],
-  ["달수네라이브", "@달수네라이브", "UCkLjBpvrRoESPPaHKX2WzGw", "해설·종합", "박문성의 축구 해설"],
+  ["tvN SPORTS", "@tvNSPORTS", "UCtybqqaTj6Nx74Azdz1KrsA", "경기·하이라이트", "중계 경기 하이라이트", 2],
+  ["JTBC Sports", "@JTBC_sports", "UCTdZyOFVzontd9MZOJDg8Qw", "경기·하이라이트", "축구 중계 하이라이트", 2],
+  ["올스 (KBS 스포츠)", "@kbssports_alls", "UCDIB1DOwPPe58M2fHPyVVDA", "경기·하이라이트", "KBS 스포츠 하이라이트", 2],
   ["리춘수 [이천수]", "@leechunsoo10", "UChI3EXzhAkRszawlMageKvQ", "해설·종합", "이천수의 축구 토크"],
   ["원투펀치 Plus", "@onetwopunchplus", "UCRpiYIlKLwSa5OdAm8ozorw", "해설·종합", "EPL 중심 전문가 토크"],
   ["Footballist", "@Footballist", "UCOVwOetN3vDC6us-2uxgWkg", "해설·종합", "축구 매체 분석·토크"],
   ["해설한승엽TV", "@imyooi", "UCdiqIXkagCScUoQnvT_spYw", "해설·종합", "해설위원의 축구 이야기"],
-  ["Tifo Football", "@Tifo", "UCGYYNGmyhZ_kwBF_lqqXdAQ", "전술", "애니메이션 전술 해설(영어)"],
-  ["Coaches' Voice", "@TheCoachesVoice", "UCuR-ZdVJtF3muYhYUQ-he-Q", "전술", "감독이 푸는 전술(영어)"],
-  ["Nouman", "@Nouman", "UCqvtpNUWlbtPDZLWXGgqoqw", "전술", "선수·팀 전술 분석(영어)"],
-  ["Football Made Simple", "@FootballMadeSimple", "UCFY0YHhxiIQWYYsLgeUBcbg", "전술", "쉬운 전술 분석(영어)"],
-  ["Modern Soccer Coach", "@modernsoccercoach", "UCU_n6cNknf6JlgnoVWEyTWw", "전술", "현대 전술 코칭법(영어)"],
-  ["The Athletic FC", "@TheAthleticFC", "UC6ZMmQaL9wZYo4iLw8n8xiA", "해설·종합", "심층 해설(영어)"],
-  ["Progressive Soccer", "@ProgressiveSoccer", "UCkZM4O__WAhfWIsuH9BeRHw", "기본기", "개인 기술·스피드(영어)"],
-  ["freekickerz", "@freekickerz", "UCC9h3H-sGrvqd2otknZntsQ", "기본기", "슈팅·프리킥 튜토리얼"],
-  ["AllAttack", "@AllAttack", "UC0Ik25PHaiHCbfGrzu-lBFQ", "기본기", "공격 스킬·드리블(영어)"],
-  ["Online Soccer Academy", "@OnlineSoccerAcademy", "UCDg5GVlFtylfIefA424N7_g", "기본기", "포지션별 기본기(영어)"],
-  ["Joner Football", "@JonerFootball", "UC5wlBUZsx1r2IsO9-rvON6Q", "기본기", "개인 훈련 루틴(영어)"],
-  ["Coerver Coaching", "@PlayGreatSoccer", "UCh-plXXdM0j7JJXMoGnk2Pw", "기본기", "볼 마스터리·1대1(영어)"],
-  ["SoccerCoachTV", "@SoccerCoachTV", "UCgKCQJCkYrRKwqr-17inQsQ", "훈련·피지컬", "팀 훈련 드릴(영어)"],
-  ["England Football Learning", "@EnglandFootballLearning", "UCisPO86aEIhWRTnTS1vrSVw", "훈련·피지컬", "잉글랜드협회 코칭(영어)"],
-  ["Professional Soccer Coaching", "@Professionalsoccercoaching", "UCFsk-Os-gRsuZwuRDQ9wYmg", "훈련·피지컬", "프로 훈련 세션(영어)"],
-  ["Train Effective", "@TrainEffective", "UC3nktOSPYbgme-dxC7q585w", "훈련·피지컬", "개인·피지컬 훈련(영어)"],
-  ["Beast Mode Soccer", "@beastmodesoccer", "UC2VOLCrgkwtINNT-MUv8BSQ", "훈련·피지컬", "기술·민첩성 훈련(영어)"],
-  ["ARS Goalkeeping", "@ARSGoalkeeping", "UCYtzQTfh5JFfYH9PUaUH46Q", "골키퍼", "GK 훈련 세션"],
-  ["Modern Goalkeeping", "@ModernGoalkeeping", "UCYJnsTsSA1-wfbjwXAHDWPA", "골키퍼", "GK 기술·드릴(영어)"],
-  ["Goalkeeping Solutions", "@GoalkeepingSolutions", "UCaWnoFnvbocPjaUHpx1Jydw", "골키퍼", "GK 기본기·세이브(영어)"],
-  ["PROPEL FUTSAL & SOCCER", "@PROPELFUTSALSOCCER", "UC3mg6VyKGPdiVli4XC0ZhRQ", "풋살", "풋살 기술·드릴(영어)"],
-  ["Premier League", "@premierleague", "UCG5qGWdu8nIRZqJ_GgDwQ-w", "경기·하이라이트", "EPL 공식 하이라이트"],
-  ["LALIGA", "@LaLiga", "UCTv-XvfzLX3i4IGWAm4sbmA", "경기·하이라이트", "라리가 공식 하이라이트"],
-  ["UEFA", "@UEFA", "UCyGa1YEx9ST66rYrJTGIKOw", "경기·하이라이트", "챔스·유로 하이라이트"],
-  ["Sky Sports Football", "@skysportsfootball", "UCZ7wY7MRDSygp63HIEfdQZA", "경기·하이라이트", "하이라이트·분석(영어)"]
+  ["달수네라이브", "@DALSOOLIVE", "UCRDowcnvz5ZVh-3NVAdfiqg", "해설·종합", "박문성의 축구 해설", 2],
+  ["볼만찬 기자들", "@ballmanchan", "UCEer1Gqjz-hK4BhG-abw0nA", "해설·종합", "축구기자들의 축구 토크", 2],
+  ["구자철 Official", "@official8270", "UCFxZimsJ4gupYy7xzmStOcA", "해설·종합", "전 국가대표 구자철", 2],
+  ["슛포러브 Shoot for Love", "@shootforlove", "UC4EP1dxFDPup_aFLt0ElsDw", "해설·종합", "선수들과 슈팅 챌린지", 2],
+  ["비정상축구", "@bichukku", "UC1Fg9KesLU6SjT2PPNBwEjQ", "해설·종합", "현지인의 해외 축구 이야기", 2]
 ];
+/* v2: 해외(영어) 채널 정리 + 달수네라이브는 공식 채널로 교체 */
+var YT_SEED_DROP=["UCGYYNGmyhZ_kwBF_lqqXdAQ", "UCuR-ZdVJtF3muYhYUQ-he-Q", "UCqvtpNUWlbtPDZLWXGgqoqw", "UCFY0YHhxiIQWYYsLgeUBcbg", "UCU_n6cNknf6JlgnoVWEyTWw", "UC6ZMmQaL9wZYo4iLw8n8xiA", "UCkZM4O__WAhfWIsuH9BeRHw", "UCC9h3H-sGrvqd2otknZntsQ", "UC0Ik25PHaiHCbfGrzu-lBFQ", "UCDg5GVlFtylfIefA424N7_g", "UC5wlBUZsx1r2IsO9-rvON6Q", "UCh-plXXdM0j7JJXMoGnk2Pw", "UCgKCQJCkYrRKwqr-17inQsQ", "UCisPO86aEIhWRTnTS1vrSVw", "UCFsk-Os-gRsuZwuRDQ9wYmg", "UC3nktOSPYbgme-dxC7q585w", "UC2VOLCrgkwtINNT-MUv8BSQ", "UCYtzQTfh5JFfYH9PUaUH46Q", "UCYJnsTsSA1-wfbjwXAHDWPA", "UCaWnoFnvbocPjaUHpx1Jydw", "UC3mg6VyKGPdiVli4XC0ZhRQ", "UCG5qGWdu8nIRZqJ_GgDwQ-w", "UCTv-XvfzLX3i4IGWAm4sbmA", "UCyGa1YEx9ST66rYrJTGIKOw", "UCZ7wY7MRDSygp63HIEfdQZA", "UCkLjBpvrRoESPPaHKX2WzGw"];
 var YT_CH_GROUPS=['전술','기본기','훈련·피지컬','골키퍼','풋살','경기·하이라이트','해설·종합','직접 추가'];
 function ytSeedApply_(cf){
-  if(cf.seed>=1) return false;
-  var have={}; cf.channels.forEach(function(c){ have[c.id]=1; });
-  YT_SEED.forEach(function(x){ if(!have[x[2]]) cf.channels.push({id:x[2], title:x[0], handle:x[1], cat:x[3], desc:x[4], thumb:'', uploads:'UU'+x[2].slice(2)}); });
-  cf.seed=1; return true;
+  if(cf.seed>=2) return false;
+  var info={}; YT_SEED.forEach(function(x){ info[x[2]]=x; });
+  var mk=function(x){ return {id:x[2], title:x[0], handle:x[1], cat:x[3], desc:x[4], thumb:'', uploads:'UU'+x[2].slice(2)}; };
+  if(!(cf.seed>=1)){
+    /* 처음: 50곳 모두 등록 (이미 직접 등록한 채널은 설명·분류만 채움) */
+    var have0={}; cf.channels.forEach(function(c){ have0[c.id]=1; });
+    YT_SEED.forEach(function(x){ if(!have0[x[2]]) cf.channels.push(mk(x)); });
+  } else {
+    /* v1 → v2: 영어 채널 삭제, 새 한국 채널만 추가 (v1에서 지운 채널은 되살리지 않음) */
+    var drop={}; YT_SEED_DROP.forEach(function(id){ drop[id]=1; });
+    cf.channels=cf.channels.filter(function(c){ return !drop[c.id]; });
+    var have={}; cf.channels.forEach(function(c){ have[c.id]=1; });
+    YT_SEED.forEach(function(x){ if(x[5]===2 && !have[x[2]]) cf.channels.push(mk(x)); });
+  }
+  /* 직접 등록한 채널 등 설명·분류가 비어 있으면 채움 */
+  cf.channels.forEach(function(c){
+    var x=info[c.id]; if(!x) return;
+    if(!c.cat || c.cat==='직접 추가') c.cat=x[3];
+    if(!c.desc) c.desc=x[4];
+    if(!c.handle) c.handle=x[1];
+  });
+  cf.seed=2; return true;
 }
 function ytConfLoad_(){
   if(state._ytconf) return Promise.resolve(state._ytconf);
