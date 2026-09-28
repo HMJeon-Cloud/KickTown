@@ -19,6 +19,40 @@
   var inKakao=/KAKAOTALK/i.test(ua);
   /* MOM 투표·출석 링크: 부정 방지를 위해 카카오톡 안에서만 열림 (외부 브라우저로 넘기지 않음)
    * 링크를 복사해 크롬·엣지·사파리·PC 등 다른 곳에서 열면 안내만 표시 */
+  /* T맵 길안내 링크 (#tmap=위도,경도,이름): 카톡에서는 tmap:// 주소가 눌리지 않아 https 링크로 감싼다.
+   * 어디서 열어도 앱을 띄우지 않고 T맵으로 바로 넘기며, T맵이 없으면 설치·다른 지도 선택 화면을 보여준다 */
+  var tm=(location.hash||'').match(/^#tmap=(-?[\d.]+),(-?[\d.]+)(?:,(.*))?$/);
+  if(tm){
+    window.__KT_EXT=1; window.__KT_TMAP=1;
+    var tLat=tm[1], tLng=tm[2], tName=''; try{ tName=decodeURIComponent(tm[3]||''); }catch(e){ tName=tm[3]||''; }
+    tName=tName||'경기장';
+    var isAnd=/Android/i.test(ua);
+    var tQ='goalname='+encodeURIComponent(tName)+'&goalx='+tLng+'&goaly='+tLat;
+    var tOpen=isAnd?('intent://route?'+tQ+'#Intent;scheme=tmap;package=com.skt.tmap.ku;end'):('tmap://route?'+tQ);
+    var tStore=isAnd?'https://play.google.com/store/apps/details?id=com.skt.tmap.ku':'https://apps.apple.com/kr/app/id431589174';
+    var kMap='https://map.kakao.com/link/map/'+encodeURIComponent(tName)+','+tLat+','+tLng;
+    var kNavi='kakaomap://route?ep='+tLat+','+tLng+'&by=CAR';
+    var nMap='nmap://route/car?dlat='+tLat+'&dlng='+tLng+'&dname='+encodeURIComponent(tName)+'&appname=kicktown';
+    window.ktTmapGo_=function(){ location.href=tOpen; };
+    document.addEventListener('DOMContentLoaded', function(){
+      function esc(t){ return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+      var B='display:block;width:100%;max-width:320px;height:48px;line-height:48px;border-radius:12px;font-size:15px;font-weight:700;margin:0 auto 9px;text-decoration:none;font-family:inherit;box-sizing:border-box;';
+      var d=document.createElement('div'); d.id='ktTmap';
+      d.setAttribute('style','position:fixed;inset:0;z-index:99999;background:#111015;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;');
+      d.innerHTML='<div style="font-size:42px;margin-bottom:12px;">🚗</div>'
+        +'<div style="font-size:18px;font-weight:800;margin-bottom:6px;">'+esc(tName)+'</div>'
+        +'<div style="font-size:13.5px;line-height:1.6;color:rgba(255,255,255,.72);margin-bottom:22px;">T맵으로 길 안내를 시작해요.<br>자동으로 열리지 않으면 아래 버튼을 눌러주세요.</div>'
+        +'<a href="'+esc(tOpen)+'" style="'+B+'background:#C8102E;color:#fff;">T맵 길 안내</a>'
+        +'<a href="'+esc(kNavi)+'" style="'+B+'background:#FEE500;color:#191919;">카카오내비</a>'
+        +'<a href="'+esc(nMap)+'" style="'+B+'background:#fff;color:#191919;">네이버 지도</a>'
+        +'<a href="'+esc(kMap)+'" style="'+B+'border:1px solid rgba(255,255,255,.25);color:#fff;">카카오맵에서 위치 보기</a>'
+        +'<a href="'+esc(tStore)+'" style="display:inline-block;margin-top:8px;color:rgba(255,255,255,.55);font-size:12.5px;text-decoration:underline;">T맵이 없어요 · 설치하기</a>';
+      document.body.appendChild(d);
+      var sp=document.getElementById('splash'); if(sp) sp.style.display='none';
+      setTimeout(window.ktTmapGo_, 400);
+    });
+    return;
+  }
   if(/^#(vote|att)=/.test(location.hash||'')){
     if(inKakao) return;
     window.__KT_EXT=1; window.__KT_KAKAO_ONLY=1;
@@ -1079,7 +1113,27 @@
 .rs-mode button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.12);}
 .rs-quick{display:flex;gap:6px;margin:0 0 10px;flex-wrap:wrap;}
 .rs-quick button{border:1px solid var(--line-strong);background:var(--card);border-radius:99px;padding:6px 11px;font-family:inherit;font-size:12px;font-weight:700;color:var(--steel);cursor:pointer;}
+.h2h-search input{width:100%;height:44px;border:1px solid var(--line-strong);border-radius:12px;padding:0 14px;font-size:14.5px;background:var(--card);color:var(--ink);font-family:inherit;font-weight:600;}
+.h2h-search input:focus{outline:none;border-color:var(--red);}
+.h2h-search{margin-bottom:10px;}
+.h2h-rows{display:flex;flex-direction:column;gap:8px;}
+.h2h-rec{font-size:12px;font-weight:600;color:var(--steel);white-space:nowrap;flex:0 0 auto;}
+.h2h-rec b{font-family:'Oswald';font-weight:600;font-size:14px;color:var(--ink);} .h2h-rec b.w{color:var(--ok);} .h2h-rec b.l{color:var(--red);}
+.h2h-back{background:none;border:none;color:var(--red);font-weight:800;font-size:13.5px;padding:2px 0 10px;cursor:pointer;font-family:inherit;}
+.h2h-head{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.h2h-name{font-size:19px;font-weight:800;letter-spacing:-.02em;color:var(--ink);}
+.h2h-sub{font-size:12px;color:var(--steel-soft);font-weight:600;margin-top:2px;}
 .an-tgs{display:flex;flex-wrap:wrap;gap:6px;}
+.an-sec{border:1px solid var(--line);border-radius:var(--r-lg,16px);padding:14px 14px 12px;background:var(--card-2);margin-bottom:12px;}
+.an-sec .btn-primary,.an-sec .btn-ghost{margin-top:8px;}
+.an-lb{font-size:14px;font-weight:800;color:var(--ink);margin-bottom:10px;}
+.an-lb span{font-size:11.5px;font-weight:600;color:var(--steel-soft);margin-left:6px;}
+.an-tg.on{border-color:var(--red);background:var(--red-tint);}
+.an-cards{display:flex;gap:8px;overflow-x:auto;padding:10px 0 2px;-webkit-overflow-scrolling:touch;}
+.an-card{flex:0 0 auto;width:112px;cursor:pointer;text-align:center;}
+.an-card img{display:block;width:112px;height:auto;border-radius:10px;border:1px solid var(--line-strong);box-shadow:var(--shadow-sm);background:#111;}
+.an-card span{display:block;font-size:11px;font-weight:700;color:var(--steel);margin-top:4px;}
+.an-busy{font-size:12.5px;color:var(--steel-soft);font-weight:600;padding:12px 0 4px;}
 .an-tg{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-strong);border-radius:99px;padding:7px 12px 7px 9px;font-size:13px;font-weight:700;color:var(--ink);cursor:pointer;background:var(--card);}
 .an-tg input{width:16px;height:16px;accent-color:var(--red);margin:0;}
 .an-tg.dis{opacity:.5;cursor:default;}
@@ -1271,7 +1325,7 @@ var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '13.5';
+var APP_VERSION = '13.6';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -2708,30 +2762,69 @@ function renderSeasonReport_(s){
   showSheet(html);
 }
 function viewH2H(){
-  // 상대팀 목록
-  var opps = {};
-  state.recMatches.forEach(function(m){ if(m.opponent) opps[m.opponent]=(opps[m.opponent]||0)+1; });
-  var names = Object.keys(opps).sort();
-  if(!names.length) return '<div class="empty"><div class="ei">📁</div>기록된 경기가 없습니다.</div>';
-  if(!state.h2hOpp || names.indexOf(state.h2hOpp)<0) state.h2hOpp = names[0];
-
-  var chips = names.map(function(o){
-    return '<div class="chip '+(state.h2hOpp===o?'on':'')+'" onclick="setH2hOpp(\''+jsq(o)+'\')">'+esc(o)+'</div>';
-  }).join('');
-
-  var ms = state.recMatches.filter(function(m){ return m.opponent===state.h2hOpp; })
-    .sort(function(a,b){ return b.date.localeCompare(a.date); });
-
-  // 상대 전적 요약
-  var w=0,dr=0,l=0,gf=0,ga=0;
-  ms.forEach(function(m){
-    if(!hasResult_(m)) return;
-    if(m.result==='W')w++; else if(m.result==='D')dr++; else l++;
-    gf+=Number(m.ourScore)||0; ga+=Number(m.oppScore)||0;
+  /* 상대팀 목록(검색·정렬) → 탭하면 그 팀 상세(전적 요약 + 경기 목록). 팀이 많아져도 바로 찾을 수 있게 */
+  var byOpp={};
+  state.recMatches.forEach(function(m){
+    if(!m.opponent) return;
+    var o=byOpp[m.opponent]=byOpp[m.opponent]||{name:m.opponent,n:0,w:0,d:0,l:0,gf:0,ga:0,last:''};
+    o.n++;
+    if(hasResult_(m)){ if(m.result==='W')o.w++; else if(m.result==='D')o.d++; else o.l++; o.gf+=Number(m.ourScore)||0; o.ga+=Number(m.oppScore)||0; }
+    if(String(m.date||'')>o.last) o.last=m.date;
   });
-  var summary = '<div class="stat-strip"><div class="stat"><div class="k">'+esc(state.h2hOpp)+' 전적</div><div class="v oswald">'+w+'승 '+dr+'무 '+l+'패</div></div>'
-    + '<div class="stat"><div class="k">득 · 실</div><div class="v oswald">'+gf+'·'+ga+'</div></div></div>';
-
+  var names=Object.keys(byOpp);
+  if(!names.length) return '<div class="empty"><div class="ei">📁</div>기록된 경기가 없습니다.</div>';
+  if(state.h2hOpp && !byOpp[state.h2hOpp]) state.h2hOpp='';
+  if(state.h2hOpp) return viewH2HDetail_(byOpp[state.h2hOpp]);
+  var sort=state.h2hSort||'recent';
+  var chips=[['recent','최근 경기순'],['games','경기 많은 순'],['name','이름순']].map(function(c){
+    return '<div class="chip '+(sort===c[0]?'on':'')+'" onclick="h2hSort_(\''+c[0]+'\')">'+c[1]+'</div>';
+  }).join('');
+  return '<div class="h2h-search"><input type="search" id="h2hQ" value="'+esc(state.h2hQ||'')+'" placeholder="상대팀 검색" oninput="h2hQ_(this.value)" autocomplete="off"></div>'
+    + '<div class="chips">'+chips+'</div>'
+    + '<div id="h2hList">'+h2hListHtml_(byOpp)+'</div>';
+}
+function h2hListHtml_(byOpp){
+  if(!byOpp){
+    byOpp={};
+    state.recMatches.forEach(function(m){
+      if(!m.opponent) return;
+      var o=byOpp[m.opponent]=byOpp[m.opponent]||{name:m.opponent,n:0,w:0,d:0,l:0,gf:0,ga:0,last:''};
+      o.n++; if(hasResult_(m)){ if(m.result==='W')o.w++; else if(m.result==='D')o.d++; else o.l++; o.gf+=Number(m.ourScore)||0; o.ga+=Number(m.oppScore)||0; }
+      if(String(m.date||'')>o.last) o.last=m.date;
+    });
+  }
+  var q=String(state.h2hQ||'').trim().toLowerCase().replace(/\s+/g,'');
+  var sort=state.h2hSort||'recent';
+  var list=Object.keys(byOpp).map(function(n){ return byOpp[n]; }).filter(function(o){ return !q || o.name.toLowerCase().replace(/\s+/g,'').indexOf(q)>-1; });
+  list.sort(function(a,b){
+    if(sort==='name') return a.name.localeCompare(b.name,'ko');
+    if(sort==='games') return (b.n-a.n)||String(b.last).localeCompare(String(a.last));
+    return String(b.last).localeCompare(String(a.last))||a.name.localeCompare(b.name,'ko');
+  });
+  if(!list.length) return '<div class="empty" style="padding:28px 0;"><div class="ei">🔍</div>\''+esc(state.h2hQ||'')+'\' 상대팀이 없어요</div>';
+  var rows=list.map(function(o){
+    var logo=oppLogo_(o.name);
+    var av=logo?'<img class="pl-avatar" src="'+logo+'" alt="" style="object-fit:contain;background:#fff;">':'<div class="pl-avatar pl-avatar-empty">'+esc(String(o.name).replace(/^FC\s*/i,'').trim().slice(0,2))+'</div>';
+    var rec=(o.w+o.d+o.l)?('<span class="h2h-rec"><b class="w">'+o.w+'</b>승 <b>'+o.d+'</b>무 <b class="l">'+o.l+'</b>패</span>'):'<span class="h2h-rec" style="color:var(--steel-soft);">기록 없음</span>';
+    return '<div class="player" onclick="setH2hOpp(\''+jsq(o.name)+'\')">'+av
+      + '<div class="meta"><div class="pname">'+esc(o.name)+'</div>'
+      + '<div class="sub"><span>'+o.n+'경기</span><span class="dot">·</span><span>최근 '+fmtDateDot(o.last)+'</span></div></div>'
+      + rec + '</div>';
+  }).join('');
+  return '<div class="eyebrow" style="margin:12px 0 8px;">상대팀 '+list.length+'팀</div><div class="h2h-rows">'+rows+'</div>';
+}
+function h2hQ_(v){ state.h2hQ=v; var el=document.getElementById('h2hList'); if(el) el.innerHTML=h2hListHtml_(); }
+function h2hSort_(k){ state.h2hSort=k; render(); }
+function h2hBack_(){ state.h2hOpp=''; render(); }
+function viewH2HDetail_(o){
+  var ms = state.recMatches.filter(function(m){ return m.opponent===o.name; })
+    .sort(function(a,b){ return b.date.localeCompare(a.date); });
+  var logo=oppLogo_(o.name);
+  var av=logo?'<img class="pl-avatar" src="'+logo+'" alt="" style="object-fit:contain;background:#fff;width:48px;height:48px;">':'<div class="pl-avatar pl-avatar-empty" style="width:48px;height:48px;font-size:14px;">'+esc(String(o.name).replace(/^FC\s*/i,'').trim().slice(0,2))+'</div>';
+  var head='<button class="h2h-back" onclick="h2hBack_()">‹ 상대팀 목록</button>'
+    + '<div class="h2h-head">'+av+'<div><div class="h2h-name">'+esc(o.name)+'</div><div class="h2h-sub">'+o.n+'경기 · 최근 '+fmtDateDot(o.last)+'</div></div></div>';
+  var summary = '<div class="stat-strip"><div class="stat"><div class="k">상대 전적</div><div class="v oswald">'+o.w+'승 '+o.d+'무 '+o.l+'패</div></div>'
+    + '<div class="stat"><div class="k">득 · 실</div><div class="v oswald">'+o.gf+'·'+o.ga+'</div></div></div>';
   var list = ms.map(function(m){
     var has=hasResult_(m);
     var cls = m.result==='W'?'r-w':(m.result==='L'?'r-l':'r-d');
@@ -2743,8 +2836,7 @@ function viewH2H(){
       +   '<span style="font-size:12.5px;color:var(--steel);">📍 '+(esc(m.venue)||'장소 미상')+'</span>'+scoreLine+'</div>'
       + '<div style="font-size:11px;color:var(--red);font-weight:700;margin-top:6px;">상세 보기 ›</div></div>';
   }).join('');
-
-  return '<div class="chips" data-sk="h2h" onscroll="saveChipScroll_(\'h2h\',this)">'+chips+'</div>' + summary
+  return head + summary
     + '<div class="section"><div class="eyebrow">경기 목록 · '+ms.length+'경기</div>'+list+'</div>'
     + '<p class="hint">경기를 탭하면 스코어·득점·도움·출석·스쿼드를 볼 수 있습니다.</p>';
 }
@@ -2878,8 +2970,8 @@ function viewAtt(){
     +   '</div></div></div>';
   var hist = viewAttHistory_(m);
   var cardBtn = isAdmin()
-    ? '<div style="display:flex;gap:8px;"><button class="btn-primary" style="flex:1.2;margin:0;" onclick="openAnnounce_(\''+m.id+'\')">경기 안내문</button><button class="btn-ghost" style="flex:1;margin:0;" onclick="lineupCardStart_()">라인업 카드</button></div>'
-    : '<button class="btn-ghost" onclick="lineupCardStart_()">라인업 카드 만들기</button>';
+    ? '<div style="display:flex;gap:8px;margin-top:14px;"><button class="btn-primary" style="flex:1.2;margin:0;" onclick="openAnnounce_(\''+m.id+'\')">경기 안내문</button><button class="btn-ghost" style="flex:1;margin:0;" onclick="lineupCardStart_()">라인업 카드</button></div>'
+    : '<button class="btn-ghost" style="margin-top:14px;" onclick="lineupCardStart_()">라인업 카드 만들기</button>';
   return card + cardBtn + venueSec + hist
     + '<p class="hint">출석·지각·불참은 기록 탭에서 경기를 탭해 입력합니다.</p>';
 }
@@ -6364,93 +6456,94 @@ function trophy_(ctx,cx,cy,h){
   ctx.restore();
 }
 function shareHofCard_(year){
+  /* 시상 카드: MVP · 득점왕 · 도움왕 · 출석왕을 한 줄씩 4행 — 왼쪽 사진, 오른쪽 정보 */
   var b=state._hofBundle||{};
   var s=seasonData_(year,(b.matches||[]),(b.stats||[]),(b.attendance||[]));
-  var hon=honors_(); var mv=hofMvp_(year, s.ms, hon); var mvpId=mv.pid;
-  var mvp=mvpId?((state.players||[]).filter(function(x){return x.id===mvpId;})[0]||pname_(mvpId)):null;
-  var mvpLabel=(mv.names.length>1)?mv.names.join(' · '):(mvp?String(mvp.name||''):'');
+  var hon=honors_(); var mv=hofMvp_(year, s.ms, hon);
   toast('카드 만드는 중...');
-  var photoP = mvpId ? loadPlayerPhotoL_(mvpId) : Promise.resolve('');
-  Promise.all([loadImg_(teamEmblemSrc_()), photoP, iconsReady_(), hofTrophyReady_()]).then(function(rs){
-    var emblem=rs[0], big=rs[1]||'';
-    return loadImg_(big||(mvp&&mvp.photo)||'').then(function(face){
-      fontsReady_(function(){
-        var W=1080, H=1500;
-        var c=document.createElement('canvas'); c.width=W; c.height=H;
-        var ctx=c.getContext('2d');
-        darkBase_(ctx,W,H);
-        cardWatermark_(ctx, W, H, emblem, 0.06);
-        /* 상단 헤어라인 + 팀 · 타이틀 */
-        ctx.fillStyle='rgba(199,162,75,.75)'; ctx.fillRect(0,0,W,3);
-        ctx.textAlign='center'; ctx.textBaseline='middle';
-        if(emblem){ ctx.save(); ctx.shadowColor='rgba(0,0,0,.5)'; ctx.shadowBlur=14; ctx.shadowOffsetY=5;
-          ctx.beginPath(); ctx.arc(W/2,96,40,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.fill(); ctx.restore(); circImg_(ctx,emblem,W/2,96,35); }
-        ctx.fillStyle='rgba(255,255,255,.55)'; ctx.font='500 20px Oswald, sans-serif'; ctx.letterSpacing='5px';
-        ctx.fillText(ourTeamName_().toUpperCase()+' · SEASON HONOURS', W/2, 166); ctx.letterSpacing='0px';
-        ctx.fillStyle='#fff'; ctx.font='700 84px Oswald, sans-serif'; ctx.letterSpacing='2px';
-        ctx.fillText('HALL OF FAME', W/2, 236); ctx.letterSpacing='0px';
-        /* 시즌 필 */
-        ctx.font='600 24px Oswald, sans-serif'; ctx.letterSpacing='4px';
-        var sl=seasonLabel_(year)+' SEASON', slw=ctx.measureText(sl).width+70;
-        rr_(ctx, W/2-slw/2, 284, slw, 46, 23); ctx.fillStyle='rgba(199,162,75,.16)'; ctx.fill();
-        rr_(ctx, W/2-slw/2, 284, slw, 46, 23); ctx.strokeStyle='rgba(199,162,75,.6)'; ctx.lineWidth=1.5; ctx.stroke();
-        ctx.fillStyle=CARD_GOLD; ctx.fillText(sl, W/2+2, 308); ctx.letterSpacing='0px';
-        /* 시즌 한 줄 요약 */
-        ctx.fillStyle='rgba(255,255,255,.5)'; ctx.font='500 22px Pretendard, sans-serif';
-        ctx.fillText((s.games||0)+'경기 · '+(s.w||0)+'승 '+(s.d||0)+'무 '+(s.l||0)+'패 · 득 '+(s.gf||0)+' 실 '+(s.ga||0), W/2, 362);
-        /* MVP 히어로 */
-        var my=430, R=150, cx=W/2, cyF=my+R+10;
-        ctx.save(); var hg=ctx.createRadialGradient(cx,cyF,R*0.6,cx,cyF,R*2.2); hg.addColorStop(0,'rgba(199,162,75,.22)'); hg.addColorStop(1,'rgba(199,162,75,0)');
-        ctx.fillStyle=hg; ctx.fillRect(0,my-120,W,R*4); ctx.restore();
-        ctx.save(); ctx.strokeStyle='rgba(199,162,75,.18)'; ctx.lineWidth=1.5;
-        [1.28,1.56].forEach(function(k){ ctx.beginPath(); ctx.arc(cx,cyF,R*k,0,Math.PI*2); ctx.stroke(); }); ctx.restore();
-        if(mvp && face){
-          ctx.save(); ctx.shadowColor='rgba(0,0,0,.6)'; ctx.shadowBlur=40; ctx.shadowOffsetY=16;
-          ctx.beginPath(); ctx.arc(cx,cyF,R+6,0,Math.PI*2); ctx.fillStyle=CARD_GOLD; ctx.fill(); ctx.restore();
-          circImg_(ctx,face,cx,cyF,R, (big&&mvp)?(mvp.photoRect||null):null);
-        } else {
-          ctx.save(); ctx.shadowColor='rgba(0,0,0,.5)'; ctx.shadowBlur=30; ctx.shadowOffsetY=12;
-          ctx.beginPath(); ctx.arc(cx,cyF,R,0,Math.PI*2); ctx.fillStyle='#1F1D25'; ctx.fill(); ctx.restore();
-          ctx.beginPath(); ctx.arc(cx,cyF,R,0,Math.PI*2); ctx.strokeStyle='rgba(199,162,75,.7)'; ctx.lineWidth=4; ctx.stroke();
-          ctx.fillStyle=CARD_GOLD; ctx.font='700 96px Oswald, sans-serif'; ctx.fillText(mvp?String(mv.names.length||1):'—', cx, cyF+4);
-          if(mvp && mv.names.length>1){ ctx.fillStyle='rgba(255,255,255,.55)'; ctx.font='600 20px Pretendard, sans-serif'; ctx.fillText('공동 수상', cx, cyF+74); }
+  var rows=[
+    {icon:'trophy', k:'MVP', en:'MOST VALUABLE PLAYER', pids:mv.pids||[], names:mv.names||[], val:'', sub:mv.auto?('MOM 투표 '+mv.momN+'회'):''},
+    {icon:'boot', k:'득점왕', en:'TOP SCORER', pids:s.scorer?s.scorer.pids:[], names:s.scorer?s.scorer.names:[], val:s.scorer?(s.scorer.v+'골'):''},
+    {icon:'ball', k:'도움왕', en:'TOP ASSIST', pids:s.assister?s.assister.pids:[], names:s.assister?s.assister.names:[], val:s.assister?(s.assister.v+'도움'):''},
+    {icon:'stadium', k:'출석왕', en:'ATTENDANCE KING', pids:s.attKing?s.attKing.pids:[], names:s.attKing?s.attKing.names:[], val:s.attKing?(s.attKing.v+'점'):''}
+  ];
+  function playerOf(pid){ return (state.players||[]).filter(function(x){return x.id===pid;})[0]||pname_(pid)||{}; }
+  var faceJobs=rows.map(function(r){
+    var pid=r.pids[0]; if(!pid) return Promise.resolve(null);
+    var p=playerOf(pid);
+    return loadPlayerPhotoL_(pid).catch(function(){ return ''; }).then(function(big){
+      return loadImg_(big||p.photo||'').then(function(im){ return im?{img:im, rect:(big&&p.photoRect)||null}:null; });
+    });
+  });
+  Promise.all([loadImg_(teamEmblemSrc_()), iconsReady_(), Promise.all(faceJobs)]).then(function(rs){
+    var emblem=rs[0], faces=rs[2];
+    fontsReady_(function(){
+      var W=1080, pad=54, RH=250, GAP=18, top=420;
+      var H=top+rows.length*(RH+GAP)-GAP+130;
+      var c=document.createElement('canvas'); c.width=W; c.height=H;
+      var ctx=c.getContext('2d');
+      darkBase_(ctx,W,H);
+      cardWatermark_(ctx, W, H, emblem, 0.06);
+      ctx.fillStyle='rgba(199,162,75,.75)'; ctx.fillRect(0,0,W,3);
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      if(emblem){ ctx.save(); ctx.shadowColor='rgba(0,0,0,.5)'; ctx.shadowBlur=14; ctx.shadowOffsetY=5;
+        ctx.beginPath(); ctx.arc(W/2,96,40,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.fill(); ctx.restore(); circImg_(ctx,emblem,W/2,96,35); }
+      ctx.fillStyle='rgba(255,255,255,.55)'; ctx.font='500 20px Oswald, sans-serif'; ctx.letterSpacing='5px';
+      ctx.fillText(ourTeamName_().toUpperCase()+' · SEASON HONOURS', W/2, 166); ctx.letterSpacing='0px';
+      ctx.fillStyle='#fff'; ctx.font='700 84px Oswald, sans-serif'; ctx.letterSpacing='2px';
+      ctx.fillText('HALL OF FAME', W/2, 236); ctx.letterSpacing='0px';
+      ctx.font='600 24px Oswald, sans-serif'; ctx.letterSpacing='4px';
+      var sl=seasonLabel_(year)+' SEASON', slw=ctx.measureText(sl).width+70;
+      rr_(ctx, W/2-slw/2, 284, slw, 46, 23); ctx.fillStyle='rgba(199,162,75,.16)'; ctx.fill();
+      rr_(ctx, W/2-slw/2, 284, slw, 46, 23); ctx.strokeStyle='rgba(199,162,75,.6)'; ctx.lineWidth=1.5; ctx.stroke();
+      ctx.fillStyle=CARD_GOLD; ctx.fillText(sl, W/2+2, 308); ctx.letterSpacing='0px';
+      ctx.fillStyle='rgba(255,255,255,.5)'; ctx.font='500 22px Pretendard, sans-serif';
+      ctx.fillText((s.games||0)+'경기 · '+(s.w||0)+'승 '+(s.d||0)+'무 '+(s.l||0)+'패 · 득 '+(s.gf||0)+' 실 '+(s.ga||0), W/2, 362);
+      /* 4행 */
+      var y=top, PW=W-pad*2, R=86, px=pad+38+R;
+      rows.forEach(function(r,i){
+        var isMvp=i===0, has=r.names.length>0;
+        glass_(ctx, pad, y, PW, RH, 26, isMvp?0.09:0.06);
+        if(isMvp){ rr_(ctx, pad, y, PW, RH, 26); ctx.strokeStyle='rgba(199,162,75,.55)'; ctx.lineWidth=2; ctx.stroke(); }
+        /* 왼쪽: 사진 (없으면 아이콘) */
+        var cy=y+RH/2, f=faces[i];
+        ctx.save(); ctx.shadowColor='rgba(0,0,0,.55)'; ctx.shadowBlur=22; ctx.shadowOffsetY=8;
+        ctx.beginPath(); ctx.arc(px,cy,R+5,0,Math.PI*2); ctx.fillStyle=isMvp?CARD_GOLD:'rgba(255,255,255,.14)'; ctx.fill(); ctx.restore();
+        if(has && f && f.img){ circImg_(ctx, f.img, px, cy, R, f.rect); }
+        else {
+          ctx.beginPath(); ctx.arc(px,cy,R,0,Math.PI*2); ctx.fillStyle='#1F1D25'; ctx.fill();
+          if(has){ ctx.fillStyle='rgba(255,255,255,.85)'; ctx.font='700 54px Pretendard, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(String(r.names[0]||'').trim().slice(-2), px, cy+2); }
+          else drawIcon_(ctx, r.icon, px, cy, 70, 'gold');
         }
-        /* MVP 태그 */
-        var tagY=cyF+R+38;
-        ctx.font='700 22px Oswald, sans-serif'; ctx.letterSpacing='5px'; var tg='MVP', tgw=ctx.measureText(tg).width+52;
-        rr_(ctx, cx-tgw/2, tagY-20, tgw, 40, 10); ctx.fillStyle=CARD_GOLD; ctx.fill();
-        ctx.fillStyle='#1a1508'; ctx.fillText(tg, cx+2, tagY+1); ctx.letterSpacing='0px';
-        /* 이름 (공동 수상은 구분자 기준 줄바꿈 · 폭에 맞춰 축소) */
-        var ny=tagY+70;
-        if(mvp){
-          ctx.fillStyle='#fff'; var fsz=64; ctx.font='800 '+fsz+'px Pretendard, sans-serif';
-          var parts=String(mvpLabel).split(' · ');
-          while(fsz>36 && parts.some(function(p){ return ctx.measureText(p).width>W-160; })){ fsz-=4; ctx.font='800 '+fsz+'px Pretendard, sans-serif'; }
-          var lines=[], cur=''; parts.forEach(function(p){ var t=cur?cur+' · '+p:p; if(cur && ctx.measureText(t).width>W-160){ lines.push(cur); cur=p; } else cur=t; }); if(cur) lines.push(cur); lines=lines.slice(0,2);
-          lines.forEach(function(l,i){ ctx.fillText(l, cx, ny+i*(fsz+10)); });
-          ny+=(lines.length-1)*(fsz+10)+52;
-          if(mv.auto){ ctx.fillStyle='rgba(255,255,255,.55)'; ctx.font='600 23px Pretendard, sans-serif'; ctx.fillText('MOM 투표 최다 · '+mv.momN+'회', cx, ny); }
-        } else {
-          ctx.fillStyle='rgba(255,255,255,.45)'; ctx.font='600 34px Pretendard, sans-serif'; ctx.fillText('미지정', cx, ny);
+        /* 공동 수상 표시 */
+        if(r.pids.length>1){
+          ctx.font='700 20px Pretendard, sans-serif'; var tw=ctx.measureText('+'+(r.pids.length-1)).width+22;
+          rr_(ctx, px+R-tw+6, cy+R-34, tw, 32, 10); ctx.fillStyle=CARD_RED; ctx.fill();
+          ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('+'+(r.pids.length-1), px+R-tw/2+6, cy+R-17);
         }
-        /* 3관왕 타일 */
-        var pad=54, cw=(W-pad*2-32)/3, py=1150, ph=236;
-        var cols=[['boot','득점왕',s.scorer,'골'],['ball','도움왕',s.assister,'도움'],['stadium','출석왕',s.attKing,'점']];
-        cols.forEach(function(cd,i){
-          var x=pad+i*(cw+16);
-          glass_(ctx,x,py,cw,ph,22,0.06);
-          ctx.textAlign='center'; ctx.textBaseline='middle';
-          drawIcon_(ctx,cd[0],x+cw/2,py+52,52,'gold');
-          ctx.fillStyle='rgba(255,255,255,.55)'; ctx.font='600 20px Pretendard, sans-serif'; ctx.fillText(cd[1], x+cw/2, py+98);
-          var t=cd[2];
-          ctx.fillStyle='#fff'; ctx.font='700 30px Pretendard, sans-serif';
-          ctx.fillText(t?cardEllipsis_(ctx,t.names.join('·'),cw-30):'—', x+cw/2, py+142);
-          ctx.fillStyle=CARD_GOLD; ctx.font='600 38px Oswald, sans-serif';
-          ctx.fillText(t?(t.v+cd[3]):'', x+cw/2, py+192);
-        });
-        cardFooterW_(ctx,W,H);
-        showCardPreview_(c,'FCJEMIRO_HOF_'+year+'.png');
+        /* 오른쪽: 정보 */
+        var tx=px+R+44, tw2=W-pad-tx-30;
+        ctx.textAlign='left'; ctx.textBaseline='middle';
+        drawIcon_(ctx, r.icon, tx+16, y+52, 34, 'gold');
+        ctx.fillStyle=CARD_GOLD; ctx.font='700 26px Pretendard, sans-serif'; ctx.fillText(r.k, tx+44, y+52);
+        var kw=ctx.measureText(r.k).width;
+        ctx.fillStyle='rgba(255,255,255,.4)'; ctx.font='600 17px Oswald, sans-serif'; ctx.letterSpacing='3px'; ctx.fillText(r.en, tx+44+kw+16, y+54); ctx.letterSpacing='0px';
+        if(has){
+          var label=r.names.join(' · '), fsz=isMvp?54:48;
+          ctx.fillStyle='#fff'; ctx.font='800 '+fsz+'px Pretendard, sans-serif';
+          while(fsz>30 && ctx.measureText(label).width>tw2){ fsz-=3; ctx.font='800 '+fsz+'px Pretendard, sans-serif'; }
+          ctx.fillText(cardEllipsis_(ctx,label,tw2), tx, y+126);
+          var vy=y+192;
+          if(r.val){ ctx.fillStyle=CARD_GOLD; ctx.font='600 40px Oswald, sans-serif'; ctx.fillText(r.val, tx, vy); }
+          else if(r.sub){ ctx.fillStyle='rgba(255,255,255,.55)'; ctx.font='600 24px Pretendard, sans-serif'; ctx.fillText(r.sub, tx, vy); }
+          else { ctx.fillStyle='rgba(255,255,255,.55)'; ctx.font='600 24px Pretendard, sans-serif'; ctx.fillText('감독 지정', tx, vy); }
+        } else {
+          ctx.fillStyle='rgba(255,255,255,.4)'; ctx.font='700 40px Pretendard, sans-serif'; ctx.fillText(isMvp?'미지정':'기록 없음', tx, y+140);
+        }
+        y+=RH+GAP;
       });
+      cardFooterW_(ctx,W,H);
+      showCardPreview_(c,'FCJEMIRO_HOF_'+year+'.png');
     });
   }).catch(function(){ toast('카드를 만들지 못했습니다'); });
 }
@@ -8898,14 +8991,8 @@ function drawBest11Card_(key, d, emblem, faces){
   head('SEASON', sy);
   ctx.font='600 26px Pretendard, sans-serif'; ctx.fillStyle='#fff';
   ctx.fillText(ms.length+'경기 · '+wdl.W+'승 '+wdl.D+'무 '+wdl.L+'패', LX, sy+46);
-  var mt=momTop_(ms);
-  if(mt){
-    ctx.fillStyle='rgba(255,255,255,.66)'; ctx.font='500 23px Pretendard, sans-serif';
-    var mw=Math.min(TXW, P(0,(sy+86-PTY)/(PBY-PTY)).x-LX-18);   /* 경기장 왼쪽 사선 안쪽까지만 */
-    wrapText_(ctx, 'MOM 최다 · '+mt.names.join(' · ')+' ('+mt.v+'회)', mw).slice(0,2).forEach(function(ln,i){ ctx.fillText(ln, LX, sy+86+i*32); });
-  }
   /* 선정 기준 */
-  sy+=176; head('SELECTION', sy);
+  sy+=120; head('SELECTION', sy);
   ctx.fillStyle='rgba(255,255,255,.72)'; ctx.font='500 23px Pretendard, sans-serif';
   ctx.fillText('MOM 40% · 출석 30%', LX, sy+44);
   ctx.fillText('득점 20% · 도움 10%', LX, sy+80);
@@ -9438,7 +9525,16 @@ function drawLineupCard_(m, d, starters, subs, emblem, oppImg, faces, opt){
   ctx.fillStyle='#fff'; ctx.font='700 44px Oswald, sans-serif';
   ctx.fillText(cardEllipsis_(ctx, ourTeamName_().toUpperCase(), TXW), LX, by+142);
   ctx.fillStyle='rgba(255,255,255,.68)'; ctx.font=SQ?'700 30px Pretendard, sans-serif':'700 34px Oswald, sans-serif';
-  ctx.fillText(cardEllipsis_(ctx, SQ?String((d&&d.squad&&d.squad.name)||'스쿼드'):String(m.opponent||'상대 미정').toUpperCase(), TXW), LX, by+196);
+  var oppTxt=SQ?String((d&&d.squad&&d.squad.name)||'스쿼드'):String(m.opponent||'상대 미정').toUpperCase();
+  if(!SQ && opt.tag){
+    /* 스쿼드가 여럿일 때: 상대 이름 오른쪽에 스쿼드 이름 태그 */
+    var tagF='700 20px Pretendard, sans-serif'; ctx.font=tagF; var tw=ctx.measureText(String(opt.tag)).width+26;
+    ctx.font='700 34px Oswald, sans-serif'; var ot=cardEllipsis_(ctx, oppTxt, TXW-tw-12); ctx.fillText(ot, LX, by+196);
+    var ox=LX+ctx.measureText(ot).width+12;
+    rr_(ctx, ox, by+182, tw, 30, 8); ctx.fillStyle='rgba(199,162,75,.18)'; ctx.fill();
+    rr_(ctx, ox, by+182, tw, 30, 8); ctx.strokeStyle='rgba(199,162,75,.7)'; ctx.lineWidth=1.5; ctx.stroke();
+    ctx.fillStyle='#E8D9B5'; ctx.font=tagF; ctx.fillText(String(opt.tag), ox+13, by+197);
+  } else ctx.fillText(cardEllipsis_(ctx, oppTxt, TXW), LX, by+196);
   ctx.restore();
   var ul=ctx.createLinearGradient(LX,0,LX+200,0); ul.addColorStop(0,RED2); ul.addColorStop(1,'rgba(255,59,87,0)');
   ctx.fillStyle=ul; ctx.fillRect(LX, by+232, 190, 3);
@@ -9626,6 +9722,7 @@ function drawLineupCard_(m, d, starters, subs, emblem, oppImg, faces, opt){
   ctx.textAlign='right'; ctx.textBaseline='middle';
   ctx.fillStyle='rgba(255,255,255,.35)'; ctx.font='600 20px Oswald, sans-serif'; ctx.letterSpacing='4px';
   ctx.fillText(SQ?'SQUAD BOARD':'MATCHDAY LINEUP', W-40, H-30); ctx.letterSpacing='0px';
+  if(opt.noPreview) return c;
   showCardPreview_(c, SQ?('FCJEMIRO_squad_'+attToday_()+'.png'):('FCJEMIRO_LINEUP_'+String(m.date||'').replace(/-/g,'')+'.png'));
 }
 
@@ -10758,100 +10855,115 @@ function openA2hs_(auto){
 }
 
 /* ================= 경기 안내문 자동 생성 =================
- * 일시 · 상대 · 장소(지도 링크) · 도착 시각(지각 기준) · 출석 링크 · 스쿼드 · 요청사항 · 한마디를 한 문장 묶음으로.
- * 항목은 토글로 넣고 빼고, 문구는 직접 고쳐서 카톡방에 공유/복사. */
-function anMapUrl_(m){
-  if(m.venueUrl) return m.venueUrl;
+ * 텍스트: 한 줄 요약 + 카카오맵·T맵 링크 + 출석 링크 (카톡에서 눌리는 것만 글로)
+ * 카드  : 경기 안내 카드(일시·상대·장소·도착 시각·한마디) + 스쿼드 카드(최대 2개, 라인업 엔진)
+ * 카톡은 글과 사진을 한 번에 받지 못하는 경우가 있어 '텍스트 공유'와 '카드 공유'를 따로 둔다. */
+function anMapUrls_(m){
   var hasXY=(m.lat!=null && m.lat!=='' && m.lng!=null && m.lng!=='');
-  /* 카톡에 붙일 주소라 한글 인코딩이 길어지지 않게 라벨은 '경기장'으로 고정 (장소명은 📍 줄에 있음) */
-  return hasXY ? ('https://map.kakao.com/link/map/'+encodeURIComponent('경기장')+','+Number(m.lat)+','+Number(m.lng)) : '';
+  if(!hasXY) return {kakao:m.venueUrl||'', tmap:''};
+  var lat=Number(m.lat), lng=Number(m.lng), name=String(m.venue||'경기장');
+  return {
+    kakao: m.venueUrl || ('https://map.kakao.com/link/map/'+encodeURIComponent(name)+','+lat+','+lng),
+    /* T맵은 tmap:// 앱 주소라 카톡에서 눌리지 않음 → 우리 사이트 https 링크로 감싸서 T맵으로 넘긴다 */
+    tmap: location.origin+location.pathname+'#tmap='+lat+','+lng+','+encodeURIComponent(name)
+  };
+}
+function anArrive_(m){
+  var st=attStartOf_(m); if(!st) return null;
+  var lm=attCfgLate_(); var cut=new Date(st.getTime()-lm*60000);
+  return {hm:attPad_(cut.getHours())+':'+attPad_(cut.getMinutes()), lateMin:lm};
 }
 function openAnnounce_(matchId){
   if(!requireAdmin()) return;
   var m=matchId ? findMatchAny_(matchId) : latestMatch();
   if(!m){ toast('경기를 먼저 등록해주세요'); return; }
   var saved={}; try{ saved=JSON.parse(localStorage.getItem('kt_announce')||'{}'); }catch(e){}
-  state._an={ matchId:m.id, squadId:'', squads:[], detail:null, att:null,
-    incMap:saved.incMap!==false, incArrive:saved.incArrive!==false, incAtt:true, incSquad:saved.incSquad!==false, incNotes:true,
-    note:saved.note||'', edited:'' };
+  state._an={ matchId:m.id, squads:[], sel:[], details:{}, att:null,
+    incMap:saved.incMap!==false, incAtt:true, incInfo:true,
+    note:saved.note||'', edited:'', cards:null, busy:false };
   var jobs=[API.run('getSquads').catch(function(){ return []; })];
   if(window.db && FS.enabled) jobs.push(db.collection(ATT_COLL).where('matchId','==',m.id).limit(5).get().then(function(qs){ var a=[]; qs.forEach(function(d){ a.push(d.data()); }); return a.filter(function(x){ return !x.closed; })[0]||a[0]||null; }).catch(function(){ return null; }));
   else jobs.push(Promise.resolve(null));
   Promise.all(jobs).then(function(r){
     var an=state._an; an.squads=(r[0]||[]).slice().reverse(); an.att=r[1];
-    if(an.squads.length){ an.squadId=(saved.squadId && an.squads.some(function(q){ return q.id===saved.squadId; }))?saved.squadId:an.squads[0].id; }
-    return anLoadSquad_().then(renderAnnounce_);
+    var keep=(saved.sel||[]).filter(function(id){ return an.squads.some(function(q){ return q.id===id; }); });
+    an.sel=keep.length?keep.slice(0,2):(an.squads.length?[an.squads[0].id]:[]);
+    return anLoadSquads_().then(renderAnnounce_);
   });
 }
-function anLoadSquad_(){
-  var an=state._an; if(!an.squadId){ an.detail=null; return Promise.resolve(); }
-  return API.run('getSquadDetail', an.squadId).then(function(d){ an.detail=d; }).catch(function(){ an.detail=null; });
+function anLoadSquads_(){
+  var an=state._an;
+  return Promise.all(an.sel.map(function(id){
+    if(an.details[id]) return Promise.resolve();
+    return API.run('getSquadDetail', id).then(function(d){ an.details[id]=d; }).catch(function(){ an.details[id]=null; });
+  }));
 }
 function anText_(){
   var an=state._an, m=findMatchAny_(an.matchId); if(!m) return '';
-  var L=[];
-  var wd=dowOf(m.date), t=cleanTime(m.time);
+  var L=[], wd=dowOf(m.date), t=cleanTime(m.time);
   L.push('📣 ['+ourTeamName_()+'] 경기 안내');
-  L.push('📅 '+fmtDateDot(m.date)+(wd?' ('+wd+')':'')+(t?' '+t:''));
-  L.push('🆚 '+(m.opponent||'상대 미정'));
+  L.push('📅 '+fmtDateDot(m.date)+(wd?' ('+wd+')':'')+(t?' '+t:'')+' · vs '+(m.opponent||'상대 미정'));
   L.push('📍 '+(m.venue||'경기장 미정'));
-  var mu=anMapUrl_(m); if(an.incMap && mu) L.push('🗺️ 지도 '+mu);
-  var st=attStartOf_(m);
-  if(an.incArrive && st){ var lm=attCfgLate_(); var cut=new Date(st.getTime()-lm*60000); L.push('⏰ '+attPad_(cut.getHours())+':'+attPad_(cut.getMinutes())+'까지 도착'+(lm?' (경기 '+lm+'분 전)':'')); }
-  if(an.incAtt && an.att) L.push('✅ 출석 체크 '+attUrl_(an.att.id));
-  if(an.incSquad && an.detail && an.detail.members){
-    var st2=(an.detail.members||[]).filter(function(x){ return x.position; });
-    var subs=(an.detail.members||[]).filter(function(x){ return !x.position; });
-    if(st2.length){
-      var grp={GK:[],DF:[],MF:[],FW:[]};
-      st2.slice().sort(function(a,b){ return (a.x||0)-(b.x||0); }).forEach(function(x){
-        var p=x.position, g=p==='GK'?'GK':(/^(DF|CB|LB|RB|LWB|RWB)$/.test(p)?'DF':(/^(MF|DM|CM|AM|LM|RM)$/.test(p)?'MF':'FW'));
-        grp[g].push(x.name);
-      });
-      var form=lineupFormation_(st2);
-      L.push('');
-      L.push('👕 스쿼드 · '+(an.detail.squad&&an.detail.squad.name||'')+(form?' ('+form+')':''));
-      ['GK','DF','MF','FW'].forEach(function(g){ if(grp[g].length) L.push('  '+g+' '+grp[g].join(' · ')); });
-      if(subs.length) L.push('  후보 '+subs.map(function(x){ return x.name; }).join(' · '));
-    }
+  var mu=anMapUrls_(m);
+  if(an.incMap && (mu.kakao||mu.tmap)){
+    L.push('');
+    if(mu.kakao) L.push('🗺️ 카카오맵 '+mu.kakao);
+    if(mu.tmap) L.push('🚗 T맵 길안내 '+mu.tmap);
   }
-  if(an.incNotes && an.detail && an.detail.notes && an.detail.notes.length){
-    L.push(''); L.push('📝 요청사항');
-    an.detail.notes.slice(0,5).forEach(function(n){ L.push('  • '+(n.scope&&n.scope!=='전체'?'['+n.scope+'] ':'')+String(n.body||'').replace(/\s*\n\s*/g,' ')); });
-  }
+  if(an.incAtt && an.att){ L.push(''); L.push('✅ 출석 체크 '+attUrl_(an.att.id)); L.push('(카카오톡에서 눌러야 체크돼요)'); }
   if(an.note && an.note.trim()){ L.push(''); L.push('💬 '+an.note.trim()); }
   return L.join('\n');
 }
+function anCardCount_(){ var an=state._an; return (an.incInfo?1:0)+an.sel.length; }
 function renderAnnounce_(){
   var an=state._an; if(!an) return;
   var m=findMatchAny_(an.matchId); if(!m) return;
   var txt=an.edited||anText_();
+  var mu=anMapUrls_(m);
   function tg(k,label,dis,hint){ return '<label class="an-tg'+(dis?' dis':'')+'"><input type="checkbox"'+(an[k]&&!dis?' checked':'')+(dis?' disabled':'')+' onchange="anSet_(\''+k+'\',this.checked)"><span>'+label+(hint?'<small>'+hint+'</small>':'')+'</span></label>'; }
-  var mu=anMapUrl_(m), st=attStartOf_(m);
+  var sqChips=an.squads.map(function(q){
+    var on=an.sel.indexOf(q.id)>-1;
+    return '<label class="an-tg'+(on?' on':'')+'"><input type="checkbox"'+(on?' checked':'')+' onchange="anSquadToggle_(\''+q.id+'\',this.checked)"><span>'+esc(q.name)+(q.count?'<small>'+q.count+'명</small>':'')+'</span></label>';
+  }).join('');
+  var nCards=anCardCount_();
   showSheet('<div class="grabber"></div>'
    + '<div class="sheet-head"><h3>경기 안내문</h3><button class="x" onclick="closeSheet()">✕</button></div>'
    + '<div class="sheet-body">'
-   +   '<div class="an-tgs">'
-   +     tg('incMap','지도 링크',!mu, mu?'':'경기장 위치 없음')
-   +     tg('incArrive','도착 시각',!st, st?'':'경기 시간 없음')
-   +     tg('incAtt','출석 링크',!an.att, an.att?'':'아직 안 만듦')
-   +     tg('incSquad','스쿼드',!an.squads.length, an.squads.length?'':'스쿼드 없음')
-   +     tg('incNotes','요청사항',!(an.detail&&an.detail.notes&&an.detail.notes.length), '')
+   +   '<div class="an-sec"><div class="an-lb">1 · 텍스트 <span>링크는 글로 보내야 눌러요</span></div>'
+   +     '<div class="an-tgs">'
+   +       tg('incMap','지도 링크 (카카오맵 · T맵)',!(mu.kakao||mu.tmap), (mu.kakao||mu.tmap)?'':'경기장 위치 없음')
+   +       tg('incAtt','출석 링크',!an.att, an.att?'':'아직 안 만듦')
+   +     '</div>'
+   +     (!an.att ? '<button class="btn-ghost" style="margin-top:10px;" onclick="anMakeAtt_()">출석 링크 만들어서 넣기</button>' : '')
+   +     '<div class="field" style="margin-top:12px;"><label>한마디 <span style="color:var(--steel-soft);font-weight:600;">(회비 · 준비물 · 공지 등 · 카드에도 들어가요)</span></label>'
+   +       '<input type="text" maxlength="120" value="'+esc(an.note)+'" placeholder="예) 회비 1만원 · 검정 유니폼 · 주차는 B동" oninput="state._an.note=this.value;state._an.cards=null;anRefresh_()"></div>'
+   +     '<div class="field"><label>미리보기 <span style="color:var(--steel-soft);font-weight:600;">직접 고칠 수 있어요</span></label>'
+   +       '<textarea id="an_txt" rows="'+Math.min(12, txt.split('\n').length+1)+'" oninput="state._an.edited=this.value" style="font-size:13.5px;line-height:1.6;">'+esc(txt)+'</textarea></div>'
+   +     '<button class="btn-primary" onclick="anShare_()">텍스트 공유</button>'
+   +     '<div style="display:flex;gap:8px;"><button class="btn-ghost" style="flex:1;" onclick="anCopy_()">복사</button><button class="btn-ghost" style="flex:1;" onclick="state._an.edited=\'\';anRefresh_()">원래대로</button></div>'
    +   '</div>'
-   +   (an.squads.length>1 && an.incSquad ? '<div class="field" style="margin:10px 0 0;"><select onchange="anSquad_(this.value)">'+an.squads.map(function(q){ return '<option value="'+q.id+'"'+(q.id===an.squadId?' selected':'')+'>'+esc(q.name)+(q.count?' · '+q.count+'명':'')+'</option>'; }).join('')+'</select></div>' : '')
-   +   (!an.att ? '<button class="btn-ghost" style="margin-top:10px;" onclick="anMakeAtt_()">출석 링크 만들어서 넣기</button>' : '')
-   +   '<div class="field" style="margin-top:12px;"><label>한마디 <span style="color:var(--steel-soft);font-weight:600;">(회비 · 준비물 · 공지 등)</span></label>'
-   +     '<input type="text" maxlength="120" value="'+esc(an.note)+'" placeholder="예) 회비 1만원 · 검정 유니폼 · 주차는 B동" oninput="state._an.note=this.value;anRefresh_()"></div>'
-   +   '<div class="field"><label>미리보기 <span style="color:var(--steel-soft);font-weight:600;">직접 고칠 수 있어요</span></label>'
-   +     '<textarea id="an_txt" rows="'+Math.min(16, txt.split('\n').length+1)+'" oninput="state._an.edited=this.value" style="font-size:13.5px;line-height:1.6;">'+esc(txt)+'</textarea></div>'
-   +   '<button class="btn-primary" onclick="anShare_()">카톡방에 공유</button>'
-   +   '<div style="display:flex;gap:8px;"><button class="btn-ghost" style="flex:1;" onclick="anCopy_()">복사</button><button class="btn-ghost" style="flex:1;" onclick="state._an.edited=\'\';anRefresh_()">원래대로</button></div>'
+   +   '<div class="an-sec"><div class="an-lb">2 · 카드 <span>이미지로 보내요 · '+nCards+'장</span></div>'
+   +     '<div class="an-tgs">'
+   +       tg('incInfo','경기 안내 카드',false,'')
+   +       sqChips
+   +     '</div>'
+   +     (an.squads.length?'<p class="hint" style="margin:8px 0 0;">스쿼드 카드는 2개까지 고를 수 있어요.</p>':'<p class="hint" style="margin:8px 0 0;">스쿼드 탭에서 스쿼드를 만들면 라인업 카드도 함께 보낼 수 있어요.</p>')
+   +     '<div id="an_cards" class="an-cards"></div>'
+   +     '<button class="btn-primary" id="an_cardbtn" onclick="anShareCards_()"'+(nCards?'':' disabled')+'>카드 공유 · '+nCards+'장</button>'
+   +     '<button class="btn-ghost" onclick="anSaveCards_()"'+(nCards?'':' disabled')+'>이미지 저장</button>'
+   +   '</div>'
    + '</div>');
+  anBuildCards_();
 }
 function anRefresh_(){ var an=state._an; if(!an) return; var ta=document.getElementById('an_txt'); if(ta && !an.edited){ ta.value=anText_(); } }
-function anSet_(k,v){ var an=state._an; an[k]=v; an.edited=''; anSaveOpt_(); renderAnnounce_(); }
-function anSquad_(id){ var an=state._an; an.squadId=id; an.edited=''; anSaveOpt_(); anLoadSquad_().then(renderAnnounce_); }
-function anSaveOpt_(){ var an=state._an; try{ localStorage.setItem('kt_announce', JSON.stringify({incMap:an.incMap, incArrive:an.incArrive, incSquad:an.incSquad, squadId:an.squadId, note:an.note})); }catch(e){} }
+function anSet_(k,v){ var an=state._an; an[k]=v; an.edited=''; if(k==='incInfo') an.cards=null; anSaveOpt_(); renderAnnounce_(); }
+function anSquadToggle_(id,on){
+  var an=state._an;
+  if(on){ if(an.sel.indexOf(id)<0){ if(an.sel.length>=2){ toast('스쿼드 카드는 2개까지예요'); renderAnnounce_(); return; } an.sel.push(id); } }
+  else an.sel=an.sel.filter(function(x){ return x!==id; });
+  an.cards=null; anSaveOpt_(); anLoadSquads_().then(renderAnnounce_);
+}
+function anSaveOpt_(){ var an=state._an; try{ localStorage.setItem('kt_announce', JSON.stringify({incMap:an.incMap, sel:an.sel, note:an.note})); }catch(e){} }
 function anFinal_(){ var an=state._an; anSaveOpt_(); var ta=document.getElementById('an_txt'); return (ta&&ta.value.trim())||anText_(); }
 function anShare_(){
   var txt=anFinal_(); if(!txt) return;
@@ -10865,14 +10977,159 @@ function anCopy_(){
   if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(ok).catch(function(){ fallbackCopy_(txt); });
   else fallbackCopy_(txt);
 }
-/* 출석 링크가 없으면 이 화면에서 바로 만들고 돌아온다 */
+/* ── 카드 생성: 경기 안내 카드 + 선택한 스쿼드 라인업 카드 → 썸네일 미리보기 + 공유용 파일 ── */
+function anBuildCards_(){
+  var an=state._an; if(!an) return;
+  var m=findMatchAny_(an.matchId); if(!m) return;
+  var box=document.getElementById('an_cards'); if(!box) return;
+  if(an.cards){ anPaintCards_(); return; }
+  if(!anCardCount_()){ box.innerHTML=''; return; }
+  box.innerHTML='<div class="an-busy">카드 만드는 중...</div>';
+  var myRun={}; an._run=myRun;
+  var jobs=[];
+  if(an.incInfo) jobs.push(anInfoCanvas_(m).then(function(c){ return {c:c, label:'경기 안내', name:'FCJEMIRO_matchinfo_'+String(m.date||'').replace(/-/g,'')+'.png'}; }));
+  an.sel.forEach(function(id){
+    var d=an.details[id]; if(!d||!d.squad) return;
+    jobs.push(anLineupCanvas_(m, d, an.sel.length>1?String(d.squad.name||''):'').then(function(c){ return {c:c, label:String(d.squad.name||'스쿼드'), name:'FCJEMIRO_LINEUP_'+String(m.date||'').replace(/-/g,'')+'_'+String(d.squad.name||id).replace(/[^\w가-힣]/g,'')+'.png'}; }));
+  });
+  Promise.all(jobs).then(function(cards){
+    if(an!==state._an || an._run!==myRun) return;
+    cards=cards.filter(Boolean);
+    return Promise.all(cards.map(function(cd){ return new Promise(function(res){ try{ cd.c.toBlob(function(b){ cd.blob=b; res(cd); }, 'image/png'); }catch(e){ res(cd); } }); }));
+  }).then(function(cards){
+    if(!cards || an!==state._an || an._run!==myRun) return;
+    an.cards=cards; anPaintCards_();
+  }).catch(function(e){ if(box) box.innerHTML='<div class="an-busy">카드를 만들지 못했어요</div>'; });
+}
+function anPaintCards_(){
+  var an=state._an, box=document.getElementById('an_cards'); if(!an||!box||!an.cards) return;
+  box.innerHTML=an.cards.map(function(cd,i){
+    var url=cd.c.toDataURL('image/jpeg',0.6);
+    return '<div class="an-card" onclick="anCardZoom_('+i+')"><img src="'+url+'" alt=""><span>'+esc(cd.label||'')+'</span></div>';
+  }).join('');
+}
+function anCardZoom_(i){
+  var an=state._an; var cd=an&&an.cards&&an.cards[i]; if(!cd) return;
+  showCardPreview_(cd.c, cd.name);
+  /* 미리보기 닫으면 안내문으로 복귀 */
+  var x=document.querySelector('#sheet .sheet-head .x'); if(x) x.setAttribute('onclick','renderAnnounce_()');
+}
+function anCardFiles_(){
+  var an=state._an; if(!an||!an.cards) return [];
+  return an.cards.map(function(cd){ try{ return cd.blob?new File([cd.blob], cd.name, {type:'image/png'}):null; }catch(e){ return null; } }).filter(Boolean);
+}
+function anShareCards_(){
+  var an=state._an; if(!an) return;
+  if(!an.cards){ toast('카드를 준비 중이에요 · 잠시 후 다시 눌러주세요'); return; }
+  var files=anCardFiles_(); if(!files.length){ toast('카드를 만들지 못했어요'); return; }
+  try{ logEvent_('share','경기 안내 카드 공유', files.length+'장'); }catch(e){}
+  if(navigator.canShare && navigator.share && navigator.canShare({files:files})){
+    navigator.share({files:files}).catch(function(e){ if(!e || e.name!=='AbortError') anSaveCards_(); });
+  } else anSaveCards_();
+}
+function anSaveCards_(){
+  var an=state._an; if(!an||!an.cards){ toast('카드를 준비 중이에요'); return; }
+  an.cards.forEach(function(cd,i){ if(cd.blob) setTimeout(function(){ dlBlob_(cd.blob, cd.name); }, i*350); });
+}
+/* 라인업 카드 캔버스 (미리보기 없이) */
+function anLineupCanvas_(m, d, tag){
+  var starters=(d.members||[]).filter(function(x){ return x.position; });
+  var subs=(d.members||[]).filter(function(x){ return !x.position; });
+  var jobs=[loadImg_(teamEmblemSrc_()), loadImg_(oppLogo_(m.opponent))].concat(starters.map(function(x){
+    var pr=(x.guest||!x.playerId)?Promise.resolve(''):loadPlayerPhotoL_(x.playerId).catch(function(){ return ''; });
+    return pr.then(function(big){ return loadImg_(big || x.photo || '').then(function(im){
+      if(im&&big&&x.playerId){ var pp=pname_(x.playerId)||{}; if(pp.photoRect) im._kjRect=pp.photoRect; }
+      return im;
+    }); });
+  }));
+  return new Promise(function(res,rej){
+    fontsReady_(function(){
+      Promise.all(jobs).then(function(imgs){
+        res(drawLineupCard_(m, d, starters, subs, imgs[0], imgs[1], imgs.slice(2), {noPreview:true, tag:tag}));
+      }).catch(rej);
+    });
+  });
+}
+/* 경기 안내 카드: MATCH DAY 헤더 + 팀 vs 팀 + 일시·장소·도착 시각·한마디 */
+function anInfoCanvas_(m){
+  var an=state._an||{};
+  return Promise.all([loadImg_(teamEmblemSrc_()), loadImg_(oppLogo_(m.opponent)||'').catch(function(){ return null; })]).then(function(res){
+    return new Promise(function(done){
+      fontsReady_(function(){
+        var emblem=res[0], oppImg=res[1];
+        var W=1080, pad=50, pw=W-pad*2, uh=470;
+        var wd=dowOf(m.date), t=cleanTime(m.time), arr=anArrive_(m);
+        var rows=[];
+        rows.push(['일시', fmtDateDot(m.date)+(wd?' ('+wd+')':'')+(t?'  '+t:'')]);
+        rows.push(['장소', String(m.venue||'경기장 미정')]);
+        if(arr) rows.push(['도착', arr.hm+'까지'+(arr.lateMin?' (경기 '+arr.lateMin+'분 전)':'')]);
+        var note=(an.note||'').trim();
+        var c=document.createElement('canvas'); var ctx=c.getContext('2d');
+        ctx.font='500 30px Pretendard, sans-serif';
+        var noteLines=note?wrapText_(ctx, note, pw-260).slice(0,3):[];
+        var rowH=92, infoH=40+rows.length*rowH+(noteLines.length?(30+noteLines.length*42+10):0)+30;
+        var H=CARD_HDR+48+uh+28+infoH+110;
+        c.width=W; c.height=H;
+        darkBase_(ctx,W,H);
+        cardWatermark_(ctx, W, H, emblem, 0.10);
+        cardHeader_(ctx, W, ourTeamName_(), 'MATCH DAY', emblem, null);
+        var uy=CARD_HDR+48;
+        glass_(ctx, pad, uy, pw, uh, 28, 0.05);
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        var dd=''; try{ var td=new Date(attToday_()+'T00:00:00'), md=new Date(m.date+'T00:00:00'); var diff=Math.round((md-td)/86400000); dd=diff===0?'D-DAY':(diff>0?'D-'+diff:''); }catch(e){}
+        var pill=dd||'MATCH'; ctx.font='700 30px Oswald, sans-serif'; ctx.letterSpacing='3px'; var ww=ctx.measureText(pill).width+64;
+        rr_(ctx, W/2-ww/2, uy+34, ww, 52, 26); ctx.fillStyle=CARD_RED; ctx.fill();
+        ctx.fillStyle='#fff'; ctx.fillText(pill, W/2+1, uy+61); ctx.letterSpacing='0px';
+        var ty=uy+225, R=82, lx=W/2-250, rx=W/2+250;
+        function teamBlock(cx, img, name, isUs){
+          ctx.save(); ctx.shadowColor='rgba(0,0,0,.5)'; ctx.shadowBlur=18; ctx.shadowOffsetY=8;
+          ctx.beginPath(); ctx.arc(cx,ty,R,0,Math.PI*2); ctx.fillStyle=img?'#fff':'rgba(255,255,255,.08)'; ctx.fill(); ctx.restore();
+          ctx.beginPath(); ctx.arc(cx,ty,R,0,Math.PI*2); ctx.lineWidth=2; ctx.strokeStyle=isUs?'rgba(199,162,75,.85)':'rgba(255,255,255,.25)'; ctx.stroke();
+          if(img) circImg_(ctx, img, cx, ty, R-8);
+          else { ctx.fillStyle='rgba(255,255,255,.8)'; ctx.font='700 54px Pretendard, sans-serif'; ctx.textAlign='center'; ctx.fillText(String(name||'?').trim().slice(0,2), cx, ty+2); }
+          ctx.fillStyle='#fff'; ctx.font='700 34px Pretendard, sans-serif'; ctx.textAlign='center';
+          wrapText_(ctx, String(name||''), 300).slice(0,2).forEach(function(l,i){ ctx.fillText(l, cx, ty+R+46+i*40); });
+        }
+        teamBlock(lx, emblem, ourTeamName_(), true);
+        teamBlock(rx, oppImg, m.opponent||'상대 미정', false);
+        ctx.fillStyle='rgba(255,255,255,.25)'; ctx.font='700 56px Oswald, sans-serif'; ctx.textAlign='center'; ctx.letterSpacing='4px';
+        ctx.fillText('VS', W/2, ty+4); ctx.letterSpacing='0px';
+        /* 정보 패널 */
+        var iy=uy+uh+28;
+        glass_(ctx, pad, iy, pw, infoH, 24, 0.06);
+        var y=iy+40+rowH/2;
+        rows.forEach(function(r){
+          ctx.textAlign='left'; ctx.textBaseline='middle';
+          rr_(ctx, pad+34, y-22, 96, 44, 12); ctx.fillStyle='rgba(199,162,75,.16)'; ctx.fill();
+          ctx.fillStyle=CARD_GOLD; ctx.font='700 24px Pretendard, sans-serif'; ctx.textAlign='center'; ctx.fillText(r[0], pad+82, y+1);
+          ctx.textAlign='left'; ctx.fillStyle='#fff'; ctx.font='700 36px Pretendard, sans-serif';
+          ctx.fillText(cardEllipsis_(ctx, r[1], pw-200), pad+156, y+1);
+          y+=rowH;
+        });
+        if(noteLines.length){
+          y-=rowH/2; y+=6;
+          ctx.fillStyle='rgba(255,255,255,.12)'; ctx.fillRect(pad+34, y, pw-68, 2); y+=30;
+          ctx.textAlign='left'; ctx.textBaseline='middle';
+          rr_(ctx, pad+34, y-22+8, 96, 44, 12); ctx.fillStyle='rgba(200,16,46,.22)'; ctx.fill();
+          ctx.fillStyle='#FF8A9B'; ctx.font='700 24px Pretendard, sans-serif'; ctx.textAlign='center'; ctx.fillText('공지', pad+82, y+9);
+          ctx.textAlign='left'; ctx.fillStyle='rgba(255,255,255,.92)'; ctx.font='500 30px Pretendard, sans-serif';
+          noteLines.forEach(function(ln,i){ ctx.fillText(ln, pad+156, y+9+i*42); });
+        }
+        cardFooterW_(ctx, W, H);
+        done(c);
+      });
+    });
+  });
+}
+/* 출석 링크가 없으면 이 화면에서 바로 만들고 돌아온다 (첫 번째 스쿼드 기준) */
 function anMakeAtt_(){
   var an=state._an; if(!an) return;
-  if(!an.squadId || !an.detail){ toast('먼저 스쿼드 탭에서 스쿼드를 만들어주세요'); return; }
-  var mems=(an.detail.members||[]).filter(function(x){ return !x.guest; });
+  var sid=an.sel[0], d=sid&&an.details[sid];
+  if(!sid || !d){ toast('먼저 스쿼드를 고르거나 스쿼드 탭에서 만들어주세요'); return; }
+  var mems=(d.members||[]).filter(function(x){ return !x.guest; });
   if(!mems.length){ toast('스쿼드에 편성된 팀원이 없어요'); return; }
-  state.squadDetail=an.detail; state._att={ sid:an.squadId, sel:{}, matchId:an.matchId }; mems.forEach(function(x){ state._att.sel[x.playerId]=true; });
-  state._attReturn=function(doc){ an.att=doc; an.edited=''; renderAnnounce_(); };
+  state.squadDetail=d; state._att={ sid:sid, sel:{}, matchId:an.matchId }; mems.forEach(function(x){ state._att.sel[x.playerId]=true; });
+  state._attReturn=function(doc){ an.att=doc; an.edited=''; state._an=an; renderAnnounce_(); };
   renderAttSetup_();
 }
 
