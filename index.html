@@ -371,13 +371,14 @@
   .cb-it:hover{background:var(--paper);}
   .cb-it.on{background:rgba(200,16,46,.07);}
   .cb-it.on b{color:var(--red);}
-  .cb-it img{width:22px;height:22px;border-radius:50%;flex:0 0 auto;}
+  .cb-it img{width:24px;height:24px;border-radius:50%;flex:0 0 auto;object-fit:cover;}
   .cb-it b{font-size:13.5px;color:var(--ink);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:58%;}
   .cb-it span{font-size:11.5px;color:var(--steel-soft);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right;}
   .cb-empty{font-size:12.5px;color:var(--steel-soft);padding:14px;text-align:center;display:none;}
   .mg-row{display:flex;align-items:center;gap:8px;padding:8px 8px 8px 12px;border-top:1px solid var(--line);}
   .mg-list .cb-g + .mg-row, .mg-list > .mg-row:first-child{border-top:none;}
   .mg-t{flex:1;min-width:0;display:flex;flex-direction:column;}
+  .mg-img{width:28px;height:28px;border-radius:50%;flex:0 0 auto;background:var(--paper);object-fit:cover;}
   .mg-t b{font-size:13.5px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .mg-t span{font-size:11.5px;color:var(--steel-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .mg-x{flex:0 0 auto;width:32px;height:32px;border:none;background:none;color:var(--steel-soft);font-size:15px;cursor:pointer;border-radius:8px;}
@@ -951,6 +952,44 @@
 .mom-card-btn{margin-left:auto;background:linear-gradient(135deg,#E7CE86,#C7A24B);color:#1a1508;border:0;border-radius:9px;padding:7px 11px;font-size:12px;font-weight:900;cursor:pointer;}
 .mom-line{display:flex;align-items:center;gap:8px;}
 .mom-card-mini{margin-left:auto;background:transparent;border:1px solid #D9BE74;color:#9a7b23;border-radius:8px;padding:3px 8px;font-size:11px;font-weight:800;cursor:pointer;}
+.at-info{background:var(--paper,#F6F5F3);border-radius:12px;padding:11px 13px;font-size:13px;line-height:1.5;margin-top:4px;}
+.at-info div{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;padding:2px 0;}
+.at-info span{flex:0 0 64px;color:var(--steel-soft,#8b8f98);font-size:12px;font-weight:700;}
+.at-info small{color:var(--steel-soft,#8b8f98);}
+.at-info p{margin:6px 0 0;font-size:11.5px;color:var(--steel-soft,#8b8f98);}
+.at-warn{background:#FFF4F4;border:1px solid #F3C9CF;color:#9b1c2e;border-radius:12px;padding:11px 13px;font-size:13px;line-height:1.55;margin-top:4px;}
+.at-sum{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px;}
+.at-sum span{font-size:12.5px;font-weight:800;padding:5px 10px;border-radius:99px;background:var(--paper,#F6F5F3);}
+.at-sum .present{background:rgba(30,158,106,.12);color:#15875A;}
+.at-sum .late{background:rgba(224,164,0,.14);color:#9a6d00;}
+.at-sum .absent{background:rgba(200,16,46,.10);color:#C8102E;}
+.at-sum .excused{color:var(--steel,#6B6E76);}
+.at-list{border:1px solid var(--line,#EAE8E4);border-radius:12px;overflow:hidden;}
+.at-row{display:flex;align-items:center;gap:10px;padding:9px 11px;border-bottom:1px solid var(--line,#EAE8E4);}
+.at-row:last-child{border-bottom:none;}
+.at-rn{flex:1;min-width:0;display:flex;flex-direction:column;}
+.at-rn b{font-size:14px;}
+.at-rn span{font-size:11.5px;color:var(--steel-soft,#8b8f98);}
+.at-ov{flex:0 0 auto;max-width:132px;padding:7px 8px;border:1px solid var(--line-strong,#ddd);border-radius:9px;font-family:inherit;font-size:12.5px;background:#fff;}
+.at-badge{display:inline-block;font-size:11px;font-weight:900;padding:2px 8px;border-radius:99px;background:rgba(255,255,255,.15);}
+.at-badge.present{background:#1E9E6A;color:#fff;}
+.at-badge.late{background:#E0A400;color:#1a1508;}
+.at-badge.absent{background:#C8102E;color:#fff;}
+.at-badge.excused{background:#6B6E76;color:#fff;}
+.at-rule{color:rgba(255,255,255,.88);font-size:12.5px;text-align:center;margin:12px 0 4px;line-height:1.6;}
+.at-rule b{color:#FFE9A8;}
+.at-rule span{opacity:.35;margin:0 6px;}
+.at-loc{width:100%;box-sizing:border-box;margin:10px 0 4px;padding:11px 12px;border-radius:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:#fff;font-size:13.5px;text-align:center;line-height:1.55;}
+.at-loc.in{background:rgba(30,158,106,.22);border-color:rgba(30,158,106,.6);font-weight:700;}
+.at-loc.out{background:rgba(200,16,46,.18);border-color:rgba(200,16,46,.5);}
+.at-loc.done{background:rgba(199,162,75,.2);border-color:rgba(199,162,75,.5);font-weight:700;}
+.at-loc small{opacity:.8;}
+.at-loc button{display:block;margin:8px auto 0;background:#fff;color:#111015;border:0;border-radius:9px;padding:7px 14px;font-weight:800;font-family:inherit;font-size:12.5px;cursor:pointer;}
+.at-card{position:relative;}
+.at-card.taken{opacity:.55;}
+.at-card:disabled{cursor:default;}
+.at-when{font-size:11.5px;color:rgba(255,255,255,.75);font-family:'Oswald',sans-serif;letter-spacing:.02em;}
+.vt-done span{display:block;font-size:14px;color:rgba(255,255,255,.85);margin-top:4px;}
 </style>
 </head>
 <body>
@@ -1088,7 +1127,7 @@ var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '12.3';
+var APP_VERSION = '12.4';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -1948,6 +1987,7 @@ function viewForm(){
     +     '<div class="act-row">'
     +       '<button class="btn-ghost" onclick="shareSquadCard_()">🖼️ 스쿼드 카드 이미지 저장</button>'
     +       (isAdmin()?'<button class="btn-ghost" onclick="openMomVote_(\''+sid+'\')">🗳️ MOM 투표 만들기 (링크 공유)</button>':'')
+    +       (isAdmin()?'<button class="btn-ghost" onclick="openAttLink_(\''+sid+'\')">📍 출석 링크 만들기</button>':'')
     +     '</div>'
     +   '</div></div>'
     +   '<div class="fc-left">' + rosterPanel + '</div>'
@@ -6881,7 +6921,7 @@ FS.init = function(){
     authP = firebase.auth ? firebase.auth().signInAnonymously().catch(function(){}) : Promise.resolve();
   }
   /* MOM 투표 링크로 들어온 경우: 투표 문서 1건만 읽으면 되므로 전체 로딩을 하지 않는다 */
-  if(/^#vote=/.test(String(location.hash||''))){ FS.voteOnly=true; authP.then(function(){ FS._resolve(); }); return; }
+  if(/^#(vote|att)=/.test(String(location.hash||''))){ FS.voteOnly=true; authP.then(function(){ FS._resolve(); }); return; }
   // 캐시가 신선하면(30분) 조회 없이 즉시 시작 — 읽기 사용량 절감 + 빠른 로딩
   var cache = ktCacheLoad_();
   if(cache && !ktCacheBypass_() && (Date.now()-cache.ts) < ktCacheTtl_()){
@@ -7029,6 +7069,7 @@ function fitPhone_(){
   try{ initBackButton_(); }catch(e){}
   if(window.__KT_EXT) return;
   if(/^#vote=/.test(String(location.hash||''))){ hideSplash_(); try{ voteBoot_(); }catch(e){} return; }
+  if(/^#att=/.test(String(location.hash||''))){ hideSplash_(); try{ attBoot_(); }catch(e){} return; }
   API.run('bootstrap').then(function(b){
     if(b){ if(b.config) state.cfg=b.config; state.clubs=b.clubs||[]; }
     hideSplash_();
@@ -7097,6 +7138,9 @@ function openTeamAdmin_(){
    +     cfgRow('지각 점수', scoreLabel_(lateScore), 'editLateScore')
    +     cfgRow('불참 점수', scoreLabel_(absentScore), 'editAbsentScore')
    +     '<div class="list-row" style="cursor:pointer;" onclick="openVoteList_()"><span class="nm" style="flex:1;">MOM 투표 관리</span><span class="val" style="color:var(--red);font-size:14px;">🗳️ 목록 ›</span></div>'
+   +     '<div class="list-row" style="cursor:pointer;" onclick="openAttList_()"><span class="nm" style="flex:1;">출석 체크 관리</span><span class="val" style="color:var(--red);font-size:14px;">📍 목록 ›</span></div>'
+   +     cfgRow('출석 인정 범위', attCfgRadius_()+'m', 'editAttRadius_')
+   +     cfgRow('지각 기준', attLateLabel_(attCfgLate_()), 'editAttLate_')
    +     cfgRow('감독 · 코치', staffLabel_(), 'editStaff_')
    +     cfgRow('시즌 기간', seasonRangeLabel_(), 'editSeason_')
    +   '</div>'
@@ -7951,8 +7995,27 @@ function openVideoSearch_(){
       if(!isAdmin()){ if(s.mode!=='ch'){ s.mode='ch'; s.src=''; s.items=[]; } }
       else if(s.mode==='ch' && !state._ytconf.channels.length && !s.items.length) s.mode='kw';
       showSheet(videoSearchHtml_()); ytUsagePaint_(); videoSearchRenderList_();
+      ytThumbFill_().then(function(n){ if(n && document.getElementById('vs_list') && !state._cbOpen) vsRepaint_(); });
     });
   });
+}
+/* 채널 사진이 없는 채널: channels API로 50개씩 한 번에 (50개당 1단위) · 하루 한 번만 시도 */
+function ytThumbFill_(){
+  var cf=state._ytconf; if(!cf || state._ytThumbBusy) return Promise.resolve(0);
+  var today=ytPTDay_();
+  var miss=cf.channels.filter(function(c){ return c.id && !c.thumb && c.thumbTry!==today; });
+  if(!miss.length) return Promise.resolve(0);
+  state._ytThumbBusy=true;
+  var chunks=[]; for(var i=0;i<miss.length;i+=50) chunks.push(miss.slice(i,i+50));
+  return Promise.all(chunks.map(function(ch){
+    return ytApi_('channels',{part:'snippet', id:ch.map(function(c){ return c.id; }).join(','), maxResults:50},1).catch(function(){ return {items:[]}; });
+  })).then(function(res){
+    var map={};
+    res.forEach(function(b){ (b.items||[]).forEach(function(it){ var t=((it.snippet||{}).thumbnails||{}); map[it.id]=(t.default||t.medium||{}).url||''; }); });
+    var n=0;
+    cf.channels.forEach(function(c){ if(c.thumb || !c.id) return; if(map[c.id]){ c.thumb=map[c.id]; n++; delete c.thumbTry; } else if(miss.indexOf(c)>-1) c.thumbTry=today; });
+    ytConfSave_(); state._ytThumbBusy=false; return n;
+  }).catch(function(){ state._ytThumbBusy=false; return 0; });
 }
 /* ── 콤보박스(선택 + 검색) 공통 ── */
 function cbBox_(id, fieldHtml, ph, listHtml){
@@ -8197,7 +8260,7 @@ function openVsManage_(){
      +     '<div class="mg-list">'+(cf.channels.length?ytChGrouped_(cf.channels).map(function(g){
              return '<div class="cb-g" data-gh="'+esc(g.g)+'">'+esc(g.g)+' · '+g.list.length+'</div>'
                + g.list.map(function(o){ var c=o.c;
-                   return '<div class="mg-row" data-g="'+esc(g.g)+'" data-s="'+esc(cbKey_(c.title,c.desc||'',g.g,c.handle||''))+'"><div class="mg-t"><b>'+esc(c.title)+'</b><span>'+esc(c.desc||c.handle||'')+'</span></div>'
+                   return '<div class="mg-row" data-g="'+esc(g.g)+'" data-s="'+esc(cbKey_(c.title,c.desc||'',g.g,c.handle||''))+'">'+(c.thumb?'<img class="mg-img" src="'+esc(c.thumb)+'" alt="" loading="lazy">':'<span class="mg-img"></span>')+'<div class="mg-t"><b>'+esc(c.title)+'</b><span>'+esc(c.desc||c.handle||'')+'</span></div>'
                      + '<button type="button" class="mg-x" onclick="vsDelChannel_('+o.i+')" aria-label="삭제">✕</button></div>'; }).join(''); }).join('')
            :'<div class="cb-empty" style="display:block;">등록된 채널이 없어요</div>')+'<div class="cb-empty">검색 결과가 없어요</div></div>'
      +   '</div>'
@@ -9942,7 +10005,7 @@ function renderVoteScreen_(){
   voteSkin_();
 }
 function voteEdit_(){ state._voteEdit=true; renderVoteScreen_(); }
-function voteFinish_(){
+function voteFinish_(doneTitle){
   var ua=String(navigator.userAgent||'');
   /* ① 인앱 브라우저 전용 종료 스킴 (카카오톡·네이버·라인) */
   try{
@@ -9958,7 +10021,7 @@ function voteFinish_(){
     if(document.hidden) return;
     var el=document.getElementById('pinScreen'); if(!el) return;
     el.innerHTML='<div class="auth-inner"><img class="auth-logo vt-logo" src="'+APP_LOGO+'" alt="">'
-      + '<div class="auth-title">투표 완료</div>'
+      + '<div class="auth-title">'+(doneTitle||'투표 완료')+'</div>'
       + '<div class="auth-sub">참여해 주셔서 감사합니다</div>'
       + '<p class="vt-hint" style="margin-top:18px;">이 창은 닫으셔도 됩니다.</p></div>';
     voteSkin_();
@@ -9973,6 +10036,467 @@ function voteCast_(pid){
   var up={}; up['votes.'+k]=pid;
   voteRef_(v.id).update(up).then(function(){ toast('투표되었습니다'); })
     .catch(function(){ toast('저장 실패 · 다시 눌러주세요'); });
+}
+
+/* ================= 출석 체크 링크 (MOM 투표와 같은 방식) =================
+ * 관리자: 스쿼드에서 '출석 링크 만들기' → 경기 선택 → 링크 공유
+ * 팀원: 링크 접속 → 경기장 반경(팀 관리 설정 50/100/200m) 안에서만 본인 이름 1명 선택(변경 가능)
+ * 판정: 경기 시작 − 지각 기준(정각/10/20분 전/직접) = 기준 시각. 기준 시각의 59초까지 참석, 그 뒤 지각
+ * 마감(관리자): 명단 중 미체크 → 불참 · 명단에 없는 팀원 → 미참석 → 경기 기록(출석)에 저장
+ * 문서: attChecks/{id} {matchId, cands[{pid,name,num}], lat,lng,radius, startAt,cutoffAt,lateMin,
+ *        checks:{pid:{at,st,dev,dist}}, byDev:{기기키:pid}, ov:{pid:st}, closed} */
+var ATT_COLL='attChecks';
+var ATT_RADII=[50,100,200];
+var ATT_ST={present:'참석', late:'지각', absent:'불참', excused:'미참석'};
+function attRef_(id){ return db.collection(ATT_COLL).doc(String(id)); }
+function attHashId_(){ var m=String(location.hash||'').match(/^#att=([A-Za-z0-9_-]+)/); return m?m[1]:''; }
+function attUrl_(id){ return location.origin+location.pathname+'#att='+id; }
+function attCfgRadius_(){ var r=Number((state.cfg||{}).attRadius); return ATT_RADII.indexOf(r)>-1?r:100; }
+function attCfgLate_(){ var n=Number((state.cfg||{}).attLateMin); return (isFinite(n)&&n>=0&&n<=180)?Math.round(n):0; }
+function attLateLabel_(n){ return n?n+'분 전':'정각'; }
+function attPad_(n){ return ('0'+n).slice(-2); }
+function attHM_(iso, sec){ var d=new Date(iso); if(isNaN(d)) return ''; return attPad_(d.getHours())+':'+attPad_(d.getMinutes())+(sec?':'+attPad_(d.getSeconds()):''); }
+function attMD_(iso){ var d=new Date(iso); if(isNaN(d)) return ''; return attPad_(d.getMonth()+1)+'.'+attPad_(d.getDate()); }
+/* 경기 시작 시각 (경기 등록의 날짜·시간, 이 기기 시간대 기준) */
+function attStartOf_(m){
+  var t=cleanTime(m&&m.time); if(!m||!m.date||!t) return null;
+  var p=String(m.date).split('-'), h=t.split(':');
+  var d=new Date(Number(p[0]), Number(p[1])-1, Number(p[2]), Number(h[0])||0, Number(h[1])||0, 0, 0);
+  return isNaN(d)?null:d;
+}
+function attHasXY_(m){ return !!(m && m.lat!=null && m.lat!=='' && m.lng!=null && m.lng!=='' && isFinite(Number(m.lat)) && isFinite(Number(m.lng))); }
+/* 기준 시각의 59초까지 참석, 그 뒤 지각 */
+function attStatusAt_(doc, iso){
+  var t=new Date(iso).getTime(), c=new Date(doc.cutoffAt).getTime();
+  return (t < c+60000) ? 'present' : 'late';
+}
+function attDist_(lat1,lng1,lat2,lng2){
+  var R=6371000, r=Math.PI/180, dLa=(lat2-lat1)*r, dLo=(lng2-lng1)*r;
+  var a=Math.sin(dLa/2)*Math.sin(dLa/2)+Math.cos(lat1*r)*Math.cos(lat2*r)*Math.sin(dLo/2)*Math.sin(dLo/2);
+  return Math.round(2*R*Math.atan2(Math.sqrt(a),Math.sqrt(1-a)));
+}
+function attDistLabel_(m){ return m>=1000?(m/1000).toFixed(1)+'km':m+'m'; }
+
+/* ── 팀 관리: 출석 인정 범위 · 지각 기준 ── */
+function editAttRadius_(){
+  if(!requireAdmin()) return;
+  var cur=attCfgRadius_();
+  showSheet('<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>📍 출석 인정 범위</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<p style="font-size:13px;color:var(--steel);margin:0 0 14px;line-height:1.55;">출석 링크에서 <b>경기장 위치로부터 이 거리 안</b>에 있어야 이름을 누를 수 있어요. 실내·건물 근처는 GPS 오차가 있어 100m 이상을 권장해요.</p>'
+   +   '<div class="chips">'+ATT_RADII.map(function(r){ return '<button class="chip'+(r===cur?' on':'')+'" onclick="attCfgSave_(\'attRadius\','+r+')">'+r+'m</button>'; }).join('')+'</div>'
+   + '</div>');
+}
+function editAttLate_(){
+  if(!requireAdmin()) return;
+  var cur=attCfgLate_(), preset=[0,10,20], custom=preset.indexOf(cur)<0;
+  showSheet('<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>⏱ 지각 기준</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<p style="font-size:13px;color:var(--steel);margin:0 0 14px;line-height:1.55;">경기 시작 시간에서 이 시간을 뺀 <b>기준 시각의 59초까지 참석</b>, 그 뒤는 지각이에요.<br><span style="color:var(--steel-soft);">예) 08:00 경기 · 20분 전 → 07:40:59까지 참석, 07:41부터 지각</span></p>'
+   +   '<div class="chips">'+preset.map(function(n){ return '<button class="chip'+(!custom&&n===cur?' on':'')+'" onclick="attCfgSave_(\'attLateMin\','+n+')">'+attLateLabel_(n)+'</button>'; }).join('')
+   +     '<button class="chip'+(custom?' on':'')+'" onclick="document.getElementById(\'at_lm_box\').style.display=\'flex\'">직접 입력'+(custom?' · '+cur+'분 전':'')+'</button></div>'
+   +   '<div id="at_lm_box" style="display:'+(custom?'flex':'none')+';gap:8px;align-items:center;margin-top:6px;">'
+   +     '<input id="at_lm" type="number" inputmode="numeric" min="0" max="180" value="'+cur+'" class="vs-input" style="width:90px;text-align:center;"> <span style="font-size:13.5px;font-weight:700;">분 전</span>'
+   +     '<button class="btn-primary" style="width:auto;margin:0 0 0 auto;padding:0 16px;height:44px;" onclick="attCfgSaveCustom_()">저장</button></div>'
+   + '</div>');
+}
+function attCfgSaveCustom_(){
+  var n=parseInt((document.getElementById('at_lm')||{}).value,10);
+  if(!(n>=0 && n<=180)){ toast('0~180분 사이로 입력해주세요'); return; }
+  attCfgSave_('attLateMin', n);
+}
+function attCfgSave_(key, v){
+  state.cfg=state.cfg||{}; state.cfg[key]=v;
+  toast('저장했어요 · '+(key==='attRadius'?v+'m':attLateLabel_(v)));
+  API.run('setConfig', key, v).then(function(cfg){ if(cfg) state.cfg=cfg; }).catch(function(){ toast('저장 실패 · 새로고침'); });
+  try{ logEvent_('edit', key==='attRadius'?'출석 인정 범위':'지각 기준', key==='attRadius'?v+'m':attLateLabel_(v)); }catch(e){}
+  openTeamAdmin_();
+}
+
+/* ── 관리자: 출석 링크 만들기 (스쿼드 명단 = 출석 대상) ── */
+function openAttLink_(sid){
+  if(!requireAdmin()) return;
+  var d=state.squadDetail;
+  if(!d || !d.squad || d.squad.id!==sid){ toast('스쿼드를 먼저 선택하세요'); return; }
+  var mems=(d.members||[]).filter(function(m){ return !m.guest; });
+  if(!mems.length){ toast('스쿼드에 편성된 팀원이 없습니다'); return; }
+  state._att={ sid:sid, sel:{}, matchId:'' };
+  mems.forEach(function(m){ state._att.sel[m.playerId]=true; });
+  var today=attToday_();
+  var ms=(state.matches||[]).filter(function(m){ return m.date; });
+  var up=ms.filter(function(m){ return m.date>=today; }).sort(function(a,b){ return String(a.date).localeCompare(String(b.date)); })[0];
+  var past=ms.slice().sort(function(a,b){ return String(b.date).localeCompare(String(a.date)); })[0];
+  state._att.matchId=(up||past||{}).id||'';
+  renderAttSetup_();
+}
+function attMatchOpts_(){
+  var today=attToday_();
+  var ms=(state.matches||[]).filter(function(m){ return m.date; });
+  var up=ms.filter(function(m){ return m.date>=today; }).sort(function(a,b){ return String(a.date).localeCompare(String(b.date)); });
+  var past=ms.filter(function(m){ return m.date<today; }).sort(function(a,b){ return String(b.date).localeCompare(String(a.date)); }).slice(0,8);
+  return up.concat(past);
+}
+function renderAttSetup_(){
+  var a=state._att, d=state.squadDetail; if(!a||!d) return;
+  var mems=(d.members||[]).filter(function(m){ return !m.guest; });
+  var ms=attMatchOpts_();
+  var m=ms.filter(function(x){ return x.id===a.matchId; })[0];
+  var opts=ms.map(function(x){
+    return '<option value="'+x.id+'"'+(x.id===a.matchId?' selected':'')+'>'+fmtDateDot(x.date)+(cleanTime(x.time)?' '+cleanTime(x.time):'')+' vs '+esc(x.opponent||'상대')+(attHasXY_(x)?'':' · 위치 없음')+'</option>';
+  }).join('');
+  var st=m?attStartOf_(m):null, lm=attCfgLate_(), rad=attCfgRadius_();
+  var info;
+  if(!m) info='<div class="at-warn">등록된 경기가 없어요. 경기 등록에서 먼저 경기를 만들어주세요.</div>';
+  else if(!attHasXY_(m)) info='<div class="at-warn">이 경기는 <b>경기장 위치(지도)</b>가 없어 거리 확인을 할 수 없어요.<br>경기 등록 → 경기장에서 지도 위치를 지정해주세요.</div>';
+  else if(!st) info='<div class="at-warn">이 경기는 <b>시간</b>이 등록되지 않았어요. 경기 등록에서 시간을 입력해주세요.</div>';
+  else {
+    var cut=new Date(st.getTime()-lm*60000);
+    info='<div class="at-info">'
+      + '<div><span>경기</span><b>'+fmtDateDot(m.date)+' '+cleanTime(m.time)+' · '+esc(m.venue||'경기장')+'</b></div>'
+      + '<div><span>참석 인정</span><b>'+attPad_(cut.getHours())+':'+attPad_(cut.getMinutes())+':59까지</b> <small>('+attLateLabel_(lm)+' 기준 · 이후 지각)</small></div>'
+      + '<div><span>출석 범위</span><b>경기장 '+rad+'m 안</b></div>'
+      + '<p>범위·지각 기준은 팀 관리에서 바꿀 수 있어요.</p></div>';
+  }
+  var n=mems.filter(function(x){ return a.sel[x.playerId]; }).length;
+  var rows=mems.map(function(x){
+    var on=!!a.sel[x.playerId];
+    return '<div class="vt-pick'+(on?' on':'')+'" id="ap_'+x.playerId+'" onclick="attToggle_(\''+x.playerId+'\')">'
+      + (x.photo?'<img class="vt-ava" src="'+x.photo+'" alt="">':'<div class="vt-ava vt-ava-e">👤</div>')
+      + '<span class="vt-num oswald">'+numDisp(x.num)+'</span><span class="vt-nm">'+esc(x.name)+'</span><span class="vt-ck">'+(on?'✓':'')+'</span></div>';
+  }).join('');
+  var ok=m && attHasXY_(m) && st;
+  showSheet('<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>📍 출석 링크 만들기</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<div class="field"><label>경기 선택</label><select id="at_match" onchange="state._att.matchId=this.value;renderAttSetup_()">'+(opts||'<option value="">등록된 경기 없음</option>')+'</select></div>'
+   +   info
+   +   '<div class="eyebrow" style="margin:14px 0 6px;">출석 대상 <span id="ap_n">'+n+'</span>명 · 탭해서 제외/추가</div>'
+   +   '<div class="vt-list">'+rows+'</div>'
+   +   '<p style="font-size:12px;color:var(--steel-soft);margin:8px 2px 0;line-height:1.55;">마감하면 대상 중 체크하지 않은 팀원은 <b>불참</b>, 대상이 아닌 팀원은 <b>미참석</b>으로 경기 기록에 저장돼요.</p>'
+   +   '<button class="btn-primary" style="margin-top:14px;"'+(ok?'':' disabled')+' onclick="attCreate_()">🔗 출석 링크 만들기</button>'
+   + '</div>');
+}
+function attToggle_(pid){
+  var a=state._att; if(!a) return;
+  a.sel[pid]=!a.sel[pid];
+  var row=document.getElementById('ap_'+pid); if(!row){ renderAttSetup_(); return; }
+  var on=!!a.sel[pid]; row.classList.toggle('on',on);
+  var ck=row.querySelector('.vt-ck'); if(ck) ck.textContent=on?'✓':'';
+  var n=((state.squadDetail||{}).members||[]).filter(function(m){ return !m.guest && a.sel[m.playerId]; }).length;
+  var el=document.getElementById('ap_n'); if(el) el.textContent=n;
+}
+function attCreate_(force){
+  var a=state._att, d=state.squadDetail; if(!a||!d) return;
+  if(state._attBusy) return;
+  var mems=(d.members||[]).filter(function(m){ return !m.guest && a.sel[m.playerId]; });
+  if(!mems.length){ toast('출석 대상을 1명 이상 선택하세요'); return; }
+  var m=(state.matches||[]).filter(function(x){ return x.id===a.matchId; })[0];
+  if(!m){ toast('경기를 선택하세요'); return; }
+  var st=attStartOf_(m);
+  if(!attHasXY_(m) || !st){ toast('경기장 위치와 시간이 등록된 경기만 가능해요'); return; }
+  if(!window.db || !FS.enabled){ toast('네트워크 연결을 확인해주세요'); return; }
+  state._attBusy=true;
+  if(!force){
+    return db.collection(ATT_COLL).where('matchId','==',m.id).limit(5).get().then(function(qs){
+      var ex=[]; qs.forEach(function(dd){ ex.push(dd.data()); });
+      state._attBusy=false;
+      if(ex.length){
+        var open=ex.filter(function(x){ return !x.closed; })[0]||ex[0];
+        showSheet('<div class="grabber"></div>'
+         + '<div class="sheet-head"><h3>이미 만든 출석 링크가 있어요</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+         + '<div class="sheet-body">'
+         +   '<p style="font-size:13px;color:var(--steel);margin:0 0 14px;line-height:1.6;"><b>'+esc(open.title||'')+'</b><br>'+(open.closed?'마감됨':'진행 중 · '+attCheckedN_(open)+'명 체크')+'</p>'
+         +   '<button class="btn-primary" onclick="openAttAdmin_(\''+open.id+'\')">📊 기존 출석 현황 열기</button>'
+         +   '<button class="btn-ghost" style="margin-top:8px;" onclick="attCopy_(\''+open.id+'\')">📋 기존 링크 복사</button>'
+         +   '<button class="btn-ghost" style="margin-top:8px;" onclick="closeSheet();setTimeout(function(){ attCreate_(true); },60)">➕ 그래도 새로 만들기</button>'
+         + '</div>');
+        return;
+      }
+      attCreate_(true);
+    }).catch(function(){ state._attBusy=false; attCreate_(true); });
+  }
+  var lm=attCfgLate_(), cut=new Date(st.getTime()-lm*60000);
+  var id='a'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+  var doc={
+    id:id, clubId:(window.ACTIVE_CLUB||state.activeClubId||''), matchId:m.id, squadId:a.sid, team:ourTeamName_(),
+    title:fmtDateDot(m.date)+' vs '+(m.opponent||'상대'), date:m.date, time:cleanTime(m.time), venue:m.venue||'',
+    lat:Number(m.lat), lng:Number(m.lng), radius:attCfgRadius_(), lateMin:lm,
+    startAt:st.toISOString(), cutoffAt:cut.toISOString(),
+    cands:mems.map(function(x){ return {pid:x.playerId, name:String(x.name||''), num:String(x.num||'')}; }),
+    checks:{}, byDev:{}, ov:{}, closed:false, createdAt:new Date().toISOString()
+  };
+  toast('출석 링크를 만드는 중...');
+  attRef_(id).set(doc).then(function(){
+    state._attBusy=false; state._attDoc=doc; closeSheet(); attShareSheet_(doc);
+    try{ logEvent_('att','create','출석 링크 · '+doc.title); }catch(e){}
+  }).catch(function(){ state._attBusy=false; toast('만들기 실패 · 네트워크를 확인해주세요'); });
+}
+function attCheckedN_(v){ var c=v.checks||{}; return Object.keys(c).filter(function(k){ return c[k]; }).length; }
+function attShareSheet_(doc){
+  var url=attUrl_(doc.id);
+  showSheet('<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>🔗 출석 링크</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<p style="font-size:13px;color:var(--steel);margin:0 0 12px;line-height:1.55;"><b>'+esc(doc.title)+'</b><br>대상 '+doc.cands.length+'명 · 경기장 '+doc.radius+'m 안에서 체크 · '+attHM_(doc.cutoffAt)+':59까지 참석</p>'
+   +   '<div class="vt-url" onclick="attCopy_(\''+doc.id+'\')">'+esc(url)+'</div>'
+   +   '<button class="btn-primary" style="margin-top:12px;" onclick="attShare_(\''+doc.id+'\')">📤 카카오톡 등으로 공유</button>'
+   +   '<button class="btn-ghost" style="margin-top:8px;" onclick="attCopy_(\''+doc.id+'\')">📋 링크 복사</button>'
+   +   '<button class="btn-ghost" style="margin-top:8px;" onclick="openAttAdmin_(\''+doc.id+'\')">📊 출석 현황 보기</button>'
+   + '</div>');
+}
+function attShare_(id){
+  var url=attUrl_(id), doc=state._attDoc||{};
+  var txt='[출석 체크] '+(doc.title||'')+'\n경기장에 도착하면 링크를 열고 본인 이름을 눌러주세요.\n'+(doc.cutoffAt?attHM_(doc.cutoffAt)+':59까지 참석 · 이후 지각\n':'')+url;
+  if(navigator.share){ navigator.share({title:'출석 체크', text:txt, url:url}).catch(function(){}); return; }
+  attCopy_(id);
+}
+function attCopy_(id){
+  var url=attUrl_(id);
+  try{
+    if(navigator.clipboard) navigator.clipboard.writeText(url);
+    else { var t=document.createElement('textarea'); t.value=url; document.body.appendChild(t); t.select(); document.execCommand('copy'); document.body.removeChild(t); }
+    toast('링크를 복사했어요');
+  }catch(e){ toast('복사에 실패했어요'); }
+}
+
+/* ── 관리자: 목록 · 현황 · 마감 ── */
+function openAttList_(){
+  if(!requireAdmin()) return;
+  if(!window.db || !FS.enabled){ toast('네트워크 연결을 확인해주세요'); return; }
+  var cid=window.ACTIVE_CLUB||state.activeClubId||'';
+  db.collection(ATT_COLL).where('clubId','==',cid).limit(40).get().then(function(qs){
+    var arr=[]; qs.forEach(function(dd){ arr.push(dd.data()); });
+    arr.sort(function(a,b){ return String(b.createdAt).localeCompare(String(a.createdAt)); });
+    var rows=arr.map(function(v){
+      var n=attCheckedN_(v);
+      var st=v.closed?'<span class="vt-st done">마감 · 기록 저장됨</span>':'<span class="vt-st live">진행 중 · '+n+'/'+(v.cands||[]).length+'명</span>';
+      return '<div class="rk-row" style="cursor:pointer;">'
+        + '<span class="rk-name" onclick="openAttAdmin_(\''+v.id+'\')">'+esc(v.title||v.date||'')+'<br>'+st+'</span>'
+        + '<span class="rk-val oswald" onclick="openAttAdmin_(\''+v.id+'\')">'+n+'<small>명</small></span>'
+        + '<button class="vt-del" onclick="attDeleteId_(\''+v.id+'\')">🗑️</button></div>';
+    }).join('') || '<div class="empty" style="padding:24px;">만든 출석 링크가 없습니다.<br>스쿼드 탭에서 출석 링크를 만들어보세요.</div>';
+    showSheet('<div class="grabber"></div>'
+     + '<div class="sheet-head"><h3>📍 출석 체크</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+     + '<div class="sheet-body"><div class="rk-list">'+rows+'</div></div>');
+  }).catch(function(){ toast('목록을 불러오지 못했습니다'); });
+}
+function openAttAdmin_(id){
+  if(!requireAdmin()) return;
+  attRef_(id).get().then(function(sn){
+    if(!sn.exists){ toast('출석 링크를 찾을 수 없습니다'); return; }
+    state._attDoc=sn.data(); renderAttAdmin_();
+  }).catch(function(){ toast('불러오지 못했습니다'); });
+}
+/* 최종 상태: 관리자 지정 > 체크 기록 > 미체크(마감 시 불참) */
+function attFinal_(v, pid){
+  var ov=(v.ov||{})[pid]; if(ov) return ov;
+  var c=(v.checks||{})[pid]; if(c) return c.st;
+  return '';
+}
+function renderAttAdmin_(){
+  var v=state._attDoc; if(!v) return;
+  var cnt={present:0,late:0,absent:0,excused:0,none:0};
+  var list=(v.cands||[]).map(function(c){
+    var ck=(v.checks||{})[c.pid], st=attFinal_(v,c.pid);
+    cnt[st||'none']++;
+    return {c:c, ck:ck, st:st};
+  });
+  list.sort(function(a,b){ var ta=a.ck?a.ck.at:'~', tb=b.ck?b.ck.at:'~'; return ta.localeCompare(tb); });
+  var rows=list.map(function(r){
+    var ov=(v.ov||{})[r.c.pid]||'';
+    var sub=r.ck?(attMD_(r.ck.at)+' '+attHM_(r.ck.at,true)+(r.ck.dist!=null?' · '+attDistLabel_(r.ck.dist):'')):(ov?'관리자 지정':'미체크'+(v.closed?'':' · 마감 시 불참'));
+    if(r.ck && ov) sub+=' · 관리자 지정';
+    var sel=v.closed?'<span class="at-badge '+(r.st||'absent')+'">'+ATT_ST[r.st||'absent']+'</span>'
+      : '<select class="at-ov" onchange="attOverride_(\''+r.c.pid+'\',this.value)">'
+        + '<option value=""'+(ov?'':' selected')+'>'+(r.ck?'자동 · '+ATT_ST[r.ck.st]:'자동 · 미체크')+'</option>'
+        + ['present','late','absent','excused'].map(function(k){ return '<option value="'+k+'"'+(ov===k?' selected':'')+'>'+ATT_ST[k]+'로 지정</option>'; }).join('')
+        + '</select>';
+    return '<div class="at-row"><span class="vt-num oswald">'+esc(r.c.num)+'</span>'
+      + '<div class="at-rn"><b>'+esc(r.c.name)+'</b><span>'+sub+'</span></div>'+sel+'</div>';
+  }).join('');
+  var candSet={}; (v.cands||[]).forEach(function(c){ candSet[c.pid]=1; });
+  var others=(state.players||[]).filter(function(p){ return !candSet[p.id] && isActiveP_(p); }).length;
+  var sum='<div class="at-sum"><span class="present">참석 '+cnt.present+'</span><span class="late">지각 '+cnt.late+'</span>'
+    + (cnt.absent?'<span class="absent">불참 '+cnt.absent+'</span>':'')+(cnt.excused?'<span class="excused">미참석 '+cnt.excused+'</span>':'')
+    + (v.closed?'':'<span class="none">미체크 '+cnt.none+'</span>')+'</div>';
+  var actions=v.closed
+    ? '<p style="font-size:13px;color:var(--steel);margin:14px 2px 0;">마감되어 경기 기록(출석)에 저장됐어요.</p>'
+      + '<button class="btn-ghost" style="margin-top:10px;" onclick="attReopen_()">↩️ 마감 취소 (다시 열기)</button>'
+      + '<button class="btn-ghost" style="margin-top:8px;color:var(--red);" onclick="attDeleteId_(\''+v.id+'\')">🗑️ 출석 링크 삭제 (기록은 유지)</button>'
+    : '<button class="btn-primary" style="margin-top:14px;" onclick="attClose_()">✅ 마감하고 경기 기록에 저장</button>'
+      + '<button class="btn-ghost" style="margin-top:8px;" onclick="state._attDoc&&attShare_(state._attDoc.id)">📤 링크 다시 공유</button>'
+      + '<button class="btn-ghost" style="margin-top:8px;" onclick="openAttAdmin_(\''+v.id+'\')">↻ 현황 새로고침</button>'
+      + '<button class="btn-ghost" style="margin-top:8px;color:var(--red);" onclick="attDeleteId_(\''+v.id+'\')">🗑️ 출석 링크 삭제</button>';
+  showSheet('<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>📊 '+esc(v.title||'출석 체크')+'</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<p style="font-size:12.5px;color:var(--steel-soft);margin:0 0 10px;">'+esc(v.venue||'경기장')+' '+v.radius+'m · '+attHM_(v.cutoffAt)+':59까지 참석 · 대상 '+(v.cands||[]).length+'명'+(v.closed?' · 마감됨':'')+'</p>'
+   +   sum
+   +   '<div class="at-list">'+rows+'</div>'
+   +   '<p style="font-size:11.5px;color:var(--steel-soft);margin:8px 2px 0;">명단에 없는 활동 팀원 '+others+'명은 마감 시 미참석으로 저장돼요.'+(v.closed?'':' 휴대폰이 없는 팀원은 오른쪽에서 직접 지정하세요.')+'</p>'
+   +   actions
+   + '</div>');
+}
+function attOverride_(pid, st){
+  var v=state._attDoc; if(!v||v.closed) return;
+  v.ov=v.ov||{}; if(st) v.ov[pid]=st; else delete v.ov[pid];
+  var up={}; up['ov.'+pid]=st||null;
+  attRef_(v.id).update(up).then(function(){ toast(st?'지정했어요':'자동으로 되돌렸어요'); renderAttAdmin_(); }).catch(function(){ toast('저장 실패'); });
+}
+function attClose_(){
+  var v=state._attDoc; if(!v||v.closed) return;
+  var m=findMatchAny_(v.matchId);
+  appConfirm_('출석을 마감할까요?\n'+(v.title||'')+' 경기의 출석 기록이 이 결과로 저장됩니다.\n(체크 안 한 대상 → 불참 · 명단 외 팀원 → 미참석)', function(){
+    var candSet={}; (v.cands||[]).forEach(function(c){ candSet[c.pid]=1; });
+    var prev={}; (state.recAtt||[]).forEach(function(x){ if(x.matchId===v.matchId) prev[x.playerId]=x.status; });
+    var list=[];
+    (state.players||[]).forEach(function(p){
+      var ck=(v.checks||{})[p.id], ov=(v.ov||{})[p.id], st;
+      if(candSet[p.id]) st=ov||(ck?ck.st:'absent');
+      else if(ov) st=ov;
+      else if(!isActiveP_(p)) st=prev[p.id]||'';          // 부상·휴식 등은 기존 기록 유지
+      else st='excused';
+      if(st) list.push({playerId:p.id, status:st, checkedAt:ck?ck.at:null});
+    });
+    toast('저장하는 중...');
+    API.run('setMatchAttendance', v.matchId, list).then(function(b){
+      applyRecBundle_(b); recCacheClear_();
+      return attRef_(v.id).update({closed:true, closedAt:new Date().toISOString()});
+    }).then(function(){
+      v.closed=true;
+      try{ logEvent_('att','close','출석 마감 · '+(v.title||'')); }catch(e){}
+      toast('✅ 출석을 경기 기록에 저장했어요');
+      renderAttAdmin_();
+      if(state.screen==='record') render();
+    }).catch(function(){ toast('마감 처리에 실패했습니다'); });
+  });
+}
+function attReopen_(){
+  var v=state._attDoc; if(!v||!v.closed) return;
+  appConfirm_('마감을 취소하고 출석 링크를 다시 열까요?\n(이미 저장된 경기 기록은 다시 마감할 때 덮어써요)', function(){
+    attRef_(v.id).update({closed:false}).then(function(){ v.closed=false; toast('다시 열었어요'); renderAttAdmin_(); }).catch(function(){ toast('실패했습니다'); });
+  });
+}
+function attDeleteId_(id){
+  if(!requireAdmin()) return;
+  appConfirm_('출석 링크를 삭제할까요?\n링크가 더 이상 열리지 않아요. (이미 저장된 경기 기록은 유지)', function(){
+    attRef_(id).delete().then(function(){ toast('삭제했어요'); try{ logEvent_('att','delete','출석 링크 삭제'); }catch(e){} openAttList_(); }).catch(function(){ toast('삭제 실패'); });
+  });
+}
+
+/* ── 팀원: 출석 화면 (링크 접속 · 로그인 없이) ── */
+function attBoot_(){
+  var id=attHashId_();
+  var el=document.getElementById('pinScreen');
+  if(el){ el.classList.add('vote'); el.style.display='flex'; el.innerHTML='<div class="auth-inner"><div class="auth-title">출석 체크</div><div class="auth-sub">불러오는 중...</div></div>'; voteSkin_(); }
+  var tb=document.getElementById('tabbar'); if(tb) tb.style.display='none';
+  var fb=document.getElementById('fab'); if(fb) fb.style.display='none';
+  FS.ready.then(function(){
+    if(!window.db){ attFail_('네트워크에 연결할 수 없습니다.'); return; }
+    return attRef_(id).get().then(function(sn){
+      if(!sn.exists){ attFail_('출석 링크를 찾을 수 없습니다.<br>삭제되었거나 만료되었어요.'); return; }
+      state._attDoc=sn.data(); state._attLoc={state:'wait'};
+      renderAttScreen_();
+      if(!state._attDoc.closed) attLocate_();
+    });
+  }).catch(function(){ attFail_('불러오지 못했습니다.'); });
+}
+function attFail_(msg){
+  var el=document.getElementById('pinScreen'); if(!el) return;
+  el.classList.add('vote');
+  el.innerHTML='<div class="auth-inner"><img class="auth-logo vt-logo" src="'+APP_LOGO+'" alt=""><div class="auth-title">출석 체크</div><div class="auth-sub">'+msg+'</div></div>';
+  voteSkin_();
+}
+/* 현재 위치 → 경기장까지 거리 */
+function attLocate_(then){
+  var v=state._attDoc; if(!v) return;
+  if(!navigator.geolocation){ state._attLoc={state:'err', msg:'이 브라우저는 위치 확인을 지원하지 않아요.'}; renderAttScreen_(); return; }
+  state._attLoc={state:'wait'}; renderAttScreen_();
+  navigator.geolocation.getCurrentPosition(function(pos){
+    var d=attDist_(pos.coords.latitude, pos.coords.longitude, Number(v.lat), Number(v.lng));
+    state._attLoc={state:d<=Number(v.radius)?'in':'out', dist:d, acc:Math.round(pos.coords.accuracy||0), at:Date.now()};
+    renderAttScreen_();
+    if(then && state._attLoc.state==='in') then();
+  }, function(err){
+    var msg = err && err.code===1 ? '위치 권한이 꺼져 있어요.<br>브라우저 설정에서 이 사이트의 위치 권한을 허용한 뒤 다시 확인해주세요.'
+            : '위치를 확인하지 못했어요. 잠시 후 다시 시도해주세요.';
+    state._attLoc={state:'err', msg:msg}; renderAttScreen_();
+  }, {enableHighAccuracy:true, timeout:15000, maximumAge:0});
+}
+function attLocOk_(){ var l=state._attLoc||{}; return l.state==='in' && (Date.now()-l.at) < 180000; }
+function renderAttScreen_(){
+  var v=state._attDoc; if(!v) return;
+  var el=document.getElementById('pinScreen'); if(!el) return;
+  el.classList.add('vote');
+  var my=(v.byDev||{})[voteKey_()]||'';
+  if(my && !(v.checks||{})[my]) my='';
+  var head='<img class="auth-logo vt-logo" src="'+APP_LOGO+'" alt=""><div class="auth-title">출석 체크</div>'
+    + '<div class="auth-sub">'+esc(v.title||'')+(v.time?' '+esc(v.time):'')+(v.venue?'<br>'+esc(v.venue):'')+'</div>';
+  var rule='<div class="at-rule">⏱ <b>'+attHM_(v.cutoffAt)+':59</b>까지 참석 · 이후 지각 <span>|</span> 📍 경기장 <b>'+v.radius+'m</b> 안</div>';
+  function card(c){
+    var ck=(v.checks||{})[c.pid], mine=my===c.pid, st=v.closed?(attFinal_(v,c.pid)||'absent'):(ck?ck.st:'');
+    return '<button class="vt-card at-card'+(mine?' on':'')+(ck&&!mine?' taken':'')+'" onclick="attPick_(\''+c.pid+'\')"'+(v.closed?' disabled':'')+'>'
+      + '<span class="vt-cnum oswald">'+esc(c.num)+'</span><span class="vt-cnm">'+esc(c.name)+'</span>'
+      + (ck?'<span class="at-when">'+attMD_(ck.at)+' '+attHM_(ck.at)+'</span>':'')
+      + (st?'<span class="at-badge '+st+'">'+ATT_ST[st]+'</span>':'')
+      + (mine?'<span class="vt-chk">✓ 나</span>':'')
+      + '</button>';
+  }
+  var grid='<div class="vt-grid">'+(v.cands||[]).map(card).join('')+'</div>';
+  var body;
+  if(v.closed){
+    body='<div class="at-loc done">🏁 출석이 마감되었어요</div>'+grid+'<p class="vt-hint">체크하지 않은 팀원은 불참으로 기록됐어요.</p>';
+  } else if(my && !state._attEdit){
+    var ck=v.checks[my], c=(v.cands||[]).filter(function(x){ return x.pid===my; })[0]||{};
+    body='<div class="vt-done">✅<br><b>'+esc(c.name||'')+'</b><span>'+attMD_(ck.at)+' '+attHM_(ck.at,true)+' · '+ATT_ST[ck.st]+'</span></div>'
+      + grid
+      + '<div class="vt-actions"><button class="auth-btn" onclick="voteFinish_(\'출석 완료\')">완료 · 창 닫기</button>'
+      +   '<button class="auth-btn ghost" onclick="state._attEdit=true;renderAttScreen_()">이름 변경</button></div>'
+      + '<p class="vt-hint">잘못 눌렀다면 이름 변경으로 바꿀 수 있어요. (체크 시간은 그대로)</p>';
+  } else {
+    var l=state._attLoc||{}, loc;
+    if(l.state==='wait') loc='<div class="at-loc">📡 위치 확인 중...</div>';
+    else if(l.state==='in') loc='<div class="at-loc in">✅ 경기장 도착 · 약 '+attDistLabel_(l.dist)+(l.acc?' <small>(오차 ±'+l.acc+'m)</small>':'')+'</div>';
+    else if(l.state==='out') loc='<div class="at-loc out">📍 경기장에서 약 <b>'+attDistLabel_(l.dist)+'</b> 떨어져 있어요<br><small>'+v.radius+'m 안에 들어오면 체크할 수 있어요'+(l.acc?' · 오차 ±'+l.acc+'m':'')+'</small><button onclick="attLocate_()">다시 확인</button></div>';
+    else loc='<div class="at-loc out">'+(l.msg||'위치를 확인하지 못했어요')+'<button onclick="attLocate_()">다시 확인</button></div>';
+    body=loc+grid+'<p class="vt-hint">'+(my?'바꿀 이름을 눌러주세요. (한 명만 선택돼요)':'경기장에 도착하면 본인 이름을 한 번 눌러주세요.')+'</p>'
+      + (my?'<div class="vt-actions"><button class="auth-btn ghost" onclick="state._attEdit=false;renderAttScreen_()">취소</button></div>':'');
+  }
+  el.innerHTML='<div class="auth-inner vt-wrap">'+head+rule+body+'</div>';
+  el.style.display='flex';
+  voteSkin_();
+}
+function attPick_(pid){
+  var v=state._attDoc; if(!v||v.closed) return;
+  var k=voteKey_(), my=(v.byDev||{})[k]||'';
+  if(my===pid){ state._attEdit=false; renderAttScreen_(); return; }
+  var ck=(v.checks||{})[pid];
+  if(ck && ck.dev!==k){ toast('이미 출석한 팀원이에요 · 잘못됐다면 관리자에게 알려주세요'); return; }
+  if(!attLocOk_()){ toast('위치를 다시 확인할게요'); attLocate_(function(){ attPick_(pid); }); return; }
+  var dist=(state._attLoc||{}).dist;
+  toast('저장하는 중...');
+  attRef_(v.id).get().then(function(sn){
+    if(!sn.exists){ attFail_('출석 링크가 삭제되었어요.'); return; }
+    var cur=sn.data(); state._attDoc=cur; v=cur;
+    if(cur.closed){ toast('출석이 마감되었어요'); renderAttScreen_(); return; }
+    var other=(cur.checks||{})[pid];
+    if(other && other.dev!==k){ toast('방금 다른 기기에서 체크한 이름이에요'); renderAttScreen_(); return; }
+    var prev=(cur.byDev||{})[k]||'', prevCk=prev?(cur.checks||{})[prev]:null;
+    /* 이름만 바꾸는 경우 처음 체크한 시간을 그대로 유지 */
+    var at=(prevCk&&prevCk.dev===k)?prevCk.at:new Date().toISOString();
+    var rec={at:at, st:attStatusAt_(cur,at), dev:k, dist:(dist!=null?dist:null)};
+    var up={}; up['checks.'+pid]=rec; up['byDev.'+k]=pid;
+    if(prev && prev!==pid && prevCk && prevCk.dev===k) up['checks.'+prev]=null;
+    return attRef_(cur.id).update(up).then(function(){
+      cur.checks=cur.checks||{}; cur.byDev=cur.byDev||{};
+      if(prev && prev!==pid && prevCk && prevCk.dev===k) delete cur.checks[prev];
+      cur.checks[pid]=rec; cur.byDev[k]=pid; state._attEdit=false;
+      toast(rec.st==='present'?'✅ 참석으로 체크됐어요':'⏰ 지각으로 체크됐어요');
+      renderAttScreen_();
+    });
+  }).catch(function(){ toast('저장 실패 · 다시 눌러주세요'); });
 }
 
 function loadClubData_(){
