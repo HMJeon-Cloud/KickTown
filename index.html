@@ -3,6 +3,11 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="color-scheme" content="light dark">
+<script>
+/* 테마(자동·라이트·다크) — 화면 그리기 전에 적용 */
+(function(){ try{ var t=localStorage.getItem('kt_theme'); if(t==='light'||t==='dark'){ document.documentElement.setAttribute('data-theme',t); var mc=document.querySelector('meta[name=color-scheme]'); if(mc) mc.setAttribute('content',t); } }catch(e){} })();
+</script>
 <script>
 /* 카카오톡 인앱 브라우저로 열린 경우 → 안드로이드는 크롬, 아이폰은 사파리(기본 브라우저)로 다시 열기
  * - 안드로이드 intent 주소는 '#'을 쓸 수 없어서 #video= 등은 ?kt_h= 로 옮겨 보내고, 도착하면 되돌린다
@@ -19,37 +24,48 @@
   var inKakao=/KAKAOTALK/i.test(ua);
   /* MOM 투표·출석 링크: 부정 방지를 위해 카카오톡 안에서만 열림 (외부 브라우저로 넘기지 않음)
    * 링크를 복사해 크롬·엣지·사파리·PC 등 다른 곳에서 열면 안내만 표시 */
-  /* T맵 길안내 링크 (#tmap=위도,경도,이름): 카톡에서는 tmap:// 주소가 눌리지 않아 https 링크로 감싼다.
-   * 어디서 열어도 앱을 띄우지 않고 T맵으로 바로 넘기며, T맵이 없으면 설치·다른 지도 선택 화면을 보여준다 */
-  var tm=(location.hash||'').match(/^#tmap=(-?[\d.]+),(-?[\d.]+)(?:,(.*))?$/);
+  /* 길안내 링크 (#go=위도,경도,이름 · 예전 링크 #tmap= 도 동일): 카톡에서는 tmap:// 같은 앱 주소가 눌리지 않아
+   * https 링크로 감싼다. 자동으로 넘기지 않고 T맵 · 카카오맵 · 네이버지도 중에서 고르게 한다.
+   * 안드로이드는 intent(패키지 지정)라 앱이 없으면 플레이스토어로 연결된다 */
+  var tm=(location.hash||'').match(/^#(?:go|tmap)=(-?[\d.]+),(-?[\d.]+)(?:,(.*))?$/);
   if(tm){
     window.__KT_EXT=1; window.__KT_TMAP=1;
     var tLat=tm[1], tLng=tm[2], tName=''; try{ tName=decodeURIComponent(tm[3]||''); }catch(e){ tName=tm[3]||''; }
     tName=tName||'경기장';
-    var isAnd=/Android/i.test(ua);
-    var tQ='goalname='+encodeURIComponent(tName)+'&goalx='+tLng+'&goaly='+tLat;
-    var tOpen=isAnd?('intent://route?'+tQ+'#Intent;scheme=tmap;package=com.skt.tmap.ku;end'):('tmap://route?'+tQ);
-    var tStore=isAnd?'https://play.google.com/store/apps/details?id=com.skt.tmap.ku':'https://apps.apple.com/kr/app/id431589174';
-    var kMap='https://map.kakao.com/link/map/'+encodeURIComponent(tName)+','+tLat+','+tLng;
-    var kNavi='kakaomap://route?ep='+tLat+','+tLng+'&by=CAR';
-    var nMap='nmap://route/car?dlat='+tLat+'&dlng='+tLng+'&dname='+encodeURIComponent(tName)+'&appname=kicktown';
-    window.ktTmapGo_=function(){ location.href=tOpen; };
+    var isAnd=/Android/i.test(ua), eN=encodeURIComponent(tName);
+    var tQ='route?goalname='+eN+'&goalx='+tLng+'&goaly='+tLat;
+    var kQ='route?ep='+tLat+','+tLng+'&by=CAR';
+    var nQ='route/car?dlat='+tLat+'&dlng='+tLng+'&dname='+eN+'&appname=kicktown';
+    function intent(q,scheme,pkg){ return 'intent://'+q+'#Intent;scheme='+scheme+';action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;package='+pkg+';end'; }
+    var apps=[
+      {id:'tmap',  label:'T맵',   icon:'app-tmap.png',     bg:'linear-gradient(145deg,#3D6CF5 0%,#6A4BF0 100%)', fg:'#fff',
+       url:isAnd?intent(tQ,'tmap','com.skt.tmap.ku'):('tmap://'+tQ)},
+      {id:'kakao', label:'카카오맵', icon:'app-kakaomap.png', bg:'#FEE500', fg:'#191919',
+       url:isAnd?intent(kQ,'kakaomap','net.daum.android.map'):('kakaomap://'+kQ)},
+      {id:'naver', label:'네이버',  icon:'app-naver.png',    bg:'#03C75A', fg:'#fff',
+       url:isAnd?intent(nQ,'nmap','com.nhn.android.nmap'):('nmap://'+nQ)}
+    ];
+    window.__KT_GO=apps;
     document.addEventListener('DOMContentLoaded', function(){
       function esc(t){ return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
-      var B='display:block;width:100%;max-width:320px;height:48px;line-height:48px;border-radius:12px;font-size:15px;font-weight:700;margin:0 auto 9px;text-decoration:none;font-family:inherit;box-sizing:border-box;';
+      var st=document.createElement('style');
+      st.textContent='#ktTmap .go-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;width:100%;max-width:340px;margin:0 auto;}'
+        +'#ktTmap .go-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;height:128px;border-radius:20px;text-decoration:none;font-size:15px;font-weight:800;letter-spacing:-.02em;box-shadow:0 10px 24px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.25);transition:transform .12s ease;-webkit-tap-highlight-color:transparent;}'
+        +'#ktTmap .go-btn:active{transform:scale(.95);}'
+        +'#ktTmap .go-btn img{width:58px;height:58px;border-radius:16px;display:block;box-shadow:0 4px 12px rgba(0,0,0,.22);background:#fff;}'
+        +'#ktTmap .go-btn.kakao img{box-shadow:0 0 0 2px rgba(25,25,25,.12),0 4px 12px rgba(0,0,0,.18);}';
+      document.head.appendChild(st);
       var d=document.createElement('div'); d.id='ktTmap';
-      d.setAttribute('style','position:fixed;inset:0;z-index:99999;background:#111015;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;');
-      d.innerHTML='<div style="font-size:42px;margin-bottom:12px;">🚗</div>'
-        +'<div style="font-size:18px;font-weight:800;margin-bottom:6px;">'+esc(tName)+'</div>'
-        +'<div style="font-size:13.5px;line-height:1.6;color:rgba(255,255,255,.72);margin-bottom:22px;">T맵으로 길 안내를 시작해요.<br>자동으로 열리지 않으면 아래 버튼을 눌러주세요.</div>'
-        +'<a href="'+esc(tOpen)+'" style="'+B+'background:#C8102E;color:#fff;">T맵 길 안내</a>'
-        +'<a href="'+esc(kNavi)+'" style="'+B+'background:#FEE500;color:#191919;">카카오내비</a>'
-        +'<a href="'+esc(nMap)+'" style="'+B+'background:#fff;color:#191919;">네이버 지도</a>'
-        +'<a href="'+esc(kMap)+'" style="'+B+'border:1px solid rgba(255,255,255,.25);color:#fff;">카카오맵에서 위치 보기</a>'
-        +'<a href="'+esc(tStore)+'" style="display:inline-block;margin-top:8px;color:rgba(255,255,255,.55);font-size:12.5px;text-decoration:underline;">T맵이 없어요 · 설치하기</a>';
+      d.setAttribute('style','position:fixed;inset:0;z-index:99999;background:radial-gradient(120% 80% at 50% 0%,#221E2B 0%,#111015 60%,#0C0B10 100%);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 20px;text-align:center;font-family:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;');
+      d.innerHTML='<div style="font-size:12px;font-weight:700;letter-spacing:.24em;color:#C7A24B;margin-bottom:10px;">길안내</div>'
+        +'<div style="font-size:24px;font-weight:800;letter-spacing:-.02em;margin-bottom:8px;">'+esc(tName)+'</div>'
+        +'<div style="font-size:13.5px;line-height:1.6;color:rgba(255,255,255,.62);margin-bottom:28px;">사용하는 앱을 눌러주세요</div>'
+        +'<div class="go-grid">'+apps.map(function(a){
+            return '<a class="go-btn '+a.id+'" href="'+esc(a.url)+'" style="background:'+a.bg+';color:'+a.fg+';"><img src="'+a.icon+'" alt=""><span>'+a.label+'</span></a>';
+          }).join('')+'</div>'
+        +'<div style="font-size:11.5px;line-height:1.6;color:rgba(255,255,255,.4);margin-top:22px;">'+(isAnd?'앱이 없으면 설치 화면으로 이동해요':'휴대폰에 설치된 앱만 열려요')+'</div>';
       document.body.appendChild(d);
       var sp=document.getElementById('splash'); if(sp) sp.style.display='none';
-      setTimeout(window.ktTmapGo_, 400);
     });
     return;
   }
@@ -121,7 +137,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
-<meta name="color-scheme" content="light dark">
 <!-- 지도(Leaflet)는 필요할 때만 지연 로드(ensureLeaflet) — 초기 로딩 차단 제거 -->
 <!-- Firebase는 body 끝(스플래시 렌더 후)에서 로드해 첫 화면 표시를 빠르게 -->
 <style>
@@ -152,8 +167,9 @@
     --solid:#131218; --solid-fg:#FFFFFF;      /* '선택됨' 진한 칩·버튼 */
     --pitch-ink:#131218;                      /* 스쿼드판 토큰 등 항상 어두운 요소 */
   }
+  /* 테마: 자동(시스템) · 라이트 · 다크 — <html data-theme> 로 수동 선택 */
   @media (prefers-color-scheme: dark){
-    :root{
+    :root:not([data-theme="light"]){
       color-scheme:dark;
       --red:#E4293F; --red-deep:#B3132C; --red-tint:rgba(228,41,63,.16); --red-glow:rgba(228,41,63,.32);
       --gold:#D8B25C; --gold-soft:#EAD9A8; --gold-tint:rgba(216,178,92,.16);
@@ -168,6 +184,21 @@
       --solid:#F3F2F5; --solid-fg:#131218;
       --pitch-ink:#131218;
     }
+  }
+  :root[data-theme="dark"]{
+      color-scheme:dark;
+      --red:#E4293F; --red-deep:#B3132C; --red-tint:rgba(228,41,63,.16); --red-glow:rgba(228,41,63,.32);
+      --gold:#D8B25C; --gold-soft:#EAD9A8; --gold-tint:rgba(216,178,92,.16);
+      --bg:#050508; --paper:#0F0E13; --card:#17161D; --card-2:#1F1E26; --card-3:#27262F;
+      --bar:rgba(19,18,25,.84);
+      --ink:#F3F2F5; --ink-soft:#D6D4DC; --steel:#A6A9B1; --steel-soft:#737680;
+      --line:rgba(255,255,255,.07); --line-strong:rgba(255,255,255,.15);
+      --ok:#3FBF88; --ok-tint:rgba(63,191,136,.14); --warn:#E3AA2A; --warn-tint:rgba(227,170,42,.14);
+      --info:#6D9BFF; --neutral-tint:rgba(255,255,255,.06);
+      --shadow:0 18px 40px rgba(0,0,0,.5); --shadow-sm:0 1px 2px rgba(0,0,0,.3);
+      --dark-head:#0E0D12;
+      --solid:#F3F2F5; --solid-fg:#131218;
+      --pitch-ink:#131218;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;}
@@ -262,6 +293,21 @@
     border:1px solid rgba(199,162,75,.5);
   }
   .crest-img{width:100%;height:100%;object-fit:cover;display:block;}
+  .theme-btn{margin-left:auto;width:36px;height:36px;flex:0 0 auto;border-radius:11px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
+  .theme-btn:active{transform:scale(.94);}
+  .theme-btn svg{width:18px;height:18px;display:block;}
+  .th-opts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+  .th-opt{border:1.5px solid var(--line-strong);border-radius:14px;background:var(--card);padding:10px 8px 11px;cursor:pointer;text-align:center;font-family:inherit;color:var(--ink);}
+  .th-opt.on{border-color:var(--red);box-shadow:0 0 0 3px var(--red-tint);}
+  .th-opt b{display:block;font-size:13.5px;font-weight:800;margin-top:8px;}
+  .th-opt small{display:block;font-size:10.5px;color:var(--steel-soft);font-weight:600;margin-top:2px;}
+  .th-pv{height:74px;border-radius:9px;overflow:hidden;display:flex;flex-direction:column;border:1px solid rgba(128,128,128,.25);}
+  .th-pv i{display:block;height:18px;background:#15131A;}
+  .th-pv em{flex:1;display:flex;flex-direction:column;gap:5px;padding:7px;}
+  .th-pv em span{display:block;height:11px;border-radius:4px;}
+  .th-pv.l em{background:#F3F2EF;} .th-pv.l em span{background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.06);}
+  .th-pv.d em{background:#0F0E13;} .th-pv.d em span{background:#1F1E26;}
+  .th-pv.a em{background:linear-gradient(90deg,#F3F2EF 50%,#0F0E13 50%);} .th-pv.a em span{background:rgba(128,128,128,.38);}
   .club{display:flex;flex-direction:column;line-height:1;}
   .club .name{font-family:'Oswald';font-weight:600;font-size:17px;letter-spacing:.1em;opacity:.92;}
   .club .tag{font-size:9.5px;color:var(--gold-soft);letter-spacing:.22em;margin-top:3px;font-weight:600;opacity:.9;}
@@ -1202,6 +1248,7 @@
         <div class="name">FC JEMIRO</div>
         <div class="tag">FOOTBALL CLUB</div>
       </div>
+      <button class="theme-btn" id="themeBtn" onclick="openTheme_()" aria-label="화면 테마"></button>
     </div>
     <div class="screen-title">
       <span class="kr" id="scrKr">팀 관리</span>
@@ -1325,7 +1372,7 @@ var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '13.6';
+var APP_VERSION = '13.8';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -1986,6 +2033,7 @@ function viewTeam(){
     + '<div class="card" style="padding:4px 0;">'
     + '<div class="list-row" style="cursor:pointer;" onclick="openClubForm()"><span class="nm" style="flex:1;">팀 정보</span><span class="val" style="color:var(--red);font-size:14px;">'+esc(ourTeamName_())+' ›</span></div>'
     + cfgRow('내 이름', esc(whoName_()||'미설정'), 'editWho_')
+    + '<div class="list-row" style="cursor:pointer;" onclick="openTheme_()"><span class="nm" style="flex:1;">화면 테마</span><span class="val" style="color:var(--red);font-size:14px;">'+themeLabel_()+' ›</span></div>'
     + (a2hsStandalone_()?'':'<div class="list-row" style="cursor:pointer;" onclick="openA2hs_(false)"><span class="nm" style="flex:1;">홈 화면에 추가 <span style="font-size:10.5px;color:var(--steel-soft);font-weight:700;">앱처럼 쓰기</span></span><span class="val" style="color:var(--red);font-size:14px;">›</span></div>')
     + '<div class="list-row" style="cursor:pointer;" onclick="openTeamAdmin_()"><span class="nm" style="flex:1;">팀 관리 <span style="font-size:10.5px;color:var(--steel-soft);font-weight:700;">팀관리자</span></span><span class="val" style="color:var(--red);font-size:14px;">›</span></div>'
     + (isOwner() ? ('<div class="list-row" style="cursor:pointer;" onclick="openSystem_()"><span class="nm" style="flex:1;">시스템 <span style="font-size:10.5px;color:var(--steel-soft);font-weight:700;">총관리자</span></span><span class="val" style="color:var(--red);font-size:14px;">›</span></div>') : '')
@@ -10860,12 +10908,12 @@ function openA2hs_(auto){
  * 카톡은 글과 사진을 한 번에 받지 못하는 경우가 있어 '텍스트 공유'와 '카드 공유'를 따로 둔다. */
 function anMapUrls_(m){
   var hasXY=(m.lat!=null && m.lat!=='' && m.lng!=null && m.lng!=='');
-  if(!hasXY) return {kakao:m.venueUrl||'', tmap:''};
+  if(!hasXY) return {kakao:m.venueUrl||'', tmap:''};   /* 좌표가 없을 때만 등록된 지도 주소를 씀 */
   var lat=Number(m.lat), lng=Number(m.lng), name=String(m.venue||'경기장');
   return {
-    kakao: m.venueUrl || ('https://map.kakao.com/link/map/'+encodeURIComponent(name)+','+lat+','+lng),
-    /* T맵은 tmap:// 앱 주소라 카톡에서 눌리지 않음 → 우리 사이트 https 링크로 감싸서 T맵으로 넘긴다 */
-    tmap: location.origin+location.pathname+'#tmap='+lat+','+lng+','+encodeURIComponent(name)
+    kakao: '',
+    /* 길안내: 앱 주소는 카톡에서 눌리지 않음 → 우리 사이트 https 링크 (T맵 · 카카오맵 · 네이버 선택 화면) */
+    tmap: location.origin+location.pathname+'#go='+lat+','+lng+','+encodeURIComponent(name)
   };
 }
 function anArrive_(m){
@@ -10907,8 +10955,8 @@ function anText_(){
   var mu=anMapUrls_(m);
   if(an.incMap && (mu.kakao||mu.tmap)){
     L.push('');
-    if(mu.kakao) L.push('🗺️ 카카오맵 '+mu.kakao);
-    if(mu.tmap) L.push('🚗 T맵 길안내 '+mu.tmap);
+    if(mu.tmap) L.push('🚗 길안내 '+mu.tmap);
+    else if(mu.kakao) L.push('🗺️ 지도 '+mu.kakao);
   }
   if(an.incAtt && an.att){ L.push(''); L.push('✅ 출석 체크 '+attUrl_(an.att.id)); L.push('(카카오톡에서 눌러야 체크돼요)'); }
   if(an.note && an.note.trim()){ L.push(''); L.push('💬 '+an.note.trim()); }
@@ -10931,7 +10979,7 @@ function renderAnnounce_(){
    + '<div class="sheet-body">'
    +   '<div class="an-sec"><div class="an-lb">1 · 텍스트 <span>링크는 글로 보내야 눌러요</span></div>'
    +     '<div class="an-tgs">'
-   +       tg('incMap','지도 링크 (카카오맵 · T맵)',!(mu.kakao||mu.tmap), (mu.kakao||mu.tmap)?'':'경기장 위치 없음')
+   +       tg('incMap','길안내 링크',!(mu.kakao||mu.tmap), (mu.kakao||mu.tmap)?'':'경기장 위치 없음')
    +       tg('incAtt','출석 링크',!an.att, an.att?'':'아직 안 만듦')
    +     '</div>'
    +     (!an.att ? '<button class="btn-ghost" style="margin-top:10px;" onclick="anMakeAtt_()">출석 링크 만들어서 넣기</button>' : '')
@@ -11132,6 +11180,48 @@ function anMakeAtt_(){
   state._attReturn=function(doc){ an.att=doc; an.edited=''; state._an=an; renderAnnounce_(); };
   renderAttSetup_();
 }
+
+/* ================= 화면 테마 (자동 · 라이트 · 다크) =================
+ * 기기마다 저장(localStorage 'kt_theme'). 자동 = 휴대폰 설정을 따라감 */
+var THEME_KEY='kt_theme';
+function themeGet_(){ try{ var t=localStorage.getItem(THEME_KEY); return (t==='light'||t==='dark')?t:'auto'; }catch(e){ return 'auto'; } }
+function themeIsDark_(){
+  var t=themeGet_(); if(t!=='auto') return t==='dark';
+  try{ return !!(window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches); }catch(e){ return false; }
+}
+function themeLabel_(){ return {auto:'자동', light:'라이트', dark:'다크'}[themeGet_()]; }
+function themeIcon_(){
+  var t=themeGet_();
+  if(t==='dark') return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
+  if(t==='light') return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.2M12 19.8V22M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2 12h2.2M19.8 12H22M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg>';
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></svg>';
+}
+function themeApply_(){
+  var t=themeGet_(), de=document.documentElement;
+  if(t==='auto') de.removeAttribute('data-theme'); else de.setAttribute('data-theme', t);
+  var mc=document.querySelector('meta[name=color-scheme]'); if(mc) mc.setAttribute('content', t==='auto'?'light dark':t);
+  var b=document.getElementById('themeBtn'); if(b){ b.innerHTML=themeIcon_(); b.setAttribute('title','화면 테마 · '+themeLabel_()); }
+}
+function themeSet_(t){
+  try{ if(t==='auto') localStorage.removeItem(THEME_KEY); else localStorage.setItem(THEME_KEY, t); }catch(e){}
+  themeApply_();
+  openTheme_();
+  try{ if(document.getElementById('content')) render(); }catch(e){}
+}
+function openTheme_(){
+  var t=themeGet_();
+  function opt(k, cls, label, sub){
+    return '<button class="th-opt'+(t===k?' on':'')+'" onclick="themeSet_(\''+k+'\')"><div class="th-pv '+cls+'"><i></i><em><span></span><span style="width:70%"></span></em></div><b>'+label+'</b><small>'+sub+'</small></button>';
+  }
+  showSheet('<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>화면 테마</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<div class="th-opts">'+opt('auto','a','자동','휴대폰 설정 따라')+opt('light','l','라이트','밝은 화면')+opt('dark','d','다크','어두운 화면')+'</div>'
+   +   '<p class="hint" style="margin-top:12px;">이 기기에만 저장돼요. 공유 카드 이미지는 테마와 상관없이 같은 디자인으로 만들어져요.</p>'
+   + '</div>');
+}
+try{ themeApply_(); }catch(e){}
+try{ window.matchMedia && matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(){ if(themeGet_()==='auto') themeApply_(); }); }catch(e){}
 
 function loadClubData_(){
   state.loading=true; render();
