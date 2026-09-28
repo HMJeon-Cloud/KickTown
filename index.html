@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <script>
 /* 카카오톡 인앱 브라우저로 열린 경우 → 안드로이드는 크롬, 아이폰은 사파리(기본 브라우저)로 다시 열기
- * - 안드로이드 intent 주소는 '#'을 쓸 수 없어서 #video= / #vote= 는 ?kt_h= 로 옮겨 보내고, 도착하면 되돌린다 */
+ * - 안드로이드 intent 주소는 '#'을 쓸 수 없어서 #video= 등은 ?kt_h= 로 옮겨 보내고, 도착하면 되돌린다
+ * - 단, MOM 투표(#vote=)·출석(#att=) 링크는 카카오톡 안에서만 열린다 (아래) */
 (function(){
   try{
     var q=location.search.match(/[?&]kt_h=([^&]+)/);
@@ -15,7 +16,25 @@
     }
   }catch(e){}
   var ua=navigator.userAgent||'';
-  if(!/KAKAOTALK/i.test(ua)) return;
+  var inKakao=/KAKAOTALK/i.test(ua);
+  /* MOM 투표·출석 링크: 부정 방지를 위해 카카오톡 안에서만 열림 (외부 브라우저로 넘기지 않음)
+   * 링크를 복사해 크롬·엣지·사파리·PC 등 다른 곳에서 열면 안내만 표시 */
+  if(/^#(vote|att)=/.test(location.hash||'')){
+    if(inKakao) return;
+    window.__KT_EXT=1; window.__KT_KAKAO_ONLY=1;
+    document.addEventListener('DOMContentLoaded', function(){
+      var isAtt=/^#att=/.test(location.hash||'');
+      var d=document.createElement('div'); d.id='ktOnly';
+      d.setAttribute('style','position:fixed;inset:0;z-index:99999;background:#111015;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;');
+      d.innerHTML='<div style="font-size:44px;margin-bottom:14px;">💬</div>'
+        +'<div style="font-size:18px;font-weight:800;margin-bottom:10px;">카카오톡에서 열어주세요</div>'
+        +'<div style="font-size:13.5px;line-height:1.7;color:rgba(255,255,255,.75);max-width:320px;">'+(isAtt?'출석 체크':'MOM 투표')+'는 공정한 참여를 위해<br><b style="color:#FFE9A8;">팀 단톡방에 공유된 링크를 휴대폰 카카오톡에서</b><br>눌렀을 때만 참여할 수 있어요.</div>'
+        +'<div style="font-size:12px;line-height:1.6;color:rgba(255,255,255,.5);margin-top:16px;max-width:320px;">링크를 복사해 다른 브라우저나 PC에서 열면 참여할 수 없어요.</div>';
+      document.body.appendChild(d);
+    });
+    return;
+  }
+  if(!inKakao) return;
   try{ if(sessionStorage.getItem('kt_stay_kakao')==='1') return; }catch(e){}
   window.__KT_EXT=1;
   var and=/Android/i.test(ua);
@@ -1127,7 +1146,7 @@ var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '12.4';
+var APP_VERSION = '12.5';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -9777,7 +9796,7 @@ function momShareSheet_(doc){
   showSheet('<div class="grabber"></div>'
    + '<div class="sheet-head"><h3>🔗 투표 링크</h3><button class="x" onclick="closeSheet()">✕</button></div>'
    + '<div class="sheet-body">'
-   +   '<p style="font-size:13px;color:var(--steel);margin:0 0 12px;line-height:1.55;"><b>'+esc(doc.title)+'</b><br>후보 '+doc.cands.length+'명 · 링크를 카카오톡 단톡방에 공유하세요.</p>'
+   +   '<p style="font-size:13px;color:var(--steel);margin:0 0 12px;line-height:1.55;"><b>'+esc(doc.title)+'</b><br>후보 '+doc.cands.length+'명 · 링크를 카카오톡 단톡방에 공유하세요.<br><span style="color:var(--red);font-weight:700;">카카오톡 안에서만 투표할 수 있어요</span> (복사해 다른 브라우저에서 열면 참여 불가)</p>'
    +   '<div class="vt-url" onclick="momCopy_(\''+doc.id+'\')">'+esc(url)+'</div>'
    +   '<button class="btn-primary" style="margin-top:12px;" onclick="momShare_(\''+doc.id+'\')">📤 카카오톡 등으로 공유</button>'
    +   '<button class="btn-ghost" style="margin-top:8px;" onclick="momCopy_(\''+doc.id+'\')">📋 링크 복사</button>'
@@ -10048,6 +10067,14 @@ function voteCast_(pid){
 var ATT_COLL='attChecks';
 var ATT_RADII=[50,100,200];
 var ATT_ST={present:'참석', late:'지각', absent:'불참', excused:'미참석'};
+var ATT_OPEN_H=3, ATT_CLOSE_H=3;   // 출석 링크 유효 시간: 경기 시작 3시간 전 ~ 시작 3시간 후
+function attWin_(v){
+  var st=new Date(v.startAt).getTime();
+  var o=v.openAt?new Date(v.openAt).getTime():st-ATT_OPEN_H*3600000, c=v.closeAt?new Date(v.closeAt).getTime():st+ATT_CLOSE_H*3600000;
+  var now=Date.now();
+  return {open:o, close:c, phase: now<o?'before':(now>c?'after':'on')};
+}
+function attDT_(ms){ var d=new Date(ms); return attPad_(d.getMonth()+1)+'.'+attPad_(d.getDate())+' '+attPad_(d.getHours())+':'+attPad_(d.getMinutes()); }
 function attRef_(id){ return db.collection(ATT_COLL).doc(String(id)); }
 function attHashId_(){ var m=String(location.hash||'').match(/^#att=([A-Za-z0-9_-]+)/); return m?m[1]:''; }
 function attUrl_(id){ return location.origin+location.pathname+'#att='+id; }
@@ -10224,6 +10251,7 @@ function attCreate_(force){
     title:fmtDateDot(m.date)+' vs '+(m.opponent||'상대'), date:m.date, time:cleanTime(m.time), venue:m.venue||'',
     lat:Number(m.lat), lng:Number(m.lng), radius:attCfgRadius_(), lateMin:lm,
     startAt:st.toISOString(), cutoffAt:cut.toISOString(),
+    openAt:new Date(st.getTime()-ATT_OPEN_H*3600000).toISOString(), closeAt:new Date(st.getTime()+ATT_CLOSE_H*3600000).toISOString(),
     cands:mems.map(function(x){ return {pid:x.playerId, name:String(x.name||''), num:String(x.num||'')}; }),
     checks:{}, byDev:{}, ov:{}, closed:false, createdAt:new Date().toISOString()
   };
@@ -10239,7 +10267,7 @@ function attShareSheet_(doc){
   showSheet('<div class="grabber"></div>'
    + '<div class="sheet-head"><h3>🔗 출석 링크</h3><button class="x" onclick="closeSheet()">✕</button></div>'
    + '<div class="sheet-body">'
-   +   '<p style="font-size:13px;color:var(--steel);margin:0 0 12px;line-height:1.55;"><b>'+esc(doc.title)+'</b><br>대상 '+doc.cands.length+'명 · 경기장 '+doc.radius+'m 안에서 체크 · '+attHM_(doc.cutoffAt)+':59까지 참석</p>'
+   +   '<p style="font-size:13px;color:var(--steel);margin:0 0 12px;line-height:1.55;"><b>'+esc(doc.title)+'</b><br>대상 '+doc.cands.length+'명 · 경기장 '+doc.radius+'m 안에서 체크 · '+attHM_(doc.cutoffAt)+':59까지 참석<br><span style="color:var(--red);font-weight:700;">팀 단톡방에 공유하세요 · 카카오톡 안에서만 열려요</span> <span style="color:var(--steel-soft);">(열림: '+attDT_(attWin_(doc).open)+' ~ '+attDT_(attWin_(doc).close)+')</span></p>'
    +   '<div class="vt-url" onclick="attCopy_(\''+doc.id+'\')">'+esc(url)+'</div>'
    +   '<button class="btn-primary" style="margin-top:12px;" onclick="attShare_(\''+doc.id+'\')">📤 카카오톡 등으로 공유</button>'
    +   '<button class="btn-ghost" style="margin-top:8px;" onclick="attCopy_(\''+doc.id+'\')">📋 링크 복사</button>'
@@ -10248,7 +10276,7 @@ function attShareSheet_(doc){
 }
 function attShare_(id){
   var url=attUrl_(id), doc=state._attDoc||{};
-  var txt='[출석 체크] '+(doc.title||'')+'\n경기장에 도착하면 링크를 열고 본인 이름을 눌러주세요.\n'+(doc.cutoffAt?attHM_(doc.cutoffAt)+':59까지 참석 · 이후 지각\n':'')+url;
+  var txt='[출석 체크] '+(doc.title||'')+'\n경기장에 도착하면 카카오톡에서 링크를 눌러 본인 이름을 선택해주세요.\n'+(doc.cutoffAt?attHM_(doc.cutoffAt)+':59까지 참석 · 이후 지각\n':'')+url;
   if(navigator.share){ navigator.share({title:'출석 체크', text:txt, url:url}).catch(function(){}); return; }
   attCopy_(id);
 }
@@ -10332,7 +10360,7 @@ function renderAttAdmin_(){
   showSheet('<div class="grabber"></div>'
    + '<div class="sheet-head"><h3>📊 '+esc(v.title||'출석 체크')+'</h3><button class="x" onclick="closeSheet()">✕</button></div>'
    + '<div class="sheet-body">'
-   +   '<p style="font-size:12.5px;color:var(--steel-soft);margin:0 0 10px;">'+esc(v.venue||'경기장')+' '+v.radius+'m · '+attHM_(v.cutoffAt)+':59까지 참석 · 대상 '+(v.cands||[]).length+'명'+(v.closed?' · 마감됨':'')+'</p>'
+   +   '<p style="font-size:12.5px;color:var(--steel-soft);margin:0 0 10px;">'+esc(v.venue||'경기장')+' '+v.radius+'m · '+attHM_(v.cutoffAt)+':59까지 참석 · 대상 '+(v.cands||[]).length+'명'+(v.closed?' · 마감됨':' · 체크 가능 '+attDT_(attWin_(v).open)+' ~ '+attDT_(attWin_(v).close))+'</p>'
    +   sum
    +   '<div class="at-list">'+rows+'</div>'
    +   '<p style="font-size:11.5px;color:var(--steel-soft);margin:8px 2px 0;">명단에 없는 활동 팀원 '+others+'명은 마감 시 미참석으로 저장돼요.'+(v.closed?'':' 휴대폰이 없는 팀원은 오른쪽에서 직접 지정하세요.')+'</p>'
@@ -10399,7 +10427,7 @@ function attBoot_(){
       if(!sn.exists){ attFail_('출석 링크를 찾을 수 없습니다.<br>삭제되었거나 만료되었어요.'); return; }
       state._attDoc=sn.data(); state._attLoc={state:'wait'};
       renderAttScreen_();
-      if(!state._attDoc.closed) attLocate_();
+      if(!state._attDoc.closed && attWin_(state._attDoc).phase==='on') attLocate_();
     });
   }).catch(function(){ attFail_('불러오지 못했습니다.'); });
 }
@@ -10420,7 +10448,8 @@ function attLocate_(then){
     renderAttScreen_();
     if(then && state._attLoc.state==='in') then();
   }, function(err){
-    var msg = err && err.code===1 ? '위치 권한이 꺼져 있어요.<br>브라우저 설정에서 이 사이트의 위치 권한을 허용한 뒤 다시 확인해주세요.'
+    var ios=/iPhone|iPad|iPod/i.test(navigator.userAgent||'');
+    var msg = err && err.code===1 ? '위치 권한이 꺼져 있어요.<br><small>'+(ios?'아이폰 설정 → 카카오톡 → 위치 → <b>앱을 사용하는 동안</b>':'휴대폰 설정 → 애플리케이션 → 카카오톡 → 권한 → <b>위치 허용</b>')+'<br>으로 바꾼 뒤 다시 확인을 눌러주세요.</small>'
             : '위치를 확인하지 못했어요. 잠시 후 다시 시도해주세요.';
     state._attLoc={state:'err', msg:msg}; renderAttScreen_();
   }, {enableHighAccuracy:true, timeout:15000, maximumAge:0});
@@ -10448,6 +10477,12 @@ function renderAttScreen_(){
   var body;
   if(v.closed){
     body='<div class="at-loc done">🏁 출석이 마감되었어요</div>'+grid+'<p class="vt-hint">체크하지 않은 팀원은 불참으로 기록됐어요.</p>';
+  } else if(attWin_(v).phase!=='on' && !my){
+    var w=attWin_(v);
+    body='<div class="at-loc out">'+(w.phase==='before'
+        ? '⏳ 출석 체크는 <b>'+attDT_(w.open)+'</b>부터 할 수 있어요<br><small>경기 시작 '+ATT_OPEN_H+'시간 전부터 열려요</small>'
+        : '⌛ 출석 체크 시간이 지났어요<br><small>'+attDT_(w.close)+'에 닫혔어요 · 관리자에게 문의하세요</small>')+'</div>'
+      + grid;
   } else if(my && !state._attEdit){
     var ck=v.checks[my], c=(v.cands||[]).filter(function(x){ return x.pid===my; })[0]||{};
     body='<div class="vt-done">✅<br><b>'+esc(c.name||'')+'</b><span>'+attMD_(ck.at)+' '+attHM_(ck.at,true)+' · '+ATT_ST[ck.st]+'</span></div>'
@@ -10474,6 +10509,9 @@ function attPick_(pid){
   if(my===pid){ state._attEdit=false; renderAttScreen_(); return; }
   var ck=(v.checks||{})[pid];
   if(ck && ck.dev!==k){ toast('이미 출석한 팀원이에요 · 잘못됐다면 관리자에게 알려주세요'); return; }
+  var win=attWin_(v);
+  if(win.phase==='before'){ toast('출석 체크는 '+attDT_(win.open)+'부터 가능해요'); return; }
+  if(win.phase==='after' && !my){ toast('출석 체크 시간이 지났어요'); return; }
   if(!attLocOk_()){ toast('위치를 다시 확인할게요'); attLocate_(function(){ attPick_(pid); }); return; }
   var dist=(state._attLoc||{}).dist;
   toast('저장하는 중...');
