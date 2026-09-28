@@ -3,6 +3,55 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<script>
+/* 카카오톡 인앱 브라우저로 열린 경우 → 안드로이드는 크롬, 아이폰은 사파리(기본 브라우저)로 다시 열기
+ * - 안드로이드 intent 주소는 '#'을 쓸 수 없어서 #video= / #vote= 는 ?kt_h= 로 옮겨 보내고, 도착하면 되돌린다 */
+(function(){
+  try{
+    var q=location.search.match(/[?&]kt_h=([^&]+)/);
+    if(q){
+      var rest=location.search.replace(/([?&])kt_h=[^&]*&?/,'$1').replace(/[?&]$/,'');
+      history.replaceState(null,'',location.pathname+rest+'#'+decodeURIComponent(q[1]));
+    }
+  }catch(e){}
+  var ua=navigator.userAgent||'';
+  if(!/KAKAOTALK/i.test(ua)) return;
+  try{ if(sessionStorage.getItem('kt_stay_kakao')==='1') return; }catch(e){}
+  window.__KT_EXT=1;
+  var and=/Android/i.test(ua);
+  var url=location.href, h=location.hash.slice(1);
+  var base=location.href.split('#')[0];
+  function kakaoExt(){ return 'kakaotalk://web/openExternal?url='+encodeURIComponent(url); }
+  function chromeIntent(){
+    var u=base+(h?(base.indexOf('?')>-1?'&':'?')+'kt_h='+encodeURIComponent(h):'');
+    return 'intent://'+u.replace(/^https?:\/\//,'')+'#Intent;scheme=https;package=com.android.chrome;end';
+  }
+  window.ktOpenExternal_=function(){
+    var gone=false;
+    function hid(){ if(document.hidden) gone=true; }
+    document.addEventListener('visibilitychange', hid);
+    window.__KT_EXT_TRY=and?chromeIntent():kakaoExt();
+    location.href=window.__KT_EXT_TRY;
+    /* 크롬이 없거나 막힌 경우: 카카오톡의 '다른 브라우저로 열기' */
+    if(and) setTimeout(function(){ if(!gone && !document.hidden){ window.__KT_EXT_TRY2=kakaoExt(); location.href=window.__KT_EXT_TRY2; } }, 1600);
+  };
+  window.ktStayKakao_=function(){ try{ sessionStorage.setItem('kt_stay_kakao','1'); }catch(e){} location.reload(); };
+  window.ktCloseKakao_=function(){ location.href='kakaotalk://inappbrowser/close'; };
+  document.addEventListener('DOMContentLoaded', function(){
+    var br=and?'크롬':'사파리', bro=and?'크롬으로':'사파리로';
+    var d=document.createElement('div'); d.id='ktExt';
+    d.setAttribute('style','position:fixed;inset:0;z-index:99999;background:#111015;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;');
+    d.innerHTML='<div style="font-size:42px;margin-bottom:14px;">🌐</div>'
+      +'<div style="font-size:18px;font-weight:800;margin-bottom:8px;">'+br+'에서 열고 있어요</div>'
+      +'<div style="font-size:13.5px;line-height:1.6;color:rgba(255,255,255,.72);margin-bottom:22px;">'+br+'에서 열어야 PIN·이름 기록과<br>홈 화면 앱이 그대로 이어져요. 이 창은 닫아도 돼요.</div>'
+      +'<button onclick="ktOpenExternal_()" style="width:100%;max-width:300px;height:48px;border:none;border-radius:12px;background:#C8102E;color:#fff;font-size:15px;font-weight:700;margin-bottom:9px;font-family:inherit;">'+bro+' 다시 열기</button>'
+      +'<button onclick="ktCloseKakao_()" style="width:100%;max-width:300px;height:44px;border:1px solid rgba(255,255,255,.25);border-radius:12px;background:transparent;color:#fff;font-size:14px;font-weight:600;margin-bottom:9px;font-family:inherit;">이 창 닫기</button>'
+      +'<button onclick="ktStayKakao_()" style="background:none;border:none;color:rgba(255,255,255,.55);font-size:12.5px;text-decoration:underline;margin-top:6px;font-family:inherit;">카카오톡에서 그냥 볼게요</button>';
+    document.body.appendChild(d);
+    setTimeout(ktOpenExternal_, 60);   // 안내 화면을 먼저 그린 뒤 이동
+  });
+})();
+</script>
 <title>FC JEMIRO</title>
 <link rel="manifest" href="manifest.json?v=3">
 <link rel="icon" href="favicon.ico?v=3" sizes="48x48">
@@ -267,6 +316,7 @@
   .vd-me-grid button b{font-family:'Oswald';color:var(--red);font-weight:600;}
   .vd-player{position:relative;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#000;}
   .vd-player iframe{position:absolute;inset:0;width:100%;height:100%;border:0;}
+  .vd-fs{flex:0 0 auto;border:1px solid var(--line-strong);background:#fff;color:var(--ink);border-radius:999px;padding:6px 11px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;}
   .vs-row{display:flex;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);}
   .vs-thumb{position:relative;width:146px;flex:0 0 auto;aspect-ratio:16/9;border-radius:10px;overflow:hidden;background:#111;cursor:pointer;}
   .vs-info{min-width:0;flex:1;display:flex;flex-direction:column;}
@@ -973,7 +1023,7 @@ var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '11.6';
+var APP_VERSION = '11.7';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -6746,6 +6796,7 @@ function makeSupaDb(){
 }
 
 FS.init = function(){
+  if(window.__KT_EXT) return;   // 카카오톡 → 외부 브라우저로 넘기는 중
   var authP;
   if(typeof KT_BACKEND!=='undefined' && KT_BACKEND==='supabase'){
     /* Supabase: 익명 키(REST)로 바로 시작 — 인증 대기 없음 */
@@ -6911,6 +6962,7 @@ function fitPhone_(){
   setTimeout(fitPhone_, 300); setTimeout(fitPhone_, 1200);
   try{ initPTR_(); }catch(e){}
   try{ initBackButton_(); }catch(e){}
+  if(window.__KT_EXT) return;
   if(/^#vote=/.test(String(location.hash||''))){ hideSplash_(); try{ voteBoot_(); }catch(e){} return; }
   API.run('bootstrap').then(function(b){
     if(b){ if(b.config) state.cfg=b.config; state.clubs=b.clubs||[]; }
@@ -7192,7 +7244,8 @@ function openVideo_(id){
    + '<div class="sheet-head"><h3 style="font-size:15px;line-height:1.35;padding-right:10px;">'+esc(v.title||'영상')+'</h3><button class="x" onclick="closeSheet()">✕</button></div>'
    + '<div class="sheet-body">'
    +   '<div class="vd-player"><iframe id="vd_ifr" data-yt="1" onload="ytListen_(this)" src="https://www.youtube-nocookie.com/embed/'+esc(v.vid)+'?autoplay=1&rel=0&playsinline=1&modestbranding=1&enablejsapi=1&origin='+encodeURIComponent(location.origin)+'" title="'+esc(v.title||'유튜브 영상')+'" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>'
-   +   '<div style="font-size:12.5px;color:var(--steel-soft);margin:10px 2px 0;">'+esc(v.channel||'')+' · '+esc(videoCatName_(v.cat))+(v.dur?' · '+fmtDur_(v.dur):'')+'</div>'
+   +   '<div style="display:flex;align-items:center;gap:8px;margin:10px 2px 0;"><div style="flex:1;min-width:0;font-size:12.5px;color:var(--steel-soft);">'+esc(v.channel||'')+' · '+esc(videoCatName_(v.cat))+(v.dur?' · '+fmtDur_(v.dur):'')+'</div>'
+   +     '<button type="button" class="vd-fs" onclick="videoFull_()">⛶ 가로로 크게</button></div>'
    +   (v.note?'<div class="vd-note" style="margin:12px 0 0;font-size:14px;">“'+esc(v.note)+'”'+(v.by?' <b>— '+esc(v.by)+'</b>':'')+'</div>':'')
    +   '<div id="vd_react" class="vd-react"></div>'
    +   '<div id="vd_seenbox"></div>'
@@ -7217,6 +7270,27 @@ function openVideo_(id){
   state._seenT=setTimeout(function(){ if(!state._ytAlive && state._vdOpen===id && document.getElementById('vd_ifr')) videoMarkSeen_(id); }, 20000);
   loadComments_(v.id);
 }
+/* ── 전체화면 = 가로 화면 ──
+ * 유튜브 플레이어의 전체화면 버튼이든 '가로로 크게' 버튼이든, 전체화면이 되면 화면을 가로로 고정하고
+ * 전체화면이 끝나면 고정을 푼다. (안드로이드 크롬 지원 · 아이폰은 폰을 돌리면 가로 재생) */
+function videoFull_(){
+  var f=document.getElementById('vd_ifr'); if(!f) return;
+  var rq=f.requestFullscreen||f.webkitRequestFullscreen;
+  if(rq){
+    try{ var p=rq.call(f); if(p && p.catch) p.catch(function(){ videoFullHint_(); }); }catch(e){ videoFullHint_(); }
+  } else videoFullHint_();
+}
+function videoFullHint_(){ toast('화면 회전 잠금을 풀고 폰을 가로로 돌리거나, 영상의 ⛶ 버튼을 눌러주세요'); }
+function videoFsChange_(){
+  var fe=document.fullscreenElement||document.webkitFullscreenElement;
+  var so=screen.orientation;
+  try{
+    if(fe && fe.tagName==='IFRAME' && fe.getAttribute('data-yt')){ if(so && so.lock) so.lock('landscape').catch(function(){}); }
+    else if(!fe){ if(so && so.unlock) so.unlock(); }
+  }catch(e){}
+}
+try{ document.addEventListener('fullscreenchange', videoFsChange_); document.addEventListener('webkitfullscreenchange', videoFsChange_); }catch(e){}
+
 /* 재생 중인 영상이 다시 시작되지 않도록 버튼·숫자만 부분 갱신 */
 function paintReacts_(v){
   var el=document.getElementById('vd_react'); if(!el) return; var k=voteKey_();
