@@ -249,8 +249,9 @@
   .vd-cm-text{font-size:14px;line-height:1.55;color:var(--ink);margin-top:3px;word-break:break-word;}
   .vd-cm.mine .vd-cm-top b{color:var(--red);}
   .vd-cm-empty{font-size:12.5px;color:var(--steel-soft);padding:10px 2px;line-height:1.55;}
-  .vd-cm-form{display:flex;gap:8px;margin-top:10px;}
-  .vd-cm-form textarea{flex:1;min-width:0;resize:none;padding:10px 12px;border:1.5px solid var(--line-strong);border-radius:12px;font-family:inherit;font-size:14px;line-height:1.45;color:var(--ink);background:#fff;}
+  .vd-cm-form{display:flex;gap:8px;margin-top:10px;align-items:stretch;}
+  .vd-cm-btn{flex:0 0 auto;min-width:64px;margin:0;border:none;border-radius:12px;background:var(--red);color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;padding:0 14px;}
+  .vd-cm-form textarea{flex:1;min-width:0;min-height:46px;box-sizing:border-box;resize:none;padding:12px;border:1.5px solid var(--line-strong);border-radius:12px;font-family:inherit;font-size:14px;line-height:1.45;color:var(--ink);background:#fff;}
   .vd-me{background:var(--paper);border-radius:12px;padding:12px;margin-top:10px;}
   .vd-who-tg{display:block;width:100%;border:none;background:none;font-family:inherit;font-size:12.5px;font-weight:700;color:var(--steel);cursor:pointer;padding:6px 0 0;text-align:center;}
   .vd-who-box{background:var(--paper);border-radius:12px;padding:12px;margin-top:8px;}
@@ -259,7 +260,8 @@
   .vd-who-row .k{font-size:15px;margin-right:2px;}
   .vd-who-chip{font-size:12px;font-weight:600;padding:4px 9px;border-radius:99px;background:#fff;border:1px solid var(--line-strong);color:var(--steel);}
   .vd-who-chip.on{border-color:#1E9E6A;color:#1E9E6A;}
-  .vd-who-chip.dim{color:var(--steel-soft);}
+  .vd-seen-st{font-size:12.5px;font-weight:600;color:var(--steel-soft);text-align:center;background:var(--paper);border-radius:10px;padding:9px 10px;margin-top:12px;}
+  .vd-seen-st.on{color:#1E9E6A;background:rgba(30,158,106,.08);}
   .vd-me-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;max-height:180px;overflow-y:auto;}
   .vd-me-grid button{border:1px solid var(--line-strong);background:#fff;border-radius:9px;padding:7px 4px;font-family:inherit;font-size:12.5px;cursor:pointer;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .vd-me-grid button b{font-family:'Oswald';color:var(--red);font-weight:600;}
@@ -971,7 +973,7 @@ var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '11.5';
+var APP_VERSION = '11.6';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -3347,6 +3349,7 @@ function doDeletePlayer(id){
 function closeSheet(){
   document.getElementById('sheetWrap').classList.remove('open');
   try{ Array.prototype.forEach.call(document.querySelectorAll('#sheet iframe[data-yt]'), function(f){ f.src='about:blank'; }); }catch(e){}
+  try{ clearTimeout(state._seenT); state._vdOpen=''; }catch(e){}
   // 시트를 열기 전 스크롤 위치로 복원 (모바일에서 목록이 맨 위로 튀는 것 방지)
   var c = document.getElementById('content');
   if(c && state._preSheetScroll != null){ c.scrollTop = state._preSheetScroll; }
@@ -6935,6 +6938,7 @@ function enterApp_(clubId){
   var tb=document.getElementById('tabbar'); if(tb) tb.style.display='flex';
   loadClubData_();
   try{ logAccess_(); }catch(e){}
+  if(PENDING_VIDEO) setTimeout(openPendingVideo_, 300);
 }
 /* ================= 시즌 기간 =================
  * config.seasonStart = 시즌 시작 월(1~12). 예: 11 → 11월~다음 해 10월이 한 시즌.
@@ -7127,7 +7131,7 @@ function videoCard_(v, my, big){
     +   '<span class="vd-play">▶</span>'
     +   (v.dur?'<span class="vd-dur">'+fmtDur_(v.dur)+'</span>':'')
     +   '<span class="vd-cat">'+esc(videoCatName_(v.cat))+'</span>'
-    +   (mine?'<span class="vd-seen">✓ 봤어요</span>':'')
+    +   (mine?'<span class="vd-seen">✓ 시청함</span>':'')
     + '</div>'
     + '<div class="vd-meta"><div class="vd-title">'+esc(v.title||'제목 없음')+'</div>'
     +   '<div class="vd-sub">'+esc(v.channel||'')+(v.channel?' · ':'')+d+'</div>'
@@ -7187,7 +7191,7 @@ function openVideo_(id){
   showSheet('<div class="grabber"></div>'
    + '<div class="sheet-head"><h3 style="font-size:15px;line-height:1.35;padding-right:10px;">'+esc(v.title||'영상')+'</h3><button class="x" onclick="closeSheet()">✕</button></div>'
    + '<div class="sheet-body">'
-   +   '<div class="vd-player"><iframe data-yt="1" src="https://www.youtube-nocookie.com/embed/'+esc(v.vid)+'?autoplay=1&rel=0&playsinline=1&modestbranding=1" title="'+esc(v.title||'유튜브 영상')+'" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>'
+   +   '<div class="vd-player"><iframe id="vd_ifr" data-yt="1" onload="ytListen_(this)" src="https://www.youtube-nocookie.com/embed/'+esc(v.vid)+'?autoplay=1&rel=0&playsinline=1&modestbranding=1&enablejsapi=1&origin='+encodeURIComponent(location.origin)+'" title="'+esc(v.title||'유튜브 영상')+'" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>'
    +   '<div style="font-size:12.5px;color:var(--steel-soft);margin:10px 2px 0;">'+esc(v.channel||'')+' · '+esc(videoCatName_(v.cat))+(v.dur?' · '+fmtDur_(v.dur):'')+'</div>'
    +   (v.note?'<div class="vd-note" style="margin:12px 0 0;font-size:14px;">“'+esc(v.note)+'”'+(v.by?' <b>— '+esc(v.by)+'</b>':'')+'</div>':'')
    +   '<div id="vd_react" class="vd-react"></div>'
@@ -7198,15 +7202,19 @@ function openVideo_(id){
    +   '<div id="vd_me"></div>'
    +   '<form class="vd-cm-form" onsubmit="event.preventDefault();videoCommentAdd_(\''+v.id+'\');">'
    +     '<textarea id="vd_cmt" rows="1" maxlength="300" placeholder="'+(meGet_()?esc(meGet_().name)+'(으)로 댓글 달기':'댓글을 남겨보세요')+'" oninput="this.style.height=\'auto\';this.style.height=Math.min(this.scrollHeight,120)+\'px\'"></textarea>'
-   +     '<button class="vs-add" style="margin:0;align-self:flex-end;">등록</button></form>'
+   +     '<button class="vd-cm-btn">등록</button></form>'
    +   '<a class="btn-ghost" style="display:block;text-align:center;text-decoration:none;margin-top:16px;" href="https://www.youtube.com/watch?v='+esc(v.vid)+'" target="_blank" rel="noopener">유튜브 앱에서 열기</a>'
-   +   (isAdmin()?'<div style="display:flex;gap:8px;margin-top:9px;">'
+   +   (isAdmin()?'<button class="btn-primary" style="margin-top:9px;" onclick="videoShareKakao_(\''+v.id+'\')">💬 카톡방에 공유</button>'
+        + '<div style="display:flex;gap:8px;margin-top:9px;">'
         + '<button class="btn-ghost" style="flex:1;margin:0;" onclick="videoPin_(\''+v.id+'\')">'+(v.pin?'📌 추천 해제':'📌 추천 고정')+'</button>'
         + '<button class="btn-ghost" style="flex:1;margin:0;" onclick="openVideoEdit_(\''+v.id+'\')">✏️ 수정</button>'
         + '<button class="btn-ghost btn-danger" style="flex:1;margin:0;" onclick="videoDelete_(\''+v.id+'\')">삭제</button></div>':'')
    + '</div>');
   paintReacts_(v); paintSeen_(v); paintWho_(v);
   vcSeenSet_(v.id, cmtN_(v));
+  /* 재생 신호를 받을 수 없는 환경 대비: 20초 이상 열어두면 시청으로 기록 */
+  state._ytAlive=false; clearTimeout(state._seenT);
+  state._seenT=setTimeout(function(){ if(!state._ytAlive && state._vdOpen===id && document.getElementById('vd_ifr')) videoMarkSeen_(id); }, 20000);
   loadComments_(v.id);
 }
 /* 재생 중인 영상이 다시 시작되지 않도록 버튼·숫자만 부분 갱신 */
@@ -7219,9 +7227,41 @@ function paintReacts_(v){
 }
 function paintSeen_(v){
   var el=document.getElementById('vd_seenbox'); if(!el) return;
-  var mine=!!(v.seen||{})[voteKey_()], n=seenN_(v);
-  el.innerHTML='<button class="'+(mine?'btn-ghost':'btn-primary')+'" style="margin-top:12px;" onclick="videoSeen_(\''+v.id+'\')">'+(mine?'✓ 봤어요 (취소)':'👍 다 봤어요')+'</button>'
-    + '<p style="font-size:12px;color:var(--steel-soft);text-align:center;margin:8px 0 0;">지금까지 '+n+'명이 봤어요</p>';
+  var mine=!!(v.seen||{})[voteKey_()], me=meGet_();
+  el.innerHTML='<div class="vd-seen-st'+(mine?' on':'')+'">'
+    + (mine?'✓ 시청 기록됨'+(me&&me.name?' · '+esc(me.name):''):'▶ 영상을 재생하면 시청한 팀원으로 기록돼요')+'</div>';
+}
+/* 유튜브 플레이어 재생 신호 수신 (IFrame API postMessage) */
+function ytListen_(f){
+  try{
+    if(!f || !/enablejsapi/.test(f.src||'')) return;
+    var w=f.contentWindow;
+    w.postMessage(JSON.stringify({event:'listening', id:'kt', channel:'widget'}), '*');
+    w.postMessage(JSON.stringify({event:'command', func:'addEventListener', args:['onStateChange'], id:'kt', channel:'widget'}), '*');
+  }catch(e){}
+}
+function ytOnMsg_(origin, data){
+  if(!/^https:\/\/www\.youtube(-nocookie)?\.com$/.test(String(origin||''))) return;
+  if(!state._vdOpen) return;
+  var d; try{ d=typeof data==='string'?JSON.parse(data):data; }catch(x){ return; }
+  if(!d) return;
+  state._ytAlive=true;
+  var playing=(d.event==='onStateChange' && d.info===1) || (d.info && typeof d.info==='object' && d.info.playerState===1);
+  if(playing) videoMarkSeen_(state._vdOpen);
+}
+try{ window.addEventListener('message', function(e){ ytOnMsg_(e.origin, e.data); }); }catch(e){}
+/* 시청 기록 (한 번 기록되면 유지 · 이름 = 처음 접속 때 등록한 이름) */
+function videoMarkSeen_(id){
+  var v=videoById_(id); if(!v) return;
+  var k=voteKey_(); v.seen=v.seen||{};
+  var me=meGet_(), nm=(me&&me.name)||true;
+  if(v.seen[k]===nm) return;
+  v.seen[k]=nm;
+  paintSeen_(v); paintWho_(v); if(state.screen==='video') render();
+  if(window.db && FS.enabled){
+    var up={}; up['seen.'+k]=nm;
+    db.collection('videos').doc(id).update(up).catch(function(){});
+  }
 }
 function videoReact_(id,r){
   var v=videoById_(id); if(!v) return;
@@ -7236,21 +7276,7 @@ function videoReact_(id,r){
     db.collection('videos').doc(id).update(up).catch(function(){ toast('저장 실패 · 다시 눌러주세요'); });
   }
 }
-function videoSeen_(id){
-  var v=videoById_(id); if(!v) return;
-  var k=voteKey_(); v.seen=v.seen||{};
-  var on=!v.seen[k];
-  if(on && !meGet_()){ askMyName_(function(){ videoSeen_(id); }); toast('이름을 먼저 등록해주세요'); return; }
-  var nm=on?meGet_().name:null;
-  if(on) v.seen[k]=nm; else delete v.seen[k];
-  paintSeen_(v); paintWho_(v); if(state.screen==='video') render();
-  if(window.db && FS.enabled){
-    var up={}; up['seen.'+k]=on?nm:null;
-    db.collection('videos').doc(id).update(up).catch(function(){ toast('저장 실패 · 다시 눌러주세요'); });
-  }
-  toast(on?'봤어요 체크했어요':'체크를 취소했어요');
-}
-/* 누가 봤나요 · 반응한 팀원 (운영진에게는 아직 안 본 팀원도) */
+/* 시청한 팀원 · 반응한 팀원 */
 function paintWho_(v){
   var el=document.getElementById('vd_who'); if(!el) return;
   var seen=whoList_(v.seen), named=seen.filter(Boolean), anon=seen.length-named.length;
@@ -7259,18 +7285,12 @@ function paintWho_(v){
   var body='';
   if(open){
     body='<div class="vd-who-box">'
-      + '<div class="vd-who-t">👀 본 팀원 '+seen.length+'</div>'
+      + '<div class="vd-who-t">👀 시청한 팀원 '+seen.length+'</div>'
       + (named.length||anon?'<div class="vd-who-row">'+named.map(function(n){ return '<span class="vd-who-chip on">'+esc(n)+'</span>'; }).join('')+(anon?'<span class="vd-who-chip">이름 없음 '+anon+'</span>':'')+'</div>':'<div class="vd-cm-empty" style="padding:4px 0;">아직 없어요</div>')
       + (rx?'<div class="vd-who-t" style="margin-top:10px;">반응한 팀원</div>'+rx:'');
-    if(isAdmin()){
-      var seenSet={}; named.forEach(function(n){ seenSet[n]=1; });
-      var not=(state.players||[]).filter(function(p){ return isActiveP_(p) && !/\(탈퇴\)/.test(p.name||'') && !seenSet[p.name]; }).slice().sort(numSort);
-      body+='<div class="vd-who-t" style="margin-top:10px;">아직 안 본 팀원 '+not.length+' <span style="font-weight:600;color:var(--steel-soft);">· 운영진만 보여요</span></div>'
-        + (not.length?'<div class="vd-who-row">'+not.map(function(p){ return '<span class="vd-who-chip dim">'+esc(p.name)+'</span>'; }).join('')+'</div>':'<div class="vd-cm-empty" style="padding:4px 0;">모두 봤어요 👏</div>');
-    }
     body+='</div>';
   }
-  el.innerHTML='<button type="button" class="vd-who-tg" onclick="state._whoOpen=(state._whoOpen===\''+v.id+'\'?\'\':\''+v.id+'\');paintWho_(videoById_(\''+v.id+'\'))">'+(open?'▲ 접기':'▼ 누가 봤나요'+(named.length?' · '+esc(named.slice(0,3).join(', '))+(named.length>3?' 외 '+(named.length-3)+'명':''):''))+'</button>'+body;
+  el.innerHTML='<button type="button" class="vd-who-tg" onclick="state._whoOpen=(state._whoOpen===\''+v.id+'\'?\'\':\''+v.id+'\');paintWho_(videoById_(\''+v.id+'\'))">'+(open?'▲ 접기':'▼ 시청한 팀원 '+seen.length+(named.length?' · '+esc(named.slice(0,3).join(', '))+(named.length>3?' 외 '+(named.length-3)+'명':''):''))+'</button>'+body;
 }
 /* ── 댓글 ── */
 function loadComments_(vidId){
@@ -7354,6 +7374,55 @@ function videoDelete_(id){
   });
 }
 
+/* ── 카톡방 공유: 링크를 누르면 앱의 영상 탭 → 해당 영상이 열림 ── */
+function videoUrl_(id){ return location.origin+location.pathname+'#video='+id; }
+function videoShareText_(v){
+  return '[🎬 '+ourTeamName_()+' 추천 영상]\n'+(v.title||'')+(v.note?'\n💬 '+v.note+(v.by?' — '+v.by:''):'')+'\n\n👇 눌러서 앱에서 보기';
+}
+function videoShareKakao_(id){
+  var v=videoById_(id); if(!v) return;
+  var url=videoUrl_(id), txt=videoShareText_(v);
+  logEvent_('share','영상 카톡 공유', v.title);
+  if(navigator.share){
+    navigator.share({title:ourTeamName_()+' 추천 영상', text:txt, url:url}).catch(function(e){ if(e && e.name!=='AbortError') videoCopyShare_(id); });
+    return;
+  }
+  videoCopyShare_(id);
+}
+function videoCopyShare_(id){
+  var v=videoById_(id); if(!v) return;
+  var all=videoShareText_(v)+'\n'+videoUrl_(id);
+  var ok=function(){ toast('공유 문구를 복사했어요 · 카톡방에 붙여넣기 하세요'); };
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(all).then(ok).catch(function(){ fallbackCopy_(all); }); }
+  else fallbackCopy_(all);
+}
+/* 영상을 올린 직후: 바로 카톡방에 보내기 */
+function videoSharedDone_(id){
+  var v=videoById_(id); if(!v) return;
+  showSheet('<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>✅ 영상 탭에 올렸어요</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<div style="display:flex;gap:12px;align-items:center;margin-bottom:14px;"><img src="'+esc(v.thumb||ytThumb_(v.vid))+'" alt="" style="width:120px;aspect-ratio:16/9;object-fit:cover;border-radius:10px;flex:0 0 auto;"><div class="vd-title" style="font-size:14px;">'+esc(v.title||'')+'</div></div>'
+   +   '<p style="font-size:13px;color:var(--steel);margin:0 0 12px;line-height:1.55;">카톡방에 공유하면 팀원이 링크를 눌러 <b>앱의 영상 탭에서 바로</b> 볼 수 있어요.</p>'
+   +   '<button class="btn-primary" onclick="videoShareKakao_(\''+v.id+'\')">💬 카톡방에 공유</button>'
+   +   '<button class="btn-ghost" onclick="videoCopyShare_(\''+v.id+'\')">📋 공유 문구 복사</button>'
+   +   '<button class="btn-ghost" onclick="closeSheet()">나중에</button>'
+   + '</div>');
+}
+/* 공유 링크(#video=ID)로 들어온 경우: PIN·이름 확인 후 영상 탭 → 해당 영상 열기 */
+var PENDING_VIDEO=(String(location.hash||'').match(/^#video=([A-Za-z0-9_-]+)/)||[])[1]||'';
+function openPendingVideo_(){
+  if(!PENDING_VIDEO) return;
+  var id=PENDING_VIDEO; PENDING_VIDEO='';
+  try{ history.replaceState(history.state, '', location.pathname+location.search); }catch(e){}
+  go('video');
+  var tries=0;
+  (function wait(){
+    if(state.videoLoaded && !state.videoLoading){ if(videoById_(id)) openVideo_(id); else toast('삭제되었거나 찾을 수 없는 영상이에요'); return; }
+    if(++tries<60) setTimeout(wait, 150);
+  })();
+}
+
 /* ── 공유(추가·수정) 시트: 분류 + 운영진 한마디 ── */
 function openVideoShare_(item, editId){
   if(!requireAdmin()) return;
@@ -7397,7 +7466,7 @@ function videoShareSave_(){
     cat:state._vdCat||'etc', note:note, by:whoName_()||'운영진', at:new Date().toISOString(), pin:pin, seen:{} };
   closeSheet(); state.videoCat='all';
   if(state.screen!=='video') go('video');
-  videoSave_(nv).then(function(){ toast('팀에 공유했어요'); });
+  videoSave_(nv).then(function(){ videoSharedDone_(nv.id); });
   logEvent_('add','영상 공유', nv.title);
 }
 
