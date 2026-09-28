@@ -1146,7 +1146,7 @@ var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '12.5';
+var APP_VERSION = '12.6';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -2006,7 +2006,7 @@ function viewForm(){
     +     '<div class="act-row">'
     +       '<button class="btn-ghost" onclick="shareSquadCard_()">🖼️ 스쿼드 카드 이미지 저장</button>'
     +       (isAdmin()?'<button class="btn-ghost" onclick="openMomVote_(\''+sid+'\')">🗳️ MOM 투표 만들기 (링크 공유)</button>':'')
-    +       (isAdmin()?'<button class="btn-ghost" onclick="openAttLink_(\''+sid+'\')">📍 출석 링크 만들기</button>':'')
+    +       (isAdmin()?'<button class="btn-ghost" onclick="openAttLink_(\''+sid+'\')">🙋 출석</button>':'')
     +     '</div>'
     +   '</div></div>'
     +   '<div class="fc-left">' + rosterPanel + '</div>'
@@ -7157,7 +7157,7 @@ function openTeamAdmin_(){
    +     cfgRow('지각 점수', scoreLabel_(lateScore), 'editLateScore')
    +     cfgRow('불참 점수', scoreLabel_(absentScore), 'editAbsentScore')
    +     '<div class="list-row" style="cursor:pointer;" onclick="openVoteList_()"><span class="nm" style="flex:1;">MOM 투표 관리</span><span class="val" style="color:var(--red);font-size:14px;">🗳️ 목록 ›</span></div>'
-   +     '<div class="list-row" style="cursor:pointer;" onclick="openAttList_()"><span class="nm" style="flex:1;">출석 체크 관리</span><span class="val" style="color:var(--red);font-size:14px;">📍 목록 ›</span></div>'
+   +     '<div class="list-row" style="cursor:pointer;" onclick="openAttList_()"><span class="nm" style="flex:1;">출석 체크 관리</span><span class="val" style="color:var(--red);font-size:14px;">🙋 목록 ›</span></div>'
    +     cfgRow('출석 인정 범위', attCfgRadius_()+'m', 'editAttRadius_')
    +     cfgRow('지각 기준', attLateLabel_(attCfgLate_()), 'editAttLate_')
    +     cfgRow('감독 · 코치', staffLabel_(), 'editStaff_')
@@ -10195,7 +10195,7 @@ function renderAttSetup_(){
   }).join('');
   var ok=m && attHasXY_(m) && st;
   showSheet('<div class="grabber"></div>'
-   + '<div class="sheet-head"><h3>📍 출석 링크 만들기</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-head"><h3>🙋 출석 링크 만들기</h3><button class="x" onclick="closeSheet()">✕</button></div>'
    + '<div class="sheet-body">'
    +   '<div class="field"><label>경기 선택</label><select id="at_match" onchange="state._att.matchId=this.value;renderAttSetup_()">'+(opts||'<option value="">등록된 경기 없음</option>')+'</select></div>'
    +   info
@@ -10306,7 +10306,7 @@ function openAttList_(){
         + '<button class="vt-del" onclick="attDeleteId_(\''+v.id+'\')">🗑️</button></div>';
     }).join('') || '<div class="empty" style="padding:24px;">만든 출석 링크가 없습니다.<br>스쿼드 탭에서 출석 링크를 만들어보세요.</div>';
     showSheet('<div class="grabber"></div>'
-     + '<div class="sheet-head"><h3>📍 출석 체크</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+     + '<div class="sheet-head"><h3>🙋 출석 체크</h3><button class="x" onclick="closeSheet()">✕</button></div>'
      + '<div class="sheet-body"><div class="rk-list">'+rows+'</div></div>');
   }).catch(function(){ toast('목록을 불러오지 못했습니다'); });
 }
@@ -10463,7 +10463,7 @@ function renderAttScreen_(){
   if(my && !(v.checks||{})[my]) my='';
   var head='<img class="auth-logo vt-logo" src="'+APP_LOGO+'" alt=""><div class="auth-title">출석 체크</div>'
     + '<div class="auth-sub">'+esc(v.title||'')+(v.time?' '+esc(v.time):'')+(v.venue?'<br>'+esc(v.venue):'')+'</div>';
-  var rule='<div class="at-rule">⏱ <b>'+attHM_(v.cutoffAt)+':59</b>까지 참석 · 이후 지각 <span>|</span> 📍 경기장 <b>'+v.radius+'m</b> 안</div>';
+  var rule='<div class="at-rule">⏱ <b>'+attHM_(v.cutoffAt)+':59</b>까지 참석 · 이후 지각</div>';
   function card(c){
     var ck=(v.checks||{})[c.pid], mine=my===c.pid, st=v.closed?(attFinal_(v,c.pid)||'absent'):(ck?ck.st:'');
     return '<button class="vt-card at-card'+(mine?' on':'')+(ck&&!mine?' taken':'')+'" onclick="attPick_(\''+c.pid+'\')"'+(v.closed?' disabled':'')+'>'
@@ -10494,7 +10494,7 @@ function renderAttScreen_(){
     var l=state._attLoc||{}, loc;
     if(l.state==='wait') loc='<div class="at-loc">📡 위치 확인 중...</div>';
     else if(l.state==='in') loc='<div class="at-loc in">✅ 경기장 도착 · 약 '+attDistLabel_(l.dist)+(l.acc?' <small>(오차 ±'+l.acc+'m)</small>':'')+'</div>';
-    else if(l.state==='out') loc='<div class="at-loc out">📍 경기장에서 약 <b>'+attDistLabel_(l.dist)+'</b> 떨어져 있어요<br><small>'+v.radius+'m 안에 들어오면 체크할 수 있어요'+(l.acc?' · 오차 ±'+l.acc+'m':'')+'</small><button onclick="attLocate_()">다시 확인</button></div>';
+    else if(l.state==='out') loc='<div class="at-loc out">📍 아직 경기장에 도착하지 않았어요<br><small>경기장에 도착하면 이름을 누를 수 있어요</small><button onclick="attLocate_()">다시 확인</button></div>';
     else loc='<div class="at-loc out">'+(l.msg||'위치를 확인하지 못했어요')+'<button onclick="attLocate_()">다시 확인</button></div>';
     body=loc+grid+'<p class="vt-hint">'+(my?'바꿀 이름을 눌러주세요. (한 명만 선택돼요)':'경기장에 도착하면 본인 이름을 한 번 눌러주세요.')+'</p>'
       + (my?'<div class="vt-actions"><button class="auth-btn ghost" onclick="state._attEdit=false;renderAttScreen_()">취소</button></div>':'');
