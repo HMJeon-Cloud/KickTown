@@ -202,6 +202,37 @@
   }
   .fab:active{transform:scale(.92);}
 
+  /* 영상 탭 */
+  .vd-actions{display:flex;gap:8px;margin-bottom:14px;}
+  .vd-grid{display:grid;grid-template-columns:1fr;gap:14px;margin-bottom:22px;}
+  @media(min-width:600px){ .vd-grid{grid-template-columns:repeat(2,minmax(0,1fr));} }
+  @media(min-width:1024px){ .vd-grid{grid-template-columns:repeat(3,minmax(0,1fr));} .vd-grid.vd-pin{grid-template-columns:repeat(2,minmax(0,1fr));} }
+  .vd-card{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;cursor:pointer;box-shadow:var(--shadow-sm);transition:transform .12s ease;}
+  .vd-card:active{transform:scale(.985);}
+  .vd-card.big{border-color:rgba(200,16,46,.35);box-shadow:0 8px 24px rgba(200,16,46,.10);}
+  .vd-thumb{position:relative;aspect-ratio:16/9;background:#111;}
+  .vd-thumb img,.vs-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .vd-play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:50px;height:50px;border-radius:50%;background:rgba(200,16,46,.92);color:#fff;display:flex;align-items:center;justify-content:center;font-size:17px;padding-left:3px;box-shadow:0 6px 18px rgba(0,0,0,.4);}
+  .vd-play.sm{width:32px;height:32px;font-size:11px;}
+  .vd-dur{position:absolute;right:7px;bottom:7px;background:rgba(0,0,0,.8);color:#fff;font-size:11.5px;font-weight:600;padding:1px 6px;border-radius:5px;font-family:'Oswald';letter-spacing:.03em;}
+  .vd-cat{position:absolute;left:8px;top:8px;background:rgba(17,16,21,.8);color:#fff;font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;}
+  .vd-seen{position:absolute;right:8px;top:8px;background:#1E9E6A;color:#fff;font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;}
+  .vd-meta{padding:11px 13px 12px;}
+  .vd-title{font-size:14.5px;font-weight:700;line-height:1.4;color:var(--ink);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .vd-card.big .vd-title{font-size:16px;}
+  .vd-sub{font-size:12px;color:var(--steel-soft);margin-top:4px;}
+  .vd-note{font-size:13px;line-height:1.55;color:var(--steel);background:var(--paper);border-radius:10px;padding:8px 11px;margin-top:9px;}
+  .vd-note b{color:var(--ink);font-weight:700;}
+  .vd-foot{font-size:11.5px;color:var(--steel-soft);margin-top:8px;}
+  .vd-player{position:relative;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#000;}
+  .vd-player iframe{position:absolute;inset:0;width:100%;height:100%;border:0;}
+  .vs-row{display:flex;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);}
+  .vs-thumb{position:relative;width:146px;flex:0 0 auto;aspect-ratio:16/9;border-radius:10px;overflow:hidden;background:#111;cursor:pointer;}
+  .vs-info{min-width:0;flex:1;display:flex;flex-direction:column;}
+  .vs-info .vd-title{font-size:13.5px;}
+  .vs-add{align-self:flex-start;margin-top:7px;border:none;background:var(--red);color:#fff;font-weight:700;font-size:12.5px;padding:7px 12px;border-radius:9px;cursor:pointer;font-family:inherit;}
+  .vs-done{margin-top:7px;font-size:12px;font-weight:700;color:#1E9E6A;}
+
   /* Bottom nav */
   .tabbar{
     position:absolute;left:0;right:0;bottom:0;z-index:15;
@@ -888,7 +919,7 @@ var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '11.1';
+var APP_VERSION = '11.2';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -1257,6 +1288,7 @@ var TABS = [
   {id:'team',  kr:'팀 관리',   en:'TEAM',     label:'팀',  icon:'<circle cx="9" cy="8.5" r="2.6"/><path d="M4 18.6c0-2.8 2.2-4.7 5-4.7s5 1.9 5 4.7"/><path d="M15.6 6.4a2.6 2.6 0 010 4.9"/><path d="M16.9 14.2c1.9.5 3.1 2 3.1 4.4"/>'},
   {id:'squad', kr:'경기 등록', en:'MATCHDAY', label:'경기등록', icon:'<rect x="4" y="5" width="16" height="15" rx="2.2"/><path d="M8 3.2v3.6M16 3.2v3.6M4 10h16"/><path d="M9.3 14.9l1.9 1.9 3.5-3.6"/>'},
   {id:'form',  kr:'스쿼드',    en:'FORMATION', label:'스쿼드', icon:'<rect x="4" y="3.5" width="16" height="17" rx="2"/><path d="M4 12h16"/><circle cx="12" cy="12" r="2.1"/><circle cx="8" cy="7.6" r="1.05" fill="currentColor" stroke="none"/><circle cx="16" cy="7.6" r="1.05" fill="currentColor" stroke="none"/><circle cx="8" cy="16.4" r="1.05" fill="currentColor" stroke="none"/><circle cx="16" cy="16.4" r="1.05" fill="currentColor" stroke="none"/>'},
+  {id:'video', kr:'영상',      en:'VIDEO',    label:'영상',  icon:'<rect x="3.5" y="5.5" width="17" height="13" rx="3.2"/><path d="M10.4 9.3v5.4l4.5-2.7z"/>'},
   {id:'record',kr:'기록 관리', en:'STATS',    label:'기록',  icon:'<path d="M4.5 20.5h15"/><path d="M7.5 20v-5.5M12 20v-10M16.5 20v-7.5"/>'},
   {id:'att',   kr:'경기장',    en:'VENUE',   label:'경기장', icon:'<rect x="5" y="5" width="14" height="16" rx="2.2"/><rect x="9" y="3" width="6" height="3.4" rx="1.2"/><path d="M8.7 13.3l2.1 2.1 4.3-4.4"/>'}
 ];
@@ -1280,6 +1312,7 @@ function go(id){
   state.matchShow = REC_PAGE; state.recShow = REC_PAGE; state.attHistShow = ATT_HIST_PAGE;   // 탭 이동 시 목록 표시 개수 초기화
   if(id==='form'){ loadForms(); return; }
   if(id==='record' && !state.recLoaded){ state.recLoaded = true; loadRecord(); return; }
+  if(id==='video') loadVideos_();
   render();
 }
 
@@ -1298,6 +1331,7 @@ function render(){
   else if(state.screen==='squad') c.innerHTML = viewSquad();
   else if(state.screen==='form') c.innerHTML = viewForm();
   else if(state.screen==='record') c.innerHTML = viewRecord();
+  else if(state.screen==='video') c.innerHTML = viewVideos();
   else if(state.screen==='att'){ c.innerHTML = viewAtt(); setTimeout(initVenueDisplayMap, 60); }
   c.scrollTop = keepScroll ? savedTop : 0;
   // 칩 줄(연/월·상대팀 등) 가로 스크롤 위치 복원
@@ -3260,6 +3294,7 @@ function doDeletePlayer(id){
 }
 function closeSheet(){
   document.getElementById('sheetWrap').classList.remove('open');
+  try{ Array.prototype.forEach.call(document.querySelectorAll('#sheet iframe[data-yt]'), function(f){ f.src='about:blank'; }); }catch(e){}
   // 시트를 열기 전 스크롤 위치로 복원 (모바일에서 목록이 맨 위로 튀는 것 방지)
   var c = document.getElementById('content');
   if(c && state._preSheetScroll != null){ c.scrollTop = state._preSheetScroll; }
@@ -6909,12 +6944,396 @@ function openSystem_(){
    +     '<div class="list-row" style="cursor:pointer;" onclick="exportBackup_()"><span class="nm" style="flex:1;">데이터 백업 (엑셀)</span><span class="val" style="color:var(--red);font-size:14px;">📥 내보내기 ›</span></div>'
    +     '<div class="list-row" style="cursor:pointer;" onclick="importBackup_()"><span class="nm" style="flex:1;">데이터 복구 (백업 엑셀 업로드)</span><span class="val" style="color:var(--red);font-size:14px;">📤 가져오기 ›</span></div>'
    +     '<div class="list-row" style="cursor:pointer;" onclick="openLogView_()"><span class="nm" style="flex:1;">활동 로그</span><span class="val" style="color:var(--red);font-size:14px;">🗒️ 보기 ›</span></div>'
+   +     '<div class="list-row" style="cursor:pointer;" onclick="openYtKey_()"><span class="nm" style="flex:1;">유튜브 API 키 <span style="font-size:10.5px;color:var(--steel-soft);font-weight:700;">영상 검색</span></span><span class="val" style="color:var(--red);font-size:14px;">▶️ 설정 ›</span></div>'
    +     migRow
    +     '<div class="list-row" style="cursor:pointer;" onclick="openPinAdmin_()"><span class="nm" style="flex:1;">PIN 관리</span><span class="val" style="color:var(--red);font-size:14px;">🔐 설정 ›</span></div>'
    +   '</div>'
    +   '<input type="file" id="bk_file" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none;" onchange="importBackupPick_(this)">'
    + '</div>');
 }
+/* ================= 영상 탭 — 운영진이 추천하는 유튜브 영상 ================= */
+/* 저장 모델: videos 컬렉션 {id, clubId, vid, title, channel, thumb, dur, cat, note, by, at, pin, seen:{기기키:true}}
+ * API 키: secrets/youtube 문서 (총관리자만 입력 · 운영진이 검색할 때만 읽음) */
+var VIDEO_CATS=[['tactic','전술'],['skill','기술'],['train','훈련·피지컬'],['analysis','경기 분석'],['gk','골키퍼'],['highlight','하이라이트'],['etc','기타']];
+var VIDEO_QUICK=['빌드업 전술','풋살 전술','드리블 기술','패스 훈련','수비 조직','골키퍼 훈련','축구 스트레칭','축구 체력 훈련'];
+function seenN_(v){ var o=v.seen||{}; return Object.keys(o).filter(function(k){ return o[k]; }).length; }
+function videoCatName_(k){ for(var i=0;i<VIDEO_CATS.length;i++) if(VIDEO_CATS[i][0]===k) return VIDEO_CATS[i][1]; return '기타'; }
+var YT_KEY=null, _ytKeyP=null;
+function ytKeyLoad_(){
+  if(YT_KEY!==null) return Promise.resolve(YT_KEY);
+  if(_ytKeyP) return _ytKeyP;
+  if(!(window.db && FS.enabled)){ YT_KEY=''; return Promise.resolve(''); }
+  _ytKeyP=db.collection('secrets').doc('youtube').get().then(function(d){
+    kjRead_('secrets','유튜브 키',1);
+    YT_KEY=(d&&d.exists&&d.data()&&d.data().key)||''; _ytKeyP=null; return YT_KEY;
+  }).catch(function(){ _ytKeyP=null; YT_KEY=''; return ''; });
+  return _ytKeyP;
+}
+/* ── 데이터 ── */
+function loadVideos_(force){
+  var now=Date.now();
+  if(!force && state._videoAt && now-state._videoAt<60000) return;
+  state._videoAt=now;
+  if(!(window.db && FS.enabled)){ state.videos=state.videos||[]; state.videoLoaded=true; return; }
+  var cid=state.activeClubId||'';
+  state.videoLoading=!state.videoLoaded;
+  db.collection('videos').where('clubId','==',cid).get().then(function(snap){
+    var a=[]; snap.forEach(function(d){ a.push(d.data()||{}); });
+    kjRead_('videos','영상 목록',a.length);
+    state.videos=a; state.videoLoaded=true; state.videoLoading=false;
+    if(state.screen==='video') render();
+  }).catch(function(e){ state.videoLoading=false; fsErr_(e,'videos'); if(state.screen==='video') render(); });
+}
+function videoSave_(v){
+  state.videos=(state.videos||[]).filter(function(x){ return x.id!==v.id; }).concat([v]);
+  if(state.screen==='video') render();
+  if(!(window.db && FS.enabled)) return Promise.resolve();
+  return db.collection('videos').doc(v.id).set(v).catch(function(e){ toast('저장 실패 · 네트워크 확인'); throw e; });
+}
+function videoById_(id){ return (state.videos||[]).filter(function(x){ return x.id===id; })[0]||null; }
+/* ── 유튜브 주소 · 시간 유틸 ── */
+function ytIdFrom_(s){
+  s=String(s||'').trim();
+  if(/^[\w-]{11}$/.test(s)) return s;
+  var m=s.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/|v\/))([\w-]{11})/);
+  return m?m[1]:'';
+}
+function ytThumb_(vid){ return 'https://i.ytimg.com/vi/'+vid+'/hqdefault.jpg'; }
+function isoDur_(s){ var m=String(s||'').match(/P(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/); if(!m) return 0; return (+m[1]||0)*86400+(+m[2]||0)*3600+(+m[3]||0)*60+(+m[4]||0); }
+function fmtDur_(sec){ sec=Number(sec)||0; if(!sec) return ''; var h=Math.floor(sec/3600), m=Math.floor(sec%3600/60), s=sec%60; return (h?h+':'+('0'+m).slice(-2):m)+':'+('0'+s).slice(-2); }
+function fmtViews_(n){ n=Number(n)||0; if(n>=1e8) return (Math.round(n/1e7)/10)+'억회'; if(n>=1e4) return (Math.round(n/1e3)/10)+'만회'; if(n>=1e3) return (Math.round(n/100)/10)+'천회'; return n+'회'; }
+function htmlDecode_(s){ var t=document.createElement('textarea'); t.innerHTML=String(s||''); return t.value; }
+function ytErrMsg_(res, body){
+  var r=''; try{ r=(((body||{}).error||{}).errors||[{}])[0].reason||''; }catch(e){}
+  if(r==='quotaExceeded'||r==='dailyLimitExceeded') return '오늘 검색 한도를 모두 썼어요 · 한국시간 오후 4~5시쯤 초기화됩니다';
+  if(r==='keyInvalid'||(res&&res.status===400)) return 'API 키가 올바르지 않아요 · 시스템에서 키를 확인해주세요';
+  if(r==='accessNotConfigured') return 'YouTube Data API v3가 사용 설정되지 않았어요 (Google Cloud 콘솔)';
+  if(res&&res.status===403) return 'API 키 권한 오류 · 키 제한(웹사이트·API) 설정을 확인해주세요';
+  return '유튜브 요청 실패 · 잠시 후 다시 시도해주세요';
+}
+function ytApi_(path, params){
+  return ytKeyLoad_().then(function(key){
+    if(!key){ var e=new Error('nokey'); e.nokey=true; throw e; }
+    params.key=key;
+    var q=Object.keys(params).map(function(k){ return k+'='+encodeURIComponent(params[k]); }).join('&');
+    return fetch('https://www.googleapis.com/youtube/v3/'+path+'?'+q).then(function(res){
+      return res.json().catch(function(){ return {}; }).then(function(body){
+        if(!res.ok){ var er=new Error(ytErrMsg_(res,body)); er.yt=true; throw er; }
+        return body;
+      });
+    });
+  });
+}
+function ytDetails_(ids){
+  if(!ids.length) return Promise.resolve({});
+  return ytApi_('videos',{part:'contentDetails,statistics,snippet', id:ids.join(',')}).then(function(b){
+    var o={}; (b.items||[]).forEach(function(it){
+      o[it.id]={dur:isoDur_((it.contentDetails||{}).duration), views:Number((it.statistics||{}).viewCount)||0,
+        title:htmlDecode_((it.snippet||{}).title), channel:htmlDecode_((it.snippet||{}).channelTitle),
+        embeddable:true};
+    }); return o;
+  });
+}
+
+/* ── 화면 ── */
+function viewVideos(){
+  if(!state.videoLoaded) return '<div class="empty"><div class="ei">🎬</div>영상 불러오는 중...</div>';
+  var all=(state.videos||[]).slice().sort(function(a,b){ return String(b.at||'').localeCompare(String(a.at||'')); });
+  var cat=state.videoCat||'all', my=voteKey_();
+  var counts={}; all.forEach(function(v){ counts[v.cat||'etc']=(counts[v.cat||'etc']||0)+1; });
+  var chips='<button class="chip'+(cat==='all'?' on':'')+'" onclick="videoCat_(\'all\')">전체 '+all.length+'</button>'
+    + VIDEO_CATS.filter(function(c){ return counts[c[0]]; }).map(function(c){
+      return '<button class="chip'+(cat===c[0]?' on':'')+'" onclick="videoCat_(\''+c[0]+'\')">'+c[1]+' '+counts[c[0]]+'</button>'; }).join('');
+  var list=all.filter(function(v){ return cat==='all' || (v.cat||'etc')===cat; });
+  var pins=cat==='all' ? list.filter(function(v){ return v.pin; }) : [];
+  var rest=list.filter(function(v){ return !(cat==='all' && v.pin); });
+  var adminBar=isAdmin()
+    ? '<div class="vd-actions"><button class="btn-primary" style="margin:0;flex:1.3;" onclick="openVideoSearch_()">🔍 유튜브에서 찾기</button>'
+      + '<button class="btn-ghost" style="margin:0;flex:1;" onclick="openVideoLink_()">🔗 링크로 추가</button></div>'
+    : '';
+  var body;
+  if(!all.length){
+    body='<div class="empty"><div class="ei">🎬</div>아직 공유된 영상이 없어요.'
+      + (isAdmin()?'<br>위 버튼으로 팀에 추천할 영상을 찾아보세요.':'<br>운영진이 추천 영상을 올리면 여기에 모여요.')+'</div>';
+  } else {
+    body=(pins.length?'<div class="eyebrow">📌 이번 주 추천</div><div class="vd-grid vd-pin">'+pins.map(function(v){ return videoCard_(v,my,true); }).join('')+'</div>':'')
+      + (rest.length?'<div class="eyebrow">'+(cat==='all'?'공유된 영상':videoCatName_(cat))+' · '+rest.length+'</div><div class="vd-grid">'+rest.map(function(v){ return videoCard_(v,my,false); }).join('')+'</div>'
+        : (pins.length?'':'<div class="empty">이 분류의 영상이 없어요.</div>'));
+  }
+  return adminBar + (all.length?'<div class="chips" data-sk="vdcat" onscroll="saveChipScroll_(\'vdcat\',this)">'+chips+'</div>':'') + body;
+}
+function videoCard_(v, my, big){
+  var seenN=seenN_(v), mine=!!(v.seen||{})[my];
+  var d=String(v.at||'').slice(0,10).replace(/-/g,'.');
+  return '<div class="vd-card'+(big?' big':'')+'" onclick="openVideo_(\''+v.id+'\')">'
+    + '<div class="vd-thumb"><img src="'+esc(v.thumb||ytThumb_(v.vid))+'" alt="" loading="lazy">'
+    +   '<span class="vd-play">▶</span>'
+    +   (v.dur?'<span class="vd-dur">'+fmtDur_(v.dur)+'</span>':'')
+    +   '<span class="vd-cat">'+esc(videoCatName_(v.cat))+'</span>'
+    +   (mine?'<span class="vd-seen">✓ 봤어요</span>':'')
+    + '</div>'
+    + '<div class="vd-meta"><div class="vd-title">'+esc(v.title||'제목 없음')+'</div>'
+    +   '<div class="vd-sub">'+esc(v.channel||'')+(v.channel?' · ':'')+d+'</div>'
+    +   (v.note?'<div class="vd-note">“'+esc(v.note)+'”'+(v.by?' <b>— '+esc(v.by)+'</b>':'')+'</div>':'')
+    +   '<div class="vd-foot">👀 '+seenN+'명 봤어요</div>'
+    + '</div></div>';
+}
+function videoCat_(k){ state.videoCat=k; render(); }
+
+/* ── 재생 시트 ── */
+function openVideo_(id){
+  var v=videoById_(id); if(!v) return;
+  var my=voteKey_(), mine=!!(v.seen||{})[my], seenN=seenN_(v);
+  showSheet('<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3 style="font-size:15px;line-height:1.35;padding-right:10px;">'+esc(v.title||'영상')+'</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<div class="vd-player"><iframe data-yt="1" src="https://www.youtube-nocookie.com/embed/'+esc(v.vid)+'?autoplay=1&rel=0&playsinline=1&modestbranding=1" title="'+esc(v.title||'유튜브 영상')+'" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>'
+   +   '<div style="font-size:12.5px;color:var(--steel-soft);margin:10px 2px 0;">'+esc(v.channel||'')+' · '+esc(videoCatName_(v.cat))+(v.dur?' · '+fmtDur_(v.dur):'')+'</div>'
+   +   (v.note?'<div class="vd-note" style="margin:12px 0 0;font-size:14px;">“'+esc(v.note)+'”'+(v.by?' <b>— '+esc(v.by)+'</b>':'')+'</div>':'')
+   +   '<button class="'+(mine?'btn-ghost':'btn-primary')+'" style="margin-top:16px;" onclick="videoSeen_(\''+v.id+'\')">'+(mine?'✓ 봤어요 (취소)':'👍 다 봤어요')+'</button>'
+   +   '<p style="font-size:12px;color:var(--steel-soft);text-align:center;margin:8px 0 0;">지금까지 '+seenN+'명이 봤어요</p>'
+   +   '<a class="btn-ghost" style="display:block;text-align:center;text-decoration:none;" href="https://www.youtube.com/watch?v='+esc(v.vid)+'" target="_blank" rel="noopener">유튜브 앱에서 열기</a>'
+   +   (isAdmin()?'<div style="display:flex;gap:8px;margin-top:9px;">'
+        + '<button class="btn-ghost" style="flex:1;margin:0;" onclick="videoPin_(\''+v.id+'\')">'+(v.pin?'📌 추천 해제':'📌 추천 고정')+'</button>'
+        + '<button class="btn-ghost" style="flex:1;margin:0;" onclick="openVideoEdit_(\''+v.id+'\')">✏️ 수정</button>'
+        + '<button class="btn-ghost btn-danger" style="flex:1;margin:0;" onclick="videoDelete_(\''+v.id+'\')">삭제</button></div>':'')
+   + '</div>');
+}
+function videoSeen_(id){
+  var v=videoById_(id); if(!v) return;
+  var k=voteKey_(); v.seen=v.seen||{};
+  var on=!v.seen[k];
+  if(on) v.seen[k]=true; else delete v.seen[k];
+  openVideo_(id); if(state.screen==='video') render();
+  if(window.db && FS.enabled){
+    var up={}; up['seen.'+k]=on?true:null;
+    db.collection('videos').doc(id).update(up).catch(function(){ toast('저장 실패 · 다시 눌러주세요'); });
+  }
+  toast(on?'봤어요 체크했어요':'체크를 취소했어요');
+}
+function videoPin_(id){
+  if(!requireAdmin()) return;
+  var v=videoById_(id); if(!v) return;
+  v.pin=!v.pin; closeSheet(); videoSave_(v); logEvent_('edit', v.pin?'영상 추천 고정':'영상 추천 해제', v.title);
+  toast(v.pin?'이번 주 추천으로 고정했어요':'추천 고정을 해제했어요');
+}
+function videoDelete_(id){
+  if(!requireAdmin()) return;
+  var v=videoById_(id); if(!v) return;
+  confirmDelete_('“'+esc(v.title||'')+'” 영상을 목록에서 삭제할까요?<br><span style="font-size:12px;color:var(--steel-soft);">유튜브 원본에는 영향이 없어요.</span>', function(){
+    state.videos=(state.videos||[]).filter(function(x){ return x.id!==id; });
+    closeSheet(); render(); logEvent_('del','영상 삭제', v.title);
+    if(window.db && FS.enabled) db.collection('videos').doc(id).delete().catch(function(){ toast('삭제 실패 · 새로고침'); });
+  });
+}
+
+/* ── 공유(추가·수정) 시트: 분류 + 운영진 한마디 ── */
+function openVideoShare_(item, editId){
+  if(!requireAdmin()) return;
+  state._vdDraft=item; state._vdEdit=editId||'';
+  var cur=editId?videoById_(editId):null;
+  var cat=(cur&&cur.cat)||item.cat||'tactic';
+  showSheet('<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>'+(editId?'영상 정보 수정':'팀에 공유하기')+'</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<div style="display:flex;gap:12px;align-items:center;margin-bottom:14px;">'
+   +     '<img src="'+esc(item.thumb||ytThumb_(item.vid))+'" alt="" style="width:132px;aspect-ratio:16/9;object-fit:cover;border-radius:10px;flex:0 0 auto;">'
+   +     '<div style="min-width:0;"><div class="vd-title" style="font-size:14px;">'+esc(item.title||'')+'</div><div class="vd-sub">'+esc(item.channel||'')+(item.dur?' · '+fmtDur_(item.dur):'')+'</div></div></div>'
+   +   (item.manual?'<div class="field"><label>영상 제목<span class="req">*</span></label><input id="vd_title" type="text" maxlength="100" value="'+esc(item.title||'')+'" placeholder="팀원들이 알아보기 쉬운 제목"></div>':'')
+   +   '<div class="field"><label>분류</label><div class="chips" id="vd_cats" style="flex-wrap:wrap;margin:0;">'
+   +     VIDEO_CATS.map(function(c){ return '<button type="button" class="chip'+(c[0]===cat?' on':'')+'" data-c="'+c[0]+'" onclick="vdPickCat_(\''+c[0]+'\')">'+c[1]+'</button>'; }).join('')
+   +   '</div></div>'
+   +   '<div class="field"><label>운영진 한마디 <span style="color:var(--steel-soft);font-weight:600;">(선택 · 왜 봐야 하는지)</span></label>'
+   +     '<textarea id="vd_note" maxlength="140" rows="3" style="width:100%;padding:12px 13px;border:1.5px solid var(--line-strong);border-radius:12px;font-family:inherit;font-size:14.5px;resize:vertical;" placeholder="예) 이번 주 빌드업 연습 전에 꼭 보고 오세요. 3:20부터 핵심!">'+esc((cur&&cur.note)||'')+'</textarea></div>'
+   +   '<label style="display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600;margin:0 0 14px;cursor:pointer;"><input id="vd_pin" type="checkbox" style="width:18px;height:18px;accent-color:var(--red);"'+((cur&&cur.pin)?' checked':'')+'> 📌 이번 주 추천으로 맨 위에 고정</label>'
+   +   '<button class="btn-primary" onclick="videoShareSave_()">'+(editId?'수정 완료':'팀에 공유')+'</button>'
+   + '</div>');
+  state._vdCat=cat;
+}
+function vdPickCat_(k){ state._vdCat=k; document.querySelectorAll('#vd_cats .chip').forEach(function(el){ el.classList.toggle('on', el.getAttribute('data-c')===k); }); }
+function openVideoEdit_(id){ var v=videoById_(id); if(!v) return; openVideoShare_({vid:v.vid,title:v.title,channel:v.channel,thumb:v.thumb,dur:v.dur,cat:v.cat}, id); }
+function videoShareSave_(){
+  var it=state._vdDraft; if(!it) return;
+  var note=((document.getElementById('vd_note')||{}).value||'').trim();
+  var pin=!!(document.getElementById('vd_pin')||{}).checked;
+  var tIn=document.getElementById('vd_title'); var title=tIn?tIn.value.trim():it.title;
+  if(!title){ toast('영상 제목을 입력하세요'); return; }
+  if(state._vdEdit){
+    var v=videoById_(state._vdEdit); if(!v) return;
+    v.note=note; v.cat=state._vdCat||v.cat; v.pin=pin; v.title=title;
+    closeSheet(); videoSave_(v); logEvent_('edit','영상 수정', v.title); toast('수정했어요'); return;
+  }
+  var dup=(state.videos||[]).filter(function(x){ return x.vid===it.vid; })[0];
+  if(dup){ toast('이미 공유된 영상이에요'); return; }
+  var nv={ id:'yv'+Date.now().toString(36)+Math.random().toString(36).slice(2,5), clubId:state.activeClubId||'',
+    vid:it.vid, title:title, channel:it.channel||'', thumb:it.thumb||ytThumb_(it.vid), dur:it.dur||0,
+    cat:state._vdCat||'etc', note:note, by:whoName_()||'운영진', at:new Date().toISOString(), pin:pin, seen:{} };
+  closeSheet(); state.videoCat='all';
+  if(state.screen!=='video') go('video');
+  videoSave_(nv).then(function(){ toast('팀에 공유했어요'); });
+  logEvent_('add','영상 공유', nv.title);
+}
+
+/* ── 링크로 추가 (API 키 없어도 동작) ── */
+function openVideoLink_(){
+  if(!requireAdmin()) return;
+  showSheet('<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>🔗 링크로 추가</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<div class="field"><label>유튜브 링크</label><input id="vd_url" type="url" inputmode="url" placeholder="https://youtu.be/… 또는 유튜브 앱의 공유 링크"></div>'
+   +   '<p style="font-size:12px;color:var(--steel-soft);margin:-4px 2px 14px;line-height:1.55;">유튜브 앱에서 <b>공유 → 링크 복사</b> 후 붙여넣으세요. 쇼츠 링크도 됩니다.</p>'
+   +   '<button class="btn-primary" onclick="videoLinkNext_()">다음</button>'
+   + '</div>');
+  setTimeout(function(){ var i=document.getElementById('vd_url'); if(i) i.focus(); }, 120);
+}
+function videoLinkNext_(){
+  var url=((document.getElementById('vd_url')||{}).value||'').trim();
+  var vid=ytIdFrom_(url);
+  if(!vid){ toast('유튜브 링크를 확인해주세요'); return; }
+  var base={vid:vid, thumb:ytThumb_(vid)};
+  ytKeyLoad_().then(function(key){
+    if(!key){ base.manual=true; openVideoShare_(base); return; }
+    toast('영상 정보 불러오는 중...');
+    ytDetails_([vid]).then(function(o){
+      var d=o[vid];
+      if(!d){ toast('영상을 찾을 수 없어요 (비공개·삭제 영상?)'); return; }
+      base.title=d.title; base.channel=d.channel; base.dur=d.dur;
+      openVideoShare_(base);
+    }).catch(function(e){ base.manual=true; toast(e.message||'정보를 못 불러와 제목을 직접 입력해주세요'); openVideoShare_(base); });
+  });
+}
+
+/* ── 유튜브에서 찾기 (Data API v3 검색) ── */
+function openVideoSearch_(){
+  if(!requireAdmin()) return;
+  ytKeyLoad_().then(function(key){
+    if(!key){
+      showSheet('<div class="grabber"></div>'
+       + '<div class="sheet-head"><h3>🔍 유튜브에서 찾기</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+       + '<div class="sheet-body"><div class="empty" style="padding:20px 10px;"><div class="ei">🔑</div>유튜브 검색을 쓰려면 API 키가 필요해요.<br>'
+       + (isOwner()?'시스템 메뉴에서 키를 등록해주세요.':'총관리자에게 시스템 메뉴에서 키 등록을 요청해주세요.')+'</div>'
+       + (isOwner()?'<button class="btn-primary" onclick="openYtKey_()">API 키 등록하기</button>':'')
+       + '<button class="btn-ghost" onclick="openVideoLink_()">🔗 대신 링크로 추가</button></div>');
+      return;
+    }
+    var s=vsState_();
+    showSheet(videoSearchHtml_());
+    if(s.items.length) videoSearchRenderList_();
+    setTimeout(function(){ var i=document.getElementById('vs_q'); if(i && !s.q) i.focus(); }, 120);
+  });
+}
+function vsState_(){ return state._vs||(state._vs={q:'',order:'relevance',dur:'any',items:[],next:''}); }
+function videoSearchHtml_(){
+  var s=vsState_();
+  function opt(name,val,cur,lbl){ return '<button type="button" class="chip'+(cur===val?' on':'')+'" onclick="vsOpt_(\''+name+'\',\''+val+'\')">'+lbl+'</button>'; }
+  return '<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>🔍 유튜브에서 찾기</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<form onsubmit="event.preventDefault();videoSearchRun_();" style="display:flex;gap:8px;margin-bottom:10px;">'
+   +     '<input id="vs_q" type="search" value="'+esc(s.q)+'" placeholder="예) 빌드업 전술, 풋살 드리블" style="flex:1;min-width:0;padding:12px 13px;border:1.5px solid var(--line-strong);border-radius:12px;font-family:inherit;font-size:15px;">'
+   +     '<button class="btn-primary" style="width:auto;margin:0;padding:0 18px;">검색</button></form>'
+   +   '<div class="chips" style="margin-bottom:6px;">'+VIDEO_QUICK.map(function(k){ return '<button type="button" class="chip" onclick="vsQuick_(\''+esc(k)+'\')">'+esc(k)+'</button>'; }).join('')+'</div>'
+   +   '<div class="chips" style="margin-bottom:6px;">'+opt('order','relevance',s.order,'관련도순')+opt('order','viewCount',s.order,'조회수순')+opt('order','date',s.order,'최신순')+'</div>'
+   +   '<div class="chips">'+opt('dur','any',s.dur,'길이 전체')+opt('dur','short',s.dur,'4분 이하')+opt('dur','medium',s.dur,'4~20분')+opt('dur','long',s.dur,'20분 이상')+'</div>'
+   +   '<div id="vs_list"></div>'
+   + '</div>';
+}
+function vsOpt_(k,v){ var s=vsState_(); s[k]=v; var q=(document.getElementById('vs_q')||{}).value; if(q!=null) s.q=q; showSheet(videoSearchHtml_()); if(s.q) videoSearchRun_(); }
+function vsQuick_(k){ var s=vsState_(); s.q=k; var i=document.getElementById('vs_q'); if(i) i.value=k; videoSearchRun_(); }
+function videoSearchRun_(more){
+  var s=vsState_(); var i=document.getElementById('vs_q'); if(i) s.q=i.value.trim();
+  if(!s.q){ toast('검색어를 입력하세요'); return; }
+  var box=document.getElementById('vs_list');
+  if(!more){ s.items=[]; s.next=''; if(box) box.innerHTML='<div class="empty" style="padding:24px;">검색 중...</div>'; }
+  var p={part:'snippet', type:'video', maxResults:12, q:s.q, order:s.order, videoEmbeddable:'true',
+    safeSearch:'moderate', relevanceLanguage:'ko', regionCode:'KR'};
+  if(s.dur!=='any') p.videoDuration=s.dur;
+  if(more && s.next) p.pageToken=s.next;
+  ytApi_('search',p).then(function(b){
+    s.next=b.nextPageToken||'';
+    var got=(b.items||[]).map(function(it){ var sn=it.snippet||{};
+      return {vid:(it.id||{}).videoId, title:htmlDecode_(sn.title), channel:htmlDecode_(sn.channelTitle),
+        thumb:((sn.thumbnails||{}).high||(sn.thumbnails||{}).medium||{}).url||'', pub:String(sn.publishedAt||'').slice(0,10)}; })
+      .filter(function(x){ return x.vid; });
+    return ytDetails_(got.map(function(x){ return x.vid; })).then(function(det){
+      got.forEach(function(x){ var d=det[x.vid]; if(d){ x.dur=d.dur; x.views=d.views; } });
+      s.items=s.items.concat(got); videoSearchRenderList_();
+    });
+  }).catch(function(e){ if(box) box.innerHTML='<div class="empty" style="padding:24px;">'+esc(e.message||'검색 실패')+'</div>'; });
+}
+function videoSearchRenderList_(){
+  var s=vsState_(), box=document.getElementById('vs_list'); if(!box) return;
+  if(!s.items.length){ box.innerHTML='<div class="empty" style="padding:24px;">검색 결과가 없어요.</div>'; return; }
+  var shared={}; (state.videos||[]).forEach(function(v){ shared[v.vid]=1; });
+  box.innerHTML=s.items.map(function(x,i){
+    return '<div class="vs-row">'
+      + '<div class="vs-thumb" onclick="vsPreview_('+i+')"><img src="'+esc(x.thumb||ytThumb_(x.vid))+'" alt="" loading="lazy">'+(x.dur?'<span class="vd-dur">'+fmtDur_(x.dur)+'</span>':'')+'<span class="vd-play sm">▶</span></div>'
+      + '<div class="vs-info"><div class="vd-title">'+esc(x.title)+'</div>'
+      +   '<div class="vd-sub">'+esc(x.channel)+(x.views?' · '+fmtViews_(x.views):'')+(x.pub?' · '+x.pub.replace(/-/g,'.'):'')+'</div>'
+      +   (shared[x.vid]?'<span class="vs-done">✓ 공유됨</span>':'<button class="vs-add" onclick="vsShare_('+i+')">+ 팀에 공유</button>')
+      + '</div></div>';
+  }).join('') + (s.next?'<button class="btn-ghost" onclick="videoSearchRun_(true)">결과 더 보기</button>':'')
+    + '<p style="font-size:11.5px;color:var(--steel-soft);text-align:center;margin:12px 0 0;">썸네일을 누르면 공유 전에 미리 볼 수 있어요</p>';
+}
+function vsShare_(i){ var x=vsState_().items[i]; if(x) openVideoShare_({vid:x.vid,title:x.title,channel:x.channel,thumb:x.thumb,dur:x.dur}); }
+function vsPreview_(i){
+  var x=vsState_().items[i]; if(!x) return;
+  showSheet('<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3 style="font-size:15px;line-height:1.35;padding-right:10px;">'+esc(x.title)+'</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<div class="vd-player"><iframe data-yt="1" src="https://www.youtube-nocookie.com/embed/'+esc(x.vid)+'?autoplay=1&rel=0&playsinline=1" title="미리보기" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>'
+   +   '<div class="vd-sub" style="margin:10px 2px 0;">'+esc(x.channel)+(x.views?' · '+fmtViews_(x.views):'')+(x.dur?' · '+fmtDur_(x.dur):'')+'</div>'
+   +   '<button class="btn-primary" style="margin-top:14px;" onclick="vsShare_('+i+')">+ 이 영상 팀에 공유</button>'
+   +   '<button class="btn-ghost" onclick="openVideoSearch_()">← 검색 결과로</button>'
+   + '</div>');
+}
+
+/* ── 총관리자: 유튜브 API 키 ── */
+function openYtKey_(){
+  if(!requireOwner()) return;
+  ytKeyLoad_().then(function(key){
+    var masked=key?(key.slice(0,6)+'••••••••'+key.slice(-4)):'';
+    showSheet('<div class="grabber"></div>'
+     + '<div class="sheet-head"><h3>▶️ 유튜브 API 키</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+     + '<div class="sheet-body">'
+     +   '<p style="font-size:13px;color:var(--steel);margin:0 0 12px;line-height:1.6;">영상 탭의 <b>유튜브에서 찾기</b>에 쓰입니다. 키가 없어도 <b>링크로 추가</b>는 됩니다.</p>'
+     +   (key?'<div class="card" style="padding:12px 14px;margin-bottom:12px;font-size:13.5px;">현재 등록된 키 · <b style="font-family:monospace;">'+esc(masked)+'</b></div>':'')
+     +   '<div class="field"><label>'+(key?'새 키로 교체':'API 키')+'</label><input id="yk_in" type="text" autocomplete="off" spellcheck="false" placeholder="AIza로 시작하는 키" style="font-family:monospace;"></div>'
+     +   '<div id="yk_msg" style="font-size:12.5px;margin:-4px 2px 12px;min-height:18px;"></div>'
+     +   '<button class="btn-primary" onclick="ytKeySave_()">연결 확인 후 저장</button>'
+     +   (key?'<button class="btn-ghost btn-danger" onclick="ytKeyDel_()">키 삭제</button>':'')
+     +   '<div class="card" style="padding:14px 16px;margin-top:16px;font-size:12.5px;line-height:1.7;color:var(--steel);">'
+     +     '<b style="color:var(--ink);">키 발급 방법</b><br>'
+     +     '① Google Cloud 콘솔(console.cloud.google.com) → 새 프로젝트<br>'
+     +     '② API 및 서비스 → 라이브러리 → <b>YouTube Data API v3</b> 사용 설정<br>'
+     +     '③ 사용자 인증 정보 → API 키 만들기<br>'
+     +     '④ <b>키 제한 필수</b>: 애플리케이션 제한 = 웹사이트, <span style="font-family:monospace;">https://kick-town.com/*</span> 추가 · API 제한 = YouTube Data API v3만<br>'
+     +     '<span style="color:var(--steel-soft);">무료 한도는 하루 10,000단위이고 검색 1회에 약 100단위를 써서, 하루 검색 약 90~100회까지 가능합니다. 초과해도 과금되지 않고 다음 날 초기화돼요.</span>'
+     +   '</div>'
+     + '</div>');
+  });
+}
+function ytKeySave_(){
+  var k=((document.getElementById('yk_in')||{}).value||'').trim();
+  var msg=document.getElementById('yk_msg');
+  if(!/^[\w-]{30,60}$/.test(k)){ if(msg){ msg.style.color='var(--red)'; msg.textContent='키 형식을 확인해주세요 (공백 없이 붙여넣기)'; } return; }
+  if(msg){ msg.style.color='var(--steel)'; msg.textContent='유튜브에 연결 확인 중...'; }
+  fetch('https://www.googleapis.com/youtube/v3/videos?part=id&id=dQw4w9WgXcQ&key='+encodeURIComponent(k)).then(function(res){
+    return res.json().catch(function(){ return {}; }).then(function(b){ if(!res.ok) throw new Error(ytErrMsg_(res,b)); });
+  }).then(function(){
+    YT_KEY=k;
+    var p=(window.db&&FS.enabled)?db.collection('secrets').doc('youtube').set({key:k, updatedAt:new Date().toISOString()}):Promise.resolve();
+    return p.then(function(){ logEvent_('edit','유튜브 API 키 등록',''); toast('API 키를 저장했어요'); openYtKey_(); });
+  }).catch(function(e){ if(msg){ msg.style.color='var(--red)'; msg.textContent='❌ '+(e.message||'연결 실패'); } });
+}
+function ytKeyDel_(){
+  confirmDelete_('유튜브 API 키를 삭제할까요?<br><span style="font-size:12px;color:var(--steel-soft);">검색이 꺼지고, 링크로 추가는 계속 쓸 수 있어요.</span>', function(){
+    YT_KEY='';
+    if(window.db&&FS.enabled) db.collection('secrets').doc('youtube').delete().catch(function(){});
+    logEvent_('del','유튜브 API 키 삭제',''); closeSheet(); toast('키를 삭제했어요');
+  });
+}
+
 function fmtBytes_(n){
   n=Number(n)||0;
   if(n>=1024*1024*1024) return (Math.round(n/1024/1024/1024*100)/100)+' GB';
