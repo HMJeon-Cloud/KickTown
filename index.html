@@ -1023,7 +1023,7 @@ var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '11.8';
+var APP_VERSION = '11.9';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -7457,10 +7457,11 @@ function videoShareText_(v){
 var KAKAO_SHARE_SDK='https://t1.kakaocdn.net/kakao_js_sdk/2.8.3/kakao.min.js';
 function kakaoShareReady_(){
   try{
-    if(!(window.Kakao && Kakao.Share)) return false;
+    if(!(window.Kakao && Kakao.init)) return false;
+    /* SDK 2.x: Kakao.Share 는 init() 이후에 생긴다 → 먼저 초기화 */
     if(!Kakao.isInitialized()) Kakao.init(KAKAO_JS_KEY);
-    return Kakao.isInitialized();
-  }catch(e){ return false; }
+    return !!(Kakao.isInitialized() && Kakao.Share && Kakao.Share.sendDefault);
+  }catch(e){ state._kshareErr=String(e&&e.message||e); return false; }
 }
 function ensureKakaoShare_(cb){
   if(!KAKAO_JS_KEY){ cb(false); return; }
