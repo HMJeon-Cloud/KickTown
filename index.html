@@ -1023,7 +1023,7 @@ var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '11.7';
+var APP_VERSION = '11.8';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -7240,12 +7240,12 @@ function whoList_(o){ var names=[]; Object.keys(o||{}).forEach(function(k){ var 
 function openVideo_(id){
   var v=videoById_(id); if(!v) return;
   state._vdOpen=id; state._cmtDel='';
+  if(isAdmin()) ensureKakaoShare_(function(){});
   showSheet('<div class="grabber"></div>'
    + '<div class="sheet-head"><h3 style="font-size:15px;line-height:1.35;padding-right:10px;">'+esc(v.title||'영상')+'</h3><button class="x" onclick="closeSheet()">✕</button></div>'
    + '<div class="sheet-body">'
    +   '<div class="vd-player"><iframe id="vd_ifr" data-yt="1" onload="ytListen_(this)" src="https://www.youtube-nocookie.com/embed/'+esc(v.vid)+'?autoplay=1&rel=0&playsinline=1&modestbranding=1&enablejsapi=1&origin='+encodeURIComponent(location.origin)+'" title="'+esc(v.title||'유튜브 영상')+'" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>'
-   +   '<div style="display:flex;align-items:center;gap:8px;margin:10px 2px 0;"><div style="flex:1;min-width:0;font-size:12.5px;color:var(--steel-soft);">'+esc(v.channel||'')+' · '+esc(videoCatName_(v.cat))+(v.dur?' · '+fmtDur_(v.dur):'')+'</div>'
-   +     '<button type="button" class="vd-fs" onclick="videoFull_()">⛶ 가로로 크게</button></div>'
+   +   '<div style="font-size:12.5px;color:var(--steel-soft);margin:10px 2px 0;">'+esc(v.channel||'')+' · '+esc(videoCatName_(v.cat))+(v.dur?' · '+fmtDur_(v.dur):'')+'</div>'
    +   (v.note?'<div class="vd-note" style="margin:12px 0 0;font-size:14px;">“'+esc(v.note)+'”'+(v.by?' <b>— '+esc(v.by)+'</b>':'')+'</div>':'')
    +   '<div id="vd_react" class="vd-react"></div>'
    +   '<div id="vd_seenbox"></div>'
@@ -7453,15 +7453,63 @@ function videoUrl_(id){ return location.origin+location.pathname+'#video='+id; }
 function videoShareText_(v){
   return '[🎬 '+ourTeamName_()+' 추천 영상]\n'+(v.title||'')+(v.note?'\n💬 '+v.note+(v.by?' — '+v.by:''):'')+'\n\n👇 눌러서 앱에서 보기';
 }
+/* 카카오톡 공유 SDK (지도와 같은 JavaScript 키 사용) */
+var KAKAO_SHARE_SDK='https://t1.kakaocdn.net/kakao_js_sdk/2.8.3/kakao.min.js';
+function kakaoShareReady_(){
+  try{
+    if(!(window.Kakao && Kakao.Share)) return false;
+    if(!Kakao.isInitialized()) Kakao.init(KAKAO_JS_KEY);
+    return Kakao.isInitialized();
+  }catch(e){ return false; }
+}
+function ensureKakaoShare_(cb){
+  if(!KAKAO_JS_KEY){ cb(false); return; }
+  if(kakaoShareReady_()){ cb(true); return; }
+  var done=false, fin=function(ok){ if(done) return; done=true; cb(ok); };
+  var s=document.querySelector('script[data-kshare]');
+  if(!s){
+    s=document.createElement('script'); s.src=KAKAO_SHARE_SDK; s.async=true; s.crossOrigin='anonymous'; s.setAttribute('data-kshare','1');
+    document.head.appendChild(s);
+  }
+  s.addEventListener('load', function(){ fin(kakaoShareReady_()); });
+  s.addEventListener('error', function(){ fin(false); });
+  setTimeout(function(){ fin(kakaoShareReady_()); }, 4000);
+}
+/* 카톡 카드에서 누르는 주소: '#' 대신 ?kt_h= (카카오 링크·안드로이드 크롬 전환에서 해시가 빠지지 않도록) */
+function videoCardUrl_(id){ return location.origin+location.pathname+'?kt_h='+encodeURIComponent('video='+id); }
+function videoKakaoSend_(v){
+  var url=videoCardUrl_(v.id), rx=reactSum_(v).n, cm=cmtN_(v), sn=seenN_(v);
+  var social={}; if(rx) social.likeCount=rx; if(cm) social.commentCount=cm; if(sn) social.viewCount=sn;
+  var desc=(v.note?'💬 '+v.note+(v.by?' — '+v.by:''):(v.channel||'')+(v.dur?' · '+fmtDur_(v.dur):''));
+  var tpl={
+    objectType:'feed',
+    content:{
+      title:'🎬 '+(v.title||'추천 영상'),
+      description:(ourTeamName_()+' 추천 영상 · '+desc).slice(0,120),
+      imageUrl:'https://i.ytimg.com/vi/'+v.vid+'/hqdefault.jpg',
+      imageWidth:480, imageHeight:270,
+      link:{ mobileWebUrl:url, webUrl:url }
+    },
+    buttons:[{ title:'▶ 영상 보러 가기', link:{ mobileWebUrl:url, webUrl:url } }]
+  };
+  if(Object.keys(social).length) tpl.social=social;
+  Kakao.Share.sendDefault(tpl);
+}
 function videoShareKakao_(id){
   var v=videoById_(id); if(!v) return;
-  var url=videoUrl_(id), txt=videoShareText_(v);
   logEvent_('share','영상 카톡 공유', v.title);
-  if(navigator.share){
-    navigator.share({title:ourTeamName_()+' 추천 영상', text:txt, url:url}).catch(function(e){ if(e && e.name!=='AbortError') videoCopyShare_(id); });
-    return;
-  }
-  videoCopyShare_(id);
+  var fallback=function(){
+    var url=videoUrl_(id), txt=videoShareText_(v);
+    if(navigator.share){
+      navigator.share({title:ourTeamName_()+' 추천 영상', text:txt, url:url}).catch(function(e){ if(e && e.name!=='AbortError') videoCopyShare_(id); });
+      return;
+    }
+    videoCopyShare_(id);
+  };
+  var go=function(){ try{ videoKakaoSend_(v); }catch(e){ fallback(); } };
+  if(kakaoShareReady_()){ go(); return; }          // 미리 로드됨 → 바로 (팝업 차단 없음)
+  toast('카카오톡 여는 중...');
+  ensureKakaoShare_(function(ok){ if(ok) go(); else fallback(); });
 }
 function videoCopyShare_(id){
   var v=videoById_(id); if(!v) return;
@@ -7473,6 +7521,7 @@ function videoCopyShare_(id){
 /* 영상을 올린 직후: 바로 카톡방에 보내기 */
 function videoSharedDone_(id){
   var v=videoById_(id); if(!v) return;
+  ensureKakaoShare_(function(){});
   showSheet('<div class="grabber"></div>'
    + '<div class="sheet-head"><h3>✅ 영상 탭에 올렸어요</h3><button class="x" onclick="closeSheet()">✕</button></div>'
    + '<div class="sheet-body">'
