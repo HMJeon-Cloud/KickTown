@@ -1372,7 +1372,7 @@ var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '13.8';
+var APP_VERSION = '13.9';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -2027,7 +2027,11 @@ function viewTeam(){
       +   '<button class="ro-sw" onclick="adminSwitch_()">관리자</button></div>'
       + '<div class="eyebrow">등록 선수 '+players.length+'명</div>'
       + '<div class="squad">'+body+'</div>'
-      + '<p class="hint">선수를 탭하면 개인 기록을 볼 수 있습니다.</p>';
+      + '<p class="hint">선수를 탭하면 개인 기록을 볼 수 있습니다.</p>'
+      + '<div class="section" style="margin-top:18px;"><div class="card" style="padding:4px 0;">'
+      +   (a2hsStandalone_()?'':'<div class="list-row" style="cursor:pointer;" onclick="openA2hs_(false)"><span class="nm" style="flex:1;">홈 화면에 추가 <span style="font-size:10.5px;color:var(--steel-soft);font-weight:700;">앱처럼 쓰기</span></span><span class="val" style="color:var(--red);font-size:14px;">›</span></div>')
+      +   '<a class="list-row" style="cursor:pointer;text-decoration:none;color:inherit;" href="manual.html" target="_blank" rel="noopener"><span class="nm" style="flex:1;">사용 설명서</span><span class="val" style="color:var(--red);font-size:14px;">›</span></a>'
+      + '</div></div>';
   }
   var clubSec = '<div class="section" style="margin-top:24px;"><div class="eyebrow">팀 관리</div>'
     + '<div class="card" style="padding:4px 0;">'
@@ -2037,6 +2041,7 @@ function viewTeam(){
     + (a2hsStandalone_()?'':'<div class="list-row" style="cursor:pointer;" onclick="openA2hs_(false)"><span class="nm" style="flex:1;">홈 화면에 추가 <span style="font-size:10.5px;color:var(--steel-soft);font-weight:700;">앱처럼 쓰기</span></span><span class="val" style="color:var(--red);font-size:14px;">›</span></div>')
     + '<div class="list-row" style="cursor:pointer;" onclick="openTeamAdmin_()"><span class="nm" style="flex:1;">팀 관리 <span style="font-size:10.5px;color:var(--steel-soft);font-weight:700;">팀관리자</span></span><span class="val" style="color:var(--red);font-size:14px;">›</span></div>'
     + (isOwner() ? ('<div class="list-row" style="cursor:pointer;" onclick="openSystem_()"><span class="nm" style="flex:1;">시스템 <span style="font-size:10.5px;color:var(--steel-soft);font-weight:700;">총관리자</span></span><span class="val" style="color:var(--red);font-size:14px;">›</span></div>') : '')
+    + '<a class="list-row" style="cursor:pointer;text-decoration:none;color:inherit;" href="manual-admin.html" target="_blank" rel="noopener"><span class="nm" style="flex:1;">사용 설명서 <span style="font-size:10.5px;color:var(--steel-soft);font-weight:700;">관리자 · 팀원용</span></span><span class="val" style="color:var(--red);font-size:14px;">›</span></a>'
     + '<div class="list-row" style="cursor:pointer;" onclick="viewerSwitch_()"><span class="nm" style="flex:1;">팀원 모드로 보기</span><span class="val" style="color:var(--red);font-size:14px;">›</span></div>'
     + '</div>'
     + '</div>';
