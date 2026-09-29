@@ -1181,6 +1181,31 @@
 .man-tx b i{font-style:normal;font-family:'Oswald';font-size:10px;letter-spacing:.14em;color:var(--steel-soft);font-weight:600;margin-left:4px;vertical-align:1px;}
 .man-tx small{font-size:12px;color:var(--steel);margin-top:3px;line-height:1.45;}
 .man-go{color:var(--steel-soft);font-size:20px;}
+.sq-wrap{display:flex;gap:6px;align-items:stretch;margin-bottom:16px;}
+.sq-tabs{flex:1;min-width:0;margin-bottom:0;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.sq-tabs::-webkit-scrollbar{display:none;}
+.sq-tabs .qtab{flex:1 0 auto;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 12px;max-width:70%;}
+.sq-tabs .sq-nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
+.sq-tabs .sq-ct{font-family:'Oswald';font-weight:600;font-size:11px;color:var(--steel-soft);flex:0 0 auto;}
+.sq-tabs .qtab.on .sq-ct{color:var(--red);}
+.sq-more{flex:0 0 auto;border:1px solid var(--line-strong);background:var(--card);color:var(--red);border-radius:var(--r-md);padding:0 12px;font-family:inherit;font-weight:800;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:3px;}
+.sq-more i{font-style:normal;font-size:16px;line-height:1;}
+.sq-row.cur{border-color:var(--red);}
+.sq-row.dis{opacity:.5;cursor:default;}
+.sq-row.dis::after{content:"";}
+.sq-av{font-size:12px;}
+.sq-cur{font-size:11px;font-weight:800;color:var(--red);background:var(--red-tint);border-radius:6px;padding:3px 7px;flex:0 0 auto;}
+.badge-new{font-size:10px;font-weight:800;color:var(--gold);background:var(--gold-tint);border-radius:5px;padding:1px 5px;vertical-align:1px;}
+.an-sqbox{margin-top:10px;border:1px dashed var(--line-strong);border-radius:14px;padding:10px 12px 12px;}
+.an-sqh{font-size:12.5px;font-weight:800;color:var(--ink);margin-bottom:8px;}
+.an-sqh span{font-weight:700;color:var(--steel-soft);margin-left:4px;}
+.an-sq{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line-strong);border-radius:12px;padding:8px 8px 8px 10px;margin-bottom:6px;}
+.an-sqn{width:22px;height:22px;border-radius:50%;background:var(--red);color:#fff;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+.an-sqnm{flex:1;min-width:0;font-size:14px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.an-sqnm small{font-size:11.5px;color:var(--steel-soft);font-weight:700;}
+.an-sqb{width:32px;height:32px;border-radius:9px;border:1px solid var(--line-strong);background:var(--card-2);color:var(--ink);font-size:15px;cursor:pointer;flex:0 0 auto;font-family:inherit;}
+.an-sqb.x{color:var(--steel);}
+.an-tg.add{border-style:dashed;color:var(--red);font-family:inherit;}
 .an-tgs{display:flex;flex-wrap:wrap;gap:6px;}
 .an-sec{border:1px solid var(--line);border-radius:var(--r-lg,16px);padding:14px 14px 12px;background:var(--card-2);margin-bottom:12px;}
 .an-sec .btn-primary,.an-sec .btn-ghost{margin-top:8px;}
@@ -1384,7 +1409,7 @@ var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '14.1';
+var APP_VERSION = '14.2';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -1811,7 +1836,7 @@ function render(){
   state._rScreen = state.screen;
   renderTabs();
   try{ document.body.classList.toggle('pc-form', state.screen==='form'); }catch(e){}
-  if(state.screen==='form'){ initPitchDrag(); initRosterDrag_(); }
+  if(state.screen==='form'){ initPitchDrag(); initRosterDrag_(); try{ var _st=document.querySelector('.sq-tabs'), _on=_st&&_st.querySelector('.qtab.on'); if(_on){ var _l=_on.offsetLeft-_st.offsetLeft, _r=_l+_on.offsetWidth; if(_r>_st.scrollLeft+_st.clientWidth) _st.scrollLeft=_r-_st.clientWidth+6; else if(_l<_st.scrollLeft) _st.scrollLeft=_l-6; } }catch(e){} }
 }
 
 /* 칩 줄 가로 스크롤 위치 저장 (렌더 시 복원용) */
@@ -2172,6 +2197,58 @@ function loadForms(){
     }
   }).catch(function(){ state.loadingSquad=false; render(); toast('스쿼드를 불러오지 못했습니다'); });
 }
+/* ── 스쿼드 선택 탭: 최근 3개만 탭으로, 나머지는 '전체' 시트에서 고른다 (많아져도 버튼이 작아지지 않게) ── */
+var SQ_TAB_N=3;
+function squadRecent_(list, curId, n){
+  var rec=list.slice().reverse();            /* getSquads는 오래된 순 → 최근 순으로 */
+  var top=rec.slice(0,n);
+  if(curId && !top.some(function(q){ return q.id===curId; })){
+    var cur=rec.filter(function(q){ return q.id===curId; })[0];
+    if(cur){ top=top.slice(0,n-1); top.push(cur); }
+  }
+  return top;
+}
+function squadTabs_(list, curId){
+  var top=squadRecent_(list, curId, SQ_TAB_N);
+  var more=list.length>top.length;
+  return '<div class="sq-wrap"><div class="qtabs sq-tabs">' + top.map(function(q){
+      return '<button class="qtab '+(q.id===curId?'on':'')+'" onclick="selectFormSquad(\''+q.id+'\')"><span class="sq-nm">'+esc(q.name)+'</span>'+(q.count?'<span class="sq-ct">'+q.count+'</span>':'')+'</button>';
+    }).join('') + '</div>'
+    + (more?'<button class="sq-more" onclick="openSquadPicker_({current:state.currentSquadId, onPick:function(id){ closeSheet(); selectFormSquad(id); }})">전체 '+list.length+'<i>›</i></button>':'')
+    + '</div>';
+}
+/* 스쿼드 고르기 시트 (스쿼드 탭 · 안내문 공용): 최근 순 · 8개 넘으면 검색 */
+function openSquadPicker_(o){
+  o=o||{}; state._sqPick=o;
+  var list=(o.list||state.squadList||[]).slice().reverse();
+  var ex=o.exclude||[];
+  showSheet('<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>'+(o.title||'스쿼드 선택')+'</h3><button class="x" onclick="'+(o.onClose?'state._sqPick.onClose()':'closeSheet()')+'">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   (list.length>8?'<div class="h2h-search"><input type="search" id="sqPickQ" placeholder="스쿼드 이름 검색" autocomplete="off" oninput="sqPickFilter_(this.value)"></div>':'')
+   +   '<div id="sqPickList" class="h2h-rows">'+sqPickRows_(list, o.current, ex, '')+'</div>'
+   +   '<p class="hint" style="margin-top:10px;">최근에 만든 스쿼드가 위에 있어요.</p>'
+   + '</div>');
+}
+function sqPickRows_(list, cur, ex, q){
+  q=String(q||'').trim().toLowerCase();
+  var rows=list.filter(function(s){ return !q || String(s.name).toLowerCase().indexOf(q)>-1; });
+  if(!rows.length) return '<div class="empty" style="padding:24px 0;">해당하는 스쿼드가 없어요</div>';
+  return rows.map(function(s,i){
+    var isCur=s.id===cur, dis=ex.indexOf(s.id)>-1;
+    return '<div class="player sq-row'+(isCur?' cur':'')+(dis?' dis':'')+'" '+(dis?'':'onclick="state._sqPick.onPick(\''+s.id+'\')"')+'>'
+      + '<div class="pl-avatar pl-avatar-empty sq-av">'+esc(String(s.name||'?').trim().slice(0,2))+'</div>'
+      + '<div class="meta"><div class="pname">'+esc(s.name)+(i===0?' <span class="badge-new">최근</span>':'')+'</div>'
+      + (s.count||dis?'<div class="sub">'+(s.count?'<span>'+s.count+'명 편성</span>':'')+(dis?(s.count?'<span class="dot">·</span>':'')+'<span>이미 선택됨</span>':'')+'</div>':'')+'</div>'
+      + (isCur?'<span class="sq-cur">현재</span>':'')
+      + '</div>';
+  }).join('');
+}
+function sqPickFilter_(q){
+  var o=state._sqPick||{}; var list=(o.list||state.squadList||[]).slice().reverse();
+  var el=document.getElementById('sqPickList'); if(el) el.innerHTML=sqPickRows_(list, o.current, o.exclude||[], q);
+}
+
 function selectFormSquad(id){
   state.currentSquadId = id;
   if(SQUAD_CACHE[id]){ state.squadDetail = SQUAD_CACHE[id]; render(); }
@@ -2184,9 +2261,7 @@ function viewForm(){
   if(!list.length){
     return addBtn + '<div class="empty"><div class="ei">📋</div>작성된 스쿼드가 없습니다.'+(isAdmin()?'<br>＋ 새 스쿼드로 포메이션을 만들어보세요.':'')+'</div>';
   }
-  var tabs = '<div class="qtabs" style="flex-wrap:wrap;">' + list.map(function(s){
-    return '<button class="qtab '+(s.id===state.currentSquadId?'on':'')+'" onclick="selectFormSquad(\''+s.id+'\')">'+esc(s.name)+(s.count?' · '+s.count:'')+'</button>';
-  }).join('') + '</div>';
+  var tabs = squadTabs_(list, state.currentSquadId);
 
   var d = state.squadDetail;
   if(!d || !d.squad){ return addBtn + tabs + '<div class="empty">스쿼드를 선택하세요.</div>'; }
@@ -10987,10 +11062,21 @@ function renderAnnounce_(){
   var txt=an.edited||anText_();
   var mu=anMapUrls_(m);
   function tg(k,label,dis,hint){ return '<label class="an-tg'+(dis?' dis':'')+'"><input type="checkbox"'+(an[k]&&!dis?' checked':'')+(dis?' disabled':'')+' onchange="anSet_(\''+k+'\',this.checked)"><span>'+label+(hint?'<small>'+hint+'</small>':'')+'</span></label>'; }
-  var sqChips=an.squads.map(function(q){
-    var on=an.sel.indexOf(q.id)>-1;
-    return '<label class="an-tg'+(on?' on':'')+'"><input type="checkbox"'+(on?' checked':'')+' onchange="anSquadToggle_(\''+q.id+'\',this.checked)"><span>'+esc(q.name)+(q.count?'<small>'+q.count+'명</small>':'')+'</span></label>';
-  }).join('');
+  var sqById={}; an.squads.forEach(function(q){ sqById[q.id]=q; });
+  var selRows=an.sel.map(function(id,i){ var q=sqById[id]||{name:'스쿼드'};
+    return '<div class="an-sq"><span class="an-sqn">'+(i+1)+'</span><span class="an-sqnm">'+esc(q.name)+(q.count?' <small>'+q.count+'명</small>':'')+'</span>'
+      + (an.sel.length>1?'<button type="button" class="an-sqb" title="순서 바꾸기" onclick="anSquadSwap_()">⇅</button>':'')
+      + '<button type="button" class="an-sqb x" title="빼기" onclick="anSquadToggle_(\''+id+'\',false)">✕</button></div>'; }).join('');
+  var rest=an.squads.filter(function(q){ return an.sel.indexOf(q.id)<0; });     /* an.squads는 최근 순 */
+  var addChips='';
+  if(an.sel.length<2 && rest.length){
+    addChips='<div class="an-tgs" style="margin-top:8px;">'
+      + rest.slice(0,3).map(function(q){ return '<button type="button" class="an-tg add" onclick="anSquadToggle_(\''+q.id+'\',true)">＋ '+esc(q.name)+(q.count?'<small>'+q.count+'명</small>':'')+'</button>'; }).join('')
+      + (rest.length>3?'<button type="button" class="an-tg add" onclick="anSquadPick_()">전체 '+an.squads.length+'개 ›</button>':'')
+      + '</div>';
+  }
+  var sqBlock='<div class="an-sqbox"><div class="an-sqh">스쿼드 카드 <span>'+(an.sel.length?an.sel.length+' / 2':'최대 2개')+'</span></div>'
+    + (selRows||'<p class="hint" style="margin:2px 0 0;">아래에서 스쿼드를 골라 넣으세요.</p>') + addChips + '</div>';
   var nCards=anCardCount_();
   showSheet('<div class="grabber"></div>'
    + '<div class="sheet-head"><h3>경기 안내문</h3><button class="x" onclick="closeSheet()">✕</button></div>'
@@ -11009,11 +11095,8 @@ function renderAnnounce_(){
    +     '<div style="display:flex;gap:8px;"><button class="btn-ghost" style="flex:1;" onclick="anCopy_()">복사</button><button class="btn-ghost" style="flex:1;" onclick="state._an.edited=\'\';anRefresh_()">원래대로</button></div>'
    +   '</div>'
    +   '<div class="an-sec"><div class="an-lb">2 · 카드 <span>이미지로 보내요 · '+nCards+'장</span></div>'
-   +     '<div class="an-tgs">'
-   +       tg('incInfo','경기 안내 카드',false,'')
-   +       sqChips
-   +     '</div>'
-   +     (an.squads.length?'<p class="hint" style="margin:8px 0 0;">스쿼드 카드는 2개까지 고를 수 있어요.</p>':'<p class="hint" style="margin:8px 0 0;">스쿼드 탭에서 스쿼드를 만들면 라인업 카드도 함께 보낼 수 있어요.</p>')
+   +     '<div class="an-tgs">'+tg('incInfo','경기 안내 카드',false,'')+'</div>'
+   +     (an.squads.length?sqBlock:'<p class="hint" style="margin:8px 0 0;">스쿼드 탭에서 스쿼드를 만들면 라인업 카드도 함께 보낼 수 있어요.</p>')
    +     '<div id="an_cards" class="an-cards"></div>'
    +     '<button class="btn-primary" id="an_cardbtn" onclick="anShareCards_()"'+(nCards?'':' disabled')+'>카드 공유 · '+nCards+'장</button>'
    +     '<button class="btn-ghost" onclick="anSaveCards_()"'+(nCards?'':' disabled')+'>이미지 저장</button>'
@@ -11028,6 +11111,12 @@ function anSquadToggle_(id,on){
   if(on){ if(an.sel.indexOf(id)<0){ if(an.sel.length>=2){ toast('스쿼드 카드는 2개까지예요'); renderAnnounce_(); return; } an.sel.push(id); } }
   else an.sel=an.sel.filter(function(x){ return x!==id; });
   an.cards=null; anSaveOpt_(); anLoadSquads_().then(renderAnnounce_);
+}
+function anSquadSwap_(){ var an=state._an; if(!an||an.sel.length<2) return; an.sel.reverse(); an.cards=null; anSaveOpt_(); renderAnnounce_(); }
+function anSquadPick_(){
+  var an=state._an; if(!an) return;
+  openSquadPicker_({title:'스쿼드 카드 추가', list:an.squads.slice().reverse(), exclude:an.sel.slice(),
+    onPick:function(id){ anSquadToggle_(id,true); }, onClose:function(){ renderAnnounce_(); }});
 }
 function anSaveOpt_(){ var an=state._an; try{ localStorage.setItem('kt_announce', JSON.stringify({incMap:an.incMap, sel:an.sel, note:an.note})); }catch(e){} }
 function anFinal_(){ var an=state._an; anSaveOpt_(); var ta=document.getElementById('an_txt'); return (ta&&ta.value.trim())||anText_(); }
