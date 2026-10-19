@@ -122,6 +122,11 @@
 })();
 </script>
 <title>FC JEMIRO</title>
+<meta name="description" content="FC JEMIRO 팀 관리 — 경기 · 출석 · 기록 · 스쿼드">
+<meta property="og:type" content="website">
+<meta property="og:title" content="FC JEMIRO">
+<meta property="og:description" content="경기 · 출석 · 기록 · 스쿼드 — 우리 팀 전용 앱">
+<meta property="og:image" content="https://kick-town.com/logo.png">
 <link rel="manifest" href="manifest.json?v=3">
 <link rel="icon" href="favicon.ico?v=3" sizes="48x48">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
@@ -359,8 +364,10 @@
   .pos-tags{display:inline-flex;gap:4px;}
   .pos-tag{font-family:'Oswald';font-weight:600;font-size:10px;letter-spacing:.05em;color:var(--red);background:var(--red-tint);border-radius:6px;padding:2px 6px;line-height:1.3;}
   .st-tag{font-size:10px;font-weight:700;border-radius:5px;padding:2px 6px;line-height:1.3;color:#fff;background:var(--steel);}
-  .st-tag.injury{background:var(--red);} .st-tag.rest{background:var(--steel-soft);} .st-tag.army{background:var(--info);} .st-tag.away{background:#8a6d1f;}
+  .st-tag.injury{background:var(--red);} .st-tag.rest{background:var(--steel-soft);} .st-tag.army{background:var(--info);} .st-tag.away{background:#8a6d1f;} .st-tag.left{background:#3f424a;}
   .player.inactive{opacity:.68;}
+  .player.left{opacity:.5;}
+  .left-sec{margin-top:16px;} .left-sec>summary{list-style:none;cursor:pointer;font-size:12.5px;font-weight:800;color:var(--steel);padding:8px 2px;display:flex;align-items:center;gap:6px;} .left-sec>summary::-webkit-details-marker{display:none;} .left-sec>summary::after{content:'펼치기 ›';margin-left:auto;font-weight:700;color:var(--steel-soft);font-size:11.5px;} .left-sec[open]>summary::after{content:'접기';}
   .player .sub{font-size:11.5px;color:var(--steel-soft);margin-top:3px;display:flex;gap:5px;flex-wrap:nowrap;white-space:nowrap;overflow:hidden;letter-spacing:-.02em;}
   .player .sub .dot{color:var(--line-strong);}
   .pl-avatar{width:42px;height:42px;border-radius:50%;object-fit:cover;flex:0 0 auto;border:1px solid var(--line);background:var(--card-2);}
@@ -1206,6 +1213,8 @@
 .an-sqb{width:32px;height:32px;border-radius:9px;border:1px solid var(--line-strong);background:var(--card-2);color:var(--ink);font-size:15px;cursor:pointer;flex:0 0 auto;font-family:inherit;}
 .an-sqb.x{color:var(--steel);}
 .an-tg.add{border-style:dashed;color:var(--red);font-family:inherit;}
+.player.noarr::after{display:none;}
+.bk-pick{flex:0 0 auto;max-width:130px;height:34px;border:1px solid var(--line-strong);border-radius:9px;background:var(--card);color:var(--ink);font-family:inherit;font-size:12.5px;padding:0 6px;}
 .an-tgs{display:flex;flex-wrap:wrap;gap:6px;}
 .an-sec{border:1px solid var(--line);border-radius:var(--r-lg,16px);padding:14px 14px 12px;background:var(--card-2);margin-bottom:12px;}
 .an-sec .btn-primary,.an-sec .btn-ghost{margin-top:8px;}
@@ -1374,9 +1383,10 @@ var state = {
 };
 var SIZES = ['XS','S','M','L','XL','2XL','3XL'];
 /* 선수 상태: 빈값=활동. 그 외는 목록에 태그 표시, 스쿼드 전체 불러오기·출석 입력에서 제외 */
-var PSTATUS = [['','활동'],['injury','부상'],['rest','휴식'],['army','군입대'],['away','장기 불참']];
+var PSTATUS = [['','활동'],['injury','부상'],['rest','휴식'],['army','군입대'],['away','장기 불참'],['left','탈퇴']];
 function pStatusLabel_(v){ for(var i=0;i<PSTATUS.length;i++){ if(PSTATUS[i][0]===(v||'')) return PSTATUS[i][1]; } return ''; }
 function isActiveP_(p){ return !(p && p.status); }
+function isLeftP_(p){ return !!(p && p.status==='left'); }   /* 탈퇴: 기록은 유지, 명단 맨 아래로 · 스쿼드·출석·투표 대상에서 제외 */
 
 /* ================= API layer =================
    데이터는 Firestore에 저장/조회 (FS.run).
@@ -1408,8 +1418,10 @@ var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 
 var APP_NAME = 'FC JEMIRO';
 var APP_SUB = 'FOOTBALL CLUB';
+var APP_REGION = '';   /* 새 팀 설치 시 헤더 지역 표기 (팀 정보에서 변경 가능) */
+var APP_NOTE = '';     /* 새 팀 설치 시 헤더 소개 문구 */
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '14.2';
+var APP_VERSION = '14.4';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -1421,7 +1433,7 @@ var ACTIVE_CLUB = null;   // 우리 팀 id (부팅 시 자동 설정)
 var API = {
   run: function(fn){
     var args = Array.prototype.slice.call(arguments, 1);
-    if((WRITE_TOUCH[fn]||fn==='setConfig') && !isAdmin()){ toast('조회 전용 모드예요 · 수정은 관리자만 가능합니다'); return Promise.reject(new Error('read-only')); }
+    if((WRITE_TOUCH[fn]||fn==='setConfig') && fn!=='initClub' && !isAdmin()){ toast('조회 전용 모드예요 · 수정은 관리자만 가능합니다'); return Promise.reject(new Error('read-only')); }
     if(window.FS && FS.enabled){ return FS.run(fn, args); }
     // Firestore 미연결(로컬 미리보기) 시 목업으로 동작
     return new Promise(function(resolve, reject){
@@ -1446,6 +1458,7 @@ function mockHandler(fn, a){
   if(fn==='bootstrap'){ return {config:mockHandler('getConfig',[]), clubs:mockHandler('getClubs',[])}; }
   // --- clubs (팀) ---
   if(fn==='getClubs'){ return DB.clubs.slice().sort(function(a2,b2){ return (b2.own?1:0)-(a2.own?1:0) || (b2.fav?1:0)-(a2.fav?1:0) || String(a2.createdAt).localeCompare(String(b2.createdAt)); }); }
+  if(fn==='initClub'){ if(!DB.clubs.length) DB.clubs.push({id:'c1', name:APP_NAME, region:(typeof APP_REGION!=='undefined'?APP_REGION:''), note:(typeof APP_NOTE!=='undefined'?APP_NOTE:''), own:true, createdAt:new Date().toISOString()}); return {clubs:mockHandler('getClubs',[])}; }
   if(fn==='setOppLogo'){ var onm=String(a[0]||'').trim();
     DB.clubs.forEach(function(c){ if(c.id===AC){ c.oppLogos=c.oppLogos||{}; if(a[1]) c.oppLogos[onm]=a[1]; else delete c.oppLogos[onm]; } });
     return mockHandler('getClubs',[]); }
@@ -2053,9 +2066,12 @@ function viewTeam(){
   if(state.loading){
     return '<div class="empty"><div class="ei">⚽</div>불러오는 중...</div>';
   }
-  var players = state.players.slice().sort(numSort);
+  var allP = state.players.slice().sort(numSort);
+  var players = allP.filter(function(p){ return !isLeftP_(p); });
+  var leftP = allP.filter(isLeftP_);
   var body = players.length ? players.map(playerCard).join('') :
-    '<div class="empty"><div class="ei">⚽</div>등록된 팀원이 없습니다.<br>우측 하단 + 버튼으로 추가하세요.</div>';
+    '<div class="empty"><div class="ei">⚽</div>'+(leftP.length?'활동 중인 팀원이 없습니다.':'등록된 팀원이 없습니다.')+'<br>우측 하단 + 버튼으로 추가하세요.</div>';
+  if(leftP.length) body += '<details class="left-sec"><summary>탈퇴 '+leftP.length+'명 <span style="font-weight:600;color:var(--steel-soft);">· 기록은 그대로 보관</span></summary>'+leftP.map(playerCard).join('')+'</details>';
   var lateScore = (state.cfg.lateScore!=null) ? Number(state.cfg.lateScore) : 0.5;
   var absentScore = (state.cfg.absentScore!=null) ? Number(state.cfg.absentScore) : -1;
   if(!isAdmin()){
@@ -2103,7 +2119,7 @@ function playerCard(p){
     ? '<div class="pos-tags">'+p.positions.map(function(pp){return '<span class="pos-tag">'+pp+'</span>';}).join('')+'</div>'
     : '';
   var stHtml = p.status ? '<span class="st-tag '+esc(p.status)+'">'+pStatusLabel_(p.status)+'</span>' : '';
-  return '<div class="player'+(p.status?' inactive':'')+'" onclick="'+(isAdmin()?'openPlayerForm':'openPlayerPage_')+'(\''+p.id+'\')">'
+  return '<div class="player'+(p.status?' inactive':'')+(isLeftP_(p)?' left':'')+'" onclick="'+(isAdmin()?'openPlayerForm':'openPlayerPage_')+'(\''+p.id+'\')">'
     + (p.photo ? '<img class="pl-avatar tap" src="'+p.photo+'" alt="" onclick="event.stopPropagation();openPhotoView_(\''+p.id+'\',this.src,\''+jsq(p.name)+'\')">' : '<div class="pl-avatar pl-avatar-empty">'+esc(String(p.name||'?').trim().slice(-2))+'</div>')
     + '<div class="num oswald">'+numDisp(p.num)+'</div>'
     + '<div class="meta"><div class="pname">'+esc(p.name)+posHtml+stHtml+'</div>'+(subHtml?'<div class="sub">'+subHtml+'</div>':'')+'</div>'
@@ -2344,9 +2360,9 @@ function openAddMembers_(sid){
   if(!requireAdmin()) return;
   var d=state.squadDetail; if(!d || !d.squad || d.squad.id!==sid){ toast('스쿼드를 먼저 선택하세요'); return; }
   var inSquad={}; (d.members||[]).forEach(function(m){ inSquad[m.playerId]=1; });
-  var cand=(state.players||[]).filter(function(p){ return !inSquad[p.id]; }).slice().sort(numSort);
+  var cand=(state.players||[]).filter(function(p){ return !inSquad[p.id] && isActiveP_(p); }).slice().sort(numSort);   /* 활동 상태만 */
   state._addSel={};
-  if(!cand.length){ toast('모든 팀원이 이미 편성되어 있습니다'); return; }
+  if(!cand.length){ toast('추가할 수 있는 활동 팀원이 없습니다'); return; }
   renderAddMembers_(sid, cand);
 }
 function renderAddMembers_(sid, cand){
@@ -2364,7 +2380,7 @@ function renderAddMembers_(sid, cand){
   showSheet('<div class="grabber"></div>'
    + '<div class="sheet-head"><h3>팀원 추가</h3><button class="x" onclick="closeSheet()">✕</button></div>'
    + '<div class="sheet-body">'
-   +   '<p style="font-size:12.5px;color:var(--steel-soft);margin:0 0 10px;">스쿼드에 없는 팀원이에요. 탭해서 선택한 뒤 추가하면 <b>미편성</b>으로 들어옵니다.</p>'
+   +   '<p style="font-size:12.5px;color:var(--steel-soft);margin:0 0 10px;">스쿼드에 없는 <b>활동</b> 팀원이에요. 탭해서 선택한 뒤 추가하면 <b>미편성</b>으로 들어옵니다.<br><span style="font-size:11.5px;">부상 · 휴식 · 군입대 · 장기 불참 · 탈퇴는 목록에서 빠져요.</span></p>'
    +   '<div class="vt-list">'+rows+'</div>'
    +   '<button class="btn-primary" id="am_go" style="margin-top:14px;" onclick="addMembersGo_(\''+sid+'\')">선택한 <span id="am_n">'+n+'</span>명 추가</button>'
    + '</div>');
@@ -3581,12 +3597,12 @@ function openPlayerForm(id){
    +       '<div class="field"><label>키 (cm)</label><input id="f_height" type="number" inputmode="numeric" placeholder="175" value="'+esc(p&&p.height!=null&&p.height!==''?p.height:'')+'"></div>'
    +       '<div class="field"><label>몸무게 (kg)</label><input id="f_weight" type="number" inputmode="numeric" placeholder="70" value="'+esc(p&&p.weight!=null&&p.weight!==''?p.weight:'')+'"></div>'
    +     '</div>'
-   +     '<div class="field"><label>상태 <span style="color:var(--steel-soft);font-weight:600;">활동 외 상태는 출석·스쿼드에서 제외</span></label><div class="sizes" id="f_status">'
+   +     '<div class="field"><label>상태 <span style="color:var(--steel-soft);font-weight:600;">활동 외 상태는 출석·스쿼드에서 제외 · 탈퇴해도 기록은 유지</span></label><div class="sizes" id="f_status">'
    +       PSTATUS.map(function(st){ return '<div class="size-opt '+(state.formStatus===st[0]?'sel':'')+'" data-st="'+st[0]+'" onclick="pickStatus(\''+st[0]+'\')">'+st[1]+'</div>'; }).join('')
    +     '</div></div>'
    +   '</div></details>'
    +   '<button class="btn-primary" onclick="savePlayer()">'+(id?'저장':'등록')+'</button>'
-   +   (id?'<div style="display:flex;gap:8px;"><button class="btn-ghost" style="flex:1;" onclick="openPlayerPage_(\''+id+'\')">개인 기록</button><button class="btn-ghost btn-danger" style="flex:1;" onclick="deletePlayer(\''+id+'\')">삭제</button></div>':'')
+   +   (id?'<div style="display:flex;gap:8px;"><button class="btn-ghost" style="flex:1;" onclick="openPlayerPage_(\''+id+'\')">개인 기록</button><button class="btn-ghost" style="flex:1;" onclick="leavePlayer_(\''+id+'\')">'+(p&&isLeftP_(p)?'복귀 처리':'탈퇴 처리')+'</button><button class="btn-ghost btn-danger" style="flex:1;" onclick="deletePlayer(\''+id+'\')">삭제</button></div>':'')
    + '</div>';
 
   showSheet(html);
@@ -3876,7 +3892,17 @@ function saveErr(){
 function deletePlayer(id){
   if(!requireAdmin()) return;
   var p=(state.players||[]).filter(function(x){return x.id===id;})[0];
-  confirmDelete_('<b>'+esc(p?p.name:'이 팀원')+'</b> 님을 명단에서 삭제할까요?', function(){ doDeletePlayer(id); });
+  confirmDelete_('<b>'+esc(p?p.name:'이 팀원')+'</b> 님을 명단에서 삭제할까요?'+(p&&!isLeftP_(p)?'<br><span style="font-size:12.5px;color:var(--steel-soft);">팀을 떠난 경우엔 삭제 대신 <b>탈퇴 처리</b>를 권장해요 · 명단에 남아 개인 기록을 계속 볼 수 있어요.</span>':''), function(){ doDeletePlayer(id); });
+}
+/* 탈퇴 / 복귀 — 삭제하지 않고 상태만 바꿈 (기록 · 출석 · 득점은 그대로) */
+function leavePlayer_(id){
+  if(!requireAdmin()) return;
+  var p=(state.players||[]).filter(function(x){return x.id===id;})[0]; if(!p) return;
+  var back=isLeftP_(p);
+  appConfirm_(back ? (p.name+' 님을 활동 상태로 되돌릴까요?') : (p.name+' 님을 탈퇴 처리할까요?\n기록은 그대로 남고, 이후 스쿼드 · 출석 · 투표 대상에서 빠져요.'), function(){
+    state.formStatus = back ? '' : 'left';
+    savePlayer();
+  });
 }
 function doDeletePlayer(id){
   var gone=(state.players||[]).filter(function(p){return p.id===id;})[0];
@@ -5546,7 +5572,7 @@ function sharePlayerCard_(pid){
         var yl=(years||[]).slice(0,4).map(function(y){ return y.year+' '+y.g+'골 '+y.a+'도움'; }).join('   ·   ');
         if(yl){ ctx.fillStyle='rgba(255,255,255,.55)'; ctx.font='500 24px Pretendard, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(cardEllipsis_(ctx, yl, W-pad*2), W/2, ylY); }
         ctx.fillStyle='rgba(255,255,255,.45)'; ctx.font='600 24px Oswald, sans-serif'; ctx.textAlign='center';
-        ctx.fillText('FC JEMIRO · FOOTBALL CLUB', W/2, H-46);
+        ctx.fillText(ourTeamName_().toUpperCase()+' · FOOTBALL CLUB', W/2, H-46);
         showCardPreview_(c, 'FCJEMIRO_player_'+String(p.name||pid)+'.png');
       });
     });
@@ -5744,8 +5770,14 @@ function restoreApply_(data, dry, AC){
       var k=mKey(r.date,r.opponent); (mByKey[k]=mByKey[k]||[]).push(nm);
     }
   });
-  // ── 득점·도움 ──
+  // ── 득점·도움 ── (같은 경기·같은 선수가 여러 줄이면 합친다: 골마다 한 줄씩 적는 경우 대비)
+  var statAgg={}, statRows=[];
   (data.stats||[]).forEach(function(r){
+    var k=[r.date, r.opponent, r.player].join('|');
+    if(!statAgg[k]){ statAgg[k]={date:r.date, opponent:r.opponent, player:r.player, goals:0, assists:0, cs:0}; statRows.push(statAgg[k]); }
+    statAgg[k].goals+=Number(r.goals)||0; statAgg[k].assists+=Number(r.assists)||0; statAgg[k].cs=Math.max(statAgg[k].cs, Number(r.cs)||0);
+  });
+  statRows.forEach(function(r){
     var m=findM(r.date, r.opponent, ''); if(!m){ sum.skip.push('득점·도움: 경기 없음 '+r.date+' '+r.opponent); return; }
     var pid=pidByName(r.player); if(!pid){ sum.skip.push('득점·도움: 선수 없음 '+r.player); return; }
     var g=r.goals||0, a=r.assists||0, cs2=r.cs||0;
@@ -6819,7 +6851,7 @@ var WRITE_TOUCH = {
   loadAllToSquad:['members'], setSquadPos:['members'], addGuest:['members'],
   addNote:['notes'], deleteNote:['notes'],
   setMatchStats:['stats'], setMatchAttendance:['attendance'],
-  updateClub:['clubs'], setExPlayer:['clubs'], setOppLogo:['clubs'],
+  updateClub:['clubs'], setExPlayer:['clubs'], setOppLogo:['clubs'], initClub:['clubs'],
   restoreBackup:['players','matches','squads','members','notes','stats','attendance']
 };
 /* 쓰기 작업별 '경기 id' 인자 위치 — 해당 경기 상세만 선로딩하기 위함 */
@@ -7458,6 +7490,11 @@ function fitPhone_(){
     if(b){ if(b.config) state.cfg=b.config; state.clubs=b.clubs||[]; }
     hideSplash_();
     var club = pickClub_();
+    /* 새로 설치한 팀: DB가 비어 있으면 앱 이름으로 팀을 한 번 만든다 (연결 실패와 구분) */
+    if(!club && b && FS.enabled && !FS.loadFailed){
+      return API.run('initClub').then(function(r){ state.clubs=(r&&r.clubs)||[]; var c2=pickClub_(); if(!c2){ toast('팀을 만들지 못했습니다'); return; }
+        pinGate_(function(){ whoGate_(function(){ enterApp_(c2.id); }); }); });
+    }
     if(!club){
       document.getElementById('content').innerHTML='<div class="empty"><div class="ei">🛡️</div>팀 데이터를 찾을 수 없습니다.<br>네트워크 상태를 확인한 뒤 새로고침해 주세요.</div>';
       return;
@@ -7467,10 +7504,11 @@ function fitPhone_(){
 })();
 
 /* 로그인 후: 접근 가능한 팀이 1개면 자동 입장, 아니면 팀 탭 */
-/* 우리 팀 선택: FC JEMIRO 이름 매칭, 없으면 첫 팀 */
+/* 우리 팀 선택: 앱 이름과 같은 팀, 없으면 첫 팀 */
 function pickClub_(){
   var cs=state.clubs||[];
-  var c=cs.filter(function(x){ return /jemiro|제미로/i.test(String(x.name||'')); })[0] || cs[0];
+  var c=cs.filter(function(x){ return String(x.name||'').trim()===APP_NAME; })[0]
+       || cs.filter(function(x){ return /jemiro|제미로/i.test(String(x.name||'')); })[0] || cs[0];   /* 기존 FC JEMIRO 데이터 호환 */
   return c||null;
 }
 function enterApp_(clubId){
@@ -7528,6 +7566,7 @@ function openTeamAdmin_(){
    +     cfgRow('지각 기준', attLateLabel_(attCfgLate_()), 'editAttLate_')
    +     cfgRow('감독 · 코치', staffLabel_(), 'editStaff_')
    +     cfgRow('시즌 기간', seasonRangeLabel_(), 'editSeason_')
+   +     '<div class="list-row" style="cursor:pointer;" onclick="openBulkPhoto_()"><span class="nm" style="flex:1;">선수 사진 한 번에 등록 <span style="font-size:10.5px;color:var(--steel-soft);font-weight:700;">파일 이름 = 등번호 · 이름</span></span><span class="val" style="color:var(--red);font-size:14px;">›</span></div>'
    +   '</div>'
    +   '<p style="font-size:11.5px;color:var(--steel-soft);margin:10px 2px 0;">출석·지각·불참 점수는 기록 탭 출석 순위 집계에 반영돼요. (미참석 0점)</p>'
    + '</div>');
@@ -7535,7 +7574,7 @@ function openTeamAdmin_(){
 /* ── 시스템 (총관리자 전용): 데이터 사용량·백업·복구·로그·이전·PIN ── */
 function openSystem_(){
   if(!requireOwner()) return;
-  var migRow=(typeof KT_BACKEND!=='undefined' && KT_BACKEND==='supabase' && !(state.cfg&&state.cfg.fbMigratedAt))
+  var migRow=(typeof KT_BACKEND!=='undefined' && KT_BACKEND==='supabase' && FIREBASE_CONFIG && FIREBASE_CONFIG.apiKey && !(state.cfg&&state.cfg.fbMigratedAt))
     ? '<div class="list-row" style="cursor:pointer;" onclick="migrateFromFirebase_()"><span class="nm" style="flex:1;">데이터 이전 <span style="font-size:10.5px;color:var(--steel-soft);font-weight:700;">Firebase → Supabase</span></span><span class="val" style="color:var(--red);font-size:14px;">1회 실행 ›</span></div>' : '';
   showSheet('<div class="grabber"></div>'
    + '<div class="sheet-head"><h3>시스템</h3><button class="x" onclick="closeSheet()">✕</button></div>'
@@ -9324,7 +9363,7 @@ function editStaff_(){
   if(!requireAdmin()) return;
   var cfg=state.cfg||{};
   function opts(cur){
-    return '<option value="">선택 안 함</option>'+(state.players||[]).slice().sort(numSort).map(function(p){
+    return '<option value="">선택 안 함</option>'+(state.players||[]).filter(function(p){ return !isLeftP_(p) || p.id===cur; }).slice().sort(numSort).map(function(p){
       return '<option value="'+p.id+'"'+(p.id===cur?' selected':'')+'>'+numLabel(p.num)+' '+esc(p.name)+'</option>';
     }).join('');
   }
@@ -11360,6 +11399,89 @@ function manualCopy_(){
   var ok=function(){ toast('팀원용 설명서 링크를 복사했어요'); };
   if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(ok).catch(function(){ fallbackCopy_(url); });
   else fallbackCopy_(url);
+}
+
+/* ================= 선수 사진 한 번에 등록 =================
+ * 사진 여러 장을 한 번에 고르면 파일 이름(등번호 또는 이름)으로 선수를 찾아 붙인다.
+ * 예) 10.jpg · 10_홍길동.jpg · 홍길동.png  →  얼굴이 들어가도록 위쪽 가운데를 기준으로 자름 */
+function openBulkPhoto_(){
+  if(!requireAdmin()) return;
+  var inp=document.getElementById('bulkPhotoInput');
+  if(!inp){ inp=document.createElement('input'); inp.type='file'; inp.accept='image/*'; inp.multiple=true; inp.id='bulkPhotoInput'; inp.style.display='none';
+    inp.onchange=function(){ bulkPhotoPicked_(this.files); this.value=''; }; document.body.appendChild(inp); }
+  showSheet('<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>선수 사진 한 번에 등록</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<p style="font-size:13px;color:var(--steel);margin:0 0 12px;line-height:1.6;">사진 파일 이름을 <b>등번호</b>나 <b>이름</b>으로 해두면 선수에게 자동으로 붙여요.<br><span style="color:var(--steel-soft);">예) 10.jpg · 10_홍길동.jpg · 홍길동.png</span></p>'
+   +   '<button class="btn-primary" onclick="document.getElementById(\'bulkPhotoInput\').click()">사진 고르기 (여러 장)</button>'
+   +   '<p class="hint" style="margin-top:10px;">얼굴이 가운데 위쪽에 오도록 자동으로 잘라요. 마음에 안 들면 선수 수정 화면에서 다시 맞출 수 있어요.</p>'
+   + '</div>');
+}
+function bulkPhotoMatch_(fname){
+  var stem=String(fname||'').replace(/\.[^.]+$/,'').trim();
+  var ps=(state.players||[]);
+  var m=stem.match(/^\s*(\d{1,3})(?:\D|$)/);
+  var rest=stem.replace(/^\s*\d{1,3}[\s._\-]*/,'').trim();
+  if(rest){ var byN=ps.filter(function(p){ return String(p.name||'').trim()===rest; }); if(byN.length===1) return byN[0];
+    if(byN.length>1 && m){ var both=byN.filter(function(p){ return String(p.num)===String(Number(m[1])); })[0]; if(both) return both; } }
+  if(m){ var byNum=ps.filter(function(p){ return String(p.num)===String(Number(m[1])); }); if(byNum.length===1) return byNum[0]; }
+  var cont=ps.filter(function(p){ return p.name && stem.indexOf(String(p.name).trim())>-1; });
+  return cont.length===1?cont[0]:null;
+}
+function bulkPhotoPicked_(files){
+  files=[].slice.call(files||[]); if(!files.length) return;
+  state._bulk=files.map(function(f){ var p=bulkPhotoMatch_(f.name); return {f:f, p:p, auto:!!p}; });
+  bulkPhotoRender_();
+}
+function bulkPhotoSet_(i, pid){ var x=(state._bulk||[])[i]; if(!x) return; x.p=(state.players||[]).filter(function(p){ return p.id===pid; })[0]||null; bulkPhotoRender_(); }
+function bulkPhotoRender_(){
+  var files=state._bulk||[];
+  var ok=files.filter(function(x){ return x.p; }).length;
+  var dup={}; state._bulk.forEach(function(x){ if(x.p){ dup[x.p.id]=(dup[x.p.id]||0)+1; } });
+  showSheet('<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>사진 '+files.length+'장 · 연결 '+ok+'명</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body"><div class="h2h-rows">'
+   + state._bulk.map(function(x,i){
+       var pick=x.auto?'':'<select class="bk-pick" onchange="bulkPhotoSet_('+i+',this.value)"><option value="">선수 선택</option>'
+         + (state.players||[]).slice().sort(numSort).map(function(p){ return '<option value="'+p.id+'"'+(x.p&&x.p.id===p.id?' selected':'')+'>'+esc(numLabel(p.num))+' '+esc(p.name)+'</option>'; }).join('')+'</select>';
+       return '<div class="player noarr" style="cursor:default;"><div class="meta"><div class="pname">'+(x.auto?esc(x.p.name)+' <span class="pos-tag">'+esc(numLabel(x.p.num))+'</span>':(x.p?'<span style="color:var(--ok);">직접 지정</span>':'<span style="color:var(--red);">선수를 못 찾았어요</span>'))
+         + (x.p&&dup[x.p.id]>1?' <span class="st-tag injury">중복</span>':'')+'</div><div class="sub"><span>'+esc(x.f.name)+'</span></div></div>'+pick+'</div>';
+     }).join('')
+   + '</div>'
+   + '<button class="btn-primary" style="margin-top:14px;" onclick="bulkPhotoApply_()"'+(ok?'':' disabled')+'>'+ok+'명 사진 등록</button>'
+   + '<p class="hint" style="margin-top:8px;">못 찾은 사진은 오른쪽에서 선수를 직접 고르거나, 그대로 두면 건너뛰어요. 같은 선수에 여러 장이면 마지막 사진이 들어가요. 이미 사진이 있는 선수는 새 사진으로 바뀌어요.</p>'
+   + '</div>');
+}
+function bulkPhotoMake_(file){
+  return new Promise(function(res, rej){
+    var rd=new FileReader();
+    rd.onload=function(){ var img=new Image(); img.onload=function(){
+      var w=img.width, h=img.height, side=Math.min(w,h), sx=(w-side)/2, sy=h>w?(h-side)*0.18:0;
+      var c=document.createElement('canvas'); c.width=c.height=128; var x=c.getContext('2d'); try{ x.imageSmoothingQuality='high'; }catch(e){}
+      x.drawImage(img, sx, sy, side, side, 0, 0, 128, 128);
+      var thumb=c.toDataURL('image/jpeg',0.82);
+      var r=Math.min(800/w, 800/h, 1), lw=Math.round(w*r), lh=Math.round(h*r);
+      var cl=document.createElement('canvas'); cl.width=lw; cl.height=lh; cl.getContext('2d').drawImage(img,0,0,lw,lh);
+      var q=0.85, big=cl.toDataURL('image/jpeg',q); while(big.length>900*1024 && q>0.5){ q-=0.1; big=cl.toDataURL('image/jpeg',q); }
+      var rect={x:Math.round(sx/w*1000)/1000, y:Math.round(sy/h*1000)/1000, w:Math.round(side/w*1000)/1000, h:Math.round(side/h*1000)/1000};
+      res({thumb:thumb, big:big, rect:rect});
+    }; img.onerror=rej; img.src=rd.result; };
+    rd.onerror=rej; rd.readAsDataURL(file);
+  });
+}
+function bulkPhotoApply_(){
+  var list=(state._bulk||[]).filter(function(x){ return x.p; }); if(!list.length) return;
+  var btn=document.querySelector('#sheetWrap .btn-primary'); if(btn){ btn.disabled=true; btn.textContent='등록 중... 0/'+list.length; }
+  var chain=Promise.resolve(), done=0, fail=0;
+  list.forEach(function(x){
+    chain=chain.then(function(){ return bulkPhotoMake_(x.f).then(function(r){
+      var p=(state.players||[]).filter(function(q){ return q.id===x.p.id; })[0]; if(!p) return;
+      var data=Object.assign({}, p, {photo:r.thumb, photoRect:r.rect});
+      savePlayerPhotoL_(p.id, r.big);
+      return API.run('updatePlayer', data).then(function(ls){ if(ls) state.players=ls; done++; });
+    }).catch(function(){ fail++; }).then(function(){ if(btn) btn.textContent='등록 중... '+(done+fail)+'/'+list.length; }); });
+  });
+  chain.then(function(){ closeSheet(); render(); toast('사진 '+done+'명 등록'+(fail?' · 실패 '+fail:'')); try{ logEvent_('etc','사진 일괄 등록', done+'명'); }catch(e){} });
 }
 
 function loadClubData_(){

@@ -25,7 +25,7 @@ function isStatic(url){ return /\.(png|jpg|jpeg|webp|gif|svg|ico|css|js|woff2?|t
 
 /* 서비스워커 스크립트는 항상 네트워크에서 직접 받아야 한다. */
 function isServiceWorkerScript(url){
-  return url.pathname === '/sw.js';
+  return /\/sw\.js$/.test(url.pathname);   /* 하위 경로(/app/sw.js) 배포도 대응 */
 }
 
 self.addEventListener('fetch', function(e){
