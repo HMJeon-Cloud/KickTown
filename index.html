@@ -1421,7 +1421,7 @@ var APP_SUB = 'FOOTBALL CLUB';
 var APP_REGION = '';   /* 새 팀 설치 시 헤더 지역 표기 (팀 정보에서 변경 가능) */
 var APP_NOTE = '';     /* 새 팀 설치 시 헤더 소개 문구 */
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '14.4';
+var APP_VERSION = '14.5';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -9213,13 +9213,12 @@ function drawBest11Card_(key, d, emblem, faces){
 
   /* ── 5) 선수 카드 (골드 트림) ── */
   var toks=d.picks.map(function(p,i2){
-    var bd=[];                                  /* 시즌 1위 항목: 다이아 뱃지로 표시 */
-    if(p.top_mom) bd.push('trophy');
-    if(p.top_g)   bd.push('boot');
-    if(p.top_a)   bd.push('ball');
-    if(p.top_att) bd.push('stadium');
-    if(p.top_cs)  bd.push('glove');
-    return {m:{playerId:p.pid, name:p.name, num:p.num, position:p.pos, x:p.x, y:p.y}, img:faces[i2], bd:bd};
+    var tp=[];                                  /* 시즌 1위 항목: 카드 아래 'MOM 1위' 같은 라벨로 표시 */
+    if(p.top_mom) tp.push('MOM 1위');
+    if(p.top_att) tp.push('출석 1위');
+    if(p.top_g)   tp.push('득점 1위');
+    if(p.top_a)   tp.push('도움 1위');
+    return {m:{playerId:p.pid, name:p.name, num:p.num, position:p.pos, x:p.x, y:p.y}, img:faces[i2], tp:tp};
   });
   var gks=toks.filter(function(t){ return t.m.position==='GK'; });
   var rest=toks.filter(function(t){ return t.m.position!=='GK'; }).sort(function(a,b){ return (b.m.y||0)-(a.m.y||0); });
@@ -9290,11 +9289,6 @@ function drawBest11Card_(key, d, emblem, faces){
     ctx.fillStyle=isGK?'#8FE3BD':GOLD2; ctx.font='700 '+Math.round(cw*0.115)+'px Oswald, sans-serif'; ctx.letterSpacing='1px';
     ctx.fillText(String(mm.position||''), x+Math.round(cw*0.075), y+Math.round(cw*0.39)); ctx.letterSpacing='0px';
     ctx.restore();
-    /* 항목 1위 뱃지 (우상단 세로 스택 · 다이아: 트로피=MOM, 축구화=득점, 축구공=도움, 경기장=출석, 글러브=무실점) */
-    if(t.bd && t.bd.length){
-      var bs=Math.round(cw*0.20), bx4=x+cw-Math.round(bs*0.66), by4=y+Math.round(bs*0.66);
-      t.bd.slice(0,4).forEach(function(nm4,bi4){ drawIcon_(ctx, nm4, bx4, by4+bi4*Math.round(bs*1.14), bs, 'diamond'); });
-    }
     var hl=ctx.createLinearGradient(0,y,0,y+ch*0.3); hl.addColorStop(0,'rgba(255,255,255,.13)'); hl.addColorStop(1,'rgba(255,255,255,0)');
     ctx.fillStyle=hl; ctx.fillRect(x,y,cw,ch*0.3);
     /* 이름 밴드 */
@@ -9306,6 +9300,27 @@ function drawBest11Card_(key, d, emblem, faces){
     ctx.fillText(cardEllipsis_(ctx, String(mm.name||''), cw-12), cx, phB+NB/2+1);
     ctx.restore();
     rr_(ctx,x,y,cw,ch,rad); ctx.lineWidth=1.2; ctx.strokeStyle='rgba(255,244,205,.22)'; ctx.stroke();
+    /* 이름 아래: 항목 1위 라벨 (MOM 1위 · 출석 1위 · 득점 1위 · 도움 1위) — 한 줄에 안 들어가면 줄바꿈 */
+    if(t.tp && t.tp.length){
+      var fs5=Math.max(12, Math.round(cw*0.135)), ph5=Math.round(fs5*1.7), gp5=5, padX=Math.round(fs5*0.6);
+      ctx.font='800 '+fs5+'px Pretendard, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      var pills=t.tp.map(function(tx5){ return {t:tx5, w:Math.ceil(ctx.measureText(tx5).width)+padX*2}; });
+      var maxW5=cw+34, lines5=[[]], lw5=0;
+      pills.forEach(function(pl){ var cur5=lines5[lines5.length-1];
+        if(cur5.length && lw5+gp5+pl.w>maxW5){ lines5.push([pl]); lw5=pl.w; } else { cur5.push(pl); lw5+=(cur5.length>1?gp5:0)+pl.w; } });
+      var py5=y+ch+8;
+      lines5.forEach(function(ln){
+        var tw5=ln.reduce(function(a,pl){ return a+pl.w; },0)+gp5*(ln.length-1), px5=cx-tw5/2;
+        ln.forEach(function(pl){
+          ctx.save(); ctx.shadowColor='rgba(0,0,0,.55)'; ctx.shadowBlur=8; ctx.shadowOffsetY=2;
+          rr_(ctx,px5,py5,pl.w,ph5,ph5/2); ctx.fillStyle='rgba(20,15,7,.92)'; ctx.fill(); ctx.restore();
+          rr_(ctx,px5,py5,pl.w,ph5,ph5/2); ctx.lineWidth=1.4; ctx.strokeStyle='rgba(199,162,75,.85)'; ctx.stroke();
+          ctx.fillStyle=GOLD2; ctx.fillText(pl.t, px5+pl.w/2, py5+ph5/2+1);
+          px5+=pl.w+gp5;
+        });
+        py5+=ph5+4;
+      });
+    }
   });
   /* 하단 워드마크 */
   ctx.textAlign='right'; ctx.textBaseline='middle';
