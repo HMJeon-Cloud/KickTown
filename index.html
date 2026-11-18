@@ -1280,6 +1280,102 @@
 .at-card:disabled{cursor:default;}
 .at-when{font-size:11.5px;color:rgba(255,255,255,.75);font-family:'Oswald',sans-serif;letter-spacing:.02em;}
 .vt-done span{display:block;font-size:14px;color:rgba(255,255,255,.85);margin-top:4px;}
+/* TAC-CSS-BEGIN */
+/* ===== 전술 보드 ===== */
+.tac-seg{margin-bottom:14px;}
+.tac-cats{margin-bottom:12px;}
+.tac-list{display:flex;flex-direction:column;gap:10px;}
+.tac-item{display:flex;gap:13px;align-items:stretch;padding:11px;border-radius:var(--r-lg);background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow-sm);cursor:pointer;transition:transform .1s;}
+.tac-item:active{transform:scale(.985);}
+.tac-item canvas{flex:0 0 auto;width:66px;height:97px;border-radius:9px;display:block;background:#1d5b3a;}
+.tac-item .ti-b{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:5px;}
+.tac-item .ti-c{font-size:10.5px;font-weight:800;letter-spacing:.06em;color:var(--gold);}
+.tac-item .ti-t{font-size:15.5px;font-weight:800;letter-spacing:-.02em;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.tac-item .ti-m{font-size:12px;color:var(--steel);display:flex;flex-wrap:wrap;gap:4px 8px;}
+.tac-item .ti-p{display:flex;gap:5px;flex-wrap:wrap;}
+.tac-item .ti-p span{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:99px;background:var(--card-2);color:var(--steel);}
+.tac-item .ti-go{align-self:center;color:var(--steel-soft);font-size:20px;}
+.tac-tpl{display:flex;gap:12px;align-items:center;padding:12px 13px;border-radius:14px;border:1px solid var(--line-strong);background:var(--card);cursor:pointer;margin-bottom:8px;width:100%;text-align:left;font-family:inherit;color:var(--ink);}
+.tac-tpl:active{background:var(--card-2);}
+.tac-tpl .tp-i{flex:0 0 auto;width:40px;height:40px;border-radius:11px;background:var(--red-tint);color:var(--red);display:flex;align-items:center;justify-content:center;}
+.tac-tpl .tp-i svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.tac-tpl b{display:block;font-size:14.5px;font-weight:800;letter-spacing:-.02em;}
+.tac-tpl span{display:block;font-size:12px;color:var(--steel);margin-top:2px;line-height:1.45;}
+.tac-tpl em{margin-left:auto;font-style:normal;font-size:10.5px;font-weight:800;color:var(--gold);white-space:nowrap;}
+
+.tac-wrap{position:absolute;inset:0;z-index:35;display:none;flex-direction:column;background:#0E1013;color:#fff;-webkit-user-select:none;user-select:none;}
+.tac-wrap.open{display:flex;}
+.tac-top{flex:0 0 auto;display:flex;align-items:center;gap:6px;padding:8px 10px 6px;padding-top:calc(8px + env(safe-area-inset-top));}
+.tac-ib{flex:0 0 auto;width:38px;height:38px;border-radius:12px;border:none;background:rgba(255,255,255,.07);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:inherit;}
+.tac-ib:disabled{opacity:.3;}
+.tac-ib svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.tac-ttl{flex:1;min-width:0;padding:0 4px;cursor:pointer;}
+.tac-ttl b{display:block;font-size:15.5px;font-weight:800;letter-spacing:-.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.tac-ttl span{display:block;font-size:11px;color:rgba(255,255,255,.5);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.tac-tb{flex:0 0 auto;height:38px;padding:0 13px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:transparent;color:#fff;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:-.01em;}
+.tac-tb.gold{border-color:transparent;background:var(--gold);color:#17130A;}
+.tac-row{flex:0 0 auto;display:flex;align-items:center;gap:6px;padding:4px 10px;min-height:40px;}
+.tac-chips{flex:1;min-width:0;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;}
+.tac-chips::-webkit-scrollbar{display:none;}
+.tac-chip{flex:0 0 auto;height:32px;padding:0 12px;border-radius:99px;border:1px solid rgba(255,255,255,.14);background:transparent;color:rgba(255,255,255,.72);font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;letter-spacing:-.01em;}
+.tac-chip.on{background:#fff;color:#111;border-color:#fff;}
+.tac-chip.dash{border-style:dashed;color:rgba(255,255,255,.5);}
+.tac-chip.opp{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;border-color:rgba(255,255,255,.24);color:#fff;background:rgba(255,255,255,.06);}
+.tac-chip.opp i{font-style:normal;color:var(--gold);margin-right:5px;font-size:11px;}
+.tac-stage{flex:1 1 auto;min-height:120px;display:flex;align-items:center;justify-content:center;padding:2px 8px;position:relative;overflow:hidden;}
+.tac-stage canvas{display:block;border-radius:14px;touch-action:none;box-shadow:0 10px 30px rgba(0,0,0,.45);}
+.tac-tip{position:absolute;left:50%;top:10px;transform:translateX(-50%);width:max-content;max-width:calc(100% - 36px);padding:8px 14px;border-radius:14px;background:rgba(10,12,14,.86);color:#fff;font-size:12.5px;font-weight:600;line-height:1.45;text-align:center;pointer-events:none;opacity:0;transition:opacity .25s;z-index:2;}
+.tac-tip.show{opacity:1;}
+.tac-cap{flex:0 0 auto;padding:6px 12px 2px;min-height:44px;display:flex;align-items:center;gap:8px;}
+.tac-cap input{flex:1;min-width:0;height:38px;border-radius:11px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#fff;font-family:inherit;font-size:13.5px;padding:0 12px;-webkit-user-select:text;user-select:text;}
+.tac-cap input::placeholder{color:rgba(255,255,255,.38);}
+.tac-cap input:focus{outline:none;border-color:var(--gold);}
+.tac-cap .cap-n{flex:0 0 auto;font-family:'Oswald',sans-serif;font-weight:700;font-size:13px;color:var(--gold);letter-spacing:.06em;}
+.tac-cap .cap-t{flex:1;min-width:0;font-size:14.5px;font-weight:700;line-height:1.4;letter-spacing:-.02em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.tac-cap .cap-t.dim{color:rgba(255,255,255,.4);font-weight:500;}
+.tac-sel{flex:1;min-width:0;display:flex;align-items:center;gap:6px;}
+.tac-sel b{flex:1;min-width:0;font-size:13.5px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.tac-sel button{flex:0 0 auto;height:34px;padding:0 11px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;}
+.tac-steps{flex:0 0 auto;display:flex;align-items:center;gap:6px;padding:4px 10px;}
+.tac-strip{flex:1;min-width:0;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;align-items:center;padding:2px 0;}
+.tac-strip::-webkit-scrollbar{display:none;}
+.tac-st{flex:0 0 auto;min-width:38px;height:38px;border-radius:11px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:rgba(255,255,255,.7);font-family:'Oswald',sans-serif;font-size:15px;font-weight:700;cursor:pointer;padding:0 6px;}
+.tac-st.on{background:#fff;color:#111;border-color:#fff;}
+.tac-st.add{border-style:dashed;color:var(--gold);border-color:rgba(199,162,75,.6);font-family:inherit;font-size:12.5px;padding:0 12px;white-space:nowrap;}
+.tac-dot{flex:0 0 auto;width:26px;height:6px;border-radius:99px;border:none;padding:0;background:rgba(255,255,255,.2);cursor:pointer;}
+.tac-dot.on{background:var(--gold);}
+.tac-play{flex:0 0 auto;height:42px;min-width:42px;padding:0 14px;border-radius:13px;border:none;background:var(--red);color:#fff;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 6px 16px var(--red-glow);}
+.tac-play svg{width:16px;height:16px;fill:currentColor;stroke:none;}
+.tac-tools{flex:0 0 auto;display:flex;align-items:center;gap:6px;padding:4px 10px calc(10px + env(safe-area-inset-bottom));}
+.tac-vw{display:flex;background:rgba(255,255,255,.07);border-radius:11px;padding:3px;}
+.tac-vw button{border:none;background:none;color:rgba(255,255,255,.6);font-family:inherit;font-size:12px;font-weight:700;height:30px;padding:0 10px;border-radius:8px;cursor:pointer;}
+.tac-vw button.on{background:rgba(255,255,255,.92);color:#111;}
+.tac-tools .sp{flex:1;}
+.tac-busy{position:absolute;inset:0;z-index:5;background:rgba(8,9,11,.86);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;font-size:14px;font-weight:700;}
+.tac-busy .bar{width:200px;height:6px;border-radius:99px;background:rgba(255,255,255,.14);overflow:hidden;}
+.tac-busy .bar i{display:block;height:100%;width:0;background:var(--gold);border-radius:99px;}
+.tac-pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:7px;}
+.tac-pick button{height:42px;border-radius:11px;border:1px solid var(--line-strong);background:var(--card);color:var(--ink);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 8px;}
+.tac-pick button.on{background:var(--solid);color:var(--solid-fg);border-color:var(--solid);}
+.tac-pick button i{font-style:normal;font-family:'Oswald',sans-serif;margin-right:5px;opacity:.7;}
+.tac-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;}
+.tac-cards div{position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--line-strong);cursor:zoom-in;}
+.tac-cards img{display:block;width:100%;}
+.tac-cards span{position:absolute;left:6px;top:6px;font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:99px;background:rgba(10,10,12,.7);color:#fff;}
+@media(min-width:1024px){
+  /* PC: 경기장은 왼쪽에 크게, 조작은 오른쪽 패널 */
+  .tac-wrap.open{display:grid;grid-template-columns:minmax(0,1fr) 400px;grid-template-rows:auto auto auto auto auto 1fr;column-gap:6px;padding:0 14px 14px;}
+  .tac-top{grid-column:1/-1;grid-row:1;padding-left:0;padding-right:0;}
+  .tac-stage{grid-column:1;grid-row:2/7;padding:0;}
+  .tac-row{grid-column:2;grid-row:2;flex-wrap:wrap;}
+  .tac-row .tac-chips{flex:1 1 100%;flex-wrap:wrap;overflow:visible;}
+  .tac-cap{grid-column:2;grid-row:3;padding-top:14px;}
+  .tac-steps{grid-column:2;grid-row:4;padding-top:10px;}
+  .tac-strip{flex-wrap:wrap;overflow:visible;}
+  .tac-tools{grid-column:2;grid-row:5;padding-top:10px;padding-bottom:0;flex-wrap:wrap;}
+}
+body.tac-open #ktDemoBadge{display:none !important;}
+/* TAC-CSS-END */
 </style>
 </head>
 <body>
@@ -1340,6 +1436,9 @@
     <div class="crop-zoom"><span>－</span><input type="range" id="cropZoom" min="100" max="400" value="100" oninput="cropSlider_(this.value)"><span>＋</span></div>
     <div class="crop-btns"><button class="btn-ghost" onclick="cropCancel_()">취소</button><button class="crop-ok" onclick="cropApply_()">이 영역으로 적용</button></div>
   </div>
+
+  <!-- 전술 보드 (전체 화면) -->
+  <div class="tac-wrap" id="tacWrap"></div>
 
   <!-- Bottom sheet -->
   <div class="sheet-wrap" id="sheetWrap">
@@ -1421,7 +1520,7 @@ var APP_SUB = 'FOOTBALL CLUB';
 var APP_REGION = '';   /* 새 팀 설치 시 헤더 지역 표기 (팀 정보에서 변경 가능) */
 var APP_NOTE = '';     /* 새 팀 설치 시 헤더 소개 문구 */
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '14.5';
+var APP_VERSION = '15.0';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -1848,7 +1947,8 @@ function render(){
   var tb=document.getElementById('tabbar'); if(tb) tb.style.display='flex';
   state._rScreen = state.screen;
   renderTabs();
-  try{ document.body.classList.toggle('pc-form', state.screen==='form'); }catch(e){}
+  try{ document.body.classList.toggle('pc-form', state.screen==='form' && state.formMode!=='tac'); }catch(e){}
+  if(state.screen==='form' && state.formMode==='tac'){ try{ tacListPaint_(); }catch(e){} }
   if(state.screen==='form'){ initPitchDrag(); initRosterDrag_(); try{ var _st=document.querySelector('.sq-tabs'), _on=_st&&_st.querySelector('.qtab.on'); if(_on){ var _l=_on.offsetLeft-_st.offsetLeft, _r=_l+_on.offsetWidth; if(_r>_st.scrollLeft+_st.clientWidth) _st.scrollLeft=_r-_st.clientWidth+6; else if(_l<_st.scrollLeft) _st.scrollLeft=_l-6; } }catch(e){} }
 }
 
@@ -2271,6 +2371,11 @@ function selectFormSquad(id){
   loadSquadDetail(id);
 }
 function viewForm(){
+  var m=state.formMode||'squad';
+  var seg='<div class="qtabs tac-seg"><button class="qtab '+(m!=='tac'?'on':'')+'" onclick="setFormMode_(\'squad\')">스쿼드</button><button class="qtab '+(m==='tac'?'on':'')+'" onclick="setFormMode_(\'tac\')">전술 보드</button></div>';
+  return seg+(m==='tac'?viewTac_():viewFormSquad_());
+}
+function viewFormSquad_(){
   if(state.loadingSquad && !state.squadList) return '<div class="empty"><div class="ei">📋</div>불러오는 중...</div>';
   var addBtn = isAdmin() ? '<button class="btn-add-match" onclick="openSquadForm()">새 스쿼드</button>' : '';
   var list = state.squadList || [];
@@ -7445,6 +7550,7 @@ function initBackButton_(){
     var sheetW=document.getElementById('sheetWrap'), cfmW=document.getElementById('cfmWrap');
     if(sheetW && sheetW.classList.contains('open')){ closeSheet(); pushHist_(); return; }
     if(cfmW && cfmW.classList.contains('open')){ closeConfirm_(false); pushHist_(); return; }
+    if(tacIsOpen_()){ tacBack_(); pushHist_(); return; }
     // 2) 화면 뒤로가기 스택
     var st=state._backStack||[];
     if(st.length){
@@ -7519,6 +7625,7 @@ function enterApp_(clubId){
   loadClubData_();
   try{ logAccess_(); }catch(e){}
   if(PENDING_VIDEO) setTimeout(openPendingVideo_, 300);
+  else if(PENDING_TAC) setTimeout(openPendingTac_, 300);
   else { try{ a2hsMaybe_(); }catch(e){} }
 }
 /* ================= 시즌 기간 =================
@@ -11506,6 +11613,1388 @@ function loadClubData_(){
     render();
   }).catch(function(){ state.loading=false; render(); });
 }
+/* TAC-JS-BEGIN */
+/* ================= 전술 보드 =================
+ * 포메이션 · 움직임을 '단계'로 만들고 재생한다. 상대는 성향에 따라 규칙대로 반응(자동) + 끌어서 수정.
+ * 좌표: x 0~1 (왼→오), y 0=상대 골 ~ 1=우리 골 (스쿼드판과 같은 방향 · 우리 팀이 위로 공격)
+ * 저장: tactics 컬렉션 (팀별 clubId) · 링크: #tac=ID */
+var TAC=null;
+var PENDING_TAC=(String(location.hash||'').match(/^#tac=([A-Za-z0-9_-]+)/)||[])[1]||'';
+var TAC_CATS=[['build','빌드업'],['set','세트피스'],['trans','전환'],['free','자유']];
+var TAC_STYLES=[['high','전방 압박','공을 잡자마자 앞에서부터 붙는다'],['mid','중간 블록','하프라인 근처에서 간격을 유지하며 기다린다'],['low','내려앉기','자기 진영 깊숙이 내려 공간을 지운다'],['man','맨투맨','선수마다 한 명씩 따라붙는다']];
+var TAC_STYLE_P={
+  high:{gap:.40,minDef:.14,maxDef:.52,depth:.36,width:.80,shift:.30,press:2,pressLine:1.0,mark:.35},
+  mid: {gap:.34,minDef:.13,maxDef:.40,depth:.30,width:.72,shift:.36,press:1,pressLine:.68,mark:.20},
+  low: {gap:.30,minDef:.11,maxDef:.26,depth:.24,width:.62,shift:.40,press:1,pressLine:.48,mark:.10},
+  man: {gap:.34,minDef:.13,maxDef:.42,depth:.30,width:.74,shift:.30,press:0,pressLine:1.0,mark:0}
+};
+/* 상대 포메이션: [가로 위치, 깊이(0=수비 라인 ~ 1=최전방, -1=골키퍼), 포지션] */
+var TAC_FORMS={
+  '4-4-2':  [[.5,-1,'GK'],[.86,0,'LB'],[.62,0,'CB'],[.38,0,'CB'],[.14,0,'RB'],[.86,.5,'LM'],[.62,.48,'CM'],[.38,.48,'CM'],[.14,.5,'RM'],[.62,1,'ST'],[.38,1,'ST']],
+  '4-3-3':  [[.5,-1,'GK'],[.86,0,'LB'],[.62,0,'CB'],[.38,0,'CB'],[.14,0,'RB'],[.5,.36,'DM'],[.70,.5,'CM'],[.30,.5,'CM'],[.84,.92,'LW'],[.5,1,'ST'],[.16,.92,'RW']],
+  '4-2-3-1':[[.5,-1,'GK'],[.86,0,'LB'],[.62,0,'CB'],[.38,0,'CB'],[.14,0,'RB'],[.62,.33,'DM'],[.38,.33,'DM'],[.84,.68,'LM'],[.5,.70,'AM'],[.16,.68,'RM'],[.5,1,'ST']],
+  '3-5-2':  [[.5,-1,'GK'],[.72,0,'CB'],[.5,0,'CB'],[.28,0,'CB'],[.93,.46,'LWB'],[.70,.46,'CM'],[.5,.38,'DM'],[.30,.46,'CM'],[.07,.46,'RWB'],[.62,1,'ST'],[.38,1,'ST']],
+  '3-4-3':  [[.5,-1,'GK'],[.72,0,'CB'],[.5,0,'CB'],[.28,0,'CB'],[.90,.46,'LM'],[.62,.44,'CM'],[.38,.44,'CM'],[.10,.46,'RM'],[.80,.92,'LW'],[.5,1,'ST'],[.20,.92,'RW']],
+  '5-3-2':  [[.5,-1,'GK'],[.92,.08,'LWB'],[.70,0,'CB'],[.5,0,'CB'],[.30,0,'CB'],[.08,.08,'RWB'],[.72,.52,'CM'],[.5,.48,'DM'],[.28,.52,'CM'],[.62,1,'ST'],[.38,1,'ST']],
+  '4-1-4-1':[[.5,-1,'GK'],[.86,0,'LB'],[.62,0,'CB'],[.38,0,'CB'],[.14,0,'RB'],[.5,.30,'DM'],[.88,.6,'LM'],[.62,.6,'CM'],[.38,.6,'CM'],[.12,.6,'RM'],[.5,1,'ST']]
+};
+/* 우리 팀 역할(4-3-3 기준 자리) — 스쿼드의 선수를 가장 가까운 역할에 배정한다. 템플릿은 이 역할 이름으로 움직임을 적는다 */
+var TAC_ROLES=[['gk',.5,.94,'GK',1],['lb',.14,.74,'LB',3],['lcb',.37,.79,'CB',4],['rcb',.63,.79,'CB',5],['rb',.86,.74,'RB',2],
+  ['dm',.5,.63,'DM',6],['lcm',.33,.52,'CM',8],['rcm',.67,.52,'CM',10],['lw',.14,.33,'LW',11],['st',.5,.26,'ST',9],['rw',.86,.33,'RW',7]];
+var TAC_ICON={
+  build:'<path d="M12 20V6"/><path d="M6.5 11.5L12 6l5.5 5.5"/><path d="M5 20h14"/>',
+  set:'<path d="M5 21V4"/><path d="M5 5h11l-2.2 3.5L16 12H5"/>',
+  trans:'<path d="M4 8h13"/><path d="M13.5 4.5L17 8l-3.5 3.5"/><path d="M20 16H7"/><path d="M10.5 12.5L7 16l3.5 3.5"/>',
+  free:'<rect x="4" y="3.5" width="16" height="17" rx="2"/><path d="M4 12h16"/><circle cx="12" cy="12" r="2.2"/>'
+};
+/* 상황 템플릿 — our: 역할별 위치(적지 않은 선수는 직전 단계 그대로), ball: 역할 이름(그 선수가 공을 가짐) 또는 [x,y]
+ * opp: 배열이면 상대 11명 위치 직접 지정(자동 반응 끔), 객체면 번호별 변경분 */
+var TAC_TPLS=[
+ {id:'gk', cat:'build', name:'골킥 빌드업', desc:'전방 압박을 짧게 풀기(A) · 길게 넘기기(B)', oppForm:'4-4-2', plans:[
+  {name:'A안 · 짧게', style:'high', steps:[
+   {note:'센터백이 박스 옆으로 벌리고 {dm:이} 박스 앞에 선다', ball:'gk', our:{gk:[.5,.93],lcb:[.29,.865],rcb:[.71,.865],lb:[.07,.70],rb:[.93,.70],dm:[.5,.765],lcm:[.34,.60],rcm:[.66,.60],lw:[.10,.40],rw:[.90,.40],st:[.5,.34]}},
+   {note:'GK가 오른쪽 센터백에게 짧게 · 풀백은 올라가 폭을 만든다', ball:'rcb', our:{dm:[.58,.74],rb:[.94,.62],rcm:[.72,.64]}},
+   {note:'압박이 붙으면 풀백에게 · {rcm:이} 안쪽에서 받아 줄 준비', ball:'rb', our:{rcm:[.80,.57],st:[.58,.42],rw:[.90,.36],dm:[.62,.70]}},
+   {note:'풀백 → {rcm} → 윙어, 삼각 패스로 압박을 벗어난다', ball:'rw', our:{rw:[.88,.27],rcm:[.78,.52],st:[.56,.25],lw:[.20,.30],rb:[.92,.52]}}
+  ]},
+  {name:'B안 · 길게', style:'high', steps:[
+   {note:'배치는 같다 — 상대가 6명 이상 올라오면 길게 간다', ball:'gk', our:{gk:[.5,.93],lcb:[.29,.865],rcb:[.71,.865],lb:[.07,.70],rb:[.93,.70],dm:[.5,.765],lcm:[.34,.60],rcm:[.66,.60],lw:[.10,.40],rw:[.90,.40],st:[.5,.34]}},
+   {note:'{st} 머리로 길게 · 양 윙어는 안으로 좁혀 세컨볼을 노린다', ball:'st', our:{st:[.5,.42],lw:[.28,.40],rw:[.72,.40],lcm:[.38,.50],rcm:[.62,.50],dm:[.5,.62],lcb:[.34,.74],rcb:[.66,.74],lb:[.12,.62],rb:[.88,.62],gk:[.5,.88]}},
+   {note:'세컨볼을 잡으면 바로 뒷공간으로', ball:'rw', our:{rw:[.72,.33],st:[.52,.26],lw:[.26,.30],rcm:[.64,.45]}}
+  ]}
+ ]},
+ {id:'third', cat:'build', name:'중앙 압박 탈출', desc:'내려와 받고 원터치로 돌려주는 3자 패스', oppForm:'4-3-3', plans:[
+  {name:'A안', style:'mid', steps:[
+   {note:'센터백이 공을 잡고 {dm:은} 상대 공격수 뒤에 숨는다', ball:'lcb', our:{gk:[.5,.90],lcb:[.36,.72],rcb:[.64,.72],lb:[.10,.58],rb:[.90,.58],dm:[.5,.60],lcm:[.34,.47],rcm:[.66,.47],lw:[.12,.28],rw:[.88,.28],st:[.5,.24]}},
+   {note:'{lcm:이} 내려와 받으며 압박을 끌어낸다', ball:'lcm', our:{lcm:[.30,.545],dm:[.54,.585]}},
+   {note:'원터치로 {dm}에게 — 앞을 보고 받는다', ball:'dm', our:{dm:[.53,.555],rcm:[.68,.40],lcm:[.30,.52]}},
+   {note:'라인 사이로 전진 패스 → 공격 전개', ball:'rcm', our:{rcm:[.68,.375],st:[.5,.20],rw:[.90,.24],lw:[.14,.24]}}
+  ]}
+ ]},
+ {id:'ck_att', cat:'set', name:'코너킥 공격', desc:'니어 포스트(A) · 짧게 연결 후 컷백(B)', view:'att', zoom:true, oppForm:'4-4-2', plans:[
+  {name:'A안 · 니어', auto:false, steps:[
+   {note:'박스 안 4명은 페널티 스폿 뒤에 모여 선다', ball:'rcm',
+    our:{rcm:[.985,.014],st:[.47,.125],rcb:[.52,.135],lcb:[.57,.125],dm:[.62,.14],lw:[.47,.04],rw:[.82,.10],lcm:[.52,.215],lb:[.36,.385],rb:[.62,.385],gk:[.5,.80]},
+    opp:[[.50,.018],[.585,.03],[.57,.062],[.515,.062],[.44,.062],[.565,.092],[.515,.102],[.465,.092],[.615,.107],[.54,.18],[.80,.07]]},
+   {note:'신호와 함께 {st:은} 니어, {lcb:은} 파, {rcb:은} 중앙으로', our:{st:[.60,.075],lcb:[.42,.07],rcb:[.505,.095],dm:[.585,.128],lw:[.485,.035]}, opp:{8:[.618,.05],6:[.405,.058],7:[.545,.10],9:[.61,.102]}},
+   {note:'니어 포스트로 낮고 빠르게 — {st:이} 잘라 먹는다', ball:'st', opp:{1:[.535,.02]}}
+  ]},
+  {name:'B안 · 짧게', auto:false, steps:[
+   {note:'배치는 같다 — {rw:이} 짧은 코너 옵션', ball:'rcm',
+    our:{rcm:[.985,.014],st:[.47,.125],rcb:[.52,.135],lcb:[.57,.125],dm:[.62,.14],lw:[.47,.04],rw:[.82,.10],lcm:[.52,.215],lb:[.36,.385],rb:[.62,.385],gk:[.5,.80]},
+    opp:[[.50,.018],[.585,.03],[.57,.062],[.515,.062],[.44,.062],[.565,.092],[.515,.102],[.465,.092],[.615,.107],[.54,.18],[.80,.07]]},
+   {note:'{rw:이} 내려와 짧게 받는다 — 수비 한 명을 끌어낸다', ball:'rw', our:{rw:[.90,.05]}, opp:{11:[.875,.08]}},
+   {note:'{rw:이} 안으로 몰고 들어오면 수비가 따라 나온다', our:{rw:[.855,.115],rcm:[.945,.09],lcm:[.56,.20]}, opp:{10:[.79,.14],11:[.845,.085]}},
+   {note:'아크 정면 {lcm}에게 컷백 — 슛', ball:'lcm'}
+  ]}
+ ]},
+ {id:'ck_def', cat:'set', name:'코너킥 수비', desc:'지역 3명 + 대인 4명, 걷어낸 뒤 역습까지', view:'def', zoom:true, oppForm:'4-4-2', plans:[
+  {name:'A안', auto:false, steps:[
+   {note:'지역 3 + 대인 4 · {lb:은} 니어 포스트, {st:은} 박스 앞, {rw:은} 역습 대기', ball:'b11',
+    our:{gk:[.50,.982],lb:[.59,.968],rcb:[.57,.936],lcb:[.515,.936],dm:[.46,.936],rb:[.585,.887],lcm:[.53,.877],rcm:[.475,.892],lw:[.635,.872],st:[.50,.79],rw:[.67,.66]},
+    opp:[[.5,.06],[.40,.60],[.60,.60],[.50,.75],[.83,.91],[.58,.855],[.525,.845],[.47,.86],[.635,.84],[.535,.962],[.985,.986]]},
+   {note:'공이 뜨면 지역 수비가 먼저 뜬다 — {lcb:이} 걷어낸다', ball:[.53,.906], our:{lcb:[.535,.926],rb:[.615,.925],lcm:[.495,.918],rcm:[.44,.915],lw:[.645,.91]}, opp:{6:[.59,.895],7:[.515,.888],8:[.455,.888],9:[.635,.882]}},
+   {note:'걷어낸 공은 {st}에게 · {rw:은} 뒷공간으로, 전원 라인을 올린다', ball:'st', our:{st:[.50,.78],rw:[.64,.60],lb:[.59,.94],rcb:[.575,.905],lcb:[.52,.895],dm:[.465,.905],rb:[.62,.875],lcm:[.50,.855],rcm:[.44,.875],lw:[.66,.83]}}
+  ]}
+ ]},
+ {id:'fk', cat:'set', name:'측면 프리킥', desc:'수비 라인 뒤로 떨어뜨리는 공', view:'att', zoom:true, oppForm:'4-4-2', plans:[
+  {name:'A안 · 파 포스트', auto:false, steps:[
+   {note:'공격 5명이 수비 라인과 나란히 선다 · {rw:은} 넓게', ball:'rcm',
+    our:{rcm:[.82,.26],lcm:[.865,.275],lw:[.44,.19],lcb:[.49,.185],rcb:[.54,.19],st:[.59,.185],dm:[.64,.19],rw:[.93,.13],lb:[.42,.40],rb:[.70,.40],gk:[.5,.82]},
+    opp:[[.5,.03],[.765,.185],[.735,.175],[.445,.158],[.495,.153],[.545,.158],[.595,.153],[.645,.158],[.56,.235],[.90,.115],[.60,.40]]},
+   {note:'킥과 동시에 출발 — {lcb} 파 포스트, {st:은} 니어에서 수비를 끌고 간다', our:{lcb:[.44,.07],lw:[.40,.105],rcb:[.52,.085],st:[.60,.08],dm:[.62,.145]}, opp:{5:[.455,.043],4:[.41,.075],6:[.535,.055],7:[.615,.052],8:[.64,.118]}},
+   {note:'라인 뒤로 떨어지는 공 — {lcb:이} 마무리', ball:'lcb'}
+  ]}
+ ]},
+ {id:'counter', cat:'trans', name:'역습 3 대 2', desc:'빼앗은 직후 세 번의 패스로 마무리', oppForm:'4-3-3', plans:[
+  {name:'A안', auto:false, steps:[
+   {note:'{dm:이} 공을 빼앗는다 — 상대 풀백은 올라가 있다', ball:'dm',
+    our:{gk:[.5,.93],lb:[.20,.76],lcb:[.40,.80],rcb:[.60,.80],rb:[.80,.76],dm:[.48,.66],lcm:[.34,.64],rcm:[.64,.63],lw:[.20,.56],rw:[.80,.54],st:[.5,.48]},
+    opp:[[.5,.08],[.90,.58],[.58,.36],[.42,.36],[.10,.56],[.5,.54],[.39,.585],[.66,.575],[.78,.70],[.5,.74],[.22,.70]]},
+   {note:'빼앗자마자 {st} 발밑으로 · 양 윙어는 전력 질주', ball:'st', our:{st:[.5,.46],lw:[.18,.42],rw:[.82,.40],rcm:[.60,.54]}, opp:{3:[.54,.40],4:[.44,.36],6:[.5,.52],7:[.40,.555],8:[.67,.555]}},
+   {note:'{st:이} 떨궈 주고 돌아 뛴다', ball:'rcm', our:{rcm:[.60,.52],st:[.52,.37],lw:[.18,.32],rw:[.82,.30]}, opp:{3:[.565,.325],4:[.45,.31]}},
+   {note:'{rcm:이} 원터치로 뒷공간에 — 3 대 2', ball:'rw', our:{rw:[.80,.20],st:[.52,.22],lw:[.22,.22],rcm:[.60,.44]}, opp:{3:[.585,.19],4:[.45,.20],1:[.5,.06]}},
+   {note:'컷백 — {st} 마무리, {lw:은} 반대편', ball:'st', our:{rw:[.76,.10],st:[.52,.10],lw:[.36,.08]}, opp:{3:[.585,.085],4:[.455,.075],1:[.52,.035]}}
+  ]}
+ ]},
+ {id:'recover', cat:'trans', name:'수비 전환', desc:'공을 뺏긴 직후 5초 — 압박, 복귀, 지연', oppForm:'4-4-2', plans:[
+  {name:'A안', auto:false, steps:[
+   {note:'공을 뺏긴 순간 — 가장 가까운 두 명이 즉시 압박', ball:'b7',
+    our:{gk:[.5,.86],lcb:[.40,.60],rcb:[.60,.60],lb:[.12,.42],rb:[.88,.40],dm:[.5,.50],lcm:[.36,.38],rcm:[.645,.345],lw:[.14,.20],st:[.5,.18],rw:[.86,.20]},
+    opp:[[.5,.04],[.80,.20],[.60,.17],[.40,.17],[.20,.20],[.82,.34],[.60,.40],[.42,.32],[.20,.34],[.62,.52],[.40,.50]]},
+   {note:'{rcm} · {dm:이} 공을 막고 패스 길을 지운다 · 나머지는 골문 쪽으로 좁히며 복귀', our:{rcm:[.635,.385],dm:[.54,.47],lb:[.16,.52],rb:[.84,.50],lcb:[.42,.66],rcb:[.60,.66],st:[.52,.28],lw:[.20,.32],rw:[.80,.32],lcm:[.42,.44]}, opp:{7:[.59,.43],10:[.64,.60],11:[.38,.58]}},
+   {note:'넘어가면 {rcb:이} 지연 — 덤비지 않고 시간을 번다 · {lcb} 커버, 풀백은 안으로', ball:'b10', our:{rcb:[.625,.69],lcb:[.50,.72],rb:[.76,.68],lb:[.26,.69],dm:[.585,.585],gk:[.5,.90],rcm:[.62,.50],lcm:[.44,.54]}, opp:{10:[.64,.625],11:[.40,.62]}}
+  ]}
+ ]},
+ {id:'free', cat:'free', name:'자유 보드', desc:'빈 경기장에서 처음부터 — 스쿼드 배치 그대로 시작', oppForm:'4-4-2', useSquad:true, plans:[
+  {name:'A안', style:'mid', steps:[{note:'', ball:'dm'}]}
+ ]}
+];
+
+/* ---------- 유틸 ---------- */
+function tacR3_(v){ return Math.round(v*1000)/1000; }
+function tacClamp_(v,a,b){ return Math.max(a, Math.min(b, v)); }
+function tacDist_(a,b){ var dx=a[0]-b[0], dy=(a[1]-b[1])*1.5; return Math.sqrt(dx*dx+dy*dy); }   /* 경기장 세로가 가로의 1.5배 */
+function tacLerp_(a,b,t){ return [a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t]; }
+function tacEase_(t){ return t<0.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2; }
+function tacClone_(o){ return JSON.parse(JSON.stringify(o)); }
+function tacCatLabel_(c){ for(var i=0;i<TAC_CATS.length;i++){ if(TAC_CATS[i][0]===c) return TAC_CATS[i][1]; } return '자유'; }
+function tacStyleLabel_(s){ for(var i=0;i<TAC_STYLES.length;i++){ if(TAC_STYLES[i][0]===s) return TAC_STYLES[i][1]; } return ''; }
+function tacIsOpp_(k){ return String(k||'').charAt(0)==='b' && /^b\d+$/.test(k); }
+function tacBallXY_(st, off){
+  if(st.own && st.pos[st.own]){ var p=st.pos[st.own]; off=off||TAC_BOFF; return [p[0]+off[0], p[1]+off[1]]; }
+  return st.ball||[.5,.5];
+}
+var TAC_BOFF=[0.026,0.017];   /* 공을 가진 선수 발밑(오른쪽 아래) — 화면 배율에 따라 그릴 때 다시 계산 */
+function tacBallBase_(st){ return (st.own && st.pos[st.own]) ? st.pos[st.own] : (st.ball||[.5,.5]); }
+function tacAccent_(){
+  if(TAC && TAC._acc) return TAC._acc;
+  var v=''; try{ v=getComputedStyle(document.documentElement).getPropertyValue('--red').trim(); }catch(e){}
+  v=v||'#C8102E'; if(TAC) TAC._acc=v; return v;
+}
+function tacLum_(hex){ var m=/^#?([0-9a-f]{6})$/i.exec(String(hex||'')); if(!m) return 0.3; var n=parseInt(m[1],16); return (0.299*((n>>16)&255)+0.587*((n>>8)&255)+0.114*(n&255))/255; }
+
+/* ---------- 우리 선수 · 상대 선수 토큰 ---------- */
+function tacOurDefault_(){
+  var toks=[], homes={};
+  TAC_ROLES.forEach(function(r){ toks.push({k:r[0], pid:'', n:'', num:r[4], pos:r[3]}); homes[r[0]]=[r[1],r[2]]; });
+  return {toks:toks, homes:homes, named:false};
+}
+/* 스쿼드(배치된 11명) → 역할 배정: 가장 가까운 역할 자리끼리 짝짓기 (탐욕 + 맞바꿈 개선) */
+function tacOurFromSquad_(d){
+  var mems=((d&&d.members)||[]).filter(function(m){ return m.position && m.x!=null && m.y!=null; }).slice(0,11);
+  if(mems.length<7) return tacOurDefault_();
+  var R=TAC_ROLES, cost=function(m,r){ if((m.position==='GK')!==(r[0]==='gk')) return 9; return tacDist_([m.x,m.y],[r[1],r[2]]); };
+  var pairs=[]; mems.forEach(function(m,i){ R.forEach(function(r,j){ pairs.push([cost(m,r),i,j]); }); });
+  pairs.sort(function(a,b){ return a[0]-b[0]; });
+  var mOf={}, rOf={};
+  pairs.forEach(function(p){ if(mOf[p[1]]===undefined && rOf[p[2]]===undefined){ mOf[p[1]]=p[2]; rOf[p[2]]=p[1]; } });
+  for(var pass=0;pass<4;pass++){
+    var ch=false;
+    for(var a=0;a<mems.length;a++) for(var b=a+1;b<mems.length;b++){
+      var ra=mOf[a], rb=mOf[b];
+      if(cost(mems[a],R[rb])+cost(mems[b],R[ra]) < cost(mems[a],R[ra])+cost(mems[b],R[rb])-1e-6){ mOf[a]=rb; mOf[b]=ra; rOf[rb]=a; rOf[ra]=b; ch=true; }
+    }
+    if(!ch) break;
+  }
+  var toks=[], homes={};
+  R.forEach(function(r,j){
+    var mi=rOf[j], m=(mi!==undefined)?mems[mi]:null;
+    if(m){ toks.push({k:r[0], pid:(m.guest?'':(m.playerId||'')), n:String(m.name||''), num:(m.num==null?'':m.num), pos:m.position||r[3]}); homes[r[0]]=[m.x,m.y]; }
+    else { toks.push({k:r[0], pid:'', n:'', num:r[4], pos:r[3]}); homes[r[0]]=[r[1],r[2]]; }
+  });
+  return {toks:toks, homes:homes, named:true};
+}
+function tacOppToks_(form){
+  var F=TAC_FORMS[form]||TAC_FORMS['4-4-2'];
+  return F.map(function(s,i){ return {k:'b'+(i+1), num:i+1, pos:s[2]}; });
+}
+
+/* ---------- 상대 자동 반응 (규칙) ----------
+ * 수비: 공 높이에 맞춰 수비 라인을 정하고 포메이션 간격을 유지 → 공 쪽으로 쏠림 → 가까운 선수가 압박 → 근처 선수 견제
+ * 공격(상대가 공을 가짐): 공보다 앞쪽에 공격 대형을 넓게 펼친다 */
+function tacOppShape_(doc, plan, st){
+  var F=TAC_FORMS[doc.oppForm]||TAC_FORMS['4-4-2'], P=TAC_STYLE_P[plan.style]||TAC_STYLE_P.mid;
+  var B=tacBallBase_(st), own=st.own||'', res={}, i, k;
+  if(tacIsOpp_(own)){
+    var fwdY=tacClamp_(B[1]+0.20, 0.50, 0.90), dep=0.46, dY=fwdY-dep;
+    F.forEach(function(s,i2){ var k2='b'+(i2+1);
+      if(s[1]<0){ res[k2]=[.5, tacClamp_(0.06+Math.max(0,dY-0.2)*0.3, 0.05, 0.16)]; return; }
+      res[k2]=[0.5+(s[0]-0.5)*0.94+(B[0]-0.5)*0.12, dY+s[1]*dep]; });
+  } else {
+    var defY=tacClamp_(B[1]-P.gap, P.minDef, P.maxDef);
+    defY=Math.max(0.05, Math.min(defY, B[1]-0.02));
+    var depth=P.depth*tacClamp_((B[1]+0.25)/0.6, 0.45, 1);
+    var outs=[];
+    F.forEach(function(s,i2){ var k2='b'+(i2+1);
+      if(s[1]<0){ res[k2]=[0.5+(B[0]-0.5)*0.10, tacClamp_(0.035+(defY-0.14)*0.22, 0.035, 0.11)]; return; }
+      res[k2]=[0.5+(s[0]-0.5)*P.width+(B[0]-0.5)*P.shift, defY+s[1]*depth]; outs.push({k:k2, d:s[1]}); });
+    var ours=doc.our.map(function(t){ return t.k; }).filter(function(k2){ return k2!=='gk' && st.pos[k2]; });
+    var busy={};
+    if(plan.style==='man'){
+      /* 전체 거리 합이 가장 작게 짝짓기 (가까운 쌍부터 + 맞바꿈 개선) → 상대 수비는 우리 공격수를, 상대 공격수는 우리 수비를 맡는다 */
+      var tg=ours.slice().sort(function(a,b){ return st.pos[a][1]-st.pos[b][1]; }).slice(0, outs.length);
+      var mc=function(ok,fk){ return tacDist_(res[fk], st.pos[ok]); }, prs=[], asg={}, usedF={};
+      tg.forEach(function(ok){ outs.forEach(function(o){ prs.push([mc(ok,o.k), ok, o.k]); }); });
+      prs.sort(function(a,b){ return a[0]-b[0]; });
+      prs.forEach(function(pr){ if(asg[pr[1]]===undefined && !usedF[pr[2]]){ asg[pr[1]]=pr[2]; usedF[pr[2]]=1; } });
+      for(var ps2=0;ps2<5;ps2++){ var sw=false;
+        for(var ia=0;ia<tg.length;ia++) for(var ib=ia+1;ib<tg.length;ib++){ var A2=tg[ia], B2=tg[ib];
+          if(mc(A2,asg[B2])+mc(B2,asg[A2]) < mc(A2,asg[A2])+mc(B2,asg[B2])-1e-6){ var tmp=asg[A2]; asg[A2]=asg[B2]; asg[B2]=tmp; sw=true; } }
+        if(!sw) break; }
+      tg.forEach(function(ok){ var p=st.pos[ok], fk2=asg[ok]; if(!fk2) return;
+        res[fk2]=tacLerp_(res[fk2], [p[0]+(0.5-p[0])*0.07, p[1]-0.05], 0.9); });
+    } else {
+      if(P.press>=1 && B[1]<=P.pressLine+0.001){
+        var cand=outs.slice().sort(function(a,b){ return (tacDist_(res[a.k],B)+(a.d===0?0.15:0))-(tacDist_(res[b.k],B)+(b.d===0?0.15:0)); });
+        if(cand[0]){ res[cand[0].k]=tacLerp_(res[cand[0].k], [B[0]+(0.5-B[0])*0.03, B[1]-0.054], 0.92); busy[cand[0].k]=1; }
+        if(P.press>=2 && own && !tacIsOpp_(own)){
+          var near=null, nd=9;
+          ours.forEach(function(ok){ if(ok===own) return; var dd=tacDist_(st.pos[ok],B); if(dd<nd){ nd=dd; near=ok; } });
+          if(near){
+            var tg=tacLerp_(st.pos[near], B, 0.3); tg=[tg[0], tg[1]-0.02];
+            var c2=outs.filter(function(o){ return !busy[o.k]; }).sort(function(a,b){ return tacDist_(res[a.k],tg)-tacDist_(res[b.k],tg); })[0];
+            if(c2){ res[c2.k]=tacLerp_(res[c2.k], tg, 0.75); busy[c2.k]=1; }
+          }
+        }
+      }
+      if(P.mark>0){
+        outs.forEach(function(o){ if(busy[o.k]) return;
+          var bp=null, bd2=0.16;
+          ours.forEach(function(ok){ var dd=tacDist_(res[o.k], st.pos[ok]); if(dd<bd2){ bd2=dd; bp=st.pos[ok]; } });
+          if(bp) res[o.k]=tacLerp_(res[o.k], [bp[0]+(0.5-bp[0])*0.05, bp[1]-0.03], P.mark);
+        });
+      }
+    }
+    /* 겹침 풀기 */
+    for(var it=0;it<3;it++){
+      for(i=0;i<outs.length;i++) for(var j=i+1;j<outs.length;j++){
+        var a=res[outs[i].k], b=res[outs[j].k], dd=tacDist_(a,b);
+        if(dd<0.078){ var dx=(b[0]-a[0])||0.01, dy=(b[1]-a[1])||0.004, m=(0.078-dd)/2/Math.max(dd,0.001); a[0]-=dx*m; b[0]+=dx*m; a[1]-=dy*m; b[1]+=dy*m; }
+      }
+      /* 우리 선수와 겹치지 않게 (골문 쪽으로 비켜 선다) */
+      outs.forEach(function(o){ var a2=res[o.k];
+        doc.our.forEach(function(t){ var q=st.pos[t.k]; if(!q) return; var d2=tacDist_(a2,q);
+          if(d2<0.07){ var ex=(a2[0]-q[0]), ey=(a2[1]-q[1])-0.004, el=Math.sqrt(ex*ex+ey*ey*2.25)||0.001, mm=(0.07-d2)/el; a2[0]+=ex*mm; a2[1]+=ey*mm; } });
+      });
+    }
+  }
+  for(k in res){ res[k]=[tacR3_(tacClamp_(res[k][0],0.03,0.97)), tacR3_(tacClamp_(res[k][1],0.02,0.98))]; }
+  return res;
+}
+/* 한 단계에 자동 반응 적용 (고정한 선수 · 공을 가진 상대는 그대로) */
+function tacOppApply_(doc, plan, st){
+  var res=tacOppShape_(doc, plan, st);
+  doc.opp.forEach(function(t){ if((st.lock&&st.lock[t.k]) || t.k===st.own) { if(st.pos[t.k]) return; } st.pos[t.k]=res[t.k]||st.pos[t.k]||[.5,.3]; });
+}
+
+/* 설명 문구의 {역할:조사} → 그 선수의 '등번호+번' (번호가 없으면 이름·포지션, 조사는 받침에 맞춤) */
+function tacTokLabel_(tk){ var n=String(tk.num==null?'':tk.num); return /^\d+$/.test(n) ? n+'번' : (tk.n||tk.pos||''); }
+function tacJosa_(word, j){
+  if(!j) return '';
+  var pairs={'은':['은','는'],'이':['이','가'],'을':['을','를'],'과':['과','와']}, pr=pairs[j]; if(!pr) return j;
+  var c=word.charCodeAt(word.length-1), bat;
+  if(c>=0xAC00 && c<=0xD7A3) bat=((c-0xAC00)%28)!==0; else bat=/[0136-8lmnr]$/i.test(word);
+  return bat?pr[0]:pr[1];
+}
+function tacNoteFill_(note, toks){
+  return String(note||'').replace(/\{(\w+)(?::([^}]+))?\}/g, function(m, k, j){
+    var tk=toks.filter(function(t){ return t.k===k; })[0]; if(!tk) return '';
+    var lab=tacTokLabel_(tk); return lab+tacJosa_(lab, j);
+  });
+}
+/* 선수가 바뀌면 설명 속 'N번'도 새 등번호로 바꾼다 */
+function tacRelabel_(doc, oldToks){
+  var map={}, any=false;
+  doc.our.forEach(function(t){ var o=oldToks.filter(function(x){ return x.k===t.k; })[0]; if(!o) return;
+    var a=String(o.num==null?'':o.num), b=String(t.num==null?'':t.num); if(a!==b && /^\d+$/.test(a) && /^\d+$/.test(b)){ map[a]=b; any=true; } });
+  if(!any) return;
+  doc.plans.forEach(function(p){ p.steps.forEach(function(st){ if(st.note) st.note=st.note.replace(/(\d+)번/g, function(m, n){ return (map[n]!==undefined?map[n]:n)+'번'; }); }); });
+}
+/* ---------- 템플릿 → 전술 문서 ---------- */
+function tacBuild_(tpl, our){
+  var now=new Date().toISOString();
+  var doc={id:uid_('tc'), clubId:state.activeClubId||'', v:1, title:tpl.name, cat:tpl.cat, tpl:tpl.id, view:tpl.view||'full', zoom:!!tpl.zoom,
+    oppForm:tpl.oppForm||'4-4-2', our:our.toks, opp:tacOppToks_(tpl.oppForm||'4-4-2'), focus:null,
+    by:whoName_()||'', createdAt:now, updatedAt:now, plans:[]};
+  tpl.plans.forEach(function(tp){
+    var plan={id:uid_('pl'), name:tp.name, auto:(tp.auto!==false), style:tp.style||'mid', steps:[]};
+    var cur={}, ocur=null, ball=[.5,.5], own='';
+    TAC_ROLES.forEach(function(r){ cur[r[0]]=(tpl.useSquad && our.homes[r[0]]) ? our.homes[r[0]].slice() : [r[1],r[2]]; });
+    tp.steps.forEach(function(ts){
+      var k;
+      if(ts.our){ for(k in ts.our) cur[k]=ts.our[k].slice(); }
+      if(typeof ts.ball==='string'){ own=ts.ball; } else if(ts.ball){ own=''; ball=ts.ball.slice(); }
+      if(ts.opp){
+        if(Array.isArray(ts.opp)){ ocur={}; ts.opp.forEach(function(p,i){ ocur['b'+(i+1)]=p.slice(); }); }
+        else { ocur=ocur||{}; for(k in ts.opp) ocur['b'+k]=ts.opp[k].slice(); }
+      }
+      var st={note:tacNoteFill_(ts.note||'', our.toks), pos:{}, ball:ball.slice(), own:own, lock:{}};
+      for(k in cur) st.pos[k]=[tacR3_(cur[k][0]), tacR3_(cur[k][1])];
+      if(ocur){ for(k in ocur) st.pos[k]=ocur[k].slice(); }
+      if(!ocur || plan.auto) tacOppApply_(doc, plan, st);
+      if(st.own && st.pos[st.own]) st.ball=tacBallXY_(st).map(tacR3_);
+      plan.steps.push(st);
+    });
+    doc.plans.push(plan);
+  });
+  return doc;
+}
+
+/* ---------- 그리기 ---------- */
+/* 보기: full=전체 · att=상대 진영 · def=우리 진영, zoom=박스 근처 확대(가로도 잘라서 1.6배) */
+function tacWin_(view, zoom){
+  var z=(zoom && view!=='full'), xs=z?0.62:1, ys=(view==='full')?1:(z?0.42:0.56);
+  return {xs:xs, ys:ys, y0:(view==='def')?1-ys:0, zoom:z};
+}
+function tacAspect_(view, zoom){ var w=tacWin_(view,zoom); return 0.10+0.91*1.5*w.ys/w.xs; }
+function tacCamX_(doc, plan){
+  var w=tacWin_(doc.view||'full', doc.zoom); if(!w.zoom) return 0.5;
+  var cx=doc.cx;
+  if(cx==null){ var sum=0, n=0; ((plan||doc.plans[0]).steps||[]).forEach(function(st){ sum+=tacBallBase_(st)[0]; n++; }); cx=n?sum/n:0.5; }
+  return tacClamp_(cx, w.xs/2, 1-w.xs/2);
+}
+function tacGeom_(view, W, H, zoom, cx){
+  var w=tacWin_(view,zoom), mx=W*0.045, my=W*0.05, fw=W-2*mx, sx=fw/w.xs, fhF=sx*1.5;
+  var x0=w.zoom ? tacClamp_((cx==null?0.5:cx)-w.xs/2, 0, 1-w.xs) : 0, y0=w.y0;
+  var r=W*0.0373*(w.zoom?0.92:1);
+  return {W:W, H:H, mx:mx, my:my, sx:sx, fhF:fhF, x0:x0, y0:y0, x1:x0+w.xs, y1:y0+w.ys, view:view, zoom:w.zoom, r:r,
+    boff:[0.63*r/sx, 0.62*r/fhF],
+    X:function(x){ return mx+(x-x0)*sx; }, Y:function(y){ return my+(y-y0)*fhF; },
+    inv:function(px,py){ return [(px-mx)/sx+x0, (py-my)/fhF+y0]; }};
+}
+function tacGeomDoc_(doc, plan, W, H){ return tacGeom_(doc.view||'full', W, H, doc.zoom, tacCamX_(doc, plan)); }
+function tacPitch_(ctx, G){
+  var X=G.X, Y=G.Y, sx=G.sx, fh=G.fhF, i;
+  ctx.fillStyle='#1c5737'; ctx.fillRect(0,0,G.W,G.H);
+  ctx.save(); ctx.beginPath(); ctx.rect(0,0,G.W,G.H); ctx.clip();
+  for(i=0;i<12;i++){ ctx.fillStyle=(i%2)?'#2a7446':'#2f7d4d'; ctx.fillRect(X(0), Y(i/12), sx, fh/12+0.6); }
+  var vg=ctx.createRadialGradient(G.W/2,G.H/2,G.W*0.2,G.W/2,G.H/2,Math.max(G.W,G.H)*0.75);
+  vg.addColorStop(0,'rgba(255,255,255,.05)'); vg.addColorStop(1,'rgba(0,0,0,.16)');
+  ctx.fillStyle=vg; ctx.fillRect(0,0,G.W,G.H);
+  var lw=Math.max(1.2, G.W*0.0053*(G.zoom?1.25:1)); ctx.lineWidth=lw; ctx.strokeStyle='rgba(255,255,255,.84)'; ctx.fillStyle='rgba(255,255,255,.84)'; ctx.lineJoin='round';
+  ctx.strokeRect(X(0),Y(0),sx,fh);
+  ctx.beginPath(); ctx.moveTo(X(0),Y(.5)); ctx.lineTo(X(1),Y(.5)); ctx.stroke();
+  var cr=sx*0.1346;
+  ctx.beginPath(); ctx.arc(X(.5),Y(.5),cr,0,Math.PI*2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(X(.5),Y(.5),lw*1.5,0,Math.PI*2); ctx.fill();
+  [0,1].forEach(function(e){
+    var s=e?-1:1, y0=e?1:0;
+    ctx.strokeRect(X(.204), Math.min(Y(y0),Y(y0+s*.157)), sx*.592, fh*.157);
+    ctx.strokeRect(X(.365), Math.min(Y(y0),Y(y0+s*.052)), sx*.27, fh*.052);
+    ctx.beginPath(); ctx.arc(X(.5),Y(y0+s*.105),lw*1.4,0,Math.PI*2); ctx.fill();
+    var dyp=fh*(.157-.105), an=Math.asin(Math.min(0.99,dyp/cr));
+    ctx.beginPath(); if(e) ctx.arc(X(.5),Y(1-.105),cr,Math.PI+an,2*Math.PI-an); else ctx.arc(X(.5),Y(.105),cr,an,Math.PI-an); ctx.stroke();
+    var gd=fh*0.018;
+    ctx.save(); ctx.fillStyle='rgba(255,255,255,.14)'; ctx.fillRect(X(.446), e?Y(1):Y(0)-gd, sx*.108, gd); ctx.strokeRect(X(.446), e?Y(1):Y(0)-gd, sx*.108, gd); ctx.restore();
+    var ca=sx*0.02;
+    ctx.beginPath(); ctx.arc(X(0),Y(y0),ca, e?-Math.PI/2:0, e?0:Math.PI/2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(X(1),Y(y0),ca, e?Math.PI:Math.PI/2, e?Math.PI*1.5:Math.PI); ctx.stroke();
+  });
+  ctx.restore();
+}
+/* 화살표: run=이동(실선) · pass=패스(점선) · drib=드리블(물결) · opp=상대 이동(가는 점선). prog 0~1 만큼만 진하게 */
+function tacArrow_(ctx, x1,y1,x2,y2, kind, prog, sc, trim1, trim2){
+  var dx=x2-x1, dy=y2-y1, len=Math.sqrt(dx*dx+dy*dy); if(len<(trim1+trim2+6*sc)) return;
+  var ux=dx/len, uy=dy/len;
+  var ax=x1+ux*trim1, ay=y1+uy*trim1, bx=x2-ux*trim2, by=y2-uy*trim2, L=len-trim1-trim2;
+  var col=(kind==='pass'||kind==='drib')?'#FFD84D':(kind==='opp'?'rgba(12,18,15,.62)':'rgba(255,255,255,.95)');
+  var w=(kind==='opp'?1.5:2.3)*sc, hd=(kind==='opp'?6:9)*sc;
+  function path(to){
+    ctx.beginPath();
+    if(kind==='drib'){
+      var n=Math.max(8, Math.round(L/(2.2*sc))), amp=3.2*sc, wl=11*sc;
+      for(var i=0;i<=n;i++){ var t=i/n*to, d=t*L, fade=Math.min(1,(L*to-d)/(hd*1.4)), o=Math.sin(d/wl*Math.PI*2)*amp*Math.max(0,fade);
+        var px=ax+ux*d-uy*o, py=ay+uy*d+ux*o; if(i) ctx.lineTo(px,py); else ctx.moveTo(px,py); }
+    } else { ctx.moveTo(ax,ay); ctx.lineTo(ax+ux*L*to, ay+uy*L*to); }
+    ctx.stroke();
+  }
+  ctx.save(); ctx.lineCap='round'; ctx.lineJoin='round'; ctx.lineWidth=w; ctx.strokeStyle=col; ctx.fillStyle=col;
+  if(kind==='pass') ctx.setLineDash([7*sc,6*sc]); else if(kind==='opp') ctx.setLineDash([2*sc,5*sc]);
+  if(prog<1){ ctx.globalAlpha*=0.3; path(1); ctx.globalAlpha/=0.3; }
+  if(prog>0.02){
+    ctx.shadowColor='rgba(0,0,0,.35)'; ctx.shadowBlur=3*sc; ctx.shadowOffsetY=1*sc;
+    path(prog); ctx.setLineDash([]);
+    var hx=ax+ux*L*prog, hy=ay+uy*L*prog;
+    ctx.beginPath(); ctx.moveTo(hx+ux*hd*0.55, hy+uy*hd*0.55);
+    ctx.lineTo(hx-ux*hd*0.6-uy*hd*0.52, hy-uy*hd*0.6+ux*hd*0.52);
+    ctx.lineTo(hx-ux*hd*0.6+uy*hd*0.52, hy-uy*hd*0.6-ux*hd*0.52); ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+}
+function tacToken_(ctx, cx, cy, r, tk, o){
+  var ours=!!o.ours, gk=(tk.pos==='GK'), fill, ink, ring;
+  if(ours){ fill=gk?'#E6AC0C':o.accent; ink=gk?'#1b1503':(tacLum_(o.accent)>0.72?'#111':'#fff'); ring='rgba(255,255,255,.95)'; }
+  else { if(o.oppDark){ fill=gk?'#565d68':'#23262c'; ink='#fff'; ring='rgba(255,255,255,.55)'; } else { fill=gk?'#aab2bd':'#f2f3f5'; ink='#15171b'; ring='rgba(20,24,28,.9)'; } }
+  ctx.save(); ctx.globalAlpha*=(o.alpha==null?1:o.alpha);
+  ctx.fillStyle='rgba(0,0,0,.28)'; ctx.beginPath(); ctx.ellipse(cx, cy+r*0.86, r*0.92, r*0.34, 0, 0, Math.PI*2); ctx.fill();
+  if(o.me){ var pu=0.5+0.5*Math.sin((o.t||0)*5); ctx.strokeStyle='rgba(255,216,77,'+(0.35+0.4*pu)+')'; ctx.lineWidth=r*0.22; ctx.beginPath(); ctx.arc(cx,cy,r*(1.42+0.12*pu),0,Math.PI*2); ctx.stroke(); }
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fillStyle=fill; ctx.fill();
+  var hl=ctx.createLinearGradient(0,cy-r,0,cy+r); hl.addColorStop(0,'rgba(255,255,255,.26)'); hl.addColorStop(0.55,'rgba(255,255,255,0)'); hl.addColorStop(1,'rgba(0,0,0,.18)');
+  ctx.fillStyle=hl; ctx.fill();
+  ctx.lineWidth=Math.max(1.2,r*0.13); ctx.strokeStyle=o.me?'#FFD84D':ring; ctx.stroke();
+  if(o.sel){ ctx.setLineDash([r*0.32,r*0.24]); ctx.lineWidth=Math.max(1.4,r*0.12); ctx.strokeStyle='#fff'; ctx.beginPath(); ctx.arc(cx,cy,r*1.38,0,Math.PI*2); ctx.stroke(); ctx.setLineDash([]); }
+  if(!o.mini){
+    var lab=String(tk.num==null||tk.num===''?(tk.pos||''):tk.num);
+    ctx.fillStyle=ink; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.font='700 '+Math.round(r*(lab.length>2?0.78:1.02))+'px Oswald, sans-serif';
+    ctx.fillText(lab, cx, cy+r*0.06);
+    if(o.lock){ ctx.fillStyle='#FFD84D'; ctx.beginPath(); ctx.arc(cx+r*0.78, cy-r*0.78, r*0.2, 0, Math.PI*2); ctx.fill(); }
+    if(ours && o.names && tk.n){
+      var nm=String(tk.n); if(nm.length>4) nm=nm.slice(0,4);
+      ctx.font=(o.me?'800 ':'700 ')+Math.round(r*(o.me?0.86:0.74))+'px Pretendard, sans-serif'; ctx.textBaseline='top';
+      ctx.lineWidth=r*0.24; ctx.strokeStyle='rgba(8,24,15,.72)'; ctx.lineJoin='round'; ctx.strokeText(nm, cx, cy+r*1.2);
+      ctx.fillStyle=o.me?'#FFE27A':'#fff'; ctx.fillText(nm, cx, cy+r*1.2);
+    }
+  }
+  ctx.restore();
+}
+function tacBallDraw_(ctx, cx, cy, r, sel){
+  ctx.save();
+  ctx.fillStyle='rgba(0,0,0,.34)'; ctx.beginPath(); ctx.ellipse(cx+r*0.15, cy+r*0.8, r*0.9, r*0.36, 0, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.fill();
+  ctx.lineWidth=Math.max(1,r*0.18); ctx.strokeStyle='#15171b'; ctx.stroke();
+  ctx.fillStyle='#15171b'; ctx.beginPath();
+  for(var i=0;i<5;i++){ var a=-Math.PI/2+i*Math.PI*2/5, px=cx+Math.cos(a)*r*0.42, py=cy+Math.sin(a)*r*0.42; if(i) ctx.lineTo(px,py); else ctx.moveTo(px,py); }
+  ctx.closePath(); ctx.fill();
+  if(sel){ ctx.setLineDash([r*0.5,r*0.4]); ctx.lineWidth=Math.max(1.2,r*0.2); ctx.strokeStyle='#FFD84D'; ctx.beginPath(); ctx.arc(cx,cy,r*1.9,0,Math.PI*2); ctx.stroke(); }
+  ctx.restore();
+}
+/* A 단계 → B 단계 사이의 움직임 목록 */
+function tacMoves_(doc, A, B, off){
+  var mv=[], drib='';
+  var bA=tacBallXY_(A, off), bB=tacBallXY_(B, off);
+  if(A.own && A.own===B.own && A.pos[A.own] && B.pos[B.own] && tacDist_(A.pos[A.own],B.pos[B.own])>0.03) drib=A.own;
+  doc.our.concat(doc.opp).forEach(function(t){
+    var a=A.pos[t.k], b=B.pos[t.k]; if(!a||!b) return;
+    var opp=tacIsOpp_(t.k), d=tacDist_(a,b);
+    if(d<(opp?0.04:0.028)) return;
+    mv.push({k:t.k, a:a, b:b, kind:(t.k===drib?'drib':(opp?'opp':'run'))});
+  });
+  if(!drib && tacDist_(bA,bB)>0.03) mv.push({k:'ball', a:bA, b:bB, kind:'pass'});
+  return mv;
+}
+/* 장면 그리기 — sc: {A,B,p} (A→B 움직임, p=진행도. A 없으면 B를 정지 화면으로) */
+function tacScene_(ctx, G, doc, sc, o){
+  o=o||{};
+  var A=sc.A, B=sc.B, p=(sc.p==null?1:sc.p), e=tacEase_(p), X=G.X, Y=G.Y, r=G.r*(o.mini?0.9:1), acc=o.accent||tacAccent_();
+  var oppDark=tacLum_(acc)>0.72;
+  tacPitch_(ctx, G);
+  var foc=(doc.focus&&doc.focus.keys&&doc.focus.keys.length)?doc.focus:null, fset={};
+  if(foc) foc.keys.forEach(function(k){ fset[k]=1; });
+  function vis(k){ if(!foc) return 1; if(tacIsOpp_(k)) return foc.opp===false?0:0.6; return fset[k]?1:(foc.hide?0:0.2); }
+  function P(k){ var b=B.pos[k]; if(!b) return null; if(!A||!A.pos[k]||p>=1) return b; return tacLerp_(A.pos[k], b, e); }
+  ctx.save(); ctx.beginPath(); ctx.rect(0,0,G.W,G.H); ctx.clip();
+  if(A && !o.mini && o.arrows!==false){
+    tacMoves_(doc, A, B, G.boff).forEach(function(m){
+      if(m.k!=='ball' && vis(m.k)<0.5) return;
+      var pr=(m.kind==='pass')?tacClamp_((p-0.06)/0.62,0,1):e;
+      var t1=(m.k==='ball')?r*0.45:r*1.12, t2=(m.k==='ball')?r*0.8:r*1.18;
+      ctx.save(); if(m.kind==='opp') ctx.globalAlpha=vis(m.k);
+      tacArrow_(ctx, X(m.a[0]),Y(m.a[1]),X(m.b[0]),Y(m.b[1]), m.kind, (p>=1?1:pr), Math.max(0.8,G.W/370), t1, t2);
+      ctx.restore();
+    });
+  }
+  var order=doc.opp.concat(doc.our);
+  order.forEach(function(t){
+    var q=P(t.k), a=vis(t.k); if(!q||a<=0) return;
+    tacToken_(ctx, X(q[0]), Y(q[1]), r*(tacIsOpp_(t.k)?0.94:1), t, {ours:!tacIsOpp_(t.k), accent:acc, oppDark:oppDark, alpha:a, names:o.names!==false&&!o.mini, mini:o.mini,
+      sel:(o.sel===t.k), me:(o.me===t.k), lock:(o.edit && B.lock && B.lock[t.k] && tacIsOpp_(t.k)), t:o.t});
+  });
+  /* 공 */
+  var bp;
+  if(A && p<1){
+    if(A.own && A.own===B.own && P(A.own)){ var q2=P(A.own); bp=[q2[0]+G.boff[0], q2[1]+G.boff[1]]; }
+    else { var tb=tacClamp_((p-0.06)/0.62,0,1); tb=1-(1-tb)*(1-tb); bp=tacLerp_(tacBallXY_(A,G.boff), tacBallXY_(B,G.boff), tb); }
+  } else bp=tacBallXY_(B,G.boff);
+  tacBallDraw_(ctx, X(bp[0]), Y(bp[1]), r*(o.mini?0.5:0.44), o.sel==='ball');
+  ctx.restore();
+}
+/* ---------- 저장 · 불러오기 ---------- */
+function tacLoad_(force){
+  var now=Date.now();
+  if(!force && state._tacAt && now-state._tacAt<60000) return;
+  state._tacAt=now;
+  if(!(window.db && FS.enabled)){ state.tactics=state.tactics||[]; state.tacLoaded=true; return; }
+  var cid=state.activeClubId||'';
+  db.collection('tactics').where('clubId','==',cid).get().then(function(snap){
+    var a=[]; snap.forEach(function(d){ var x=d.data()||{}; if(x && x.plans && x.plans.length) a.push(x); });
+    try{ kjRead_('tactics','전술 목록',a.length); }catch(e){}
+    state.tactics=a; state.tacLoaded=true;
+    if(state.screen==='form' && state.formMode==='tac') render();
+  }).catch(function(e){ state.tacLoaded=true; state.tactics=state.tactics||[]; try{ fsErr_(e,'tactics'); }catch(_){} if(state.screen==='form' && state.formMode==='tac') render(); });
+}
+function tacById_(id){ return (state.tactics||[]).filter(function(x){ return x.id===id; })[0]||null; }
+function tacSaveDoc_(doc){
+  state.tactics=(state.tactics||[]).filter(function(x){ return x.id!==doc.id; }).concat([doc]);
+  if(!(window.db && FS.enabled)) return Promise.resolve();
+  return db.collection('tactics').doc(doc.id).set(doc);
+}
+function tacFetch_(id){
+  var d=tacById_(id); if(d) return Promise.resolve(d);
+  if(!(window.db && FS.enabled)) return Promise.resolve(null);
+  return db.collection('tactics').doc(id).get().then(function(s){ var x=(s && s.exists)?(s.data()||null):null; return (x && x.plans && x.plans.length)?x:null; });
+}
+
+/* ---------- 스쿼드 탭: 스쿼드 | 전술 보드 ---------- */
+function setFormMode_(m){ state.formMode=m; if(m==='tac') tacLoad_(); render(); }
+function tacSetCat_(c){ state.tacCat=c; render(); }
+function viewTac_(){
+  if(!state.tacLoaded){ tacLoad_(); if(!state.tacLoaded) return '<div class="empty"><div class="ei">📋</div>불러오는 중...</div>'; }
+  var add=isAdmin()?'<button class="btn-add-match" style="margin-bottom:14px;" onclick="tacNewSheet_()">새 전술 만들기</button>':'';
+  var all=(state.tactics||[]).slice().sort(function(a,b){ return String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')); });
+  if(!all.length){
+    return add+'<div class="empty"><div class="ei">📋</div><b style="color:var(--ink);font-size:15px;">움직임을 그려서 팀에 공유해요</b><br>골킥 빌드업 · 세트피스 · 역습처럼 약속된 움직임을<br>단계별로 만들고, 링크 · 영상 · 이미지로 보낼 수 있어요.'
+      +(isAdmin()?'<br><br>위 버튼을 눌러 예시 전술부터 열어 보세요.':'<br><br>아직 등록된 전술이 없습니다.')+'</div>';
+  }
+  var cat=state.tacCat||'';
+  var cats=all.length>3 ? ('<div class="chips tac-cats"><button class="chip '+(cat?'':'on')+'" onclick="tacSetCat_(\'\')">전체 '+all.length+'</button>'
+    + TAC_CATS.map(function(c){ var n=all.filter(function(x){ return (x.cat||'free')===c[0]; }).length; return n?'<button class="chip '+(cat===c[0]?'on':'')+'" onclick="tacSetCat_(\''+c[0]+'\')">'+c[1]+' '+n+'</button>':''; }).join('')+'</div>') : '';
+  var list=cat?all.filter(function(x){ return (x.cat||'free')===cat; }):all;
+  return add+cats+'<div class="tac-list">'+list.map(function(d){
+    var steps=0; d.plans.forEach(function(p){ steps=Math.max(steps,p.steps.length); });
+    return '<div class="tac-item" onclick="tacOpen_(\''+d.id+'\',\'view\')"><canvas data-tac="'+d.id+'" width="132" height="194"></canvas>'
+      + '<div class="ti-b"><div class="ti-c">'+tacCatLabel_(d.cat)+'</div><div class="ti-t">'+esc(d.title||'전술')+'</div>'
+      + '<div class="ti-p">'+d.plans.map(function(p){ return '<span>'+esc(p.name)+' · '+p.steps.length+'단계</span>'; }).join('')+'</div>'
+      + '<div class="ti-m"><span>상대 '+esc(d.oppForm||'')+'</span>'+(d.by?'<span>'+esc(d.by)+'</span>':'')+'<span>'+esc(String(d.updatedAt||'').slice(5,10).replace('-','.'))+'</span></div></div>'
+      + '<span class="ti-go">›</span></div>';
+  }).join('')+'</div>'
+  + '<p class="hint">전술을 누르면 재생 화면이 열려요.'+(isAdmin()?' 편집은 재생 화면 오른쪽 위에서.':'')+'</p>';
+}
+function tacListPaint_(){
+  var acc=''; try{ acc=getComputedStyle(document.documentElement).getPropertyValue('--red').trim(); }catch(e){}
+  Array.prototype.forEach.call(document.querySelectorAll('canvas[data-tac]'), function(cv){
+    var d=tacById_(cv.getAttribute('data-tac')); if(!d) return;
+    var plan=d.plans[0], st=plan.steps[plan.steps.length>1?1:0], prev=plan.steps.length>1?plan.steps[0]:null;
+    var ctx=cv.getContext('2d'), W=cv.width, H=cv.height, a=tacAspect_(d.view||'full', d.zoom), h=Math.min(H, W*a);
+    ctx.fillStyle='#1c5737'; ctx.fillRect(0,0,W,H);
+    ctx.save(); ctx.translate(0, Math.max(0,(H-h)/2));
+    try{ tacScene_(ctx, tacGeomDoc_(d, plan, W, h), d, {A:null, B:st||prev, p:1}, {mini:true, accent:acc||'#C8102E'}); }catch(e){}
+    ctx.restore();
+  });
+}
+
+/* ---------- 새 전술 (템플릿) ---------- */
+function tacNewSheet_(){
+  if(!requireAdmin()) return;
+  var sq=state.squadDetail, sqName=(sq&&sq.squad&&((sq.members||[]).filter(function(m){ return m.position; }).length>=7))?sq.squad.name:'';
+  var body='';
+  TAC_CATS.forEach(function(c){
+    var ts=TAC_TPLS.filter(function(t){ return t.cat===c[0]; }); if(!ts.length) return;
+    body+='<div class="eyebrow" style="margin:14px 0 8px;">'+c[1]+'</div>'+ts.map(function(t){
+      return '<button class="tac-tpl" onclick="tacCreate_(\''+t.id+'\')"><div class="tp-i"><svg viewBox="0 0 24 24">'+TAC_ICON[t.cat]+'</svg></div>'
+        + '<div style="min-width:0;"><b>'+esc(t.name)+'</b><span>'+esc(t.desc)+'</span></div>'
+        + (t.plans.length>1?'<em>대응안 '+t.plans.length+'개</em>':(t.id==='free'?'':'<em>'+t.plans[0].steps.length+'단계</em>'))+'</button>';
+    }).join('');
+  });
+  showSheet('<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>새 전술 만들기</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<p style="font-size:12.5px;color:var(--steel);margin:0 0 4px;line-height:1.6;">상황을 고르면 <b>예시 움직임</b>이 들어 있는 보드가 열려요. 선수와 공을 끌어서 우리 팀에 맞게 고치면 됩니다.<br>'
+   +   (sqName?'선수는 <b>'+esc(sqName)+'</b> 스쿼드에서 불러와요.':'선수는 등번호로 표시돼요 · 편집 화면에서 스쿼드를 불러올 수 있어요.')+'</p>'
+   +   body
+   + '</div>');
+}
+function tacCreate_(tplId){
+  if(!requireAdmin()) return;
+  var tpl=TAC_TPLS.filter(function(t){ return t.id===tplId; })[0]; if(!tpl) return;
+  var doc=tacBuild_(tpl, tacOurFromSquad_(state.squadDetail));
+  var same=(state.tactics||[]).filter(function(x){ return x.title===doc.title || String(x.title||'').indexOf(doc.title+' ')===0; }).length;
+  if(same) doc.title=doc.title+' '+(same+1);
+  closeSheet();
+  tacSaveDoc_(doc).catch(function(){ toast('저장 실패 · 네트워크 확인'); });
+  try{ logEvent_('add','전술 만들기', doc.title); }catch(e){}
+  tacOpen_(doc.id,'edit');
+  var seen=''; try{ seen=localStorage.getItem('kt_tac_help')||''; }catch(e){}
+  if(!seen) setTimeout(function(){ if(TAC) tacHelp_(); }, 350);
+  else setTimeout(function(){ tacTip_(tpl.id==='free'?'선수와 공을 끌고 ＋ 장면으로 다음 움직임을 만드세요':'▶ 재생으로 예시를 보고, 장면을 눌러 고쳐 보세요'); }, 500);
+}
+
+/* ---------- 보드 열기 · 닫기 ---------- */
+function tacIsOpen_(){ var w=document.getElementById('tacWrap'); return !!(w && w.classList.contains('open')); }
+function tacOpen_(id, mode){
+  var src=tacById_(id); if(!src){ toast('전술을 찾을 수 없습니다'); return; }
+  if(mode==='edit' && !isAdmin()) mode='view';
+  TAC={doc:tacClone_(src), planIdx:0, stepIdx:0, mode:mode||'view', playing:false, clock:0, speed:1, loop:true, names:true, sel:'', me:'', undo:[], dirty:false};
+  var who=whoName_();
+  if(who){ TAC.doc.our.forEach(function(t){ if(t.n && t.n===who) TAC.me=t.k; }); }
+  var w=document.getElementById('tacWrap'); w.classList.add('open'); try{ document.body.classList.add('tac-open'); }catch(e){}
+  tacUI_();
+  if(TAC.mode==='view' && TAC.doc.plans[0].steps.length>1) setTimeout(function(){ if(TAC && !TAC.playing && TAC.mode==='view') tacPlayToggle_(); }, 450);
+}
+function tacBack_(){
+  if(!TAC) return;
+  tacStop_(); tacFlush_();
+  var w=document.getElementById('tacWrap'); if(w){ w.classList.remove('open'); w.innerHTML=''; }
+  try{ document.body.classList.remove('tac-open'); }catch(e){}
+  TAC=null;
+  if(state.screen==='form') render();
+}
+function tacSetMode_(m){
+  if(!TAC) return; if(m==='edit' && !requireAdmin()) return;
+  tacStop_(); TAC.mode=m; TAC.sel=''; tacUI_();
+}
+function tacPlan_(){ return TAC.doc.plans[TAC.planIdx]; }
+function tacStep_(){ var p=tacPlan_(); return p.steps[Math.min(TAC.stepIdx,p.steps.length-1)]; }
+function tacSnap_(){ if(!TAC) return; TAC.undo.push(JSON.stringify(TAC.doc)); if(TAC.undo.length>40) TAC.undo.shift(); var b=document.getElementById('tacUndo'); if(b) b.disabled=false; }
+function tacUndo_(){
+  if(!TAC || !TAC.undo.length) return;
+  tacStop_(); TAC.doc=JSON.parse(TAC.undo.pop()); TAC.sel='';
+  TAC.planIdx=Math.min(TAC.planIdx, TAC.doc.plans.length-1); TAC.stepIdx=Math.min(TAC.stepIdx, tacPlan_().steps.length-1);
+  tacUI_(); tacTouch_();
+}
+function tacTouch_(){
+  if(!TAC) return;
+  TAC.doc.updatedAt=new Date().toISOString(); TAC.dirty=true;
+  var s=document.getElementById('tacSub'); if(s) s.textContent=tacCatLabel_(TAC.doc.cat)+' · 저장 중…';
+  clearTimeout(TAC.saveT); TAC.saveT=setTimeout(tacFlush_, 900);
+}
+function tacFlush_(){
+  if(!TAC || !TAC.dirty) return Promise.resolve();
+  clearTimeout(TAC.saveT); TAC.dirty=false;
+  var id=TAC.doc.id;
+  return tacSaveDoc_(tacClone_(TAC.doc)).then(function(){ var s=document.getElementById('tacSub'); if(s && TAC && TAC.doc.id===id && !TAC.dirty) s.textContent=tacCatLabel_(TAC.doc.cat)+' · 저장됨'; })
+    .catch(function(){ if(TAC && TAC.doc.id===id){ TAC.dirty=true; var s=document.getElementById('tacSub'); if(s) s.textContent='저장 실패 · 네트워크 확인'; } });
+}
+function tacTip_(msg){
+  var t=document.getElementById('tacTip'); if(!t) return;
+  t.textContent=msg; t.classList.add('show'); clearTimeout(tacTip_.t); tacTip_.t=setTimeout(function(){ t.classList.remove('show'); }, 3200);
+}
+
+/* ---------- 화면 ---------- */
+var TAC_SVG={
+  back:'<svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>',
+  undo:'<svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/></svg>',
+  more:'<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg>',
+  play:'<svg viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5z"/></svg>',
+  pause:'<svg viewBox="0 0 24 24"><rect x="6" y="5" width="4.2" height="14" rx="1"/><rect x="13.8" y="5" width="4.2" height="14" rx="1"/></svg>',
+  prev:'<svg viewBox="0 0 24 24"><path d="M14 6l-6 6 6 6"/></svg>',
+  next:'<svg viewBox="0 0 24 24"><path d="M10 6l6 6-6 6"/></svg>'
+};
+function tacUI_(){
+  var w=document.getElementById('tacWrap'); if(!w||!TAC) return;
+  var d=TAC.doc, plan=tacPlan_(), ed=(TAC.mode==='edit'), v=d.view||'full';
+  var meTk=TAC.me?d.our.filter(function(t){ return t.k===TAC.me; })[0]:null;
+  var h='<div class="tac-top">'
+    + '<button class="tac-ib" onclick="tacBack_()" aria-label="닫기">'+TAC_SVG.back+'</button>'
+    + '<div class="tac-ttl" '+(ed?'onclick="tacRename_()"':'')+'><b>'+esc(d.title||'전술')+'</b><span id="tacSub">'+tacCatLabel_(d.cat)+(ed?' · 저장됨':(d.by?' · '+esc(d.by):''))+'</span></div>'
+    + (ed?'<button class="tac-ib" id="tacUndo" onclick="tacUndo_()" aria-label="되돌리기" '+(TAC.undo.length?'':'disabled')+'>'+TAC_SVG.undo+'</button>'
+         :(isAdmin()?'<button class="tac-tb" onclick="tacSetMode_(\'edit\')">편집</button>':''))
+    + '<button class="tac-tb gold" onclick="tacShareSheet_()">공유</button>'
+    + (ed?'<button class="tac-ib" onclick="tacMenu_()" aria-label="더보기">'+TAC_SVG.more+'</button>':'')
+    + '</div>';
+  h+='<div class="tac-row"><div class="tac-chips">'
+    + d.plans.map(function(p,i){ return '<button class="tac-chip '+(i===TAC.planIdx?'on':'')+'" onclick="tacPlanGo_('+i+')">'+esc(p.name)+'</button>'; }).join('')
+    + (ed && d.plans.length<4?'<button class="tac-chip dash" onclick="tacPlanAdd_()">＋ 대응안</button>':'')
+    + '</div>'
+    + (ed?'<button class="tac-chip opp" onclick="tacOppSheet_()"><i>상대</i>'+esc(d.oppForm)+' · '+(plan.auto?tacStyleLabel_(plan.style):'직접 배치')+'</button>'
+         :'<button class="tac-chip opp" onclick="tacMeSheet_()"><i>내 위치</i>'+(meTk?esc((meTk.num!==''&&meTk.num!=null?meTk.num+' ':'')+(meTk.n||meTk.pos)):'선택')+'</button>')
+    + '</div>';
+  h+='<div class="tac-stage" id="tacStage"><canvas id="tacCv"></canvas><div class="tac-tip" id="tacTip"></div></div>';
+  h+='<div class="tac-cap" id="tacCap"></div><div class="tac-steps" id="tacSteps"></div>';
+  h+='<div class="tac-tools"><div class="tac-vw">'
+    + [['full','전체'],['att','공격'],['def','수비']].map(function(x){ return '<button class="'+(v===x[0]?'on':'')+'" onclick="tacView_(\''+x[0]+'\')">'+x[1]+'</button>'; }).join('')+'</div><span class="sp"></span>'
+    + (v!=='full'?'<button class="tac-chip '+(d.zoom?'on':'')+'" onclick="tacZoom_()">확대</button>':'')
+    + '<button class="tac-chip '+((d.focus&&d.focus.keys&&d.focus.keys.length)?'on':'')+'" onclick="tacFocusSheet_()">부분</button>'
+    + '<button class="tac-chip '+(TAC.names?'on':'')+'" onclick="tacNames_()">이름</button>'
+    + (ed?'':'<button class="tac-chip" onclick="tacSpeed_()">'+TAC.speed+'x</button>')
+    + '</div>';
+  w.innerHTML=h;
+  tacCapUI_(); tacStepsUI_(); tacFit_(); tacBind_();
+}
+function tacCapUI_(){
+  var el=document.getElementById('tacCap'); if(!el||!TAC) return;
+  var d=TAC.doc, plan=tacPlan_(), st=tacStep_(), ed=(TAC.mode==='edit'), n=plan.steps.length;
+  if(ed && TAC.sel && !TAC.playing){
+    var k=TAC.sel, h='';
+    if(k==='ball'){ h='<b>⚽ 공 — 끌어서 받는 선수 위에 놓으세요</b>'; }
+    else {
+      var opp=tacIsOpp_(k), tk=(opp?d.opp:d.our).filter(function(t){ return t.k===k; })[0]||{};
+      h='<b>'+(opp?'상대 ':'')+esc(String(tk.num!==''&&tk.num!=null?tk.num:'')+' '+(tk.n||tk.pos||''))+'</b>'
+        + (st.own===k?'':'<button onclick="tacGiveBall_(\''+k+'\')">⚽ 공 주기</button>')
+        + (opp?((st.lock&&st.lock[k])?'<button onclick="tacUnlock_(\''+k+'\')">자동 위치로</button>':''):'<button onclick="tacSwapSheet_(\''+k+'\')">선수 변경</button>');
+    }
+    el.innerHTML='<div class="tac-sel">'+h+'</div>';
+    return;
+  }
+  if(ed && !TAC.playing){
+    el.innerHTML='<span class="cap-n">'+(TAC.stepIdx+1)+'/'+n+'</span><input id="tacNote" type="text" maxlength="60" autocomplete="off" placeholder="이 장면 설명 (예: 6번이 내려와 받는다)" value="'+esc(st.note||'')+'" oninput="tacNote_(this.value)" onfocus="tacNoteFocus_()">';
+  } else {
+    el.innerHTML='<span class="cap-n">'+(TAC.stepIdx+1)+'/'+n+'</span><div class="cap-t '+(st.note?'':'dim')+'">'+(st.note?esc(st.note):(TAC.stepIdx===0?'시작 배치':'설명 없음'))+'</div>';
+  }
+}
+function tacStepsUI_(){
+  var el=document.getElementById('tacSteps'); if(!el||!TAC) return;
+  var plan=tacPlan_(), ed=(TAC.mode==='edit'), n=plan.steps.length, h='';
+  if(ed){
+    h='<div class="tac-strip" id="tacStrip">'+plan.steps.map(function(s,i){ return '<button class="tac-st '+(i===TAC.stepIdx?'on':'')+'" onclick="tacStepGo_('+i+')">'+(i+1)+'</button>'; }).join('')
+      + (n<12?'<button class="tac-st add" onclick="tacStepAdd_()">＋ 장면</button>':'')+'</div>'
+      + '<button class="tac-play" id="tacPlayB" onclick="tacPlayToggle_()">'+(TAC.playing?TAC_SVG.pause+'멈춤':TAC_SVG.play+'재생')+'</button>';
+  } else {
+    h='<button class="tac-ib" onclick="tacStepRel_(-1)" aria-label="이전">'+TAC_SVG.prev+'</button>'
+      + '<button class="tac-play" id="tacPlayB" onclick="tacPlayToggle_()">'+(TAC.playing?TAC_SVG.pause:TAC_SVG.play)+'</button>'
+      + '<button class="tac-ib" onclick="tacStepRel_(1)" aria-label="다음">'+TAC_SVG.next+'</button>'
+      + '<div class="tac-strip" id="tacStrip" style="justify-content:center;">'+plan.steps.map(function(s,i){ return '<button class="tac-dot '+(i<=TAC.stepIdx?'on':'')+'" onclick="tacStepGo_('+i+')" aria-label="'+(i+1)+'단계"></button>'; }).join('')+'</div>';
+  }
+  el.innerHTML=h;
+  var on=el.querySelector('.tac-st.on'), sp=document.getElementById('tacStrip');
+  if(on && sp){ var l=on.offsetLeft-sp.offsetLeft; if(l<sp.scrollLeft || l+on.offsetWidth>sp.scrollLeft+sp.clientWidth) sp.scrollLeft=Math.max(0,l-60); }
+}
+function tacFit_(){
+  var st=document.getElementById('tacStage'), cv=document.getElementById('tacCv'); if(!st||!cv||!TAC) return;
+  var a=tacAspect_(TAC.doc.view||'full', TAC.doc.zoom), aw=st.clientWidth-16, ah=st.clientHeight-6;
+  var cw=Math.max(140, Math.floor(Math.min(aw, ah/a, 780))), ch=Math.round(cw*a), dpr=Math.min(3, window.devicePixelRatio||1);
+  cv.style.width=cw+'px'; cv.style.height=ch+'px'; cv.width=Math.round(cw*dpr); cv.height=Math.round(ch*dpr);
+  TAC.cv=cv; TAC.ctx=cv.getContext('2d'); TAC.dpr=dpr; TAC.G=tacGeomDoc_(TAC.doc, tacPlan_(), cw, ch);
+  tacDrawNow_();
+}
+function tacDrawNow_(){
+  if(!TAC || !TAC.ctx) return;
+  var plan=tacPlan_(), steps=plan.steps, sc;
+  if(TAC.playing){ var at=tacAt_(steps.length, TAC.clock); sc={A:(at.a>=0?steps[at.a]:null), B:steps[at.b], p:at.p}; }
+  else { var i=Math.min(TAC.stepIdx, steps.length-1); sc={A:(i>0?steps[i-1]:null), B:steps[i], p:1}; }
+  var ctx=TAC.ctx; ctx.setTransform(TAC.dpr,0,0,TAC.dpr,0,0);
+  tacScene_(ctx, TAC.G, TAC.doc, sc, {names:TAC.names, sel:(TAC.mode==='edit'&&!TAC.playing)?(TAC.hot||TAC.sel):'', me:(TAC.mode==='view'?TAC.me:''), edit:(TAC.mode==='edit'&&plan.auto), t:TAC.clock});
+}
+window.addEventListener('resize', function(){ if(TAC && tacIsOpen_()) setTimeout(tacFit_, 60); });
+
+/* ---------- 재생 ---------- */
+var TAC_T={hold0:0.9, move:1.6, hold:0.9, end:1.6};
+function tacTotal_(n){ return n<=1 ? TAC_T.end : TAC_T.hold0+(n-1)*(TAC_T.move+TAC_T.hold)+(TAC_T.end-TAC_T.hold); }
+function tacAt_(n, c){
+  if(n<=1) return {a:-1,b:0,p:1};
+  if(c<TAC_T.hold0) return {a:-1,b:0,p:1};
+  c-=TAC_T.hold0;
+  var seg=Math.floor(c/(TAC_T.move+TAC_T.hold));
+  if(seg>=n-1) return {a:n-2,b:n-1,p:1};
+  return {a:seg, b:seg+1, p:Math.min(1,(c-seg*(TAC_T.move+TAC_T.hold))/TAC_T.move)};
+}
+function tacPlayToggle_(){
+  if(!TAC) return;
+  if(TAC.playing){ tacStop_(); tacSyncStep_(true); return; }
+  var n=tacPlan_().steps.length; if(n<2){ tacTip_(TAC.mode==='edit'?'＋ 장면을 눌러 다음 움직임을 만들면 재생할 수 있어요':'장면이 하나뿐이에요'); return; }
+  TAC.sel=''; TAC.playing=true;
+  /* 보고 있던 장면부터 재생 (마지막 장면이면 처음부터) */
+  TAC.clock=(TAC.stepIdx>=n-1 || TAC.stepIdx<=0) ? 0 : TAC_T.hold0+(TAC.stepIdx-1)*(TAC_T.move+TAC_T.hold)+TAC_T.move;
+  TAC._last=performance.now(); TAC._shown=-1;
+  tacSyncStep_(true);
+  var loop=function(now){
+    if(!TAC || !TAC.playing) return;
+    var dt=Math.min(0.1,(now-TAC._last)/1000); TAC._last=now; TAC.clock+=dt*TAC.speed;
+    var tot=tacTotal_(n);
+    if(TAC.clock>=tot){
+      if(TAC.loop && TAC.mode==='view'){ TAC.clock=0; }
+      else { TAC.playing=false; TAC.stepIdx=n-1; tacSyncStep_(true); tacDrawNow_(); return; }
+    }
+    var at=tacAt_(n, TAC.clock);
+    if(at.b!==TAC._shown){ TAC._shown=at.b; TAC.stepIdx=at.b; tacSyncStep_(false); }
+    tacDrawNow_();
+    TAC._raf=requestAnimationFrame(loop);
+  };
+  TAC._raf=requestAnimationFrame(loop);
+}
+function tacStop_(){ if(!TAC) return; TAC.playing=false; try{ cancelAnimationFrame(TAC._raf); }catch(e){} }
+function tacSyncStep_(full){
+  if(full){ tacStepsUI_(); }
+  else {
+    var sp=document.getElementById('tacStrip');
+    if(sp) Array.prototype.forEach.call(sp.children, function(b,i){ if(b.classList.contains('tac-dot')) b.classList.toggle('on', i<=TAC.stepIdx); else if(!b.classList.contains('add')) b.classList.toggle('on', i===TAC.stepIdx); });
+  }
+  tacCapUI_();
+}
+function tacStepGo_(i){
+  if(!TAC) return;
+  var was=TAC.playing; tacStop_();
+  if(!was && TAC.mode==='edit' && i===TAC.stepIdx){ tacStepMenu_(); return; }
+  TAC.stepIdx=i; TAC.sel=''; tacSyncStep_(true); tacDrawNow_();
+}
+function tacStepRel_(dir){ if(!TAC) return; var n=tacPlan_().steps.length; tacStop_(); TAC.stepIdx=tacClamp_(TAC.stepIdx+dir,0,n-1); tacSyncStep_(true); tacDrawNow_(); }
+function tacSpeed_(){ if(!TAC) return; TAC.speed=(TAC.speed===1?0.5:(TAC.speed===0.5?1.5:1)); tacUI_(); }
+function tacNames_(){ if(!TAC) return; TAC.names=!TAC.names; tacUI_(); }
+function tacView_(v){
+  if(!TAC) return;
+  if(TAC.mode==='edit'){ if(TAC.doc.view!==v){ tacSnap_(); TAC.doc.view=v; tacTouch_(); } } else TAC.doc.view=v;
+  tacUI_();
+}
+/* 확대: 박스 근처를 1.6배로 (세트피스용). 빈 곳을 좌우로 끌면 보이는 범위가 움직인다 */
+function tacZoom_(){
+  if(!TAC) return;
+  if(TAC.mode==='edit'){ tacSnap_(); TAC.doc.zoom=!TAC.doc.zoom; TAC.doc.cx=null; tacTouch_(); } else { TAC.doc.zoom=!TAC.doc.zoom; }
+  tacUI_();
+  if(TAC.doc.zoom) tacTip_('빈 곳을 좌우로 끌면 보이는 범위가 움직여요');
+}
+
+/* ---------- 편집: 장면 · 대응안 ---------- */
+function tacNote_(v){ if(!TAC) return; if(!TAC._noteSnap){ tacSnap_(); TAC._noteSnap=1; } tacStep_().note=String(v||'').slice(0,60); tacTouch_(); }
+function tacNoteFocus_(){ if(TAC) TAC._noteSnap=0; }
+function tacStepAdd_(){
+  if(!TAC || TAC.mode!=='edit') return;
+  tacStop_(); tacSnap_();
+  var plan=tacPlan_(), cp=tacClone_(tacStep_()); cp.note='';
+  plan.steps.splice(TAC.stepIdx+1, 0, cp); TAC.stepIdx++; TAC.sel='';
+  tacUI_(); tacTouch_();
+  tacTip_('선수와 공을 끌어 다음 움직임을 만드세요');
+}
+function tacStepMenu_(){
+  var n=tacPlan_().steps.length, i=TAC.stepIdx;
+  showSheet('<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>장면 '+(i+1)+'</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   (i>0?'<button class="btn-ghost" style="margin-top:0;" onclick="tacStepMove_(-1)">앞 장면과 순서 바꾸기</button>':'')
+   +   (i<n-1?'<button class="btn-ghost" onclick="tacStepMove_(1)">뒤 장면과 순서 바꾸기</button>':'')
+   +   (n>1?'<button class="btn-ghost btn-danger" onclick="tacStepDel_()">이 장면 삭제</button>':'<p class="hint" style="margin-top:0;">장면이 하나뿐이라 삭제할 수 없어요.</p>')
+   + '</div>');
+}
+function tacStepMove_(dir){
+  var plan=tacPlan_(), i=TAC.stepIdx, j=i+dir; if(j<0||j>=plan.steps.length) return;
+  tacSnap_(); var t=plan.steps[i]; plan.steps[i]=plan.steps[j]; plan.steps[j]=t; TAC.stepIdx=j;
+  closeSheet(); tacUI_(); tacTouch_();
+}
+function tacStepDel_(){
+  var plan=tacPlan_(); if(plan.steps.length<2) return;
+  tacSnap_(); plan.steps.splice(TAC.stepIdx,1); TAC.stepIdx=Math.max(0,TAC.stepIdx-1);
+  closeSheet(); tacUI_(); tacTouch_();
+}
+function tacPlanGo_(i){
+  if(!TAC) return;
+  var was=TAC.playing; tacStop_();
+  if(TAC.mode==='edit' && i===TAC.planIdx && !was){ tacPlanMenu_(); return; }
+  TAC.planIdx=i; TAC.stepIdx=0; TAC.sel=''; TAC.clock=0; tacUI_();
+  if(was || TAC.mode==='view') setTimeout(function(){ if(TAC && !TAC.playing && tacPlan_().steps.length>1) tacPlayToggle_(); }, 250);
+}
+function tacPlanAdd_(){
+  if(!TAC || TAC.mode!=='edit' || TAC.doc.plans.length>=4) return;
+  tacStop_(); tacSnap_();
+  var cp=tacClone_(tacPlan_()); cp.id=uid_('pl'); cp.name='ABCD'.charAt(TAC.doc.plans.length)+'안';
+  TAC.doc.plans.push(cp); TAC.planIdx=TAC.doc.plans.length-1; TAC.stepIdx=0; TAC.sel='';
+  tacUI_(); tacTouch_();
+  tacTip_('지금 안을 복사했어요 — 같은 상황을 다르게 풀어 보세요');
+}
+function tacPlanMenu_(){
+  var p=tacPlan_();
+  showSheet('<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>대응안</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<div class="field"><label>이름</label><input id="tacPlanNm" type="text" maxlength="14" value="'+esc(p.name)+'" placeholder="예: A안 · 짧게"></div>'
+   +   '<button class="btn-primary" onclick="tacPlanRename_()">저장</button>'
+   +   (TAC.doc.plans.length>1?'<button class="btn-ghost btn-danger" onclick="tacPlanDel_()">이 대응안 삭제</button>':'')
+   + '</div>');
+}
+function tacPlanRename_(){ var v=(document.getElementById('tacPlanNm')||{}).value||''; v=v.trim(); if(!v){ toast('이름을 입력하세요'); return; } tacSnap_(); tacPlan_().name=v.slice(0,14); closeSheet(); tacUI_(); tacTouch_(); }
+function tacPlanDel_(){
+  if(TAC.doc.plans.length<2) return;
+  tacSnap_(); TAC.doc.plans.splice(TAC.planIdx,1); TAC.planIdx=Math.max(0,TAC.planIdx-1); TAC.stepIdx=0;
+  closeSheet(); tacUI_(); tacTouch_();
+}
+
+/* ---------- 편집: 끌어서 배치 ---------- */
+function tacBind_(){
+  var cv=document.getElementById('tacCv'); if(!cv) return;
+  function pt(ev){ var r=cv.getBoundingClientRect(); return [ev.clientX-r.left, ev.clientY-r.top]; }
+  function hit(px,py){
+    var G=TAC.G, st=tacStep_(), best='', bd=1e9, d;
+    var bp=tacBallXY_(st); d=Math.hypot(px-G.X(bp[0]), py-G.Y(bp[1])); if(d<Math.max(17,G.r*1.15)){ best='ball'; bd=d-2; }
+    TAC.doc.our.concat(TAC.doc.opp).forEach(function(t){
+      var q=st.pos[t.k]; if(!q) return;
+      var f=TAC.doc.focus; if(f&&f.keys&&f.keys.length){ if(tacIsOpp_(t.k)){ if(f.opp===false) return; } else if(f.hide && f.keys.indexOf(t.k)<0) return; }
+      d=Math.hypot(px-G.X(q[0]), py-G.Y(q[1])); if(d<Math.max(24,G.r*1.5) && d<bd){ bd=d; best=t.k; }
+    });
+    return best;
+  }
+  cv.onpointerdown=function(ev){
+    if(!TAC || TAC.playing) return;
+    var p=pt(ev), k=hit(p[0],p[1]);
+    var pan=(TAC.G.zoom && (!k || TAC.mode!=='edit'));
+    if(TAC.mode!=='edit' && !pan){ if(k && k!=='ball' && !tacIsOpp_(k)){ TAC.me=(TAC.me===k?'':k); tacUI_(); } return; }
+    var ae=document.activeElement; if(ae && ae.id==='tacNote') ae.blur();
+    TAC.drag={k:(pan&&TAC.mode!=='edit')?'':k, tapK:k, pan:pan, sx:p[0], sy:p[1], cx0:(TAC.G.x0+TAC.G.x1)/2, moved:false};
+    try{ cv.setPointerCapture(ev.pointerId); }catch(e){}
+    ev.preventDefault();
+  };
+  cv.onpointermove=function(ev){
+    if(!TAC || !TAC.drag) return;
+    var D=TAC.drag, p=pt(ev), G=TAC.G;
+    if(!D.k){
+      if(!D.pan) return;
+      if(!D.moved){ if(Math.abs(p[0]-D.sx)<6) return; D.moved=true; if(TAC.mode==='edit') tacSnap_(); }
+      TAC.doc.cx=tacR3_(tacClamp_(D.cx0-(p[0]-D.sx)/G.sx, 0.31, 0.69));
+      TAC.G=tacGeomDoc_(TAC.doc, tacPlan_(), G.W, G.H); tacDrawNow_(); ev.preventDefault(); return;
+    }
+    if(!D.moved){ if(Math.hypot(p[0]-D.sx,p[1]-D.sy)<5) return; D.moved=true; tacSnap_(); TAC.sel=''; }
+    var q=G.inv(p[0],p[1]), st=tacStep_(), plan=tacPlan_();
+    q=[tacR3_(tacClamp_(q[0],Math.max(0.015,G.x0+0.01),Math.min(0.985,G.x1-0.01))), tacR3_(tacClamp_(q[1],Math.max(0.012,G.y0+0.008),Math.min(0.988,G.y1-0.008)))];
+    if(D.k==='ball'){
+      st.own=''; st.ball=q; TAC.hot='';
+      var bd=0.06; TAC.doc.our.concat(TAC.doc.opp).forEach(function(t){ var dd=st.pos[t.k]?tacDist_(st.pos[t.k],q):9; if(dd<bd){ bd=dd; TAC.hot=t.k; } });
+    } else {
+      st.pos[D.k]=q;
+      if(tacIsOpp_(D.k) && plan.auto){ st.lock=st.lock||{}; st.lock[D.k]=1; }
+    }
+    if(plan.auto && (D.k==='ball' || !tacIsOpp_(D.k) || D.k===st.own)) tacOppApply_(TAC.doc, plan, st);
+    tacDrawNow_();
+    ev.preventDefault();
+  };
+  cv.onpointerup=cv.onpointercancel=function(ev){
+    if(!TAC || !TAC.drag) return;
+    var D=TAC.drag; TAC.drag=null;
+    try{ cv.releasePointerCapture(ev.pointerId); }catch(e){}
+    var st=tacStep_(), plan=tacPlan_();
+    if(!D.k){
+      if(D.moved){ if(TAC.mode==='edit') tacTouch_(); return; }
+      if(TAC.mode!=='edit'){ var tk=D.tapK; if(tk && tk!=='ball' && !tacIsOpp_(tk)){ TAC.me=(TAC.me===tk?'':tk); tacUI_(); } return; }
+      TAC.sel=''; tacCapUI_(); tacDrawNow_(); return;
+    }
+    if(D.moved){
+      if(D.k==='ball'){
+        if(TAC.hot){ st.own=TAC.hot; st.ball=tacBallXY_(st).map(tacR3_); }
+        TAC.hot='';
+        if(plan.auto) tacOppApply_(TAC.doc, plan, st);
+      } else if(st.own===D.k){ st.ball=tacBallXY_(st).map(tacR3_); }
+      tacTouch_(); tacCapUI_(); tacDrawNow_();
+    } else {
+      TAC.sel=(D.k && TAC.sel!==D.k)?D.k:''; tacCapUI_(); tacDrawNow_();
+    }
+  };
+}
+function tacGiveBall_(k){
+  if(!TAC) return; var st=tacStep_(), plan=tacPlan_();
+  tacSnap_(); st.own=k; st.ball=tacBallXY_(st).map(tacR3_); TAC.sel='';
+  if(plan.auto) tacOppApply_(TAC.doc, plan, st);
+  tacCapUI_(); tacDrawNow_(); tacTouch_();
+}
+function tacUnlock_(k){
+  if(!TAC) return; var st=tacStep_(), plan=tacPlan_();
+  tacSnap_(); if(st.lock) delete st.lock[k]; TAC.sel='';
+  tacOppApply_(TAC.doc, plan, st); tacCapUI_(); tacDrawNow_(); tacTouch_();
+}
+/* ---------- 상대 설정 ---------- */
+function tacOppSheet_(){
+  if(!TAC) return;
+  var d=TAC.doc, plan=tacPlan_();
+  showSheet('<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>상대 팀</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<div class="eyebrow" style="margin-top:0;">포메이션</div>'
+   +   '<div class="tac-pick" style="margin-bottom:16px;">'+Object.keys(TAC_FORMS).map(function(f){ return '<button class="'+(d.oppForm===f?'on':'')+'" onclick="tacOppForm_(\''+f+'\')">'+f+'</button>'; }).join('')+'</div>'
+   +   '<div class="eyebrow">움직임 <span style="font-weight:600;color:var(--steel-soft);">'+esc(plan.name)+'</span></div>'
+   +   '<div class="qtabs" style="margin-bottom:10px;"><button class="qtab '+(plan.auto?'on':'')+'" onclick="tacOppAuto_(true)">자동 반응</button><button class="qtab '+(plan.auto?'':'on')+'" onclick="tacOppAuto_(false)">직접 배치</button></div>'
+   +   (plan.auto
+        ? TAC_STYLES.map(function(s){ return '<button class="tac-tpl" style="'+(plan.style===s[0]?'border-color:var(--red);background:var(--red-tint);':'')+'" onclick="tacOppStyle_(\''+s[0]+'\')"><div style="min-width:0;"><b>'+s[1]+'</b><span>'+s[2]+'</span></div>'+(plan.style===s[0]?'<em>선택됨</em>':'')+'</button>'; }).join('')
+          + '<p class="hint" style="margin:8px 0 0;text-align:left;padding:0;">공과 우리 선수를 움직이면 상대가 규칙대로 따라 움직여요. 상대를 직접 끌면 그 선수는 그 장면에서 고정(노란 점)됩니다.</p>'
+        : '<p class="hint" style="margin:4px 0 0;text-align:left;padding:0;">상대가 자동으로 움직이지 않아요. 장면마다 직접 끌어서 배치하세요. (세트피스에 알맞아요)</p>')
+   +   '<button class="btn-ghost" style="margin-top:14px;" onclick="tacOppReset_(false)">이 장면 상대 다시 배치</button>'
+   +   '<button class="btn-ghost" onclick="tacOppReset_(true)">모든 장면 상대 다시 배치</button>'
+   + '</div>');
+}
+function tacOppAfter_(){ tacUI_(); tacTouch_(); tacOppSheet_(); }
+function tacOppForm_(f){
+  if(!TAC || TAC.doc.oppForm===f) return;
+  tacSnap_(); var d=TAC.doc; d.oppForm=f; d.opp=tacOppToks_(f);
+  d.plans.forEach(function(p){ p.steps.forEach(function(st){ st.lock={}; var own=st.own; d.opp.forEach(function(t){ if(t.k!==own) delete st.pos[t.k]; }); tacOppApply_(d,p,st); }); });
+  tacOppAfter_(); toast('상대를 '+f+' 로 다시 배치했어요');
+}
+function tacOppStyle_(s){
+  if(!TAC) return; var plan=tacPlan_();
+  tacSnap_(); plan.style=s; plan.auto=true;
+  plan.steps.forEach(function(st){ tacOppApply_(TAC.doc, plan, st); });
+  tacOppAfter_();
+}
+function tacOppAuto_(on){
+  if(!TAC) return; var plan=tacPlan_(); if(plan.auto===on) return;
+  tacSnap_(); plan.auto=on;
+  if(on) plan.steps.forEach(function(st){ tacOppApply_(TAC.doc, plan, st); });
+  tacOppAfter_();
+}
+function tacOppReset_(all){
+  if(!TAC) return; var plan=tacPlan_(); tacSnap_();
+  (all?plan.steps:[tacStep_()]).forEach(function(st){ st.lock={}; var own=st.own; TAC.doc.opp.forEach(function(t){ if(t.k!==own) delete st.pos[t.k]; }); tacOppApply_(TAC.doc, plan, st); });
+  closeSheet(); tacUI_(); tacTouch_(); toast(all?'모든 장면의 상대를 다시 배치했어요':'이 장면의 상대를 다시 배치했어요');
+}
+
+/* ---------- 부분 보기 (일부 선수만) ---------- */
+function tacFocusSheet_(){
+  if(!TAC) return;
+  var d=TAC.doc, f=d.focus||{keys:[],opp:true,hide:false}, on={};
+  (f.keys||[]).forEach(function(k){ on[k]=1; });
+  showSheet('<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>부분 보기</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<p style="font-size:12.5px;color:var(--steel);margin:0 0 10px;line-height:1.55;">수비 라인 · 측면 3명처럼 <b>일부 선수의 움직임만</b> 보여 줄 때 써요. 반코트(공격 · 수비) 보기와 함께 쓰면 크게 보여요.</p>'
+   +   '<div class="chips">'+[['all','전체'],['DF','수비 라인'],['MF','미드필드'],['FW','공격'],['L','왼쪽'],['R','오른쪽']].map(function(g){ return '<button class="chip" onclick="tacFocusPreset_(\''+g[0]+'\')">'+g[1]+'</button>'; }).join('')+'</div>'
+   +   '<div class="tac-pick">'+d.our.map(function(t){ return '<button class="'+(on[t.k]?'on':'')+'" onclick="tacFocusTog_(\''+t.k+'\')"><i>'+esc(String(t.num!==''&&t.num!=null?t.num:t.pos))+'</i>'+esc(t.n||t.pos)+'</button>'; }).join('')+'</div>'
+   +   '<div class="qtabs" style="margin:14px 0 8px;"><button class="qtab '+(f.hide?'':'on')+'" onclick="tacFocusOpt_(\'hide\',false)">나머지 흐리게</button><button class="qtab '+(f.hide?'on':'')+'" onclick="tacFocusOpt_(\'hide\',true)">나머지 숨기기</button></div>'
+   +   '<div class="qtabs" style="margin-bottom:0;"><button class="qtab '+(f.opp!==false?'on':'')+'" onclick="tacFocusOpt_(\'opp\',true)">상대 표시</button><button class="qtab '+(f.opp===false?'on':'')+'" onclick="tacFocusOpt_(\'opp\',false)">상대 숨기기</button></div>'
+   +   '<button class="btn-primary" style="margin-top:14px;" onclick="closeSheet()">확인</button>'
+   + '</div>');
+}
+function tacFocusSet_(f){
+  if(TAC.mode==='edit') tacSnap_();
+  TAC.doc.focus=(f && f.keys && f.keys.length)?f:null;
+  if(TAC.mode==='edit') tacTouch_();
+  tacUI_(); tacFocusSheet_();
+}
+function tacFocusPreset_(g){
+  var d=TAC.doc, f=d.focus||{keys:[],opp:true,hide:false}, st0=d.plans[0].steps[0];
+  if(g==='all'){ tacFocusSet_(null); return; }
+  var keys=d.our.filter(function(t){
+    var p=st0.pos[t.k]||[.5,.5];
+    if(g==='L') return p[0]<0.42; if(g==='R') return p[0]>0.58;
+    var grp=POS_GRP[t.pos]||'MF'; return grp===g || (g==='DF' && grp==='GK');
+  }).map(function(t){ return t.k; });
+  tacFocusSet_({keys:keys, opp:f.opp!==false, hide:!!f.hide});
+}
+function tacFocusTog_(k){
+  var f=TAC.doc.focus?tacClone_(TAC.doc.focus):{keys:[],opp:true,hide:false}, i=f.keys.indexOf(k);
+  if(i>=0) f.keys.splice(i,1); else f.keys.push(k);
+  tacFocusSet_(f);
+}
+function tacFocusOpt_(key, val){
+  var f=TAC.doc.focus?tacClone_(TAC.doc.focus):null;
+  if(!f){ toast('먼저 보여 줄 선수를 고르세요'); return; }
+  f[key]=val; tacFocusSet_(f);
+}
+
+/* ---------- 내 위치 강조 (팀원 보기) ---------- */
+function tacMeSheet_(){
+  if(!TAC) return;
+  showSheet('<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>내 위치</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<p style="font-size:12.5px;color:var(--steel);margin:0 0 10px;">고른 선수가 노란 테두리로 강조돼요. 경기장에서 선수를 눌러도 됩니다.</p>'
+   +   '<div class="tac-pick">'+TAC.doc.our.map(function(t){ return '<button class="'+(TAC.me===t.k?'on':'')+'" onclick="tacMeSet_(\''+t.k+'\')"><i>'+esc(String(t.num!==''&&t.num!=null?t.num:t.pos))+'</i>'+esc(t.n||t.pos)+'</button>'; }).join('')+'</div>'
+   +   '<button class="btn-ghost" style="margin-top:14px;" onclick="tacMeSet_(\'\')">강조 끄기</button>'
+   + '</div>');
+}
+function tacMeSet_(k){ if(!TAC) return; TAC.me=k; closeSheet(); tacUI_(); }
+
+/* ---------- 이름 · 선수 · 메뉴 ---------- */
+function tacMenu_(){
+  showSheet('<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>전술 설정</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<button class="btn-ghost" style="margin-top:0;" onclick="tacHelp_()">사용법 보기</button>'
+   +   '<button class="btn-ghost" onclick="tacRename_()">이름 · 분류 바꾸기</button>'
+   +   '<button class="btn-ghost" onclick="tacLoadSquad_()">스쿼드에서 선수 불러오기</button>'
+   +   '<button class="btn-ghost" onclick="tacCopy_()">이 전술 복제</button>'
+   +   '<button class="btn-ghost" onclick="closeSheet();tacSetMode_(\'view\')">재생 화면으로 보기</button>'
+   +   '<button class="btn-ghost btn-danger" onclick="tacDelete_()">전술 삭제</button>'
+   + '</div>');
+}
+function tacHelp_(){
+  try{ localStorage.setItem('kt_tac_help','1'); }catch(e){}
+  var li=function(t,d){ return '<div style="display:flex;gap:11px;margin-bottom:13px;"><b style="flex:0 0 auto;width:26px;height:26px;border-radius:50%;background:var(--red-tint);color:var(--red);display:flex;align-items:center;justify-content:center;font-size:13px;">'+t+'</b><div style="font-size:13.5px;line-height:1.55;color:var(--ink);">'+d+'</div></div>'; };
+  showSheet('<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>전술 보드 사용법</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   li(1,'<b>선수와 공을 끌어서</b> 배치해요. 공을 선수 위에 놓으면 그 선수가 공을 가져요.')
+   +   li(2,'<b>＋ 장면</b>을 누르면 지금 배치가 복사돼요. 다음 위치로 끌어 옮기면 <b>이동 · 패스 · 드리블 화살표</b>가 자동으로 그려져요.')
+   +   li(3,'<b>상대</b>는 성향(전방 압박 · 내려앉기 등)에 맞춰 스스로 움직여요. 직접 끌면 그 장면에서 고정돼요.')
+   +   li(4,'<b>＋ 대응안</b>으로 같은 상황의 A안 · B안을 만들어 비교해요.')
+   +   li(5,'<b>공격 · 수비 · 확대 · 부분</b>으로 일부 지역 · 일부 선수만 크게 보여 줄 수 있어요.')
+   +   li(6,'<b>공유</b>에서 재생 링크 · 영상 · 장면별 이미지를 팀에 보내요. 실수하면 ↶ 되돌리기.')
+   +   '<button class="btn-primary" onclick="closeSheet()">시작하기</button>'
+   + '</div>');
+}
+function tacRename_(){
+  if(!TAC || TAC.mode!=='edit') return;
+  var d=TAC.doc; TAC._cat=d.cat||'free';
+  showSheet('<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>이름 · 분류</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<div class="field"><label>전술 이름</label><input id="tacTtl" type="text" maxlength="24" value="'+esc(d.title||'')+'" placeholder="예: 골킥 빌드업"></div>'
+   +   '<div class="field"><label>분류</label><div class="sizes" id="tacCatBox">'+TAC_CATS.map(function(c){ return '<div class="size-opt '+(TAC._cat===c[0]?'sel':'')+'" data-c="'+c[0]+'" onclick="tacCatPick_(\''+c[0]+'\')">'+c[1]+'</div>'; }).join('')+'</div></div>'
+   +   '<button class="btn-primary" onclick="tacRenameGo_()">저장</button>'
+   + '</div>');
+}
+function tacCatPick_(c){ TAC._cat=c; Array.prototype.forEach.call(document.querySelectorAll('#tacCatBox .size-opt'), function(o){ o.classList.toggle('sel', o.getAttribute('data-c')===c); }); }
+function tacRenameGo_(){
+  var v=((document.getElementById('tacTtl')||{}).value||'').trim(); if(!v){ toast('이름을 입력하세요'); return; }
+  tacSnap_(); TAC.doc.title=v.slice(0,24); TAC.doc.cat=TAC._cat||'free'; closeSheet(); tacUI_(); tacTouch_();
+}
+function tacLoadSquad_(){
+  if(!TAC) return;
+  if(!(state.squadList||[]).length){ closeSheet(); toast('스쿼드 탭에서 스쿼드를 먼저 만들어 주세요'); return; }
+  openSquadPicker_({title:'선수를 불러올 스쿼드', onPick:function(id){
+    closeSheet();
+    API.run('getSquadDetail', id).then(function(sd){
+      if(!TAC) return;
+      var our=tacOurFromSquad_(sd);
+      if(!our.named){ toast('선수가 7명 이상 배치된 스쿼드를 골라 주세요'); return; }
+      tacSnap_(); var d=TAC.doc, oldT=d.our; d.our=our.toks; tacRelabel_(d, oldT);
+      if(TAC.me && !d.our.some(function(t){ return t.k===TAC.me; })) TAC.me='';
+      if(d.tpl==='free' && d.plans.length===1 && d.plans[0].steps.length===1){
+        var st=d.plans[0].steps[0]; d.our.forEach(function(t){ st.pos[t.k]=[tacR3_(our.homes[t.k][0]), tacR3_(our.homes[t.k][1])]; });
+        if(d.plans[0].auto) tacOppApply_(d, d.plans[0], st);
+        toast('선수와 배치를 불러왔어요');
+      } else toast('선수를 불러왔어요 · 움직임은 그대로예요');
+      tacUI_(); tacTouch_();
+    }).catch(function(){ toast('스쿼드를 불러오지 못했습니다'); });
+  }});
+}
+function tacSwapSheet_(k){
+  if(!TAC) return;
+  var used={}; TAC.doc.our.forEach(function(t){ if(t.pid && t.k!==k) used[t.pid]=1; });
+  var ps=(state.players||[]).filter(function(p){ return isActiveP_(p) && !used[p.id]; }).slice().sort(numSort);
+  showSheet('<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>선수 변경</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<div class="tac-pick">'+ps.map(function(p){ return '<button onclick="tacSwap_(\''+k+'\',\''+p.id+'\')"><i>'+esc(String(numTok(p.num)))+'</i>'+esc(p.name)+'</button>'; }).join('')+'</div>'
+   +   (ps.length?'':'<p class="hint" style="margin-top:0;">바꿀 수 있는 활동 선수가 없습니다.</p>')
+   +   '<button class="btn-ghost" style="margin-top:14px;" onclick="tacSwap_(\''+k+'\',\'\')">이름 없이 번호만 표시</button>'
+   + '</div>');
+}
+function tacSwap_(k, pid){
+  if(!TAC) return; var tk=TAC.doc.our.filter(function(t){ return t.k===k; })[0]; if(!tk) return;
+  tacSnap_(); var oldT=tacClone_(TAC.doc.our);
+  if(pid){ var p=(state.players||[]).filter(function(x){ return x.id===pid; })[0]; if(!p) return; tk.pid=pid; tk.n=p.name; tk.num=(p.num==null?'':p.num); }
+  else { tk.pid=''; tk.n=''; var r=TAC_ROLES.filter(function(x){ return x[0]===k; })[0]; if(tk.num==='' || tk.num==null) tk.num=r?r[4]:''; }
+  tacRelabel_(TAC.doc, oldT);
+  TAC.sel=''; closeSheet(); tacUI_(); tacTouch_();
+}
+function tacCopy_(){
+  if(!TAC) return;
+  tacFlush_();
+  var cp=tacClone_(TAC.doc), now=new Date().toISOString();
+  cp.id=uid_('tc'); cp.title=String(cp.title||'전술').slice(0,20)+' 복사'; cp.createdAt=now; cp.updatedAt=now; cp.by=whoName_()||cp.by||'';
+  cp.plans.forEach(function(p){ p.id=uid_('pl'); });
+  tacSaveDoc_(cp).catch(function(){ toast('저장 실패 · 네트워크 확인'); });
+  closeSheet(); tacOpen_(cp.id,'edit'); toast('복제했어요');
+}
+function tacDelete_(){
+  if(!TAC || !requireAdmin()) return;
+  var id=TAC.doc.id, ttl=TAC.doc.title;
+  closeSheet();
+  appConfirm_('"'+ttl+'" 전술을 삭제할까요?\n공유한 링크도 더 이상 열리지 않아요.', function(){
+    if(TAC){ TAC.dirty=false; clearTimeout(TAC.saveT); }
+    state.tactics=(state.tactics||[]).filter(function(x){ return x.id!==id; });
+    if(window.db && FS.enabled) db.collection('tactics').doc(id).delete().catch(function(){ toast('삭제 실패 · 새로고침'); });
+    try{ logEvent_('del','전술 삭제', ttl); }catch(e){}
+    tacBack_(); toast('삭제했습니다');
+  });
+}
+
+/* ---------- 공유: 링크 · 영상 · 이미지 카드 ---------- */
+function tacUrl_(id){ return location.origin+location.pathname+'#tac='+id; }
+function tacCardUrl_(id){ return location.origin+location.pathname+'?kt_h='+encodeURIComponent('tac='+id); }
+function tacShareText_(d){
+  return '[📋 '+ourTeamName_()+' 전술] '+(d.title||'')+'\n'+d.plans.map(function(p){ return p.name+' · '+p.steps.length+'단계'; }).join(' / ')+'\n\n👇 눌러서 움직임 보기';
+}
+function tacShareSheet_(){
+  if(!TAC) return;
+  tacStop_(); tacSyncStep_(true); tacFlush_();
+  try{ ensureKakaoShare_(function(){}); }catch(e){}
+  var multi=TAC.doc.plans.length>1, pn=esc(tacPlan_().name);
+  showSheet('<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>전술 공유</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<div class="eyebrow" style="margin-top:0;">재생 링크 <span style="font-weight:600;color:var(--steel-soft);">앱에서 재생 · 내 위치 강조</span></div>'
+   +   '<button class="btn-primary" onclick="tacShareKakao_()">카톡방에 링크 공유</button>'
+   +   '<button class="btn-ghost" onclick="tacCopyLink_()">링크 복사</button>'
+   +   '<div class="eyebrow" style="margin-top:18px;">파일로 보내기'+(multi?' <span style="font-weight:600;color:var(--steel-soft);">지금 보는 '+pn+'</span>':'')+'</div>'
+   +   '<button class="btn-ghost" style="margin-top:0;" onclick="tacVideo_()">영상으로 저장</button>'
+   +   '<button class="btn-ghost" onclick="tacCards_()">장면별 이미지 카드</button>'
+   + '</div>');
+}
+function tacShareKakao_(){
+  if(!TAC) return; var d=TAC.doc;
+  try{ logEvent_('share','전술 링크 공유', d.title); }catch(e){}
+  var fallback=function(){
+    var url=tacUrl_(d.id), txt=tacShareText_(d);
+    if(navigator.share){ navigator.share({title:ourTeamName_()+' 전술', text:txt, url:url}).catch(function(e){ if(e && e.name!=='AbortError') tacCopyLink_(); }); return; }
+    tacCopyLink_();
+  };
+  var send=function(){
+    try{
+      var url=tacCardUrl_(d.id), img=location.origin+location.pathname.replace(/[^\/]*$/,'')+'logo.png';
+      Kakao.Share.sendDefault({objectType:'feed',
+        content:{ title:'📋 '+(d.title||'전술'), description:(ourTeamName_()+' 전술 · '+d.plans.map(function(p){ return p.name; }).join(' / ')).slice(0,120), imageUrl:img, imageWidth:512, imageHeight:512, link:{mobileWebUrl:url, webUrl:url} },
+        buttons:[{ title:'▶ 움직임 보기', link:{mobileWebUrl:url, webUrl:url} }]});
+    }catch(e){ fallback(); }
+  };
+  if(kakaoShareReady_()){ send(); return; }
+  toast('카카오톡 여는 중...');
+  ensureKakaoShare_(function(ok){ if(ok) send(); else fallback(); });
+}
+function tacCopyLink_(){
+  if(!TAC) return;
+  var all=tacShareText_(TAC.doc)+'\n'+tacUrl_(TAC.doc.id);
+  var ok=function(){ toast('공유 문구를 복사했어요 · 카톡방에 붙여넣기 하세요'); };
+  if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(all).then(ok).catch(function(){ fallbackCopy_(all); });
+  else fallbackCopy_(all);
+}
+/* 공유 링크(#tac=ID)로 들어온 경우: PIN·이름 확인 후 스쿼드 탭 → 전술 재생 */
+function openPendingTac_(){
+  if(!PENDING_TAC) return;
+  var id=PENDING_TAC; PENDING_TAC='';
+  try{ history.replaceState(history.state, '', location.pathname+location.search); }catch(e){}
+  state.formMode='tac'; go('form');
+  tacFetch_(id).then(function(d){
+    if(!d){ toast('삭제되었거나 찾을 수 없는 전술이에요'); return; }
+    if(!tacById_(id)) state.tactics=(state.tactics||[]).concat([d]);
+    tacOpen_(id,'view');
+  }).catch(function(){ toast('전술을 불러오지 못했습니다'); });
+}
+
+/* 내보내기용 화면 (영상 프레임 · 이미지 카드 공용) — 가로 1080 기준 */
+function tacOutSize_(doc){ var ph=Math.round(1000*tacAspect_(doc.view||'full', doc.zoom)); return {W:1080, H:Math.ceil((186+ph+18+150+18+62)/8)*8, ph:ph}; }
+function tacCompose_(ctx, S, doc, plan, sc, info){
+  var W=S.W, H=S.H, GOLD='#C7A24B';
+  var bg=ctx.createLinearGradient(0,0,0,H); bg.addColorStop(0,'#1B1A21'); bg.addColorStop(0.5,'#121116'); bg.addColorStop(1,'#0B0A0E');
+  ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+  var gl=ctx.createRadialGradient(W*0.5,-80,40,W*0.5,-80,760); gl.addColorStop(0,'rgba(199,162,75,.20)'); gl.addColorStop(1,'rgba(199,162,75,0)');
+  ctx.fillStyle=gl; ctx.fillRect(0,0,W,520);
+  ctx.fillStyle=GOLD; ctx.fillRect(0,0,W,6);
+  /* 헤더 */
+  var tx=40;
+  if(info.emblem){
+    ctx.save(); ctx.beginPath(); ctx.arc(88,96,50,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.fill(); ctx.clip();
+    var em=info.emblem, iw=em.width||1, ih=em.height||1, s=Math.min(88/iw, 88/ih); ctx.drawImage(em, 88-iw*s/2, 96-ih*s/2, iw*s, ih*s); ctx.restore();
+    ctx.beginPath(); ctx.arc(88,96,50,0,Math.PI*2); ctx.lineWidth=3; ctx.strokeStyle=GOLD; ctx.stroke();
+    tx=160;
+  }
+  ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+  ctx.fillStyle=GOLD; ctx.font='600 25px Oswald, sans-serif'; try{ ctx.letterSpacing='4px'; }catch(e){}
+  ctx.fillText(cardEllipsis_(ctx, String(ourTeamName_()).toUpperCase()+'  ·  TACTICS', 560), tx, 76);
+  try{ ctx.letterSpacing='0px'; }catch(e){}
+  ctx.fillStyle='#fff'; ctx.font='800 50px Pretendard, sans-serif';
+  ctx.fillText(cardEllipsis_(ctx, doc.title||'전술', W-tx-290), tx, 134);
+  ctx.textAlign='right';
+  if(doc.plans.length>1 || /안/.test(plan.name)===false){
+    ctx.font='700 26px Pretendard, sans-serif'; var pw=ctx.measureText(plan.name).width+40;
+    rr_(ctx, W-40-pw, 44, pw, 46, 23); ctx.fillStyle='rgba(255,255,255,.10)'; ctx.fill();
+    ctx.fillStyle='#fff'; ctx.textBaseline='middle'; ctx.fillText(plan.name, W-60, 68); ctx.textBaseline='alphabetic';
+  }
+  ctx.fillStyle=GOLD; ctx.font='700 40px Oswald, sans-serif'; try{ ctx.letterSpacing='3px'; }catch(e){}
+  ctx.fillText('STEP '+info.step+' / '+info.total, W-40, 142); try{ ctx.letterSpacing='0px'; }catch(e){}
+  /* 경기장 */
+  ctx.save(); ctx.translate(40,186);
+  ctx.save(); ctx.shadowColor='rgba(0,0,0,.5)'; ctx.shadowBlur=30; ctx.shadowOffsetY=12; rr_(ctx,0,0,1000,S.ph,26); ctx.fillStyle='#1c5737'; ctx.fill(); ctx.restore();
+  rr_(ctx,0,0,1000,S.ph,26); ctx.clip();
+  tacScene_(ctx, tacGeomDoc_(doc, plan, 1000, S.ph), doc, sc, {names:info.names!==false, me:info.me||'', accent:info.accent, t:info.t||0});
+  ctx.restore();
+  /* 설명 */
+  var cy=186+S.ph+18;
+  var note=info.note||(info.step===1?'시작 배치':'');
+  if(note){
+    rr_(ctx,40,cy,1000,150,24); ctx.fillStyle='rgba(255,255,255,.06)'; ctx.fill();
+    ctx.fillStyle=GOLD; ctx.fillRect(40,cy+26,6,98);
+    ctx.textAlign='left'; ctx.textBaseline='middle';
+    ctx.font='700 37px Pretendard, sans-serif'; ctx.fillStyle='#fff';
+    var lines=wrapText_(ctx, note, 920).slice(0,2);
+    lines.forEach(function(ln,i){ ctx.fillText(ln, 76, cy+75+(i-(lines.length-1)/2)*50); });
+  }
+  /* 범례 · 워드마크 */
+  var fy=cy+150+18+26, lx=44;
+  ctx.font='600 22px Pretendard, sans-serif'; ctx.fillStyle='rgba(255,255,255,.62)';
+  [['run','이동'],['pass','패스'],['drib','드리블']].forEach(function(g){
+    tacArrow_(ctx, lx, fy, lx+64, fy, g[0], 1, 1.25, 0, 0); ctx.fillStyle='rgba(255,255,255,.62)'; ctx.textAlign='left'; ctx.textBaseline='middle';
+    ctx.fillText(g[1], lx+78, fy+1); lx+=78+ctx.measureText(g[1]).width+34;
+  });
+  ctx.textAlign='right'; ctx.fillStyle='rgba(199,162,75,.6)'; ctx.font='600 22px Oswald, sans-serif'; try{ ctx.letterSpacing='5px'; }catch(e){}
+  ctx.fillText('TACTICS BOARD', W-40, fy+1); try{ ctx.letterSpacing='0px'; }catch(e){}
+}
+function tacBusy_(msg, pct){
+  var w=document.getElementById('tacWrap'); if(!w) return;
+  var b=document.getElementById('tacBusy');
+  if(msg===null){ if(b) b.parentNode.removeChild(b); return; }
+  if(!b){ b=document.createElement('div'); b.id='tacBusy'; b.className='tac-busy'; b.innerHTML='<div id="tacBusyT"></div><div class="bar"><i id="tacBusyB"></i></div>'; w.appendChild(b); }
+  document.getElementById('tacBusyT').textContent=msg; document.getElementById('tacBusyB').style.width=Math.round((pct||0)*100)+'%';
+}
+function tacFileBase_(){ return 'FCJEMIRO_TACTIC_'+String(TAC.doc.title||'').replace(/[\\\/:*?"<>|\s]+/g,'_').slice(0,20)+(TAC.doc.plans.length>1?'_'+String(tacPlan_().name).replace(/[^0-9A-Za-z가-힣]+/g,''):''); }
+/* 장면별 이미지 카드 */
+function tacCards_(){
+  if(!TAC) return;
+  closeSheet(); tacBusy_('이미지 카드 만드는 중…', 0.05);
+  var d=tacClone_(TAC.doc), plan=d.plans[TAC.planIdx], S=tacOutSize_(d), acc=tacAccent_(), me='', names=TAC.names, base=tacFileBase_();
+  fontsReady_(function(){
+    loadImg_(teamEmblemSrc_()).then(function(em){
+      var cards=[], jobs=[];
+      plan.steps.forEach(function(st,i){
+        var c=document.createElement('canvas'); c.width=S.W; c.height=S.H;
+        tacCompose_(c.getContext('2d'), S, d, plan, {A:(i>0?plan.steps[i-1]:null), B:st, p:1}, {emblem:em, step:i+1, total:plan.steps.length, note:st.note, accent:acc, me:me, names:names});
+        var cd={c:c, name:base+'_'+(i+1)+'.png', label:(i+1)+'/'+plan.steps.length, blob:null}; cards.push(cd);
+        jobs.push(new Promise(function(res){ try{ c.toBlob(function(b){ cd.blob=b; res(); }, 'image/png'); }catch(e){ res(); } }));
+      });
+      Promise.all(jobs).then(function(){ tacBusy_(null); state._tacCards=cards; tacCardsSheet_(); });
+    });
+  });
+}
+function tacCardsSheet_(){
+  var cs=state._tacCards||[];
+  showSheet('<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>장면별 이미지 카드</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<div class="tac-cards">'+cs.map(function(cd,i){ return '<div onclick="tacCardZoom_('+i+')"><img src="'+cd.c.toDataURL('image/jpeg',0.6)+'" alt=""><span>'+cd.label+'</span></div>'; }).join('')+'</div>'
+   +   '<button class="btn-primary" onclick="tacCardsShare_()">'+cs.length+'장 공유 · 저장</button>'
+   +   '<button class="btn-ghost" onclick="tacCardsSave_()">모두 다운로드</button>'
+   +   '<p class="hint" style="margin-top:10px;">카드를 누르면 크게 보고 한 장씩 저장할 수 있어요.</p>'
+   + '</div>');
+}
+function tacCardZoom_(i){
+  var cd=(state._tacCards||[])[i]; if(!cd) return;
+  showCardPreview_(cd.c, cd.name);
+  var x=document.querySelector('#sheet .sheet-head .x'); if(x) x.setAttribute('onclick','tacCardsSheet_()');
+}
+function tacCardsShare_(){
+  var files=(state._tacCards||[]).map(function(cd){ try{ return cd.blob?new File([cd.blob], cd.name, {type:'image/png'}):null; }catch(e){ return null; } }).filter(Boolean);
+  if(!files.length){ toast('카드를 만들지 못했어요'); return; }
+  try{ logEvent_('share','전술 이미지 카드 공유', files.length+'장'); }catch(e){}
+  if(navigator.canShare && navigator.share && navigator.canShare({files:files})){
+    navigator.share({files:files}).catch(function(e){ if(!e || e.name!=='AbortError') tacCardsSave_(); });
+  } else tacCardsSave_();
+}
+function tacCardsSave_(){ (state._tacCards||[]).forEach(function(cd,i){ if(cd.blob) setTimeout(function(){ dlBlob_(cd.blob, cd.name); }, i*350); }); }
+/* 영상 저장: 캔버스를 실시간으로 녹화 (mp4 우선, 안 되면 webm) */
+function tacVideoMime_(){
+  if(!(window.MediaRecorder && MediaRecorder.isTypeSupported)) return '';
+  var c=['video/mp4;codecs=avc1.42E01E','video/mp4','video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];
+  for(var i=0;i<c.length;i++){ try{ if(MediaRecorder.isTypeSupported(c[i])) return c[i]; }catch(e){} }
+  return '';
+}
+function tacVideo_(){
+  if(!TAC) return;
+  var mime=tacVideoMime_(), cvOK=!!(window.HTMLCanvasElement && HTMLCanvasElement.prototype.captureStream);
+  if(!mime || !cvOK){ toast('이 기기에서는 영상 저장이 안 돼요 · 이미지 카드를 이용해 주세요'); return; }
+  var d=tacClone_(TAC.doc), plan=d.plans[TAC.planIdx], n=plan.steps.length;
+  if(n<2){ toast('장면이 2개 이상이어야 영상을 만들 수 있어요'); return; }
+  closeSheet(); tacBusy_('영상 만드는 중… 화면을 켜 두세요', 0);
+  var S=tacOutSize_(d), k=720/1080, acc=tacAccent_(), me='', names=TAC.names, base=tacFileBase_();
+  var c=document.createElement('canvas'); c.width=720; c.height=Math.round(S.H*k/2)*2;
+  var ctx=c.getContext('2d'), tot=tacTotal_(n)+0.5;
+  fontsReady_(function(){
+    loadImg_(teamEmblemSrc_()).then(function(em){
+      var frame=function(clock){
+        var at=tacAt_(n, Math.max(0,clock));
+        ctx.setTransform(k,0,0,k,0,0);
+        tacCompose_(ctx, S, d, plan, {A:(at.a>=0?plan.steps[at.a]:null), B:plan.steps[at.b], p:at.p}, {emblem:em, step:at.b+1, total:n, note:plan.steps[at.b].note, accent:acc, me:me, names:names, t:clock});
+      };
+      frame(0);
+      var rec, chunks=[], stream;
+      try{ stream=c.captureStream(30); rec=new MediaRecorder(stream, {mimeType:mime, videoBitsPerSecond:4500000}); }
+      catch(e){ tacBusy_(null); toast('영상을 만들지 못했어요 · 이미지 카드를 이용해 주세요'); return; }
+      rec.ondataavailable=function(ev){ if(ev.data && ev.data.size) chunks.push(ev.data); };
+      rec.onstop=function(){
+        tacBusy_(null);
+        try{ stream.getTracks().forEach(function(t){ t.stop(); }); }catch(e){}
+        var ext=/mp4/.test(mime)?'mp4':'webm', blob=new Blob(chunks, {type:mime.split(';')[0]});
+        if(!blob.size){ toast('영상을 만들지 못했어요'); return; }
+        state._tacVid={blob:blob, name:base+'.'+ext, url:URL.createObjectURL(blob), ext:ext};
+        try{ logEvent_('share','전술 영상 만들기', d.title); }catch(e){}
+        tacVideoSheet_();
+      };
+      rec.start(250);
+      var t0=performance.now();
+      var tick=function(now){
+        var clock=(now-t0)/1000-0.25;
+        frame(clock); tacBusy_('영상 만드는 중… 화면을 켜 두세요', Math.min(1,(clock+0.25)/tot));
+        if(clock>=tot){ try{ rec.stop(); }catch(e){ tacBusy_(null); } return; }
+        requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    });
+  });
+}
+function tacVideoSheet_(){
+  var v=state._tacVid; if(!v) return;
+  showSheet('<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>전술 영상</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<video src="'+v.url+'" controls loop autoplay muted playsinline style="display:block;margin:0 auto;max-width:100%;max-height:58vh;border-radius:14px;border:1px solid var(--line-strong);background:#000;"></video>'
+   +   '<button class="btn-primary" style="margin-top:14px;" onclick="tacVideoShare_()">공유 · 저장</button>'
+   +   '<button class="btn-ghost" onclick="tacVideoSave_()">다운로드</button>'
+   +   (v.ext==='webm'?'<p class="hint" style="margin-top:10px;">이 기기에서는 WEBM 형식으로 저장돼요. 카톡에서 재생되지 않으면 이미지 카드나 재생 링크를 보내 주세요.</p>':'')
+   + '</div>');
+}
+function tacVideoSave_(){ var v=state._tacVid; if(!v) return; var a=document.createElement('a'); a.href=v.url; a.download=v.name; document.body.appendChild(a); a.click(); setTimeout(function(){ try{ a.parentNode.removeChild(a); }catch(e){} }, 600); toast('영상을 저장했습니다'); }
+function tacVideoShare_(){
+  var v=state._tacVid; if(!v) return; var file=null;
+  try{ file=new File([v.blob], v.name, {type:v.blob.type}); }catch(e){}
+  if(file && navigator.canShare && navigator.share && navigator.canShare({files:[file]})){
+    navigator.share({files:[file]}).catch(function(e){ if(!e || e.name!=='AbortError') tacVideoSave_(); });
+  } else tacVideoSave_();
+}
+/* ================= 전술 보드 끝 ================= */
+/* TAC-JS-END */
 </script>
 </body>
 </html>
