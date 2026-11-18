@@ -1285,16 +1285,6 @@
 .tac-seg{margin-bottom:14px;}
 .tac-cats{margin-bottom:12px;}
 .tac-list{display:flex;flex-direction:column;gap:10px;}
-.tac-item{display:flex;gap:13px;align-items:stretch;padding:11px;border-radius:var(--r-lg);background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow-sm);cursor:pointer;transition:transform .1s;}
-.tac-item:active{transform:scale(.985);}
-.tac-item canvas{flex:0 0 auto;width:66px;height:97px;border-radius:9px;display:block;background:#1d5b3a;}
-.tac-item .ti-b{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:5px;}
-.tac-item .ti-c{font-size:10.5px;font-weight:800;letter-spacing:.06em;color:var(--gold);}
-.tac-item .ti-t{font-size:15.5px;font-weight:800;letter-spacing:-.02em;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.tac-item .ti-m{font-size:12px;color:var(--steel);display:flex;flex-wrap:wrap;gap:4px 8px;}
-.tac-item .ti-p{display:flex;gap:5px;flex-wrap:wrap;}
-.tac-item .ti-p span{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:99px;background:var(--card-2);color:var(--steel);}
-.tac-item .ti-go{align-self:center;color:var(--steel-soft);font-size:20px;}
 .tac-tpl{display:flex;gap:12px;align-items:center;padding:12px 13px;border-radius:14px;border:1px solid var(--line-strong);background:var(--card);cursor:pointer;margin-bottom:8px;width:100%;text-align:left;font-family:inherit;color:var(--ink);}
 .tac-tpl:active{background:var(--card-2);}
 .tac-tpl .tp-i{flex:0 0 auto;width:40px;height:40px;border-radius:11px;background:var(--red-tint);color:var(--red);display:flex;align-items:center;justify-content:center;}
@@ -1303,7 +1293,7 @@
 .tac-tpl span{display:block;font-size:12px;color:var(--steel);margin-top:2px;line-height:1.45;}
 .tac-tpl em{margin-left:auto;font-style:normal;font-size:10.5px;font-weight:800;color:var(--gold);white-space:nowrap;}
 
-.tac-wrap{position:absolute;inset:0;z-index:35;display:none;flex-direction:column;background:#0E1013;color:#fff;-webkit-user-select:none;user-select:none;}
+.tac-wrap{position:absolute;inset:0;z-index:35;display:none;flex-direction:column;background:radial-gradient(120% 60% at 50% 0%,#1a1d24 0%,#0d0f13 55%,#08090b 100%);color:#fff;-webkit-user-select:none;user-select:none;}
 .tac-wrap.open{display:flex;}
 .tac-top{flex:0 0 auto;display:flex;align-items:center;gap:6px;padding:8px 10px 6px;padding-top:calc(8px + env(safe-area-inset-top));}
 .tac-ib{flex:0 0 auto;width:38px;height:38px;border-radius:12px;border:none;background:rgba(255,255,255,.07);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:inherit;}
@@ -1351,17 +1341,10 @@
 .tac-vw button{border:none;background:none;color:rgba(255,255,255,.6);font-family:inherit;font-size:12px;font-weight:700;height:30px;padding:0 10px;border-radius:8px;cursor:pointer;}
 .tac-vw button.on{background:rgba(255,255,255,.92);color:#111;}
 .tac-tools .sp{flex:1;}
-.tac-busy{position:absolute;inset:0;z-index:5;background:rgba(8,9,11,.86);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;font-size:14px;font-weight:700;}
-.tac-busy .bar{width:200px;height:6px;border-radius:99px;background:rgba(255,255,255,.14);overflow:hidden;}
-.tac-busy .bar i{display:block;height:100%;width:0;background:var(--gold);border-radius:99px;}
 .tac-pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:7px;}
 .tac-pick button{height:42px;border-radius:11px;border:1px solid var(--line-strong);background:var(--card);color:var(--ink);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 8px;}
 .tac-pick button.on{background:var(--solid);color:var(--solid-fg);border-color:var(--solid);}
 .tac-pick button i{font-style:normal;font-family:'Oswald',sans-serif;margin-right:5px;opacity:.7;}
-.tac-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;}
-.tac-cards div{position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--line-strong);cursor:zoom-in;}
-.tac-cards img{display:block;width:100%;}
-.tac-cards span{position:absolute;left:6px;top:6px;font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:99px;background:rgba(10,10,12,.7);color:#fff;}
 @media(min-width:1024px){
   /* PC: 경기장은 왼쪽에 크게, 조작은 오른쪽 패널 */
   .tac-wrap.open{display:grid;grid-template-columns:minmax(0,1fr) 400px;grid-template-rows:auto auto auto auto auto 1fr;column-gap:6px;padding:0 14px 14px;}
@@ -1375,6 +1358,88 @@
   .tac-tools{grid-column:2;grid-row:5;padding-top:10px;padding-bottom:0;flex-wrap:wrap;}
 }
 body.tac-open #ktDemoBadge{display:none !important;}
+/* 목록: 영화 포스터처럼 3D 장면 카드 */
+.tac-new{width:100%;display:flex;align-items:center;gap:13px;padding:14px 16px;margin-bottom:14px;border:none;border-radius:var(--r-lg);background:linear-gradient(120deg,var(--red) 0%,var(--red-deep) 100%);color:#fff;font-family:inherit;text-align:left;cursor:pointer;box-shadow:0 10px 26px var(--red-glow);}
+.tac-new .tn-i{flex:0 0 auto;width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:400;}
+.tac-new b{display:block;font-size:15.5px;font-weight:800;letter-spacing:-.02em;}
+.tac-new i{display:block;font-style:normal;font-size:12px;opacity:.78;margin-top:2px;}
+.tac-hero{border-radius:22px;padding:26px 22px 24px;background:radial-gradient(120% 90% at 100% 0%,rgba(199,162,75,.28),rgba(199,162,75,0) 60%),linear-gradient(160deg,#1b2a22,#0e1512);color:#fff;}
+.tac-hero .th-k{font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:.3em;color:#C7A24B;margin-bottom:10px;}
+.tac-hero b{display:block;font-size:22px;line-height:1.3;font-weight:900;letter-spacing:-.03em;}
+.tac-hero p{font-size:13px;line-height:1.6;color:rgba(255,255,255,.7);margin:10px 0 0;}
+.tac-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;}
+.tac-card{position:relative;border-radius:18px;overflow:hidden;cursor:pointer;background:#0d1210;box-shadow:0 10px 26px rgba(0,0,0,.22);transition:transform .15s;}
+.tac-card:active{transform:scale(.985);}
+.tac-card canvas{display:block;width:100%;}
+.tac-card .tc-ov{position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,8,10,0) 38%,rgba(6,8,10,.88) 100%);}
+.tac-card .tc-c{position:absolute;left:12px;top:12px;font-size:11px;font-weight:800;padding:4px 9px;border-radius:99px;background:rgba(8,10,12,.62);color:#E8C877;letter-spacing:.02em;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
+.tac-card .tc-play{position:absolute;right:12px;top:12px;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.92);display:flex;align-items:center;justify-content:center;}
+.tac-card .tc-play svg{width:16px;height:16px;fill:#111;margin-left:2px;}
+.tac-card .tc-b{position:absolute;left:14px;right:14px;bottom:12px;color:#fff;}
+.tac-card .tc-b b{display:block;font-size:17px;font-weight:900;letter-spacing:-.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tac-card .tc-b i{display:block;font-style:normal;font-size:11.5px;color:rgba(255,255,255,.7);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* 편집 화면 보강 */
+.tac-tb svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;margin-right:5px;vertical-align:-3px;}
+.tac-stage.v3 canvas{border-radius:18px;box-shadow:0 18px 40px rgba(0,0,0,.6);}
+.tac-badge{position:absolute;left:18px;bottom:12px;font-family:'Oswald',sans-serif;font-size:10.5px;letter-spacing:.22em;color:rgba(255,255,255,.75);padding:4px 9px;border-radius:6px;background:rgba(0,0,0,.45);pointer-events:none;}
+.tac-toolseg button{display:flex;align-items:center;gap:4px;}
+.tac-toolseg button svg,.tac-chip.ic svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;}
+.tac-chip.ic{display:flex;align-items:center;gap:5px;}
+.tac-sel input{flex:1;min-width:0;height:34px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-family:inherit;font-size:13px;padding:0 10px;-webkit-user-select:text;user-select:text;}
+.tac-sel input:focus{outline:none;border-color:var(--gold);}
+.tac-sel button.on{background:#FFD84D;color:#15130a;border-color:#FFD84D;}
+.tac-sel button:disabled{opacity:.35;}
+.tac-dotc{flex:0 0 auto;width:24px;height:24px;border-radius:50%;cursor:pointer;border:2px solid rgba(255,255,255,.25);box-sizing:border-box;}
+.tac-dotc.on{border-color:#fff;box-shadow:0 0 0 2px rgba(255,255,255,.25);}
+.tac-st.has{box-shadow:inset 0 -3px 0 rgba(199,162,75,.85);}
+.tac-play.round{width:48px;height:48px;padding:0;border-radius:50%;}
+.tac-play.round svg{width:18px;height:18px;}
+/* 공유 스튜디오 */
+.tac-studio{position:absolute;inset:0;z-index:6;display:flex;flex-direction:column;background:radial-gradient(120% 60% at 50% 0%,#1d2027 0%,#0b0c0f 60%);color:#fff;}
+.st-top{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:8px 10px;padding-top:calc(8px + env(safe-area-inset-top));}
+.st-ttl{flex:1;min-width:0;}
+.st-ttl b{display:block;font-size:16px;font-weight:800;letter-spacing:-.02em;}
+.st-ttl span{display:block;font-size:11.5px;color:rgba(255,255,255,.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.st-body{flex:1;min-height:0;display:flex;flex-direction:column;}
+.st-prev{flex:1 1 auto;min-height:180px;position:relative;display:flex;align-items:center;justify-content:center;padding:4px 16px;}
+.st-prev canvas,.st-prev video{display:block;border-radius:14px;box-shadow:0 20px 50px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.06);background:#000;}
+.st-live{position:absolute;left:50%;top:10px;transform:translateX(-50%);font-size:10.5px;font-weight:800;letter-spacing:.08em;padding:3px 8px;border-radius:99px;background:rgba(0,0,0,.55);color:rgba(255,255,255,.8);}
+.st-panel{flex:0 0 auto;max-height:56%;overflow-y:auto;padding:10px 14px calc(14px + env(safe-area-inset-bottom));}
+.st-lab{font-size:11.5px;font-weight:800;color:rgba(255,255,255,.55);margin:10px 2px 6px;letter-spacing:.02em;}
+.st-lab span{font-weight:600;color:rgba(255,255,255,.35);margin-left:4px;}
+.st-row{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;}
+.st-row::-webkit-scrollbar{display:none;}
+.st-row2{display:flex;gap:8px;}
+.st-row2 .st-go2{flex:1;margin-top:0;}
+.st-chip{flex:0 0 auto;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;min-height:38px;padding:6px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);color:rgba(255,255,255,.78);font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;letter-spacing:-.01em;text-align:left;}
+.st-chip i{font-style:normal;font-size:10.5px;font-weight:600;color:rgba(255,255,255,.45);margin-top:1px;}
+.st-chip.on{background:#fff;color:#111;border-color:#fff;}
+.st-chip.on i{color:rgba(0,0,0,.5);}
+.st-go{width:100%;margin-top:16px;height:54px;border:none;border-radius:15px;background:linear-gradient(120deg,#E3C06A,#C7A24B);color:#16120a;font-family:inherit;font-size:15.5px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:7px;cursor:pointer;box-shadow:0 10px 26px rgba(199,162,75,.32);}
+.st-go svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.st-go i{font-style:normal;font-size:11.5px;font-weight:700;opacity:.7;margin-left:4px;}
+.st-go2{width:100%;margin-top:8px;height:46px;border-radius:13px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#fff;font-family:inherit;font-size:14px;font-weight:800;cursor:pointer;}
+.st-go2.kakao{background:#FEE500;color:#191919;border-color:#FEE500;}
+.st-note{font-size:12px;line-height:1.55;color:rgba(255,255,255,.5);margin:12px 2px 0;}
+.st-body.cards{overflow-y:auto;}
+.st-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:6px 14px;}
+.st-cards div{position:relative;border-radius:10px;overflow:hidden;cursor:zoom-in;box-shadow:0 6px 16px rgba(0,0,0,.4);}
+.st-cards img{display:block;width:100%;}
+.st-cards span{position:absolute;left:6px;top:6px;font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:99px;background:rgba(10,10,12,.7);color:#fff;}
+.tac-busy{position:absolute;inset:0;z-index:9;background:rgba(6,7,9,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:#fff;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
+.tac-busy .tb-ring{position:relative;width:96px;height:96px;}
+.tac-busy svg{width:96px;height:96px;transform:rotate(-90deg);}
+.tac-busy circle{fill:none;stroke-width:5;stroke:rgba(255,255,255,.12);}
+.tac-busy circle#tacBusyC{stroke:#C7A24B;stroke-linecap:round;transition:stroke-dashoffset .2s;}
+.tac-busy .tb-ring b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-size:22px;}
+.tac-busy #tacBusyT{font-size:15px;font-weight:800;}
+.tac-busy span{font-size:12px;color:rgba(255,255,255,.5);}
+@media(min-width:1024px){
+  .tac-studio .st-body{flex-direction:row;}
+  .tac-studio .st-prev{flex:1 1 auto;}
+  .tac-studio .st-panel{flex:0 0 400px;max-height:none;padding-top:20px;}
+  .tac-studio .st-body.cards{flex-direction:column;}
+}
 /* TAC-CSS-END */
 </style>
 </head>
@@ -1520,7 +1585,7 @@ var APP_SUB = 'FOOTBALL CLUB';
 var APP_REGION = '';   /* 새 팀 설치 시 헤더 지역 표기 (팀 정보에서 변경 가능) */
 var APP_NOTE = '';     /* 새 팀 설치 시 헤더 소개 문구 */
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '15.0';
+var APP_VERSION = '16.0';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -7551,6 +7616,8 @@ function initBackButton_(){
     if(sheetW && sheetW.classList.contains('open')){ closeSheet(); pushHist_(); return; }
     if(cfmW && cfmW.classList.contains('open')){ closeConfirm_(false); pushHist_(); return; }
     if(tacIsOpen_()){ tacBack_(); pushHist_(); return; }
+    if(typeof tacStudioOpen_==='function' && tacStudioOpen_()){ tacStudioClose_(); pushHist_(); return; }
+    if(tacIsOpen_()){ tacBack_(); pushHist_(); return; }
     // 2) 화면 뒤로가기 스택
     var st=state._backStack||[];
     if(st.length){
@@ -11654,8 +11721,8 @@ var TAC_TPLS=[
   {name:'A안 · 짧게', style:'high', steps:[
    {note:'센터백이 박스 옆으로 벌리고 {dm:이} 박스 앞에 선다', ball:'gk', our:{gk:[.5,.93],lcb:[.29,.865],rcb:[.71,.865],lb:[.07,.70],rb:[.93,.70],dm:[.5,.765],lcm:[.34,.60],rcm:[.66,.60],lw:[.10,.40],rw:[.90,.40],st:[.5,.34]}},
    {note:'GK가 오른쪽 센터백에게 짧게 · 풀백은 올라가 폭을 만든다', ball:'rcb', our:{dm:[.58,.74],rb:[.94,.62],rcm:[.72,.64]}},
-   {note:'압박이 붙으면 풀백에게 · {rcm:이} 안쪽에서 받아 줄 준비', ball:'rb', our:{rcm:[.80,.57],st:[.58,.42],rw:[.90,.36],dm:[.62,.70]}},
-   {note:'풀백 → {rcm} → 윙어, 삼각 패스로 압박을 벗어난다', ball:'rw', our:{rw:[.88,.27],rcm:[.78,.52],st:[.56,.25],lw:[.20,.30],rb:[.92,.52]}}
+   {note:'압박이 붙으면 풀백에게 · {rcm:이} 안쪽에서 받아 줄 준비', ball:'rb', our:{rcm:[.80,.57],st:[.58,.42],rw:[.90,.36],dm:[.62,.70]}, fx:[{t:'zone', r:[.66,.48,.26,.15], c:'gold', l:'받을 공간'}]},
+   {note:'풀백 → {rcm} → 윙어, 삼각 패스로 압박을 벗어난다', ball:'rw', our:{rw:[.88,.27],rcm:[.78,.52],st:[.56,.25],lw:[.20,.30],rb:[.92,.52]}, fx:[{t:'link', ks:['rb','rcm','rw'], c:'blue'}]}
   ]},
   {name:'B안 · 길게', style:'high', steps:[
    {note:'배치는 같다 — 상대가 6명 이상 올라오면 길게 간다', ball:'gk', our:{gk:[.5,.93],lcb:[.29,.865],rcb:[.71,.865],lb:[.07,.70],rb:[.93,.70],dm:[.5,.765],lcm:[.34,.60],rcm:[.66,.60],lw:[.10,.40],rw:[.90,.40],st:[.5,.34]}},
@@ -11668,7 +11735,7 @@ var TAC_TPLS=[
    {note:'센터백이 공을 잡고 {dm:은} 상대 공격수 뒤에 숨는다', ball:'lcb', our:{gk:[.5,.90],lcb:[.36,.72],rcb:[.64,.72],lb:[.10,.58],rb:[.90,.58],dm:[.5,.60],lcm:[.34,.47],rcm:[.66,.47],lw:[.12,.28],rw:[.88,.28],st:[.5,.24]}},
    {note:'{lcm:이} 내려와 받으며 압박을 끌어낸다', ball:'lcm', our:{lcm:[.30,.545],dm:[.54,.585]}},
    {note:'원터치로 {dm}에게 — 앞을 보고 받는다', ball:'dm', our:{dm:[.53,.555],rcm:[.68,.40],lcm:[.30,.52]}},
-   {note:'라인 사이로 전진 패스 → 공격 전개', ball:'rcm', our:{rcm:[.68,.375],st:[.5,.20],rw:[.90,.24],lw:[.14,.24]}}
+   {note:'라인 사이로 전진 패스 → 공격 전개', ball:'rcm', our:{rcm:[.68,.375],st:[.5,.20],rw:[.90,.24],lw:[.14,.24]}, fx:[{t:'zone', r:[.52,.33,.32,.09], c:'gold', l:'라인 사이'}]}
   ]}
  ]},
  {id:'ck_att', cat:'set', name:'코너킥 공격', desc:'니어 포스트(A) · 짧게 연결 후 컷백(B)', view:'att', zoom:true, oppForm:'4-4-2', plans:[
@@ -11676,7 +11743,7 @@ var TAC_TPLS=[
    {note:'박스 안 4명은 페널티 스폿 뒤에 모여 선다', ball:'rcm',
     our:{rcm:[.985,.014],st:[.47,.125],rcb:[.52,.135],lcb:[.57,.125],dm:[.62,.14],lw:[.47,.04],rw:[.82,.10],lcm:[.52,.215],lb:[.36,.385],rb:[.62,.385],gk:[.5,.80]},
     opp:[[.50,.018],[.585,.03],[.57,.062],[.515,.062],[.44,.062],[.565,.092],[.515,.102],[.465,.092],[.615,.107],[.54,.18],[.80,.07]]},
-   {note:'신호와 함께 {st:은} 니어, {lcb:은} 파, {rcb:은} 중앙으로', our:{st:[.60,.075],lcb:[.42,.07],rcb:[.505,.095],dm:[.585,.128],lw:[.485,.035]}, opp:{8:[.618,.05],6:[.405,.058],7:[.545,.10],9:[.61,.102]}},
+   {note:'신호와 함께 {st:은} 니어, {lcb:은} 파, {rcb:은} 중앙으로', fx:[{t:'zone', r:[.555,.025,.1,.07], c:'red', l:'니어'}], our:{st:[.60,.075],lcb:[.42,.07],rcb:[.505,.095],dm:[.585,.128],lw:[.485,.035]}, opp:{8:[.618,.05],6:[.405,.058],7:[.545,.10],9:[.61,.102]}},
    {note:'니어 포스트로 낮고 빠르게 — {st:이} 잘라 먹는다', ball:'st', opp:{1:[.535,.02]}}
   ]},
   {name:'B안 · 짧게', auto:false, steps:[
@@ -11690,7 +11757,7 @@ var TAC_TPLS=[
  ]},
  {id:'ck_def', cat:'set', name:'코너킥 수비', desc:'지역 3명 + 대인 4명, 걷어낸 뒤 역습까지', view:'def', zoom:true, oppForm:'4-4-2', plans:[
   {name:'A안', auto:false, steps:[
-   {note:'지역 3 + 대인 4 · {lb:은} 니어 포스트, {st:은} 박스 앞, {rw:은} 역습 대기', ball:'b11',
+   {note:'지역 3 + 대인 4 · {lb:은} 니어 포스트, {st:은} 박스 앞, {rw:은} 역습 대기', ball:'b11', fx:[{t:'link', ks:['dm','lcb','rcb'], c:'blue'}],
     our:{gk:[.50,.982],lb:[.59,.968],rcb:[.57,.936],lcb:[.515,.936],dm:[.46,.936],rb:[.585,.887],lcm:[.53,.877],rcm:[.475,.892],lw:[.635,.872],st:[.50,.79],rw:[.67,.66]},
     opp:[[.5,.06],[.40,.60],[.60,.60],[.50,.75],[.83,.91],[.58,.855],[.525,.845],[.47,.86],[.635,.84],[.535,.962],[.985,.986]]},
    {note:'공이 뜨면 지역 수비가 먼저 뜬다 — {lcb:이} 걷어낸다', ball:[.53,.906], our:{lcb:[.535,.926],rb:[.615,.925],lcm:[.495,.918],rcm:[.44,.915],lw:[.645,.91]}, opp:{6:[.59,.895],7:[.515,.888],8:[.455,.888],9:[.635,.882]}},
@@ -11702,7 +11769,7 @@ var TAC_TPLS=[
    {note:'공격 5명이 수비 라인과 나란히 선다 · {rw:은} 넓게', ball:'rcm',
     our:{rcm:[.82,.26],lcm:[.865,.275],lw:[.44,.19],lcb:[.49,.185],rcb:[.54,.19],st:[.59,.185],dm:[.64,.19],rw:[.93,.13],lb:[.42,.40],rb:[.70,.40],gk:[.5,.82]},
     opp:[[.5,.03],[.765,.185],[.735,.175],[.445,.158],[.495,.153],[.545,.158],[.595,.153],[.645,.158],[.56,.235],[.90,.115],[.60,.40]]},
-   {note:'킥과 동시에 출발 — {lcb} 파 포스트, {st:은} 니어에서 수비를 끌고 간다', our:{lcb:[.44,.07],lw:[.40,.105],rcb:[.52,.085],st:[.60,.08],dm:[.62,.145]}, opp:{5:[.455,.043],4:[.41,.075],6:[.535,.055],7:[.615,.052],8:[.64,.118]}},
+   {note:'킥과 동시에 출발 — {lcb} 파 포스트, {st:은} 니어에서 수비를 끌고 간다', fx:[{t:'zone', r:[.36,.03,.12,.08], c:'gold', l:'파 포스트'}], our:{lcb:[.44,.07],lw:[.40,.105],rcb:[.52,.085],st:[.60,.08],dm:[.62,.145]}, opp:{5:[.455,.043],4:[.41,.075],6:[.535,.055],7:[.615,.052],8:[.64,.118]}},
    {note:'라인 뒤로 떨어지는 공 — {lcb:이} 마무리', ball:'lcb'}
   ]}
  ]},
@@ -11713,7 +11780,7 @@ var TAC_TPLS=[
     opp:[[.5,.08],[.90,.58],[.58,.36],[.42,.36],[.10,.56],[.5,.54],[.39,.585],[.66,.575],[.78,.70],[.5,.74],[.22,.70]]},
    {note:'빼앗자마자 {st} 발밑으로 · 양 윙어는 전력 질주', ball:'st', our:{st:[.5,.46],lw:[.18,.42],rw:[.82,.40],rcm:[.60,.54]}, opp:{3:[.54,.40],4:[.44,.36],6:[.5,.52],7:[.40,.555],8:[.67,.555]}},
    {note:'{st:이} 떨궈 주고 돌아 뛴다', ball:'rcm', our:{rcm:[.60,.52],st:[.52,.37],lw:[.18,.32],rw:[.82,.30]}, opp:{3:[.565,.325],4:[.45,.31]}},
-   {note:'{rcm:이} 원터치로 뒷공간에 — 3 대 2', ball:'rw', our:{rw:[.80,.20],st:[.52,.22],lw:[.22,.22],rcm:[.60,.44]}, opp:{3:[.585,.19],4:[.45,.20],1:[.5,.06]}},
+   {note:'{rcm:이} 원터치로 뒷공간에 — 3 대 2', ball:'rw', fx:[{t:'zone', r:[.62,.10,.30,.16], c:'gold', l:'뒷공간'}], our:{rw:[.80,.20],st:[.52,.22],lw:[.22,.22],rcm:[.60,.44]}, opp:{3:[.585,.19],4:[.45,.20],1:[.5,.06]}},
    {note:'컷백 — {st} 마무리, {lw:은} 반대편', ball:'st', our:{rw:[.76,.10],st:[.52,.10],lw:[.36,.08]}, opp:{3:[.585,.085],4:[.455,.075],1:[.52,.035]}}
   ]}
  ]},
@@ -11723,7 +11790,7 @@ var TAC_TPLS=[
     our:{gk:[.5,.86],lcb:[.40,.60],rcb:[.60,.60],lb:[.12,.42],rb:[.88,.40],dm:[.5,.50],lcm:[.36,.38],rcm:[.645,.345],lw:[.14,.20],st:[.5,.18],rw:[.86,.20]},
     opp:[[.5,.04],[.80,.20],[.60,.17],[.40,.17],[.20,.20],[.82,.34],[.60,.40],[.42,.32],[.20,.34],[.62,.52],[.40,.50]]},
    {note:'{rcm} · {dm:이} 공을 막고 패스 길을 지운다 · 나머지는 골문 쪽으로 좁히며 복귀', our:{rcm:[.635,.385],dm:[.54,.47],lb:[.16,.52],rb:[.84,.50],lcb:[.42,.66],rcb:[.60,.66],st:[.52,.28],lw:[.20,.32],rw:[.80,.32],lcm:[.42,.44]}, opp:{7:[.59,.43],10:[.64,.60],11:[.38,.58]}},
-   {note:'넘어가면 {rcb:이} 지연 — 덤비지 않고 시간을 번다 · {lcb} 커버, 풀백은 안으로', ball:'b10', our:{rcb:[.625,.69],lcb:[.50,.72],rb:[.76,.68],lb:[.26,.69],dm:[.585,.585],gk:[.5,.90],rcm:[.62,.50],lcm:[.44,.54]}, opp:{10:[.64,.625],11:[.40,.62]}}
+   {note:'넘어가면 {rcb:이} 지연 — 덤비지 않고 시간을 번다 · {lcb} 커버, 풀백은 안으로', ball:'b10', fx:[{t:'link', ks:['lb','lcb','rcb','rb'], c:'blue'}], hl:['rcb'], our:{rcb:[.625,.69],lcb:[.50,.72],rb:[.76,.68],lb:[.26,.69],dm:[.585,.585],gk:[.5,.90],rcm:[.62,.50],lcm:[.44,.54]}, opp:{10:[.64,.625],11:[.40,.62]}}
   ]}
  ]},
  {id:'free', cat:'free', name:'자유 보드', desc:'빈 경기장에서 처음부터 — 스쿼드 배치 그대로 시작', oppForm:'4-4-2', useSquad:true, plans:[
@@ -11910,6 +11977,8 @@ function tacBuild_(tpl, our){
         else { ocur=ocur||{}; for(k in ts.opp) ocur['b'+k]=ts.opp[k].slice(); }
       }
       var st={note:tacNoteFill_(ts.note||'', our.toks), pos:{}, ball:ball.slice(), own:own, lock:{}};
+      if(ts.fx) st.fx=ts.fx.map(function(f){ var o={id:uid_('fx'), t:f.t||'zone', c:f.c||'gold'}; if(o.t==='zone'){ o.r=f.r.slice(); o.l=f.l||''; } else o.ks=f.ks.slice(); return o; });
+      if(ts.hl){ st.hl={}; ts.hl.forEach(function(k){ st.hl[k]=1; }); }
       for(k in cur) st.pos[k]=[tacR3_(cur[k][0]), tacR3_(cur[k][1])];
       if(ocur){ for(k in ocur) st.pos[k]=ocur[k].slice(); }
       if(!ocur || plan.auto) tacOppApply_(doc, plan, st);
@@ -11944,15 +12013,123 @@ function tacGeom_(view, W, H, zoom, cx){
     inv:function(px,py){ return [(px-mx)/sx+x0, (py-my)/fhF+y0]; }};
 }
 function tacGeomDoc_(doc, plan, W, H){ return tacGeom_(doc.view||'full', W, H, doc.zoom, tacCamX_(doc, plan)); }
+/* ---------- 움직임 모델 (2D 보드 · 3D 방송 화면 공용) ----------
+ * 한 장면 전환(A→B)의 진행도 p(0~1) 안에서:
+ *   화살표 미리 그리기 0~0.30 · 선수 이동 0.12~1 · 패스 0.18~0.90 (받는 선수가 도착할 때 공도 도착) */
+var TAC_PH={arr:0.30, mv0:0.12, bp0:0.18, bp1:0.90};
+var TAC_FXC={gold:'#F2C94C', red:'#FF5A5F', blue:'#4FB3FF', mint:'#3FE0B0'};
+function tacEaseOut_(t){ return 1-(1-t)*(1-t); }
+function tacSmooth_(t){ return t*t*(3-2*t); }
+function tacMeters_(a,b){ var dx=(a[0]-b[0])*68, dy=(a[1]-b[1])*105; return Math.sqrt(dx*dx+dy*dy); }
+/* 곡선 이동: cv = 곡선 가운데가 직선 가운데에서 벗어난 만큼 (경기장 비율 좌표) */
+function tacBez_(a,b,cv){
+  if(!cv || (!cv[0] && !cv[1])) return function(t){ return [a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t]; };
+  var c=[(a[0]+b[0])/2+2*cv[0], (a[1]+b[1])/2+2*cv[1]];
+  return function(t){ var u=1-t; return [u*u*a[0]+2*u*t*c[0]+t*t*b[0], u*u*a[1]+2*u*t*c[1]+t*t*b[1]]; };
+}
+function tacMotion_(doc, A, B){
+  var mv=[], drib='';
+  if(!A || !B) return mv;
+  if(A.own && A.own===B.own && A.pos[A.own] && B.pos[B.own] && tacDist_(A.pos[A.own],B.pos[B.own])>0.03) drib=A.own;
+  doc.our.concat(doc.opp).forEach(function(t){
+    var a=A.pos[t.k], b=B.pos[t.k]; if(!a || !b) return;
+    var opp=tacIsOpp_(t.k), d=tacDist_(a,b);
+    if(d<(opp?0.035:0.022)) return;
+    var cv=(B.cv && B.cv[t.k]) || null;
+    mv.push({k:t.k, a:a, b:b, cv:cv, f:tacBez_(a,b,cv), kind:(t.k===drib?'drib':(opp?'opp':'run')), d:d});
+  });
+  var ba=tacBallBase_(A), bb=tacBallBase_(B);
+  if(!drib && tacDist_(ba,bb)>0.025 && (A.own!==B.own || !A.own)) mv.push({k:'ball', a:ba, b:bb, f:tacBez_(ba,bb,null), kind:'pass', d:tacDist_(ba,bb), to:B.own||'', from:A.own||''});
+  return mv;
+}
+/* 진행도 p 에서 모든 선수 · 공의 위치 */
+function tacPose_(doc, A, B, p){
+  var mv=(A && p<1) ? tacMotion_(doc, A, B) : [], by={};
+  mv.forEach(function(m){ by[m.k]=m; });
+  var mp=tacEase_(tacClamp_((p-TAC_PH.mv0)/(1-TAC_PH.mv0),0,1)), pos={};
+  doc.our.concat(doc.opp).forEach(function(t){
+    var b=B.pos[t.k]; if(!b) return;
+    var m=by[t.k];
+    pos[t.k]=(m) ? m.f(mp) : ((A && p<1 && A.pos[t.k]) ? tacLerp_(A.pos[t.k], b, mp) : b);
+  });
+  var pm=by.ball, owner='', ball=null, bz=0, bt=1;
+  if(pm){
+    bt=tacClamp_((p-TAC_PH.bp0)/(TAC_PH.bp1-TAC_PH.bp0),0,1);
+    if(bt<=0 && A.own && pos[A.own]){ owner=A.own; }
+    else if(bt>=1 && B.own){ owner=B.own; }
+    else {
+      var e=tacSmooth_(bt), to=(B.own && pos[B.own]) ? pos[B.own] : pm.b, fr=(A.own && A.pos[A.own]) ? A.pos[A.own] : pm.a;
+      ball=tacLerp_(fr, to, e);
+      var wd=tacMeters_(fr,to), hm=(wd>24) ? Math.min(9, wd*0.17) : wd*0.025;
+      bz=4*hm*bt*(1-bt);
+    }
+  } else if(B.own && pos[B.own]) owner=B.own;
+  else if(A && p<1 && !B.own && !A.own) ball=tacLerp_(A.ball||B.ball||[.5,.5], B.ball||[.5,.5], mp);
+  else ball=(B.ball||[.5,.5]).slice();
+  return {pos:pos, owner:owner, ball:ball, bz:bz, bt:bt, mp:mp, arr:(A && p<1) ? tacClamp_(p/TAC_PH.arr,0,1) : 1, moves:(A ? tacMotion_(doc, A, B) : []), pass:pm||null};
+}
+/* 장면 효과(구역 · 연결선)의 나타남 정도 — A 에 없고 B 에 새로 생긴 것은 이동 후반에 나타난다 */
+function tacFxAlpha_(A, B, p, hold){
+  var out=[], idA={}, idB={};
+  ((A&&A.fx)||[]).forEach(function(f){ idA[f.id]=f; });
+  (B.fx||[]).forEach(function(f){ idB[f.id]=1;
+    var a=1;
+    if(!idA[f.id]){ a=(A && p<1) ? tacClamp_((p-0.45)/0.4,0,1) : (hold==null ? 1 : tacClamp_(hold/0.45,0,1)); }
+    out.push({f:f, a:a});
+  });
+  if(A && p<1) ((A.fx)||[]).forEach(function(f){ if(!idB[f.id]){ var a=1-tacClamp_(p/0.35,0,1); if(a>0) out.push({f:f, a:a}); } });
+  return out;
+}
+/* 강조할 선수: 직접 지정(★) + 패스를 받은 선수 + 내 위치 */
+function tacHi_(A, B, me){
+  var h={};
+  Object.keys(B.hl||{}).forEach(function(k){ if(B.hl[k]) h[k]=1; });
+  if(A && B.own && A.own!==B.own) h[B.own]=1;
+  if(me) h[me]=2;
+  return h;
+}
+
+/* ---------- 재생 타임라인 (앱 재생 · 영상 공용) ---------- */
+function tacHoldSec_(st, first){ var n=String((st&&st.note)||'').length; return (first?1.3:0.95)+Math.min(1.9, n*0.055); }
+function tacTL_(plan, o){
+  o=o||{}; var sp=o.speed||1, segs=[], t=0, n=plan.steps.length;
+  if(o.intro){ segs.push({k:'intro', i:0, t0:t, d:2.4}); t+=2.4; }
+  var h0=tacHoldSec_(plan.steps[0], true)/sp; segs.push({k:'hold', i:0, t0:t, d:h0}); t+=h0;
+  for(var i=1;i<n;i++){
+    var st=plan.steps[i], m=1.85*(st.dur||1)/sp, h=tacHoldSec_(st)/sp;
+    segs.push({k:'move', i:i, t0:t, d:m}); t+=m;
+    segs.push({k:'hold', i:i, t0:t, d:h}); t+=h;
+  }
+  if(o.outro){ segs.push({k:'outro', i:n-1, t0:t, d:2.2}); t+=2.2; }
+  return {segs:segs, total:t, n:n};
+}
+function tacTLAt_(TL, plan, t){
+  var segs=TL.segs, s=segs[segs.length-1];
+  for(var j=0;j<segs.length;j++){ if(t<segs[j].t0+segs[j].d){ s=segs[j]; break; } }
+  var lt=tacClamp_(t-s.t0, 0, s.d), r={seg:s, k:s.k, i:s.i, lt:lt, u:(s.d?lt/s.d:1), B:plan.steps[s.i], A:null, p:1, hold:null};
+  if(s.k==='move'){ r.A=plan.steps[s.i-1]; r.p=r.u; }
+  else if(s.k==='hold'){ r.A=(s.i>0)?plan.steps[s.i-1]:null; r.hold=lt; }
+  else { r.hold=(s.k==='intro')?0:9; }
+  return r;
+}
+/* 장면 i 가 시작되는 시각 (재생 위치 맞추기) */
+function tacTLStepT_(TL, i){
+  for(var j=0;j<TL.segs.length;j++){ var s=TL.segs[j]; if(s.i===i && (s.k==='move' || (i===0 && s.k==='hold'))) return s.t0; }
+  return 0;
+}
+
+/* ---------- 2D 보드 그리기 ---------- */
 function tacPitch_(ctx, G){
   var X=G.X, Y=G.Y, sx=G.sx, fh=G.fhF, i;
-  ctx.fillStyle='#1c5737'; ctx.fillRect(0,0,G.W,G.H);
+  var bg=ctx.createLinearGradient(0,0,0,G.H); bg.addColorStop(0,'#174a30'); bg.addColorStop(1,'#123d27');
+  ctx.fillStyle=bg; ctx.fillRect(0,0,G.W,G.H);
   ctx.save(); ctx.beginPath(); ctx.rect(0,0,G.W,G.H); ctx.clip();
-  for(i=0;i<12;i++){ ctx.fillStyle=(i%2)?'#2a7446':'#2f7d4d'; ctx.fillRect(X(0), Y(i/12), sx, fh/12+0.6); }
-  var vg=ctx.createRadialGradient(G.W/2,G.H/2,G.W*0.2,G.W/2,G.H/2,Math.max(G.W,G.H)*0.75);
-  vg.addColorStop(0,'rgba(255,255,255,.05)'); vg.addColorStop(1,'rgba(0,0,0,.16)');
+  for(i=0;i<14;i++){ ctx.fillStyle=(i%2)?'#2b7a4a':'#318552'; ctx.fillRect(X(0), Y(i/14), sx, fh/14+0.6); }
+  for(i=0;i<6;i++){ if(i%2) continue; ctx.fillStyle='rgba(255,255,255,.028)'; ctx.fillRect(X(i/6), Y(0), sx/6, fh); }
+  var vg=ctx.createRadialGradient(G.W/2,G.H*0.42,G.W*0.15,G.W/2,G.H*0.5,Math.max(G.W,G.H)*0.78);
+  vg.addColorStop(0,'rgba(255,255,230,.07)'); vg.addColorStop(1,'rgba(0,0,0,.22)');
   ctx.fillStyle=vg; ctx.fillRect(0,0,G.W,G.H);
-  var lw=Math.max(1.2, G.W*0.0053*(G.zoom?1.25:1)); ctx.lineWidth=lw; ctx.strokeStyle='rgba(255,255,255,.84)'; ctx.fillStyle='rgba(255,255,255,.84)'; ctx.lineJoin='round';
+  var lw=Math.max(1.2, G.W*0.0053*(G.zoom?1.25:1)); ctx.lineWidth=lw; ctx.strokeStyle='rgba(255,255,255,.86)'; ctx.fillStyle='rgba(255,255,255,.86)'; ctx.lineJoin='round';
   ctx.strokeRect(X(0),Y(0),sx,fh);
   ctx.beginPath(); ctx.moveTo(X(0),Y(.5)); ctx.lineTo(X(1),Y(.5)); ctx.stroke();
   var cr=sx*0.1346;
@@ -11966,73 +12143,91 @@ function tacPitch_(ctx, G){
     var dyp=fh*(.157-.105), an=Math.asin(Math.min(0.99,dyp/cr));
     ctx.beginPath(); if(e) ctx.arc(X(.5),Y(1-.105),cr,Math.PI+an,2*Math.PI-an); else ctx.arc(X(.5),Y(.105),cr,an,Math.PI-an); ctx.stroke();
     var gd=fh*0.018;
-    ctx.save(); ctx.fillStyle='rgba(255,255,255,.14)'; ctx.fillRect(X(.446), e?Y(1):Y(0)-gd, sx*.108, gd); ctx.strokeRect(X(.446), e?Y(1):Y(0)-gd, sx*.108, gd); ctx.restore();
+    ctx.save(); ctx.fillStyle='rgba(255,255,255,.16)'; ctx.fillRect(X(.446), e?Y(1):Y(0)-gd, sx*.108, gd); ctx.strokeRect(X(.446), e?Y(1):Y(0)-gd, sx*.108, gd); ctx.restore();
     var ca=sx*0.02;
     ctx.beginPath(); ctx.arc(X(0),Y(y0),ca, e?-Math.PI/2:0, e?0:Math.PI/2); ctx.stroke();
     ctx.beginPath(); ctx.arc(X(1),Y(y0),ca, e?Math.PI:Math.PI/2, e?Math.PI*1.5:Math.PI); ctx.stroke();
   });
   ctx.restore();
 }
-/* 화살표: run=이동(실선) · pass=패스(점선) · drib=드리블(물결) · opp=상대 이동(가는 점선). prog 0~1 만큼만 진하게 */
-function tacArrow_(ctx, x1,y1,x2,y2, kind, prog, sc, trim1, trim2){
-  var dx=x2-x1, dy=y2-y1, len=Math.sqrt(dx*dx+dy*dy); if(len<(trim1+trim2+6*sc)) return;
-  var ux=dx/len, uy=dy/len;
-  var ax=x1+ux*trim1, ay=y1+uy*trim1, bx=x2-ux*trim2, by=y2-uy*trim2, L=len-trim1-trim2;
-  var col=(kind==='pass'||kind==='drib')?'#FFD84D':(kind==='opp'?'rgba(12,18,15,.62)':'rgba(255,255,255,.95)');
-  var w=(kind==='opp'?1.5:2.3)*sc, hd=(kind==='opp'?6:9)*sc;
-  function path(to){
-    ctx.beginPath();
-    if(kind==='drib'){
-      var n=Math.max(8, Math.round(L/(2.2*sc))), amp=3.2*sc, wl=11*sc;
-      for(var i=0;i<=n;i++){ var t=i/n*to, d=t*L, fade=Math.min(1,(L*to-d)/(hd*1.4)), o=Math.sin(d/wl*Math.PI*2)*amp*Math.max(0,fade);
-        var px=ax+ux*d-uy*o, py=ay+uy*d+ux*o; if(i) ctx.lineTo(px,py); else ctx.moveTo(px,py); }
-    } else { ctx.moveTo(ax,ay); ctx.lineTo(ax+ux*L*to, ay+uy*L*to); }
-    ctx.stroke();
-  }
+/* 화면 좌표 경로의 일부(from~to 비율)를 화살표로. run=이동 · pass=패스 · drib=드리블 · opp=상대 · link=연결선 */
+function tacArrow2_(ctx, pts, kind, from, to, sc, head){
+  if(pts.length<2 || to-from<0.01) return;
+  var L=[0], i; for(i=1;i<pts.length;i++) L.push(L[i-1]+Math.hypot(pts[i][0]-pts[i-1][0], pts[i][1]-pts[i-1][1]));
+  var tot=L[L.length-1]; if(tot<4*sc) return;
+  function at(d){ for(var j=1;j<L.length;j++){ if(L[j]>=d){ var u=(d-L[j-1])/((L[j]-L[j-1])||1); return [pts[j-1][0]+(pts[j][0]-pts[j-1][0])*u, pts[j-1][1]+(pts[j][1]-pts[j-1][1])*u, j]; } } var q=pts[pts.length-1]; return [q[0],q[1],pts.length-1]; }
+  var d0=from*tot, d1=to*tot, col, w, hd=(kind==='opp'?6.5:10)*sc;
+  if(kind==='pass' || kind==='drib'){ col='#FFD34D'; w=2.4*sc; }
+  else if(kind==='opp'){ col='rgba(8,14,11,.62)'; w=1.6*sc; }
+  else if(kind==='link'){ col='#7FE3FF'; w=2.6*sc; }
+  else { col='#FFFFFF'; w=2.6*sc; }
+  var e0=at(d0), e1=at(Math.max(d0, d1-(head?hd*0.55:0)));
   ctx.save(); ctx.lineCap='round'; ctx.lineJoin='round'; ctx.lineWidth=w; ctx.strokeStyle=col; ctx.fillStyle=col;
-  if(kind==='pass') ctx.setLineDash([7*sc,6*sc]); else if(kind==='opp') ctx.setLineDash([2*sc,5*sc]);
-  if(prog<1){ ctx.globalAlpha*=0.3; path(1); ctx.globalAlpha/=0.3; }
-  if(prog>0.02){
-    ctx.shadowColor='rgba(0,0,0,.35)'; ctx.shadowBlur=3*sc; ctx.shadowOffsetY=1*sc;
-    path(prog); ctx.setLineDash([]);
-    var hx=ax+ux*L*prog, hy=ay+uy*L*prog;
-    ctx.beginPath(); ctx.moveTo(hx+ux*hd*0.55, hy+uy*hd*0.55);
-    ctx.lineTo(hx-ux*hd*0.6-uy*hd*0.52, hy-uy*hd*0.6+ux*hd*0.52);
-    ctx.lineTo(hx-ux*hd*0.6+uy*hd*0.52, hy-uy*hd*0.6-ux*hd*0.52); ctx.closePath(); ctx.fill();
+  if(kind==='pass') ctx.setLineDash([8*sc,6*sc]); else if(kind==='opp') ctx.setLineDash([2*sc,5*sc]);
+  ctx.shadowColor='rgba(0,0,0,.38)'; ctx.shadowBlur=3*sc; ctx.shadowOffsetY=1*sc;
+  ctx.beginPath(); ctx.moveTo(e0[0],e0[1]);
+  if(kind==='drib'){
+    var amp=3.4*sc, wl=12*sc, steps=Math.max(6, Math.round((d1-d0)/(2*sc)));
+    for(i=1;i<=steps;i++){ var dd=d0+(d1-(head?hd*0.55:0)-d0)*i/steps, q=at(dd), q2=at(Math.min(tot,dd+1)), ux=q2[0]-q[0], uy=q2[1]-q[1], ul=Math.hypot(ux,uy)||1;
+      var fade=Math.min(1,(d1-dd)/(hd*1.6)), o=Math.sin(dd/wl*Math.PI*2)*amp*Math.max(0,fade); ctx.lineTo(q[0]-uy/ul*o, q[1]+ux/ul*o); }
+  } else {
+    for(i=e0[2];i<e1[2];i++) ctx.lineTo(pts[i][0],pts[i][1]);
+    ctx.lineTo(e1[0],e1[1]);
+  }
+  ctx.stroke(); ctx.setLineDash([]);
+  if(head){
+    var hp=at(d1), hb=at(Math.max(0,d1-hd)), ux2=hp[0]-hb[0], uy2=hp[1]-hb[1], ul2=Math.hypot(ux2,uy2)||1; ux2/=ul2; uy2/=ul2;
+    ctx.beginPath(); ctx.moveTo(hp[0]+ux2*hd*0.25, hp[1]+uy2*hd*0.25);
+    ctx.lineTo(hp[0]-ux2*hd*0.75-uy2*hd*0.5, hp[1]-uy2*hd*0.75+ux2*hd*0.5);
+    ctx.lineTo(hp[0]-ux2*hd*0.75+uy2*hd*0.5, hp[1]-uy2*hd*0.75-ux2*hd*0.5); ctx.closePath(); ctx.fill();
   }
   ctx.restore();
 }
+/* 경로를 화면 좌표로 펼치고 양 끝을 토큰 반지름만큼 잘라낸 비율 */
+function tacPathPx_(G, f, n){ var pts=[]; for(var i=0;i<=n;i++){ var q=f(i/n); pts.push([G.X(q[0]), G.Y(q[1])]); } return pts; }
+function tacTrim_(pts, a, b){
+  var tot=0; for(var i=1;i<pts.length;i++) tot+=Math.hypot(pts[i][0]-pts[i-1][0], pts[i][1]-pts[i-1][1]);
+  if(tot<1) return [0,0]; return [Math.min(0.45,a/tot), Math.max(0.55,1-b/tot)];
+}
 function tacToken_(ctx, cx, cy, r, tk, o){
   var ours=!!o.ours, gk=(tk.pos==='GK'), fill, ink, ring;
-  if(ours){ fill=gk?'#E6AC0C':o.accent; ink=gk?'#1b1503':(tacLum_(o.accent)>0.72?'#111':'#fff'); ring='rgba(255,255,255,.95)'; }
-  else { if(o.oppDark){ fill=gk?'#565d68':'#23262c'; ink='#fff'; ring='rgba(255,255,255,.55)'; } else { fill=gk?'#aab2bd':'#f2f3f5'; ink='#15171b'; ring='rgba(20,24,28,.9)'; } }
+  if(ours){ fill=gk?'#E6AC0C':o.accent; ink=gk?'#1b1503':(tacLum_(o.accent)>0.72?'#111':'#fff'); ring='rgba(255,255,255,.96)'; }
+  else { if(o.oppDark){ fill=gk?'#565d68':'#23262c'; ink='#fff'; ring='rgba(255,255,255,.55)'; } else { fill=gk?'#b5bcc6':'#f2f3f5'; ink='#15171b'; ring='rgba(20,24,28,.9)'; } }
   ctx.save(); ctx.globalAlpha*=(o.alpha==null?1:o.alpha);
-  ctx.fillStyle='rgba(0,0,0,.28)'; ctx.beginPath(); ctx.ellipse(cx, cy+r*0.86, r*0.92, r*0.34, 0, 0, Math.PI*2); ctx.fill();
-  if(o.me){ var pu=0.5+0.5*Math.sin((o.t||0)*5); ctx.strokeStyle='rgba(255,216,77,'+(0.35+0.4*pu)+')'; ctx.lineWidth=r*0.22; ctx.beginPath(); ctx.arc(cx,cy,r*(1.42+0.12*pu),0,Math.PI*2); ctx.stroke(); }
+  if(o.hi){
+    var pu=0.5+0.5*Math.sin((o.t||0)*4.2), gcol=(o.hi===2)?'255,216,77':'255,226,122';
+    var gg=ctx.createRadialGradient(cx,cy,r*0.8,cx,cy,r*2.5); gg.addColorStop(0,'rgba('+gcol+',.42)'); gg.addColorStop(1,'rgba('+gcol+',0)');
+    ctx.fillStyle=gg; ctx.beginPath(); ctx.arc(cx,cy,r*2.5,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='rgba('+gcol+','+(0.55+0.35*pu)+')'; ctx.lineWidth=r*0.2; ctx.beginPath(); ctx.arc(cx,cy,r*(1.36+0.1*pu),0,Math.PI*2); ctx.stroke();
+  }
+  ctx.fillStyle='rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(cx, cy+r*0.86, r*0.95, r*0.36, 0, 0, Math.PI*2); ctx.fill();
   ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fillStyle=fill; ctx.fill();
-  var hl=ctx.createLinearGradient(0,cy-r,0,cy+r); hl.addColorStop(0,'rgba(255,255,255,.26)'); hl.addColorStop(0.55,'rgba(255,255,255,0)'); hl.addColorStop(1,'rgba(0,0,0,.18)');
+  var hl=ctx.createLinearGradient(0,cy-r,0,cy+r); hl.addColorStop(0,'rgba(255,255,255,.3)'); hl.addColorStop(0.5,'rgba(255,255,255,0)'); hl.addColorStop(1,'rgba(0,0,0,.2)');
   ctx.fillStyle=hl; ctx.fill();
-  ctx.lineWidth=Math.max(1.2,r*0.13); ctx.strokeStyle=o.me?'#FFD84D':ring; ctx.stroke();
-  if(o.sel){ ctx.setLineDash([r*0.32,r*0.24]); ctx.lineWidth=Math.max(1.4,r*0.12); ctx.strokeStyle='#fff'; ctx.beginPath(); ctx.arc(cx,cy,r*1.38,0,Math.PI*2); ctx.stroke(); ctx.setLineDash([]); }
+  ctx.lineWidth=Math.max(1.2,r*0.13); ctx.strokeStyle=o.hi?'#FFD84D':ring; ctx.stroke();
+  if(o.sel){ ctx.setLineDash([r*0.32,r*0.24]); ctx.lineWidth=Math.max(1.4,r*0.12); ctx.strokeStyle='#fff'; ctx.beginPath(); ctx.arc(cx,cy,r*1.4,0,Math.PI*2); ctx.stroke(); ctx.setLineDash([]); }
   if(!o.mini){
     var lab=String(tk.num==null||tk.num===''?(tk.pos||''):tk.num);
     ctx.fillStyle=ink; ctx.textAlign='center'; ctx.textBaseline='middle';
     ctx.font='700 '+Math.round(r*(lab.length>2?0.78:1.02))+'px Oswald, sans-serif';
     ctx.fillText(lab, cx, cy+r*0.06);
     if(o.lock){ ctx.fillStyle='#FFD84D'; ctx.beginPath(); ctx.arc(cx+r*0.78, cy-r*0.78, r*0.2, 0, Math.PI*2); ctx.fill(); }
-    if(ours && o.names && tk.n){
+    if(ours && (o.names || o.hi) && tk.n){
       var nm=String(tk.n); if(nm.length>4) nm=nm.slice(0,4);
-      ctx.font=(o.me?'800 ':'700 ')+Math.round(r*(o.me?0.86:0.74))+'px Pretendard, sans-serif'; ctx.textBaseline='top';
-      ctx.lineWidth=r*0.24; ctx.strokeStyle='rgba(8,24,15,.72)'; ctx.lineJoin='round'; ctx.strokeText(nm, cx, cy+r*1.2);
-      ctx.fillStyle=o.me?'#FFE27A':'#fff'; ctx.fillText(nm, cx, cy+r*1.2);
+      ctx.font=(o.hi?'800 ':'700 ')+Math.round(r*(o.hi?0.84:0.74))+'px Pretendard, sans-serif'; ctx.textBaseline='top';
+      ctx.lineWidth=r*0.26; ctx.strokeStyle='rgba(8,24,15,.75)'; ctx.lineJoin='round'; ctx.strokeText(nm, cx, cy+r*1.2);
+      ctx.fillStyle=o.hi?'#FFE27A':'#fff'; ctx.fillText(nm, cx, cy+r*1.2);
     }
   }
   ctx.restore();
 }
-function tacBallDraw_(ctx, cx, cy, r, sel){
+function tacBallDraw_(ctx, cx, cy, r, sel, lift){
+  lift=lift||0;
   ctx.save();
-  ctx.fillStyle='rgba(0,0,0,.34)'; ctx.beginPath(); ctx.ellipse(cx+r*0.15, cy+r*0.8, r*0.9, r*0.36, 0, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.fill();
+  ctx.fillStyle='rgba(0,0,0,'+(0.34/(1+lift*0.04))+')'; ctx.beginPath(); ctx.ellipse(cx+r*0.15, cy+r*0.8, r*0.9, r*0.36, 0, 0, Math.PI*2); ctx.fill();
+  cy-=lift;
+  if(lift>1){ ctx.shadowColor='rgba(255,240,180,.7)'; ctx.shadowBlur=r*1.6; }
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.fill(); ctx.shadowBlur=0;
   ctx.lineWidth=Math.max(1,r*0.18); ctx.strokeStyle='#15171b'; ctx.stroke();
   ctx.fillStyle='#15171b'; ctx.beginPath();
   for(var i=0;i<5;i++){ var a=-Math.PI/2+i*Math.PI*2/5, px=cx+Math.cos(a)*r*0.42, py=cy+Math.sin(a)*r*0.42; if(i) ctx.lineTo(px,py); else ctx.moveTo(px,py); }
@@ -12040,56 +12235,717 @@ function tacBallDraw_(ctx, cx, cy, r, sel){
   if(sel){ ctx.setLineDash([r*0.5,r*0.4]); ctx.lineWidth=Math.max(1.2,r*0.2); ctx.strokeStyle='#FFD84D'; ctx.beginPath(); ctx.arc(cx,cy,r*1.9,0,Math.PI*2); ctx.stroke(); }
   ctx.restore();
 }
-/* A 단계 → B 단계 사이의 움직임 목록 */
-function tacMoves_(doc, A, B, off){
-  var mv=[], drib='';
-  var bA=tacBallXY_(A, off), bB=tacBallXY_(B, off);
-  if(A.own && A.own===B.own && A.pos[A.own] && B.pos[B.own] && tacDist_(A.pos[A.own],B.pos[B.own])>0.03) drib=A.own;
-  doc.our.concat(doc.opp).forEach(function(t){
-    var a=A.pos[t.k], b=B.pos[t.k]; if(!a||!b) return;
-    var opp=tacIsOpp_(t.k), d=tacDist_(a,b);
-    if(d<(opp?0.04:0.028)) return;
-    mv.push({k:t.k, a:a, b:b, kind:(t.k===drib?'drib':(opp?'opp':'run'))});
-  });
-  if(!drib && tacDist_(bA,bB)>0.03) mv.push({k:'ball', a:bA, b:bB, kind:'pass'});
-  return mv;
+function tacZone2_(ctx, G, f, a, sel, sc){
+  var c=TAC_FXC[f.c]||TAC_FXC.gold, r=f.r, x=G.X(r[0]), y=G.Y(r[1]), w=r[2]*G.sx, h=r[3]*G.fhF, rad=Math.min(14*sc, w/4, h/4);
+  ctx.save(); ctx.globalAlpha*=a;
+  rr_(ctx,x,y,w,h,rad);
+  var g=ctx.createLinearGradient(0,y,0,y+h); g.addColorStop(0,tacRgba_(c,.30)); g.addColorStop(1,tacRgba_(c,.14)); ctx.fillStyle=g; ctx.fill();
+  ctx.lineWidth=(sel?2.4:1.8)*sc; ctx.strokeStyle=tacRgba_(c,.95); if(!sel) ctx.setLineDash([6*sc,4*sc]); ctx.stroke(); ctx.setLineDash([]);
+  if(f.l){
+    ctx.font='800 '+Math.round(11.5*sc)+'px Pretendard, sans-serif'; var tw=ctx.measureText(f.l).width+14*sc, th=20*sc;
+    rr_(ctx,x+6*sc,y+6*sc,tw,th,th/2); ctx.fillStyle=c; ctx.fill();
+    ctx.fillStyle=tacLum_(c)>0.6?'#15171b':'#fff'; ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.fillText(f.l, x+13*sc, y+6*sc+th/2+0.5*sc);
+  }
+  if(sel){ ctx.fillStyle='#fff'; ctx.strokeStyle=c; ctx.lineWidth=2*sc; ctx.beginPath(); ctx.arc(x+w,y+h,7*sc,0,Math.PI*2); ctx.fill(); ctx.stroke(); }
+  ctx.restore();
 }
-/* 장면 그리기 — sc: {A,B,p} (A→B 움직임, p=진행도. A 없으면 B를 정지 화면으로) */
+function tacRgba_(hex, a){ var m=/^#?([0-9a-f]{6})$/i.exec(String(hex||'')); if(!m) return 'rgba(255,255,255,'+a+')'; var n=parseInt(m[1],16); return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')'; }
+/* 장면 그리기 — sc: {A,B,p,hold} · o: names, sel, multi{}, me, edit, t, mini, accent, ui(편집 표시: 곡선 손잡이 · 선택 상자 · 연결 중) */
 function tacScene_(ctx, G, doc, sc, o){
   o=o||{};
-  var A=sc.A, B=sc.B, p=(sc.p==null?1:sc.p), e=tacEase_(p), X=G.X, Y=G.Y, r=G.r*(o.mini?0.9:1), acc=o.accent||tacAccent_();
-  var oppDark=tacLum_(acc)>0.72;
+  var A=sc.A, B=sc.B, p=(sc.p==null?1:sc.p), X=G.X, Y=G.Y, r=G.r*(o.mini?0.9:1), acc=o.accent||tacAccent_(), k2=Math.max(0.8,G.W/370);
+  var oppDark=tacLum_(acc)>0.72, P=tacPose_(doc, A, B, p);
   tacPitch_(ctx, G);
   var foc=(doc.focus&&doc.focus.keys&&doc.focus.keys.length)?doc.focus:null, fset={};
   if(foc) foc.keys.forEach(function(k){ fset[k]=1; });
   function vis(k){ if(!foc) return 1; if(tacIsOpp_(k)) return foc.opp===false?0:0.6; return fset[k]?1:(foc.hide?0:0.2); }
-  function P(k){ var b=B.pos[k]; if(!b) return null; if(!A||!A.pos[k]||p>=1) return b; return tacLerp_(A.pos[k], b, e); }
   ctx.save(); ctx.beginPath(); ctx.rect(0,0,G.W,G.H); ctx.clip();
+  /* 구역 · 연결선 */
+  var fxs=tacFxAlpha_(A, B, p, sc.hold);
+  fxs.forEach(function(x){ if(x.f.t==='zone') tacZone2_(ctx, G, x.f, x.a, (o.ui && o.ui.fx===x.f.id), k2); });
+  fxs.forEach(function(x){
+    if(x.f.t!=='link') return;
+    var pts=(x.f.ks||[]).map(function(k){ var q=P.pos[k]; return q?[X(q[0]),Y(q[1])]:null; }).filter(Boolean); if(pts.length<2) return;
+    ctx.save(); ctx.globalAlpha*=x.a; tacArrow2_(ctx, pts, 'link', 0, 1, k2, false);
+    if(o.ui && o.ui.fx===x.f.id){ ctx.strokeStyle='#fff'; ctx.lineWidth=1.4*k2; ctx.setLineDash([4*k2,4*k2]); ctx.beginPath(); pts.forEach(function(q,i){ if(i) ctx.lineTo(q[0],q[1]); else ctx.moveTo(q[0],q[1]); }); ctx.stroke(); }
+    ctx.restore();
+  });
+  /* 움직임 화살표 */
   if(A && !o.mini && o.arrows!==false){
-    tacMoves_(doc, A, B, G.boff).forEach(function(m){
+    tacMotion_(doc, A, B).forEach(function(m){
       if(m.k!=='ball' && vis(m.k)<0.5) return;
-      var pr=(m.kind==='pass')?tacClamp_((p-0.06)/0.62,0,1):e;
-      var t1=(m.k==='ball')?r*0.45:r*1.12, t2=(m.k==='ball')?r*0.8:r*1.18;
+      var pts=tacPathPx_(G, m.f, m.cv?24:2), tr=(m.k==='ball')?tacTrim_(pts, r*0.5, r*1.15):tacTrim_(pts, r*1.12, r*1.22);
+      var to=(p>=1)?tr[1]:tr[0]+(tr[1]-tr[0])*P.arr;
       ctx.save(); if(m.kind==='opp') ctx.globalAlpha=vis(m.k);
-      tacArrow_(ctx, X(m.a[0]),Y(m.a[1]),X(m.b[0]),Y(m.b[1]), m.kind, (p>=1?1:pr), Math.max(0.8,G.W/370), t1, t2);
+      if(p<1 && P.arr<1){ ctx.globalAlpha*=0.3; tacArrow2_(ctx, pts, m.kind, tr[0], tr[1], k2, false); ctx.globalAlpha/=0.3; }
+      tacArrow2_(ctx, pts, m.kind, tr[0], to, k2, true);
       ctx.restore();
     });
   }
-  var order=doc.opp.concat(doc.our);
-  order.forEach(function(t){
-    var q=P(t.k), a=vis(t.k); if(!q||a<=0) return;
+  /* 곡선 손잡이 (편집 중 선택한 선수) */
+  if(o.ui && o.ui.handle){ var hh=o.ui.handle; ctx.save(); ctx.fillStyle='#fff'; ctx.strokeStyle='#FFD34D'; ctx.lineWidth=2.4*k2; ctx.beginPath(); ctx.arc(X(hh[0]),Y(hh[1]),7.5*k2,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle='#FFD34D'; ctx.beginPath(); ctx.arc(X(hh[0]),Y(hh[1]),3*k2,0,Math.PI*2); ctx.fill(); ctx.restore(); }
+  /* 선수 */
+  var hi=tacHi_(A, B, o.me);
+  doc.opp.concat(doc.our).forEach(function(t){
+    var q=P.pos[t.k], a=vis(t.k); if(!q||a<=0) return;
     tacToken_(ctx, X(q[0]), Y(q[1]), r*(tacIsOpp_(t.k)?0.94:1), t, {ours:!tacIsOpp_(t.k), accent:acc, oppDark:oppDark, alpha:a, names:o.names!==false&&!o.mini, mini:o.mini,
-      sel:(o.sel===t.k), me:(o.me===t.k), lock:(o.edit && B.lock && B.lock[t.k] && tacIsOpp_(t.k)), t:o.t});
+      sel:(o.sel===t.k || (o.multi && o.multi[t.k])), hi:(o.mini?0:(hi[t.k]||0)), lock:(o.edit && B.lock && B.lock[t.k] && tacIsOpp_(t.k)), t:o.t});
   });
   /* 공 */
-  var bp;
-  if(A && p<1){
-    if(A.own && A.own===B.own && P(A.own)){ var q2=P(A.own); bp=[q2[0]+G.boff[0], q2[1]+G.boff[1]]; }
-    else { var tb=tacClamp_((p-0.06)/0.62,0,1); tb=1-(1-tb)*(1-tb); bp=tacLerp_(tacBallXY_(A,G.boff), tacBallXY_(B,G.boff), tb); }
-  } else bp=tacBallXY_(B,G.boff);
-  tacBallDraw_(ctx, X(bp[0]), Y(bp[1]), r*(o.mini?0.5:0.44), o.sel==='ball');
+  var bq=P.owner && P.pos[P.owner] ? [P.pos[P.owner][0]+G.boff[0], P.pos[P.owner][1]+G.boff[1]] : P.ball;
+  tacBallDraw_(ctx, X(bq[0]), Y(bq[1]), r*(o.mini?0.5:0.44), o.sel==='ball', P.bz*G.sx/68*0.9);
+  /* 편집 표시: 선택 상자 · 연결 중인 선 · 그리는 구역 */
+  if(o.ui){
+    if(o.ui.box){ var b=o.ui.box; ctx.save(); ctx.fillStyle='rgba(255,255,255,.08)'; ctx.strokeStyle='rgba(255,255,255,.85)'; ctx.lineWidth=1.2*k2; ctx.setLineDash([5*k2,4*k2]);
+      ctx.fillRect(Math.min(b[0],b[2]),Math.min(b[1],b[3]),Math.abs(b[2]-b[0]),Math.abs(b[3]-b[1])); ctx.strokeRect(Math.min(b[0],b[2]),Math.min(b[1],b[3]),Math.abs(b[2]-b[0]),Math.abs(b[3]-b[1])); ctx.restore(); }
+    if(o.ui.draft && o.ui.draft.length){ var dp=o.ui.draft.map(function(k){ var q=P.pos[k]; return q?[X(q[0]),Y(q[1])]:null; }).filter(Boolean);
+      if(dp.length>1){ ctx.save(); ctx.globalAlpha=0.9; tacArrow2_(ctx, dp, 'link', 0, 1, k2, false); ctx.restore(); }
+      dp.forEach(function(q,i){ ctx.save(); ctx.fillStyle='#7FE3FF'; ctx.beginPath(); ctx.arc(q[0]+r*0.85,q[1]-r*0.85,7*k2,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#062a33'; ctx.font='800 '+Math.round(9*k2)+'px Pretendard, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(String(i+1), q[0]+r*0.85, q[1]-r*0.85+0.5); ctx.restore(); }); }
+    if(o.ui.zdraw){ var zd=o.ui.zdraw; tacZone2_(ctx, G, {r:[Math.min(zd[0],zd[2]),Math.min(zd[1],zd[3]),Math.abs(zd[2]-zd[0]),Math.abs(zd[3]-zd[1])], c:o.ui.zc||'gold', l:''}, 1, true, k2); }
+  }
   ctx.restore();
 }
+/* ================= 전술 방송 그래픽 (3D 카메라 · 영상 · 이미지 카드) =================
+ * 중계 화면처럼: 기울어진 카메라가 공과 움직이는 선수를 따라가고, 바닥에 그려지는 화살표 · 구역,
+ * 선수 머리 위 사진 마커, 인트로 · 하단 자막 · 진행 바 · 엔딩까지 한 번에 그린다.
+ * 좌표: 경기장 비율(x 0~1, y 0=상대 골 ~ 1=우리 골) → 미터(X 가로, Y 앞쪽 +, Z 높이) */
+var TV_PW=68, TV_PL=105, TV_NEAR=0.8;
+var TV_RATIOS={'9:16':[1080,1920,'세로 9:16','릴스 · 쇼츠 · 카톡'], '4:5':[1080,1350,'피드 4:5','인스타 피드 · 카드'], '16:9':[1920,1080,'가로 16:9','유튜브 · PC']};
+function tvW_(p){ return [(p[0]-0.5)*TV_PW, (0.5-p[1])*TV_PL]; }
+/* 카메라: 목표점(tx,ty) · 거리 · 내려다보는 각(elev) · 방향(yaw: 0=우리 골 뒤에서 앞으로, -90°=옆줄에서 · 공격이 오른쪽) */
+function tvCam_(K, R){
+  var ce=Math.cos(K.elev), se=Math.sin(K.elev), yw=K.yaw||0, ys=Math.sin(yw), yc=Math.cos(yw);
+  return {C:[K.tx-ys*ce*K.dist, K.ty-yc*ce*K.dist, K.dist*se], ce:ce, se:se, ys:ys, yc:yc, foc:R.foc, cx:R.W/2, cy:R.H/2};
+}
+function tvCS_(c,X,Y,Z){ var vx=X-c.C[0], vy=Y-c.C[1], vz=(Z||0)-c.C[2], h=vx*c.ys+vy*c.yc; return [vx*c.yc-vy*c.ys, h*c.se+vz*c.ce, h*c.ce-vz*c.se]; }
+function tvPS_(c,q){ return {x:c.cx+c.foc*q[0]/q[2], y:c.cy-c.foc*q[1]/q[2], s:c.foc/q[2], z:q[2]}; }
+function tvP_(c,X,Y,Z){ var q=tvCS_(c,X,Y,Z); return q[2]<TV_NEAR?null:tvPS_(c,q); }
+/* 다각형(바닥 · 벽) — 카메라 앞쪽만 남기고 잘라서 경로로 */
+function tvPoly_(ctx,c,pts){
+  var cs=pts.map(function(p){ return tvCS_(c,p[0],p[1],p[2]||0); }), out=[];
+  for(var i=0;i<cs.length;i++){
+    var a=cs[i], b=cs[(i+1)%cs.length], ain=a[2]>=TV_NEAR, bin=b[2]>=TV_NEAR;
+    if(ain) out.push(a);
+    if(ain!==bin){ var t=(TV_NEAR-a[2])/(b[2]-a[2]); out.push([a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, TV_NEAR]); }
+  }
+  if(out.length<3) return false;
+  ctx.beginPath(); out.forEach(function(q,i){ var p=tvPS_(c,q); if(i) ctx.lineTo(p.x,p.y); else ctx.moveTo(p.x,p.y); }); ctx.closePath();
+  return true;
+}
+function tvLine_(ctx,c,pts){
+  ctx.beginPath(); var prev=null, pen=false, any=false;
+  for(var i=0;i<pts.length;i++){
+    var q=tvCS_(c,pts[i][0],pts[i][1],pts[i][2]||0);
+    if(prev){
+      var ain=prev[2]>=TV_NEAR, bin=q[2]>=TV_NEAR;
+      if(ain && bin){ if(!pen){ var a=tvPS_(c,prev); ctx.moveTo(a.x,a.y); pen=true; } var b=tvPS_(c,q); ctx.lineTo(b.x,b.y); any=true; }
+      else if(ain!==bin){
+        var t=(TV_NEAR-prev[2])/(q[2]-prev[2]), m=tvPS_(c,[prev[0]+(q[0]-prev[0])*t, prev[1]+(q[1]-prev[1])*t, TV_NEAR]);
+        if(ain){ if(!pen){ var a2=tvPS_(c,prev); ctx.moveTo(a2.x,a2.y); } ctx.lineTo(m.x,m.y); pen=false; }
+        else { ctx.moveTo(m.x,m.y); var b2=tvPS_(c,q); ctx.lineTo(b2.x,b2.y); pen=true; }
+        any=true;
+      } else pen=false;
+    }
+    prev=q;
+  }
+  return any;
+}
+function tvCircle_(X,Y,r,n,Z){ var a=[]; for(var i=0;i<n;i++){ var t=i/n*Math.PI*2; a.push([X+Math.cos(t)*r, Y+Math.sin(t)*r, Z||0]); } return a; }
+function tvSeg_(a,b,n){ var o=[]; for(var i=0;i<=n;i++){ var t=i/n; o.push([a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, (a[2]||0)+((b[2]||0)-(a[2]||0))*t]); } return o; }
+function tvArc_(X,Y,r,a0,a1,n){ var o=[]; for(var i=0;i<=n;i++){ var t=a0+(a1-a0)*i/n; o.push([X+Math.cos(t)*r, Y+Math.sin(t)*r]); } return o; }
+function tvRect_(x0,y0,x1,y1,n){ return tvSeg_([x0,y0],[x1,y0],n).concat(tvSeg_([x1,y0],[x1,y1],n).slice(1), tvSeg_([x1,y1],[x0,y1],n).slice(1), tvSeg_([x0,y1],[x0,y0],n).slice(1)); }
+
+/* ---------- 준비: 크기 · 카메라 키프레임 · 사진 ---------- */
+function tvPrep_(doc, plan, o){
+  o=o||{};
+  var W=o.W, H=o.H, stage=(o.overlay==='stage'||o.overlay==='thumb');
+  var R={doc:doc, plan:plan, o:o, W:W, H:H, u:Math.min(W,H)/(stage?(o.overlay==='thumb'?380:640):1080), accent:o.accent||tacAccent_(),
+    foc:(Math.sqrt(W*W+H*H)/2)/Math.tan(28*Math.PI/180), imgs:o.imgs||{}, emblem:o.emblem||null, team:o.team||ourTeamName_()};
+  R.oppLight=tacLum_(R.accent)<0.62;
+  R.TL=tacTL_(plan, {intro:!!o.intro, outro:!!o.outro, speed:o.speed||1});
+  R.lay=tvLayout_(R);
+  R.safe=R.lay.safe;
+  R.K=tvKeys_(R);
+  return R;
+}
+/* 화면 배치: 상단(진행 바 · 엠블럼 · 제목) / 하단 자막 / 카메라가 선수를 담을 안전 영역 */
+function tvLayout_(R){
+  var W=R.W, H=R.H, u=R.u, ov=R.o.overlay, land=W>H*1.2;
+  if(ov==='stage' || ov==='thumb' || ov==='none') return {safe:{l:W*0.06, t:H*0.07, r:W*0.94, b:H*0.93}, land:land};
+  var pad=(land?54:58)*u, headB=(land?150:208)*u, capH=(land?178:(H/W>1.5?292:236))*u;
+  return {land:land, pad:pad, headB:headB, capH:capH, capT:H-capH,
+    safe:{l:pad*0.7, t:headB+(land?14:30)*u, r:W-pad*0.7, b:H-capH-(land?4:12)*u}};
+}
+/* 보여 줄 대상을 담는 카메라 위치 찾기 (거리 이분 탐색 + 세로 가운데 맞춤) */
+function tvFit_(R, pts, elev, minW, minD, yaw){
+  yaw=yaw||0;
+  var ys=Math.sin(yaw), yc=Math.cos(yaw);
+  function toV(p){ return [p[0]*yc-p[1]*ys, p[0]*ys+p[1]*yc]; }          /* 화면 가로(u) · 깊이(v) */
+  function toW(u,v){ return [u*yc+v*ys, -u*ys+v*yc]; }
+  var x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
+  pts.forEach(function(p){ var q=toV(p); x0=Math.min(x0,q[0]); x1=Math.max(x1,q[0]); y0=Math.min(y0,q[1]); y1=Math.max(y1,q[1]); });
+  if(x0>x1){ x0=-20; x1=20; y0=-20; y1=20; }
+  var cu=(x0+x1)/2, cv=(y0+y1)/2, hw=Math.max((x1-x0)/2+3, minW/2), hd=Math.max((y1-y0)/2+3, minD/2);
+  /* 멀리(상대 골문 쪽) 볼수록 카메라를 높여 원근 압축을 줄인다 */
+  if(!yaw && elev<0.8) elev+=tacClamp_((cv-8)/36,0,1)*16*Math.PI/180;
+  var box=[[cu-hw,cv-hd],[cu+hw,cv-hd],[cu+hw,cv+hd],[cu-hw,cv+hd],[cu,cv+hd],[cu,cv-hd]].map(function(q){ return toW(q[0],q[1]); }), inner=pts.length<=40?pts:[];
+  var S=R.safe, sh=0, dist=60;
+  function K_(d,s2){ var t=toW(cu, cv+s2); return {tx:t[0], ty:t[1], dist:d, elev:elev, yaw:yaw}; }
+  function ext(K){
+    var c=tvCam_(K,R), e={l:1e9,r:-1e9,t:1e9,b:-1e9,ok:true};
+    box.forEach(function(q){ var p=tvP_(c,q[0],q[1],0); if(!p){ e.ok=false; return; } e.l=Math.min(e.l,p.x); e.r=Math.max(e.r,p.x); e.t=Math.min(e.t,p.y); e.b=Math.max(e.b,p.y); });
+    inner.forEach(function(q){ var p=tvP_(c,q[0],q[1],0); if(!p){ e.ok=false; return; } var tp=p.y-Math.min(p.s*3.24+p.s*3.1, 150*R.u)-26*R.u; e.t=Math.min(e.t,tp); });
+    return e;
+  }
+  function fits(K){ var e=ext(K); return e.ok && e.l>=S.l && e.r<=S.r && e.t>=S.t && e.b<=S.b; }
+  for(var it=0;it<4;it++){
+    var lo=8, hi=560;
+    for(var j=0;j<28;j++){ var mid=(lo+hi)/2; if(fits(K_(mid,sh))) hi=mid; else lo=mid; }
+    dist=hi;
+    var e1=ext(K_(dist,sh)), e2=ext(K_(dist,sh+1)), want=(S.t+S.b)/2, now=(e1.t+e1.b)/2, rate=(e2.t+e2.b)/2-now;
+    if(Math.abs(rate)>1e-4) sh+=tacClamp_((want-now)/rate, -30, 30);
+  }
+  return K_(dist, sh);
+}
+/* 장면별로 담을 대상: 공 · 이번/다음 움직임 · 구역 · 강조 선수 */
+function tvInterest_(doc, plan, i){
+  var st=plan.steps[i], pts=[], seen={};
+  function add(p, k){ if(!p) return; if(k){ if(seen[k]) return; seen[k]=1; } pts.push(tvW_(p)); }
+  add(tacBallBase_(st));
+  var prev=plan.steps[i-1], next=plan.steps[i+1];
+  if(prev) tacMotion_(doc, prev, st).forEach(function(m){ if(m.kind==='opp') return; add(m.a); add(m.b); if(m.cv) add(m.f(0.5)); });
+  else if(next) tacMotion_(doc, st, next).forEach(function(m){ if(m.kind==='opp') return; add(m.a); });
+  if(next){ add(tacBallBase_(next)); }
+  (st.fx||[]).forEach(function(f){ if(f.t==='zone'){ add([f.r[0],f.r[1]]); add([f.r[0]+f.r[2], f.r[1]+f.r[3]]); } else (f.ks||[]).forEach(function(k){ add(st.pos[k]); }); });
+  Object.keys(st.hl||{}).forEach(function(k){ add(st.pos[k]); });
+  if(doc.focus && doc.focus.keys && doc.focus.keys.length) doc.focus.keys.forEach(function(k){ add(st.pos[k]); });
+  if(pts.length<3) doc.our.forEach(function(t){ add(st.pos[t.k]); });
+  return pts;
+}
+function tvKeys_(R){
+  var doc=R.doc, plan=R.plan, K=[], i;
+  var all=[[-TV_PW/2,-TV_PL/2],[TV_PW/2,-TV_PL/2],[TV_PW/2,TV_PL/2],[-TV_PW/2,TV_PL/2]];
+  var land=R.W>R.H*1.2, SIDE=-Math.PI/2;
+  function build(yaw){
+    var ks=[];
+    if(R.o.cam==='wide'){
+      var pts=[]; plan.steps.forEach(function(st){ doc.our.forEach(function(t){ if(st.pos[t.k]) pts.push(tvW_(st.pos[t.k])); }); pts.push(tvW_(tacBallBase_(st))); });
+      var kw=tvFit_(R, pts, 48*Math.PI/180, 40, 34, yaw);
+      for(var j=0;j<plan.steps.length;j++) ks.push(kw);
+    } else {
+      var mw=land?40:28, md=land?22:20;
+      for(var j2=0;j2<plan.steps.length;j2++) ks.push(tvFit_(R, tvInterest_(doc, plan, j2), 40*Math.PI/180, mw, md, yaw));
+    }
+    return ks;
+  }
+  /* 방향 고르기: 같은 장면을 더 가까이(크게) 담는 쪽 — 세로 화면은 골대 뒤, 가로 화면은 옆줄 시점이 기본 */
+  var kEnd=build(0), kSide=build(SIDE), sum=function(a){ return a.reduce(function(s,k){ return s+k.dist; },0); };
+  var useSide=land ? (sum(kSide)<=sum(kEnd)*1.2) : (sum(kSide)<sum(kEnd)*0.86);
+  if(R.o.yaw==='end') useSide=false; else if(R.o.yaw==='side') useSide=true;
+  K=useSide?kSide:kEnd; R.yaw=useSide?SIDE:0;
+  R.Kov=tvFit_(R, all, 56*Math.PI/180, 0, 0, R.yaw);
+  R.push=R.TL.segs.filter(function(s){ return s.k==='hold'; }).map(function(s){ return 1-0.04*tacClamp_(s.d/3.5,0,1); });
+  return K;
+}
+function tvLerpK_(a,b,t){ return {tx:a.tx+(b.tx-a.tx)*t, ty:a.ty+(b.ty-a.ty)*t, dist:a.dist+(b.dist-a.dist)*t, elev:a.elev+(b.elev-a.elev)*t, yaw:(a.yaw||0)+((b.yaw||0)-(a.yaw||0))*t}; }
+function tvKPush_(R,i,f){ var k=R.K[i]; return {tx:k.tx, ty:k.ty, dist:k.dist*(1-(1-(R.push[i]||1))*f), elev:k.elev, yaw:k.yaw||0}; }
+function tvCamAt_(R, st){
+  var k;
+  if(st.k==='intro') k=tvLerpK_(R.Kov, R.K[0], tacSmooth_(tacClamp_((st.u-0.3)/0.7,0,1)));
+  else if(st.k==='outro') k=tvLerpK_(tvKPush_(R,st.i,1), R.Kov, tacSmooth_(tacClamp_(st.u/0.75,0,1)));
+  else if(st.k==='move') k=tvLerpK_(tvKPush_(R,st.i-1,1), R.K[st.i], tacSmooth_(tacClamp_(st.p/0.9,0,1)));
+  else k=tvKPush_(R, st.i, tacClamp_(st.lt/st.seg.d,0,1));
+  return tvCam_(k, R);
+}
+/* 사진 · 엠블럼 미리 불러오기 */
+function tvAssets_(doc){
+  var imgs={}, jobs=[];
+  doc.our.forEach(function(t){
+    if(!t.pid) return; var p=(state.players||[]).filter(function(x){ return x.id===t.pid; })[0];
+    if(p && p.photo) jobs.push(loadImg_(p.photo).then(function(im){ if(im) imgs[t.k]=im; }));
+  });
+  var em=null; jobs.push(loadImg_(teamEmblemSrc_()).then(function(im){ em=im; }));
+  return Promise.all(jobs).then(function(){ return {imgs:imgs, emblem:em}; });
+}
+
+/* ---------- 경기장 · 경기장 주변 ---------- */
+var _tvNoise=null;
+function tvNoise_(){
+  if(_tvNoise) return _tvNoise;
+  var c=document.createElement('canvas'); c.width=c.height=160; var x=c.getContext('2d'), d=x.createImageData(160,160);
+  for(var i=0;i<d.data.length;i+=4){ var v=Math.random()*255|0; d.data[i]=d.data[i+1]=d.data[i+2]=v; d.data[i+3]=255; }
+  x.putImageData(d,0,0); _tvNoise=c; return c;
+}
+function tvPitch3_(ctx, c, R){
+  var W=R.W, H=R.H, u=R.u, i, hx=TV_PW/2, hy=TV_PL/2;
+  var sky=ctx.createLinearGradient(0,0,0,H); sky.addColorStop(0,'#05070a'); sky.addColorStop(0.5,'#0a1210'); sky.addColorStop(1,'#0c1712');
+  ctx.fillStyle=sky; ctx.fillRect(0,0,W,H);
+  /* 관중석 (뒤 · 좌우) */
+  [[[-62,hy+9,1],[62,hy+9,1],[70,hy+30,18],[-70,hy+30,18]], [[62,-hy-9,1],[-62,-hy-9,1],[-70,-hy-30,18],[70,-hy-30,18]], [[-hx-8,-hy-8,1],[-hx-8,hy+9,1],[-hx-30,hy+30,18],[-hx-30,-hy-30,18]], [[hx+8,-hy-8,1],[hx+8,hy+9,1],[hx+30,hy+30,18],[hx+30,-hy-30,18]]].forEach(function(q){
+    if(tvPoly_(ctx,c,q)){ ctx.fillStyle='#0b1014'; ctx.fill(); }
+  });
+  /* 경기장 바깥 잔디 */
+  if(tvPoly_(ctx,c,[[-hx-8,-hy-8],[hx+8,-hy-8],[hx+8,hy+9],[-hx-8,hy+9]])){ ctx.fillStyle='#1f5636'; ctx.fill(); }
+  /* 잔디 줄무늬 */
+  var NB=18;
+  for(i=0;i<NB;i++){ var a0=-hy+i*TV_PL/NB, a1=a0+TV_PL/NB;
+    if(tvPoly_(ctx,c,[[-hx-6,a0],[hx+6,a0],[hx+6,a1],[-hx-6,a1]])){ ctx.fillStyle=(i%2)?'#2e8350':'#36925b'; ctx.fill(); } }
+  for(i=0;i<8;i+=2){ var b0=-hx+i*TV_PW/8, b1=b0+TV_PW/8;
+    if(tvPoly_(ctx,c,[[b0,-hy],[b1,-hy],[b1,hy],[b0,hy]])){ ctx.fillStyle='rgba(255,255,255,.035)'; ctx.fill(); } }
+  /* 라인 */
+  ctx.lineJoin='round'; ctx.lineCap='round';
+  function stroke(pts, cx2, cy2){ var p=tvP_(c,cx2,cy2,0), lw=tacClamp_((p?p.s:6)*0.13, 1.1*u, 4.2*u); if(tvLine_(ctx,c,pts)){ ctx.lineWidth=lw; ctx.strokeStyle='rgba(255,255,255,.88)'; ctx.stroke(); } }
+  stroke(tvRect_(-hx,-hy,hx,hy,14), 0, 0);
+  stroke(tvSeg_([-hx,0],[hx,0],14), 0, 0);
+  stroke(tvArc_(0,0,9.15,0,Math.PI*2,56), 0, 0);
+  [-1,1].forEach(function(s){
+    var gy=s*hy;
+    stroke(tvRect_(-20.16, gy, 20.16, gy-s*16.5, 8), 0, gy-s*8);
+    stroke(tvRect_(-9.16, gy, 9.16, gy-s*5.5, 4), 0, gy-s*3);
+    var an=Math.acos(5.5/9.15), pc=gy-s*11, mid=(s>0)?-Math.PI/2:Math.PI/2;
+    stroke(tvArc_(0,pc,9.15,mid-an,mid+an,20), 0, pc-s*7);
+    [-1,1].forEach(function(sx){ var cxn=sx*hx, ac=Math.atan2(-s,-sx); stroke(tvArc_(cxn,gy,1,ac-Math.PI/4,ac+Math.PI/4,8), cxn, gy); });
+    /* 골대 */
+    var gp=tvP_(c,0,gy,0), glw=tacClamp_((gp?gp.s:6)*0.14, 1.2*u, 4.5*u), dep=s*2.2;
+    ctx.strokeStyle='rgba(255,255,255,.95)'; ctx.lineWidth=glw;
+    if(tvLine_(ctx,c,[[-3.66,gy,0],[-3.66,gy,2.44],[3.66,gy,2.44],[3.66,gy,0]])) ctx.stroke();
+    ctx.strokeStyle='rgba(255,255,255,.38)'; ctx.lineWidth=glw*0.55;
+    if(tvLine_(ctx,c,[[-3.66,gy,2.44],[-3.66,gy+dep,1.6],[-3.66,gy+dep,0]])) ctx.stroke();
+    if(tvLine_(ctx,c,[[3.66,gy,2.44],[3.66,gy+dep,1.6],[3.66,gy+dep,0]])) ctx.stroke();
+    if(tvLine_(ctx,c,[[-3.66,gy+dep,1.6],[3.66,gy+dep,1.6]])) ctx.stroke();
+    for(var nx=-3;nx<=3;nx+=1.5){ if(tvLine_(ctx,c,[[nx,gy,2.44],[nx,gy+dep,1.6],[nx,gy+dep,0]])) ctx.stroke(); }
+  });
+  [[0,0],[0,hy-11],[0,-hy+11]].forEach(function(sp){ if(tvPoly_(ctx,c,tvCircle_(sp[0],sp[1],0.28,10))){ ctx.fillStyle='rgba(255,255,255,.9)'; ctx.fill(); } });
+  /* LED 광고판: 팀 이름 */
+  tvBoards_(ctx, c, R);
+}
+function tvBoards_(ctx, c, R){
+  var hx=TV_PW/2, hy=TV_PL/2, L=8, Hm=0.95, txt=String(R.team||'').toUpperCase(), acc=R.accent, segs=[];
+  for(var x=-44;x<44;x+=L) segs.push([[x,hy+4],[x+L,hy+4]]);
+  for(var x2=-44;x2<44;x2+=L) segs.push([[x2+L,-hy-4],[x2,-hy-4]]);
+  for(var y=-hy-2;y<hy+4;y+=L){ segs.push([[-hx-4,y+L],[-hx-4,y]]); segs.push([[hx+4,y],[hx+4,y+L]]); }
+  segs.forEach(function(sg,idx){
+    var a=sg[0], b=sg[1];
+    var p00=tvP_(c,a[0],a[1],0), p10=tvP_(c,b[0],b[1],0), p01=tvP_(c,a[0],a[1],Hm), p11=tvP_(c,b[0],b[1],Hm);
+    if(!p00||!p10||!p01||!p11) return;
+    if(Math.abs(p10.x-p00.x)+Math.abs(p10.y-p00.y)<6) return;
+    if(p10.x<p00.x){ var sw=a; a=b; b=sw; sw=p00; p00=p10; p10=sw; sw=p01; p01=p11; p11=sw; }
+    ctx.beginPath(); ctx.moveTo(p00.x,p00.y); ctx.lineTo(p10.x,p10.y); ctx.lineTo(p11.x,p11.y); ctx.lineTo(p01.x,p01.y); ctx.closePath();
+    var g=ctx.createLinearGradient(p01.x,p01.y,p00.x,p00.y); g.addColorStop(0, idx%2?'#14181d':acc); g.addColorStop(1, idx%2?'#0b0e11':tacRgba_(acc,.55));
+    ctx.fillStyle=g; ctx.fill();
+    if(!txt) return;
+    var a2=(p11.x-p01.x)/(L*100), b2=(p11.y-p01.y)/(L*100), c2=(p00.x-p01.x)/(Hm*100), d2=(p00.y-p01.y)/(Hm*100);
+    ctx.save(); ctx.transform(a2,b2,c2,d2,p01.x,p01.y);
+    ctx.fillStyle=idx%2?tacRgba_(acc,.95):'#fff'; ctx.font='700 58px Oswald, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(txt.length>14?txt.slice(0,14):txt, L*50, Hm*52, L*92);
+    ctx.restore();
+  });
+}
+function tvLight_(ctx, R){
+  var W=R.W, H=R.H;
+  var l=ctx.createRadialGradient(W*0.5,-H*0.05,H*0.05,W*0.5,H*0.2,H*0.95); l.addColorStop(0,'rgba(255,248,220,.13)'); l.addColorStop(1,'rgba(255,248,220,0)');
+  ctx.fillStyle=l; ctx.fillRect(0,0,W,H);
+  var d=Math.sqrt(W*W+H*H)/2, v=ctx.createRadialGradient(W/2,H/2,d*0.42,W/2,H/2,d*1.02); v.addColorStop(0,'rgba(0,0,0,0)'); v.addColorStop(1,'rgba(0,0,0,.55)');
+  ctx.fillStyle=v; ctx.fillRect(0,0,W,H);
+  if(R.o.overlay!=='thumb'){ ctx.save(); ctx.globalAlpha=0.045; ctx.fillStyle=ctx.createPattern(tvNoise_(),'repeat'); ctx.fillRect(0,0,W,H); ctx.restore(); }
+}
+
+/* ---------- 바닥 그래픽: 화살표 띠 · 구역 · 연결선 ---------- */
+function tvSub_(pts, s0, s1){
+  var L=[0], i; for(i=1;i<pts.length;i++) L.push(L[i-1]+Math.hypot(pts[i][0]-pts[i-1][0], pts[i][1]-pts[i-1][1]));
+  var tot=L[L.length-1], d0=s0*tot, d1=s1*tot, out=[];
+  function at(d){ for(var j=1;j<L.length;j++){ if(L[j]>=d){ var t=(d-L[j-1])/((L[j]-L[j-1])||1); return [pts[j-1][0]+(pts[j][0]-pts[j-1][0])*t, pts[j-1][1]+(pts[j][1]-pts[j-1][1])*t]; } } return pts[pts.length-1].slice(); }
+  out.push(at(d0)); for(i=1;i<pts.length-1;i++){ if(L[i]>d0 && L[i]<d1) out.push(pts[i].slice()); } out.push(at(d1));
+  return {pts:out, len:d1-d0, tot:tot};
+}
+function tvLen_(pts){ var s=0; for(var i=1;i<pts.length;i++) s+=Math.hypot(pts[i][0]-pts[i-1][0], pts[i][1]-pts[i-1][1]); return s; }
+/* 바닥에 붙은 띠(+화살촉). pts: 미터 경로 */
+function tvRibbon_(ctx, c, pts, hw, head, fill){
+  if(pts.length<2) return;
+  var len=tvLen_(pts), hl=head?Math.min(head[0], len*0.6):0, body=hl?tvSub_(pts,0,(len-hl)/len).pts:pts;
+  var Lf=[], Rt=[], n=body.length;
+  for(var i=0;i<n;i++){
+    var a=body[Math.max(0,i-1)], b=body[Math.min(n-1,i+1)], dx=b[0]-a[0], dy=b[1]-a[1], dl=Math.hypot(dx,dy)||1, nx=-dy/dl, ny=dx/dl;
+    Lf.push([body[i][0]+nx*hw, body[i][1]+ny*hw]); Rt.push([body[i][0]-nx*hw, body[i][1]-ny*hw]);
+  }
+  var poly=Lf.slice();
+  if(hl){
+    var e=pts[pts.length-1], bse=body[n-1], dx2=e[0]-bse[0], dy2=e[1]-bse[1], dl2=Math.hypot(dx2,dy2)||1, nx2=-dy2/dl2, ny2=dx2/dl2;
+    poly.push([bse[0]+nx2*head[1], bse[1]+ny2*head[1]], [e[0],e[1]], [bse[0]-nx2*head[1], bse[1]-ny2*head[1]]);
+  }
+  poly=poly.concat(Rt.reverse());
+  if(tvPoly_(ctx,c,poly)){ ctx.fillStyle=fill; ctx.fill(); }
+}
+function tvDashes_(ctx, c, pts, hw, on, off, fill, head){
+  var tot=tvLen_(pts); if(tot<0.5) return;
+  var hlen=head?head[0]:0;
+  for(var d=0; d<tot-hlen-0.2; d+=on+off){ var e=Math.min(tot-hlen, d+on); tvRibbon_(ctx, c, tvSub_(pts, d/tot, e/tot).pts, hw, null, fill); }
+  if(head) tvRibbon_(ctx, c, tvSub_(pts, Math.max(0,(tot-hlen-0.3))/tot, 1).pts, hw, head, fill);
+}
+function tvWave_(pts){
+  var tot=tvLen_(pts), out=[], n=Math.max(12, Math.round(tot/0.6));
+  for(var i=0;i<=n;i++){ var s=i/n, q=tvSub_(pts, 0, Math.max(0.0001,s)).pts, p=q[q.length-1], a=q.length>1?q[q.length-2]:pts[0];
+    var dx=p[0]-a[0], dy=p[1]-a[1], dl=Math.hypot(dx,dy)||1, amp=0.55*Math.min(1,(1-s)*tot/3), o=Math.sin(s*tot/2.4*Math.PI*2)*amp;
+    out.push([p[0]-dy/dl*o, p[1]+dx/dl*o]); }
+  return out;
+}
+function tvMovePts_(m, n){ var o=[]; for(var i=0;i<=n;i++) o.push(tvW_(m.f(i/n))); return o; }
+function tvTrimM_(pts, a, b){ var tot=tvLen_(pts); if(tot<a+b+0.6) return null; return tvSub_(pts, a/tot, 1-b/tot).pts; }
+function tvZone_(ctx, c, R, f, a, t){
+  var col=TAC_FXC[f.c]||TAC_FXC.gold, r=f.r, p0=tvW_([r[0],r[1]]), p1=tvW_([r[0]+r[2], r[1]+r[3]]);
+  var x0=Math.min(p0[0],p1[0]), x1=Math.max(p0[0],p1[0]), y0=Math.min(p0[1],p1[1]), y1=Math.max(p0[1],p1[1]), rc=Math.min(2.2,(x1-x0)/3,(y1-y0)/3), pts=[];
+  [[x1-rc,y1-rc,0],[x0+rc,y1-rc,Math.PI/2],[x0+rc,y0+rc,Math.PI],[x1-rc,y0+rc,Math.PI*1.5]].forEach(function(q){ for(var i=0;i<=6;i++){ var an=q[2]+i/6*Math.PI/2; pts.push([q[0]+Math.cos(an)*rc, q[1]+Math.sin(an)*rc]); } });
+  var pu=0.5+0.5*Math.sin(t*3.2);
+  ctx.save(); ctx.globalAlpha*=a;
+  if(tvPoly_(ctx,c,pts)){
+    ctx.fillStyle=tacRgba_(col, 0.20+0.08*pu); ctx.fill();
+    ctx.lineWidth=2.6*R.u; ctx.strokeStyle=tacRgba_(col,.95); ctx.setLineDash([12*R.u,8*R.u]); ctx.lineDashOffset=-t*30*R.u; ctx.stroke(); ctx.setLineDash([]);
+  }
+  if(f.l){
+    var lp=tvP_(c,(x0+x1)/2,y1,0);
+    if(lp){ var fs=Math.round(26*R.u); ctx.font='800 '+fs+'px Pretendard, sans-serif'; var tw=ctx.measureText(f.l).width+fs*1.1, th=fs*1.7;
+      ctx.shadowColor='rgba(0,0,0,.5)'; ctx.shadowBlur=10*R.u; rr_(ctx, lp.x-tw/2, lp.y-th-8*R.u, tw, th, th/2); ctx.fillStyle=col; ctx.fill(); ctx.shadowBlur=0;
+      ctx.fillStyle=tacLum_(col)>0.6?'#121418':'#fff'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(f.l, lp.x, lp.y-th/2-8*R.u+1); }
+  }
+  ctx.restore();
+}
+
+/* ---------- 선수 마커 · 공 ---------- */
+function tvToken_(ctx, c, R, X, Y, tk, o){
+  var g=tvP_(c,X,Y,0); if(!g) return;
+  var u=R.u, ours=o.ours, gk=(tk.pos==='GK'), acc=R.accent, hi=o.hi||0, t=o.t||0;
+  var col=ours?(gk?'#F2C94C':acc):(R.oppLight?(gk?'#B8C0CA':'#EEF1F4'):(gk?'#4b525c':'#22262d'));
+  ctx.save(); ctx.globalAlpha*=(o.alpha==null?1:o.alpha);
+  /* 바닥: 그림자 · 링 · 강조 빛 */
+  if(hi>0){
+    var gr=tvP_(c,X,Y,0); var rg=ctx.createRadialGradient(gr.x,gr.y,0,gr.x,gr.y,gr.s*4.2); rg.addColorStop(0,'rgba(255,214,90,'+(0.42*hi)+')'); rg.addColorStop(1,'rgba(255,214,90,0)');
+    ctx.fillStyle=rg; if(tvPoly_(ctx,c,tvCircle_(X,Y,4.2,28))) ctx.fill();
+    for(var w=0;w<2;w++){ var ph=((t*0.7+w*0.5)%1); if(tvPoly_(ctx,c,tvCircle_(X,Y,1.1+ph*3.4,30))){ ctx.lineWidth=tacClamp_(0.2*g.s,1.5*u,5*u); ctx.strokeStyle='rgba(255,220,110,'+((1-ph)*0.85*hi)+')'; ctx.stroke(); } }
+  }
+  if(tvPoly_(ctx,c,tvCircle_(X+0.3,Y-0.2,1.45,20))){ ctx.fillStyle='rgba(0,0,0,.32)'; ctx.fill(); }
+  if(tvPoly_(ctx,c,tvCircle_(X,Y,1.12,26))){
+    ctx.fillStyle=tacRgba_(ours?col:(R.oppLight?'#ffffff':'#000000'), ours?0.34:0.22); ctx.fill();
+    ctx.lineWidth=tacClamp_(0.17*g.s, 1.6*u, 4.6*u); ctx.strokeStyle=ours?col:(R.oppLight?'rgba(255,255,255,.9)':'rgba(8,10,12,.9)'); ctx.stroke();
+  }
+  if(o.ghost) { ctx.restore(); return; }
+  /* 머리 위 마커 */
+  var top=tvP_(c,X,Y,ours?3.1:2.3); if(!top){ ctx.restore(); return; }
+  var R0=tacClamp_(g.s*1.62, 25*u, 56*u)*(ours?1:0.74)*(1+0.12*hi), dy=top.y-R0;
+  ctx.strokeStyle=ours?'rgba(255,255,255,.7)':'rgba(255,255,255,.42)'; ctx.lineWidth=1.7*u;
+  ctx.beginPath(); ctx.moveTo(g.x,g.y); ctx.lineTo(top.x, top.y); ctx.stroke();
+  ctx.save(); ctx.shadowColor='rgba(0,0,0,.5)'; ctx.shadowBlur=12*u; ctx.shadowOffsetY=4*u;
+  if(hi>0){ ctx.shadowColor='rgba(255,210,80,'+(0.9*hi)+')'; ctx.shadowBlur=26*u; ctx.shadowOffsetY=0; }
+  ctx.beginPath(); ctx.arc(top.x,dy,R0,0,Math.PI*2);
+  var dg=ctx.createLinearGradient(0,dy-R0,0,dy+R0); dg.addColorStop(0, ours?tacRgba_(col,1):(R.oppLight?'#ffffff':'#2c3139')); dg.addColorStop(1, ours?shade_(col,-0.28):(R.oppLight?'#cfd5dc':'#15181d'));
+  ctx.fillStyle=dg; ctx.fill(); ctx.restore();
+  var img=ours?o.img:null, lab=String(tk.num==null||tk.num===''?(tk.pos||''):tk.num);
+  if(img){ circImg_(ctx, img, top.x, dy, R0-2.6*u, null); }
+  else {
+    ctx.fillStyle=ours?(gk?'#1b1503':(tacLum_(col)>0.72?'#111':'#fff')):(R.oppLight?'#16191e':'#fff');
+    ctx.font='700 '+Math.round(R0*(lab.length>2?0.78:1.0))+'px Oswald, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(lab, top.x, dy+R0*0.05);
+  }
+  ctx.beginPath(); ctx.arc(top.x,dy,R0,0,Math.PI*2); ctx.lineWidth=(hi>0?4.2:3)*u; ctx.strokeStyle=hi>0?'#FFD84D':(ours?'#fff':(R.oppLight?'rgba(20,24,28,.85)':'rgba(255,255,255,.55)')); ctx.stroke();
+  if(img){
+    var br=R0*0.44, bx=top.x+R0*0.74, by=dy+R0*0.7;
+    ctx.beginPath(); ctx.arc(bx,by,br,0,Math.PI*2); ctx.fillStyle=gk?'#F2C94C':'#0f1216'; ctx.fill(); ctx.lineWidth=2*u; ctx.strokeStyle=gk?'#fff':col; ctx.stroke();
+    ctx.fillStyle=gk?'#141414':'#fff'; ctx.font='700 '+Math.round(br*1.15)+'px Oswald, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(lab, bx, by+br*0.06);
+  }
+  /* 이름표 */
+  if(ours && tk.n && (o.names || hi>0)){
+    var nm=String(tk.n); if(nm.length>5) nm=nm.slice(0,5);
+    if(hi>=2 && o.meTag) nm='나 · '+nm;
+    var fs=Math.round(Math.max(17*u, R0*(hi>0?0.6:0.5))); ctx.font='800 '+fs+'px Pretendard, sans-serif';
+    var tw=ctx.measureText(nm).width+fs*1.0, th=fs*1.55, ty=dy-R0-th-5*u;
+    ctx.save(); ctx.shadowColor='rgba(0,0,0,.45)'; ctx.shadowBlur=8*u;
+    rr_(ctx, top.x-tw/2, ty, tw, th, th/2); ctx.fillStyle=hi>0?'#FFD84D':'rgba(10,12,15,.82)'; ctx.fill(); ctx.restore();
+    ctx.fillStyle=hi>0?'#15130a':'#fff'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(nm, top.x, ty+th/2+1);
+  }
+  ctx.restore();
+}
+function tvBall_(ctx, c, R, X, Y, Z){
+  var g=tvP_(c,X,Y,0), b=tvP_(c,X,Y,0.24+Z); if(!g || !b) return;
+  var u=R.u, rb=tacClamp_(0.42*b.s, 9*u, 19*u), sh=1/(1+Z*0.12);
+  ctx.save();
+  ctx.fillStyle='rgba(0,0,0,'+(0.45*sh)+')'; ctx.beginPath(); ctx.ellipse(g.x+rb*0.2, g.y+rb*0.15, rb*1.15*sh, rb*0.45*sh, 0, 0, Math.PI*2); ctx.fill();
+  if(Z>0.4){ ctx.shadowColor='rgba(255,240,190,.85)'; ctx.shadowBlur=rb*2.2; }
+  var bg=ctx.createRadialGradient(b.x-rb*0.35,b.y-rb*0.4,rb*0.1,b.x,b.y,rb); bg.addColorStop(0,'#ffffff'); bg.addColorStop(1,'#c6cdd5');
+  ctx.beginPath(); ctx.arc(b.x,b.y,rb,0,Math.PI*2); ctx.fillStyle=bg; ctx.fill(); ctx.shadowBlur=0;
+  ctx.lineWidth=Math.max(1,rb*0.12); ctx.strokeStyle='rgba(20,22,26,.85)'; ctx.stroke();
+  ctx.fillStyle='#1a1d22'; ctx.beginPath();
+  for(var i=0;i<5;i++){ var a=-Math.PI/2+i*Math.PI*2/5, px=b.x+Math.cos(a)*rb*0.4, py=b.y+Math.sin(a)*rb*0.4; if(i) ctx.lineTo(px,py); else ctx.moveTo(px,py); }
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+/* ---------- 장면 그리기 ---------- */
+/* st: tacTLAt_ 결과(또는 {i,A,B,p:1}) · still=정지 화면(카드 · 편집 미리보기: 출발 위치 · 화살표 전부 표시) */
+function tvScene_(ctx, R, st, still, t){
+  var doc=R.doc, A=st.A, B=st.B, p=still?1:st.p, u=R.u, k3;
+  var c=still ? tvCam_(R.K[st.i], R) : tvCamAt_(R, st);
+  tvPitch3_(ctx, c, R);
+  var P=tacPose_(doc, A, B, p), foc=(doc.focus&&doc.focus.keys&&doc.focus.keys.length)?doc.focus:null, fset={};
+  if(foc) foc.keys.forEach(function(k){ fset[k]=1; });
+  function vis(k){ if(!foc) return 1; if(tacIsOpp_(k)) return foc.opp===false?0:0.55; return fset[k]?1:(foc.hide?0:0.22); }
+  /* 구역 · 연결선 */
+  var fxs=still ? (B.fx||[]).map(function(f){ return {f:f, a:1}; }) : tacFxAlpha_(A, B, p, st.hold);
+  fxs.forEach(function(x){ if(x.f.t==='zone') tvZone_(ctx, c, R, x.f, x.a, t); });
+  fxs.forEach(function(x){
+    if(x.f.t!=='link') return;
+    var pts=(x.f.ks||[]).map(function(k){ return P.pos[k]?tvW_(P.pos[k]):null; }).filter(Boolean); if(pts.length<2) return;
+    var dense=[]; for(var i=1;i<pts.length;i++) dense=dense.concat(tvSeg_(pts[i-1],pts[i],6).slice(i>1?1:0));
+    var shown=tvSub_(dense, 0, Math.max(0.001, x.a)).pts;
+    ctx.save(); tvRibbon_(ctx, c, shown, 0.3, null, 'rgba(0,0,0,.25)'); tvRibbon_(ctx, c, shown, 0.17, null, 'rgba(127,227,255,.95)');
+    pts.forEach(function(q){ if(tvPoly_(ctx,c,tvCircle_(q[0],q[1],0.55,14))){ ctx.fillStyle='rgba(127,227,255,'+(0.9*x.a)+')'; ctx.fill(); } });
+    ctx.restore();
+  });
+  /* 움직임 */
+  var mv=A ? tacMotion_(doc, A, B) : [];
+  if(still && A) mv.forEach(function(m){ if(m.kind==='run' && vis(m.k)>0.5){ var tk=doc.our.filter(function(x){ return x.k===m.k; })[0]; if(tk){ var w0=tvW_(m.a); ctx.save(); ctx.globalAlpha=0.45; tvToken_(ctx, c, R, w0[0], w0[1], tk, {ours:true, ghost:true}); ctx.restore(); } } });
+  mv.forEach(function(m){
+    if(m.k!=='ball' && vis(m.k)<0.5) return;
+    var pts=tvMovePts_(m, m.cv?22:6);
+    if(m.kind==='pass'){
+      var to=(B.own && P.pos[B.own]) ? tvW_(P.pos[B.own]) : pts[pts.length-1], fr=(A.own && A.pos[A.own]) ? tvW_(A.pos[A.own]) : pts[0];
+      var line=tvTrimM_(tvSeg_(fr,to,8), 0.9, 1.6); if(!line) return;
+      var la=still?1:(P.bt>=1?Math.max(0,1-(st.hold||0)/0.5):Math.min(1,P.arr*1.4));
+      if(la>0){ ctx.save(); ctx.globalAlpha*=la*(still?1:0.75); tvDashes_(ctx, c, line, 0.2, 1.7, 1.1, '#FFD34D', [2.2,0.85]); ctx.restore(); }
+      if(!still && P.bt<1 && P.bt>0){
+        var tr=[], fl=tacMeters_(m.a,m.b), hm=(fl>24)?Math.min(9,fl*0.17):fl*0.025, e=tacSmooth_(P.bt), e0=Math.max(0,e-0.5);
+        for(var j=0;j<=16;j++){ var s=e0+(e-e0)*j/16, q=[fr[0]+(to[0]-fr[0])*s, fr[1]+(to[1]-fr[1])*s], bt=s; tr.push([q[0],q[1], 0.24+4*hm*bt*(1-bt)]); }
+        ctx.save(); ctx.lineCap='round';
+        if(tvLine_(ctx,c,tr)){ ctx.strokeStyle='rgba(255,211,77,.28)'; ctx.lineWidth=12*u; ctx.stroke(); ctx.strokeStyle='rgba(255,236,160,.95)'; ctx.lineWidth=3.2*u; ctx.stroke(); }
+        ctx.restore();
+        var rp=(P.bt*2)%1; if(tvPoly_(ctx,c,tvCircle_(to[0],to[1],1.0+rp*2.2,26))){ ctx.lineWidth=2.4*u; ctx.strokeStyle='rgba(255,211,77,'+(1-rp)+')'; ctx.stroke(); }
+      }
+      return;
+    }
+    var trim=tvTrimM_(pts, 1.25, 1.55); if(!trim) return;
+    var body=(m.kind==='drib')?tvWave_(trim):trim, s0=0, s1=1;
+    if(!still){ s1=P.arr; s0=Math.min(s1, Math.max(0, P.mp-0.02)); if(p>=1) return; }
+    if(s1-s0<0.01) return;
+    var seg=tvSub_(body, s0, s1).pts, hd=(m.kind==='opp')?[1.4,0.55]:[2.5,1.05];
+    if(m.kind==='opp'){ ctx.save(); ctx.globalAlpha*=0.6*vis(m.k); tvDashes_(ctx, c, seg, 0.13, 0.7, 0.7, R.oppLight?'rgba(255,255,255,.75)':'rgba(10,14,12,.8)', hd); ctx.restore(); return; }
+    ctx.save();
+    tvRibbon_(ctx, c, seg, 0.42, [hd[0]+0.25, hd[1]+0.22], 'rgba(0,0,0,.28)');
+    tvRibbon_(ctx, c, seg, m.kind==='drib'?0.22:0.3, hd, m.kind==='drib'?'#FFD34D':'rgba(255,255,255,.96)');
+    ctx.restore();
+    if(!still && P.mp>0.02 && P.mp<1){ var tl=tvSub_(trim, Math.max(0,P.mp-0.3), P.mp).pts; ctx.save(); ctx.globalAlpha*=0.35; tvRibbon_(ctx, c, tl, 0.16, null, tacRgba_(R.accent,1)); ctx.restore(); }
+  });
+  /* 선수 (먼 쪽부터) */
+  var hi=tacHi_(A, B, R.o.me), hiA=still?1:((st.k==='move')?tacClamp_((p-0.6)/0.3,0,1):1), list=[];
+  doc.our.concat(doc.opp).forEach(function(tk){
+    var q=P.pos[tk.k], a=vis(tk.k); if(!q || a<=0) return;
+    var w=tvW_(q), cs=tvCS_(c,w[0],w[1],0); list.push({tk:tk, w:w, z:cs[2], a:a});
+  });
+  list.sort(function(x,y){ return y.z-x.z; });
+  var bpos=P.owner && P.pos[P.owner] ? tvW_(P.pos[P.owner]) : tvW_(P.ball), own=!!(P.owner && P.pos[P.owner]);
+  var bX=bpos[0]+(own?0.75:0), bY=bpos[1]+(own?-0.55:0), bz=tvCS_(c,bX,bY,0)[2], ballDone=false;
+  list.forEach(function(it){
+    if(!ballDone && it.z<bz){ tvBall_(ctx, c, R, bX, bY, P.bz); ballDone=true; }
+    var ours=!tacIsOpp_(it.tk.k), h=(hi[it.tk.k]||0)*(hi[it.tk.k]===2?1:hiA);
+    tvToken_(ctx, c, R, it.w[0], it.w[1], it.tk, {ours:ours, img:R.imgs[it.tk.k], hi:h, alpha:it.a, names:R.o.names!==false, t:t, meTag:true});
+  });
+  if(!ballDone) tvBall_(ctx, c, R, bX, bY, P.bz);
+  tvLight_(ctx, R);
+  return c;
+}
+
+/* ---------- 화면 위 그래픽: 인트로 · 상단 · 하단 자막 · 엔딩 ---------- */
+function tvTxt_(ctx, s, x, y, font, col, align, ls){ ctx.font=font; ctx.fillStyle=col; ctx.textAlign=align||'left'; ctx.textBaseline='alphabetic'; try{ ctx.letterSpacing=(ls||0)+'px'; }catch(e){} ctx.fillText(s, x, y); try{ ctx.letterSpacing='0px'; }catch(e){} }
+function tvEmblem_(ctx, R, x, y, r){
+  ctx.save(); ctx.shadowColor='rgba(0,0,0,.5)'; ctx.shadowBlur=r*0.4; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.fill(); ctx.restore();
+  if(R.emblem){ ctx.save(); ctx.beginPath(); ctx.arc(x,y,r*0.98,0,Math.PI*2); ctx.clip(); var em=R.emblem, iw=em.width||1, ih=em.height||1, s=Math.min(r*1.62/iw, r*1.62/ih); ctx.drawImage(em, x-iw*s/2, y-ih*s/2, iw*s, ih*s); ctx.restore(); }
+  ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.lineWidth=Math.max(2,r*0.07); ctx.strokeStyle='#C7A24B'; ctx.stroke();
+}
+function tvSubLine_(R){
+  var plan=R.plan, d=R.doc, s=[];
+  if(d.plans.length>1) s.push(plan.name);
+  s.push('vs '+(d.oppForm||'')+(plan.auto?' · '+tacStyleLabel_(plan.style):''));
+  return s.join('  ·  ');
+}
+function tvBackOut_(t){ var c1=1.70158, c3=c1+1; return 1+c3*Math.pow(t-1,3)+c1*Math.pow(t-1,2); }
+function tvOverlay_(ctx, R, st, t, still){
+  var W=R.W, H=R.H, u=R.u, L=R.lay, GOLD='#C7A24B', acc=R.accent, plan=R.plan, n=plan.steps.length;
+  var introA=(st.k==='intro')?tacClamp_((st.u-0.72)/0.22,0,1):1, outroA=(st.k==='outro')?1-tacClamp_(st.u/0.25,0,1):1, chromeA=Math.min(introA,outroA);
+  if(chromeA>0){
+    ctx.save(); ctx.globalAlpha=chromeA;
+    /* 상단 그라데이션 · 진행 바 */
+    var hg=ctx.createLinearGradient(0,0,0,L.headB+50*u); hg.addColorStop(0,'rgba(5,7,9,.9)'); hg.addColorStop(0.65,'rgba(5,7,9,.55)'); hg.addColorStop(1,'rgba(5,7,9,0)');
+    ctx.fillStyle=hg; ctx.fillRect(0,0,W,L.headB+50*u);
+    var bx=L.pad, bw=W-L.pad*2, gap=8*u, sw=(bw-gap*(n-1))/n, by=L.pad*0.62, bh=6*u, cur=st.i, fr=still?1:tvStepFrac_(R, st);
+    for(var i=0;i<n;i++){ rr_(ctx, bx+i*(sw+gap), by, sw, bh, bh/2); ctx.fillStyle='rgba(255,255,255,.22)'; ctx.fill();
+      var f=(i<cur)?1:(i===cur?fr:0); if(f>0){ rr_(ctx, bx+i*(sw+gap), by, Math.max(bh, sw*f), bh, bh/2); ctx.fillStyle=i===cur?'#fff':'rgba(255,255,255,.85)'; ctx.fill(); } }
+    var er=L.land?44*u:50*u, ex=L.pad+er, ey=by+bh+24*u+er;
+    tvEmblem_(ctx, R, ex, ey, er);
+    var tx=ex+er+22*u;
+    ctx.font='600 '+Math.round(21*u)+'px Oswald, sans-serif';
+    tvTxt_(ctx, cardEllipsis_(ctx, String(R.team).toUpperCase()+'  ·  TACTICS', W-tx-L.pad), tx, ey-er+20*u, ctx.font, GOLD, 'left', 3*u);
+    ctx.font='800 '+Math.round((L.land?48:52)*u)+'px Pretendard, sans-serif';
+    tvTxt_(ctx, cardEllipsis_(ctx, R.doc.title||'전술', W-tx-L.pad), tx, ey+20*u, ctx.font, '#fff');
+    ctx.font='600 '+Math.round(24*u)+'px Pretendard, sans-serif';
+    tvTxt_(ctx, cardEllipsis_(ctx, tvSubLine_(R), W-tx-L.pad), tx, ey+er+8*u, ctx.font, 'rgba(255,255,255,.66)');
+    /* 하단 자막 */
+    var ca=still?{a:1,e:1}:tvCapAnim_(R, st);
+    if(ca.a>0 && st.k!=='intro' && st.k!=='outro'){
+      var B=plan.steps[st.i], note=B.note||(st.i===0?'시작 배치':'');
+      var cg=ctx.createLinearGradient(0,L.capT-40*u,0,H); cg.addColorStop(0,'rgba(5,7,9,0)'); cg.addColorStop(0.35,'rgba(5,7,9,.72)'); cg.addColorStop(1,'rgba(5,7,9,.94)');
+      ctx.fillStyle=cg; ctx.fillRect(0,L.capT-40*u,W,H-L.capT+40*u);
+      var cx0=L.pad, cy0=L.capT+(L.land?34:52)*u, slide=(1-tacEaseOut_(ca.e))*60*u;
+      ctx.save(); ctx.globalAlpha*=ca.a;
+      ctx.fillStyle=acc; ctx.fillRect(cx0-slide*0.2, cy0, 8*u, (L.land?108:136)*u*tacEaseOut_(Math.min(1,ca.e*1.6)));
+      var num=(st.i+1<10?'0':'')+(st.i+1);
+      tvTxt_(ctx, num, cx0+30*u-slide, cy0+70*u, '700 '+Math.round(76*u)+'px Oswald, sans-serif', '#fff');
+      ctx.font='700 '+Math.round(76*u)+'px Oswald, sans-serif'; var nw=ctx.measureText(num).width;
+      tvTxt_(ctx, '/ '+(n<10?'0':'')+n, cx0+30*u+nw+12*u-slide, cy0+70*u, '600 '+Math.round(30*u)+'px Oswald, sans-serif', 'rgba(255,255,255,.5)');
+      tvTxt_(ctx, 'STEP', cx0+30*u-slide, cy0+(L.land?100:104)*u, '600 '+Math.round(20*u)+'px Oswald, sans-serif', GOLD, 'left', 4*u);
+      var nx=cx0+30*u+Math.max(nw+110*u, 210*u), nwid=W-nx-L.pad;
+      if(note){
+        ctx.font='800 '+Math.round((L.land?40:42)*u)+'px Pretendard, sans-serif';
+        var lines=wrapText_(ctx, note, nwid).slice(0,L.land?2:3), lh=(L.land?52:56)*u, y0=cy0+(L.land?46:44)*u-((lines.length-1)*lh)/2+(L.land?6:16)*u;
+        lines.forEach(function(ln,j){ var a2=tacClamp_((ca.e-0.12*j)/0.6,0,1); ctx.save(); ctx.globalAlpha*=a2; tvTxt_(ctx, ln, nx+(1-tacEaseOut_(a2))*40*u, y0+j*lh, ctx.font, '#fff'); ctx.restore(); });
+      }
+      ctx.restore();
+    }
+    tvTxt_(ctx, 'TACTICS BOARD', W-L.pad, H-(L.land?28:40)*u, '600 '+Math.round(18*u)+'px Oswald, sans-serif', 'rgba(199,162,75,.55)', 'right', 5*u);
+    ctx.restore();
+  }
+  if(st.k==='intro') tvIntro_(ctx, R, st.u, t);
+  if(st.k==='outro') tvOutro_(ctx, R, st.u);
+}
+function tvStepFrac_(R, st){
+  if(st.k==='intro') return 0; if(st.k==='outro') return 1;
+  var segs=R.TL.segs, s0=null, s1=null;
+  segs.forEach(function(s){ if(s.i===st.i && (s.k==='move'||s.k==='hold')){ if(!s0) s0=s; s1=s; } });
+  if(!s0) return 1; var tot=s1.t0+s1.d-s0.t0; return tacClamp_((st.seg.t0+st.lt-s0.t0)/tot,0,1);
+}
+function tvCapAnim_(R, st){
+  if(st.k==='intro'||st.k==='outro') return {a:0,e:0};
+  var segs=R.TL.segs, s0=null, s1=null;
+  segs.forEach(function(s){ if(s.i===st.i && (s.k==='move'||s.k==='hold')){ if(!s0) s0=s; s1=s; } });
+  var since=st.seg.t0+st.lt-s0.t0, left=s1.t0+s1.d-(st.seg.t0+st.lt);
+  var e=tacClamp_(since/0.55,0,1), a=Math.min(tacClamp_(since/0.2,0,1), (st.i===R.plan.steps.length-1)?1:tacClamp_(left/0.22,0,1));
+  return {a:a, e:e};
+}
+function tvIntro_(ctx, R, u0, t){
+  var W=R.W, H=R.H, u=R.u, GOLD='#C7A24B';
+  var dim=0.86*(1-tacSmooth_(tacClamp_((u0-0.62)/0.3,0,1)));
+  ctx.fillStyle='rgba(5,7,9,'+dim+')'; ctx.fillRect(0,0,W,H);
+  var out=tacClamp_((u0-0.6)/0.18,0,1), oa=1-out, oy=-out*60*u;
+  if(oa<=0) return;
+  ctx.save(); ctx.globalAlpha=oa;
+  var cy=H*0.42+oy, er=(R.lay.land?92:118)*u, pe=tacClamp_(u0/0.2,0,1);
+  /* 빛 줄기 */
+  var sw=tacClamp_((u0-0.08)/0.4,0,1), sx=-W*0.3+sw*W*1.6;
+  var lg=ctx.createLinearGradient(sx-W*0.3,0,sx+W*0.3,0); lg.addColorStop(0,'rgba(199,162,75,0)'); lg.addColorStop(0.5,'rgba(199,162,75,.22)'); lg.addColorStop(1,'rgba(199,162,75,0)');
+  ctx.fillStyle=lg; ctx.fillRect(0,cy-er*2.2,W,er*4.6);
+  ctx.save(); ctx.translate(W/2, cy-er*0.9); var sc=tvBackOut_(pe); ctx.scale(sc,sc); ctx.globalAlpha*=pe; tvEmblem_(ctx, R, 0, 0, er); ctx.restore();
+  var a1=tacClamp_((u0-0.14)/0.18,0,1), a2=tacClamp_((u0-0.22)/0.18,0,1), a3=tacClamp_((u0-0.32)/0.18,0,1);
+  ctx.save(); ctx.globalAlpha*=a1; tvTxt_(ctx, String(R.team).toUpperCase()+'  ·  TACTICS', W/2, cy+er*0.5+(1-tacEaseOut_(a1))*24*u, '600 '+Math.round(28*u)+'px Oswald, sans-serif', GOLD, 'center', 6*u); ctx.restore();
+  ctx.save(); ctx.globalAlpha*=a2; ctx.font='900 '+Math.round((R.lay.land?84:92)*u)+'px Pretendard, sans-serif';
+  tvTxt_(ctx, cardEllipsis_(ctx, R.doc.title||'전술', W*0.88), W/2, cy+er*0.5+108*u+(1-tacEaseOut_(a2))*40*u, ctx.font, '#fff', 'center'); ctx.restore();
+  var lw=W*0.34*tacEaseOut_(a3); ctx.fillStyle=R.accent; ctx.fillRect(W/2-lw/2, cy+er*0.5+140*u, lw, 6*u);
+  ctx.save(); ctx.globalAlpha*=a3; tvTxt_(ctx, tvSubLine_(R), W/2, cy+er*0.5+200*u, '700 '+Math.round(32*u)+'px Pretendard, sans-serif', 'rgba(255,255,255,.78)', 'center'); ctx.restore();
+  ctx.restore();
+}
+function tvOutro_(ctx, R, u0){
+  var W=R.W, H=R.H, u=R.u, GOLD='#C7A24B', a=tacClamp_((u0-0.12)/0.35,0,1);
+  ctx.fillStyle='rgba(5,7,9,'+(0.86*a)+')'; ctx.fillRect(0,0,W,H);
+  if(a<=0) return;
+  ctx.save(); ctx.globalAlpha=a;
+  var cy=H*0.44, er=(R.lay.land?84:104)*u, s=0.9+0.1*tacEaseOut_(a);
+  ctx.save(); ctx.translate(W/2, cy-er*0.6); ctx.scale(s,s); tvEmblem_(ctx, R, 0, 0, er); ctx.restore();
+  ctx.font='900 '+Math.round(64*u)+'px Pretendard, sans-serif';
+  tvTxt_(ctx, cardEllipsis_(ctx, R.team, W*0.86), W/2, cy+er*0.8+40*u, ctx.font, '#fff', 'center');
+  tvTxt_(ctx, 'TACTICS BOARD', W/2, cy+er*0.8+96*u, '600 '+Math.round(28*u)+'px Oswald, sans-serif', GOLD, 'center', 8*u);
+  ctx.fillStyle=R.accent; ctx.fillRect(W/2-60*u, cy+er*0.8+124*u, 120*u, 5*u);
+  tvTxt_(ctx, cardEllipsis_(ctx, (R.doc.title||'')+'  ·  '+R.plan.name, W*0.86), W/2, cy+er*0.8+180*u, '700 '+Math.round(30*u)+'px Pretendard, sans-serif', 'rgba(255,255,255,.72)', 'center');
+  ctx.restore();
+}
+/* 한 프레임 (영상) */
+function tvFrame_(ctx, R, t){
+  var st=tacTLAt_(R.TL, R.plan, t);
+  tvScene_(ctx, R, st, false, t);
+  if(R.o.overlay==='video') tvOverlay_(ctx, R, st, t, false);
+}
+/* 정지 화면 (이미지 카드 · 앱 정지 화면) */
+function tvStill_(ctx, R, i, t){
+  var plan=R.plan, st={k:'hold', i:i, A:i>0?plan.steps[i-1]:null, B:plan.steps[i], p:1, hold:9, lt:0, u:1, seg:{t0:0,d:1}};
+  tvScene_(ctx, R, st, true, t||0);
+  if(R.o.overlay==='video' || R.o.overlay==='card') tvOverlay_(ctx, R, st, t||0, true);
+}
+
+/* ---------- 영상 만들기: WebCodecs(프레임 단위 · 끊김 없음) → 안 되면 실시간 녹화 ---------- */
+var TV_MUXER_URL='https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.2/build/mp4-muxer.js';
+function tvLoadMuxer_(){
+  if(window.Mp4Muxer) return Promise.resolve(true);
+  return new Promise(function(res){
+    var s=document.createElement('script'); s.src=TV_MUXER_URL; s.async=true; s.crossOrigin='anonymous';
+    s.onload=function(){ res(!!window.Mp4Muxer); }; s.onerror=function(){ res(false); };
+    document.head.appendChild(s); setTimeout(function(){ res(!!window.Mp4Muxer); }, 8000);
+  });
+}
+function tvPickCodec_(W,H){
+  if(!(window.VideoEncoder && window.VideoFrame && VideoEncoder.isConfigSupported)) return Promise.resolve(null);
+  var list=['avc1.640028','avc1.4d0028','avc1.42e028','avc1.640033','avc1.42e033'], i=0;
+  function next(){
+    if(i>=list.length) return Promise.resolve(null);
+    var cfg={codec:list[i++], width:W, height:H, bitrate:Math.round(W*H*3.1), framerate:30, avc:{format:'avc'}};
+    return VideoEncoder.isConfigSupported(cfg).then(function(r){ return (r && r.supported) ? cfg : next(); }).catch(next);
+  }
+  return next();
+}
+function tvExport_(R, onProg){
+  var W=R.W, H=R.H, fps=30, N=Math.ceil(R.TL.total*fps), cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+  var ctx=cv.getContext('2d');
+  return tvPickCodec_(W,H).then(function(cfg){
+    if(!cfg) return null;
+    return tvLoadMuxer_().then(function(ok){ return ok?cfg:null; });
+  }).then(function(cfg){
+    if(!cfg) return tvRecord_(R, onProg);
+    var mux=new Mp4Muxer.Muxer({target:new Mp4Muxer.ArrayBufferTarget(), video:{codec:'avc', width:W, height:H, frameRate:fps}, fastStart:'in-memory', firstTimestampBehavior:'offset'});
+    var err=null, enc=new VideoEncoder({output:function(ch,meta){ mux.addVideoChunk(ch,meta); }, error:function(e){ err=e; }});
+    enc.configure(cfg);
+    var i=0;
+    return new Promise(function(res, rej){
+      function step(){
+        if(err){ rej(err); return; }
+        var until=performance.now()+40;
+        while(i<N && performance.now()<until){
+          if(enc.encodeQueueSize>6) break;
+          tvFrame_(ctx, R, i/fps);
+          var vf=new VideoFrame(cv, {timestamp:Math.round(i*1e6/fps), duration:Math.round(1e6/fps)});
+          enc.encode(vf, {keyFrame:i%60===0}); vf.close(); i++;
+        }
+        onProg && onProg(i/N);
+        if(i<N) setTimeout(step, enc.encodeQueueSize>6?8:0);
+        else enc.flush().then(function(){ mux.finalize(); try{ enc.close(); }catch(e){} res({blob:new Blob([mux.target.buffer], {type:'video/mp4'}), ext:'mp4'}); }).catch(rej);
+      }
+      step();
+    });
+  }).catch(function(){ return tvRecord_(R, onProg); });
+}
+function tvRecord_(R, onProg){
+  var mime=tacVideoMime_(); if(!mime || !HTMLCanvasElement.prototype.captureStream) return Promise.resolve(null);
+  var k=Math.min(1, 720/Math.min(R.W,R.H)), cv=document.createElement('canvas'); cv.width=Math.round(R.W*k/2)*2; cv.height=Math.round(R.H*k/2)*2;
+  var ctx=cv.getContext('2d'), tot=R.TL.total, stream=cv.captureStream(30), rec, chunks=[];
+  try{ rec=new MediaRecorder(stream, {mimeType:mime, videoBitsPerSecond:6000000}); }catch(e){ return Promise.resolve(null); }
+  return new Promise(function(res){
+    rec.ondataavailable=function(ev){ if(ev.data && ev.data.size) chunks.push(ev.data); };
+    rec.onstop=function(){ try{ stream.getTracks().forEach(function(t){ t.stop(); }); }catch(e){} var b=new Blob(chunks, {type:mime.split(';')[0]}); res(b.size?{blob:b, ext:/mp4/.test(mime)?'mp4':'webm'}:null); };
+    ctx.setTransform(k,0,0,k,0,0); tvFrame_(ctx, R, 0);
+    rec.start(250); var t0=performance.now();
+    (function tick(now){ var t=(now-t0)/1000; ctx.setTransform(k,0,0,k,0,0); tvFrame_(ctx, R, Math.min(t,tot)); onProg && onProg(Math.min(1,t/tot));
+      if(t>=tot+0.3){ try{ rec.stop(); }catch(e){ res(null); } return; } requestAnimationFrame(tick); })(t0);
+  });
+}
+function tacVideoMime_(){
+  if(!(window.MediaRecorder && MediaRecorder.isTypeSupported)) return '';
+  var c=['video/mp4;codecs=avc1.42E01E','video/mp4','video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];
+  for(var i=0;i<c.length;i++){ try{ if(MediaRecorder.isTypeSupported(c[i])) return c[i]; }catch(e){} }
+  return '';
+}
+/* ================= 방송 그래픽 끝 ================= */
 /* ---------- 저장 · 불러오기 ---------- */
 function tacLoad_(force){
   var now=Date.now();
@@ -12121,36 +12977,35 @@ function setFormMode_(m){ state.formMode=m; if(m==='tac') tacLoad_(); render(); 
 function tacSetCat_(c){ state.tacCat=c; render(); }
 function viewTac_(){
   if(!state.tacLoaded){ tacLoad_(); if(!state.tacLoaded) return '<div class="empty"><div class="ei">📋</div>불러오는 중...</div>'; }
-  var add=isAdmin()?'<button class="btn-add-match" style="margin-bottom:14px;" onclick="tacNewSheet_()">새 전술 만들기</button>':'';
   var all=(state.tactics||[]).slice().sort(function(a,b){ return String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')); });
+  var add=isAdmin()?'<button class="tac-new" onclick="tacNewSheet_()"><span class="tn-i">＋</span><span><b>새 전술 만들기</b><i>상황을 고르면 예시 움직임이 들어 있어요</i></span></button>':'';
   if(!all.length){
-    return add+'<div class="empty"><div class="ei">📋</div><b style="color:var(--ink);font-size:15px;">움직임을 그려서 팀에 공유해요</b><br>골킥 빌드업 · 세트피스 · 역습처럼 약속된 움직임을<br>단계별로 만들고, 링크 · 영상 · 이미지로 보낼 수 있어요.'
-      +(isAdmin()?'<br><br>위 버튼을 눌러 예시 전술부터 열어 보세요.':'<br><br>아직 등록된 전술이 없습니다.')+'</div>';
+    return add+'<div class="tac-hero"><div class="th-k">TACTICS BOARD</div><b>움직임을 그려서<br>팀에 보여 주세요</b>'
+      + '<p>빌드업 · 세트피스 · 역습 같은 약속된 움직임을 장면별로 만들고, 중계 화면 같은 영상 · 이미지로 공유해요.</p>'
+      + (isAdmin()?'':'<p style="opacity:.6;">아직 등록된 전술이 없습니다.</p>')+'</div>';
   }
   var cat=state.tacCat||'';
   var cats=all.length>3 ? ('<div class="chips tac-cats"><button class="chip '+(cat?'':'on')+'" onclick="tacSetCat_(\'\')">전체 '+all.length+'</button>'
     + TAC_CATS.map(function(c){ var n=all.filter(function(x){ return (x.cat||'free')===c[0]; }).length; return n?'<button class="chip '+(cat===c[0]?'on':'')+'" onclick="tacSetCat_(\''+c[0]+'\')">'+c[1]+' '+n+'</button>':''; }).join('')+'</div>') : '';
   var list=cat?all.filter(function(x){ return (x.cat||'free')===cat; }):all;
   return add+cats+'<div class="tac-list">'+list.map(function(d){
-    var steps=0; d.plans.forEach(function(p){ steps=Math.max(steps,p.steps.length); });
-    return '<div class="tac-item" onclick="tacOpen_(\''+d.id+'\',\'view\')"><canvas data-tac="'+d.id+'" width="132" height="194"></canvas>'
-      + '<div class="ti-b"><div class="ti-c">'+tacCatLabel_(d.cat)+'</div><div class="ti-t">'+esc(d.title||'전술')+'</div>'
-      + '<div class="ti-p">'+d.plans.map(function(p){ return '<span>'+esc(p.name)+' · '+p.steps.length+'단계</span>'; }).join('')+'</div>'
-      + '<div class="ti-m"><span>상대 '+esc(d.oppForm||'')+'</span>'+(d.by?'<span>'+esc(d.by)+'</span>':'')+'<span>'+esc(String(d.updatedAt||'').slice(5,10).replace('-','.'))+'</span></div></div>'
-      + '<span class="ti-go">›</span></div>';
-  }).join('')+'</div>'
-  + '<p class="hint">전술을 누르면 재생 화면이 열려요.'+(isAdmin()?' 편집은 재생 화면 오른쪽 위에서.':'')+'</p>';
+    var n=d.plans[0].steps.length;
+    return '<div class="tac-card" onclick="tacOpen_(\''+d.id+'\',\'view\')"><canvas data-tac="'+d.id+'"></canvas>'
+      + '<div class="tc-ov"><span class="tc-c">'+tacCatLabel_(d.cat)+'</span><span class="tc-play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span>'
+      + '<div class="tc-b"><b>'+esc(d.title||'전술')+'</b><i>'+d.plans.map(function(p){ return esc(p.name); }).join(' · ')+'  ·  '+n+'장면  ·  vs '+esc(d.oppForm||'')+'</i></div></div></div>';
+  }).join('')+'</div>';
 }
 function tacListPaint_(){
   var acc=''; try{ acc=getComputedStyle(document.documentElement).getPropertyValue('--red').trim(); }catch(e){}
   Array.prototype.forEach.call(document.querySelectorAll('canvas[data-tac]'), function(cv){
     var d=tacById_(cv.getAttribute('data-tac')); if(!d) return;
-    var plan=d.plans[0], st=plan.steps[plan.steps.length>1?1:0], prev=plan.steps.length>1?plan.steps[0]:null;
-    var ctx=cv.getContext('2d'), W=cv.width, H=cv.height, a=tacAspect_(d.view||'full', d.zoom), h=Math.min(H, W*a);
-    ctx.fillStyle='#1c5737'; ctx.fillRect(0,0,W,H);
-    ctx.save(); ctx.translate(0, Math.max(0,(H-h)/2));
-    try{ tacScene_(ctx, tacGeomDoc_(d, plan, W, h), d, {A:null, B:st||prev, p:1}, {mini:true, accent:acc||'#C8102E'}); }catch(e){}
-    ctx.restore();
+    var w=cv.clientWidth||340, h=Math.round(w*0.52), dpr=Math.min(2, window.devicePixelRatio||1);
+    cv.width=Math.round(w*dpr); cv.height=Math.round(h*dpr); cv.style.height=h+'px';
+    var plan=d.plans[0], i=Math.min(plan.steps.length-1, plan.steps.length>2?2:1);
+    try{
+      var R=tvPrep_(d, plan, {W:w, H:h, overlay:'thumb', accent:acc||'#C8102E', names:false});
+      var ctx=cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0); tvStill_(ctx, R, i, 0.6);
+    }catch(e){ try{ console.warn('tac thumb', e); }catch(_){} }
   });
 }
 
@@ -12164,7 +13019,7 @@ function tacNewSheet_(){
     body+='<div class="eyebrow" style="margin:14px 0 8px;">'+c[1]+'</div>'+ts.map(function(t){
       return '<button class="tac-tpl" onclick="tacCreate_(\''+t.id+'\')"><div class="tp-i"><svg viewBox="0 0 24 24">'+TAC_ICON[t.cat]+'</svg></div>'
         + '<div style="min-width:0;"><b>'+esc(t.name)+'</b><span>'+esc(t.desc)+'</span></div>'
-        + (t.plans.length>1?'<em>대응안 '+t.plans.length+'개</em>':(t.id==='free'?'':'<em>'+t.plans[0].steps.length+'단계</em>'))+'</button>';
+        + (t.plans.length>1?'<em>대응안 '+t.plans.length+'개</em>':(t.id==='free'?'':'<em>'+t.plans[0].steps.length+'장면</em>'))+'</button>';
     }).join('');
   });
   showSheet('<div class="grabber"></div>'
@@ -12187,7 +13042,7 @@ function tacCreate_(tplId){
   tacOpen_(doc.id,'edit');
   var seen=''; try{ seen=localStorage.getItem('kt_tac_help')||''; }catch(e){}
   if(!seen) setTimeout(function(){ if(TAC) tacHelp_(); }, 350);
-  else setTimeout(function(){ tacTip_(tpl.id==='free'?'선수와 공을 끌고 ＋ 장면으로 다음 움직임을 만드세요':'▶ 재생으로 예시를 보고, 장면을 눌러 고쳐 보세요'); }, 500);
+  else setTimeout(function(){ tacTip_(tpl.id==='free'?'선수와 공을 끌고 ＋ 장면으로 다음 움직임을 만드세요':'▶ 미리보기로 예시를 보고, 장면을 눌러 고쳐 보세요'); }, 500);
 }
 
 /* ---------- 보드 열기 · 닫기 ---------- */
@@ -12195,12 +13050,14 @@ function tacIsOpen_(){ var w=document.getElementById('tacWrap'); return !!(w && 
 function tacOpen_(id, mode){
   var src=tacById_(id); if(!src){ toast('전술을 찾을 수 없습니다'); return; }
   if(mode==='edit' && !isAdmin()) mode='view';
-  TAC={doc:tacClone_(src), planIdx:0, stepIdx:0, mode:mode||'view', playing:false, clock:0, speed:1, loop:true, names:true, sel:'', me:'', undo:[], dirty:false};
+  TAC={doc:tacClone_(src), planIdx:0, stepIdx:0, mode:mode||'view', playing:false, clock:0, speed:1, loop:true, names:true, sel:'', multi:{}, tool:'sel', fxSel:'', draft:null,
+    me:'', undo:[], dirty:false, v3:(mode!=='edit'), rev:0, assets:null};
   var who=whoName_();
   if(who){ TAC.doc.our.forEach(function(t){ if(t.n && t.n===who) TAC.me=t.k; }); }
   var w=document.getElementById('tacWrap'); w.classList.add('open'); try{ document.body.classList.add('tac-open'); }catch(e){}
   tacUI_();
-  if(TAC.mode==='view' && TAC.doc.plans[0].steps.length>1) setTimeout(function(){ if(TAC && !TAC.playing && TAC.mode==='view') tacPlayToggle_(); }, 450);
+  tvAssets_(TAC.doc).then(function(a){ if(!TAC) return; TAC.assets=a; TAC.R3=null; tacDrawNow_(); });
+  if(TAC.mode==='view' && TAC.doc.plans[0].steps.length>1) setTimeout(function(){ if(TAC && !TAC.playing && TAC.mode==='view') tacPlayToggle_(); }, 500);
 }
 function tacBack_(){
   if(!TAC) return;
@@ -12212,20 +13069,22 @@ function tacBack_(){
 }
 function tacSetMode_(m){
   if(!TAC) return; if(m==='edit' && !requireAdmin()) return;
-  tacStop_(); TAC.mode=m; TAC.sel=''; tacUI_();
+  tacStop_(); TAC.mode=m; tacClearSel_(); TAC.tool='sel'; TAC.v3=(m!=='edit'); tacUI_();
 }
 function tacPlan_(){ return TAC.doc.plans[TAC.planIdx]; }
 function tacStep_(){ var p=tacPlan_(); return p.steps[Math.min(TAC.stepIdx,p.steps.length-1)]; }
-function tacSnap_(){ if(!TAC) return; TAC.undo.push(JSON.stringify(TAC.doc)); if(TAC.undo.length>40) TAC.undo.shift(); var b=document.getElementById('tacUndo'); if(b) b.disabled=false; }
+function tacPrev_(){ var p=tacPlan_(); return TAC.stepIdx>0 ? p.steps[TAC.stepIdx-1] : null; }
+function tacClearSel_(){ if(!TAC) return; TAC.sel=''; TAC.multi={}; TAC.fxSel=''; TAC.draft=null; }
+function tacSnap_(){ if(!TAC) return; TAC.undo.push(JSON.stringify(TAC.doc)); if(TAC.undo.length>50) TAC.undo.shift(); var b=document.getElementById('tacUndo'); if(b) b.disabled=false; }
 function tacUndo_(){
   if(!TAC || !TAC.undo.length) return;
-  tacStop_(); TAC.doc=JSON.parse(TAC.undo.pop()); TAC.sel='';
+  tacStop_(); TAC.doc=JSON.parse(TAC.undo.pop()); tacClearSel_();
   TAC.planIdx=Math.min(TAC.planIdx, TAC.doc.plans.length-1); TAC.stepIdx=Math.min(TAC.stepIdx, tacPlan_().steps.length-1);
   tacUI_(); tacTouch_();
 }
 function tacTouch_(){
   if(!TAC) return;
-  TAC.doc.updatedAt=new Date().toISOString(); TAC.dirty=true;
+  TAC.doc.updatedAt=new Date().toISOString(); TAC.dirty=true; TAC.rev++; TAC.R3=null;
   var s=document.getElementById('tacSub'); if(s) s.textContent=tacCatLabel_(TAC.doc.cat)+' · 저장 중…';
   clearTimeout(TAC.saveT); TAC.saveT=setTimeout(tacFlush_, 900);
 }
@@ -12249,18 +13108,24 @@ var TAC_SVG={
   play:'<svg viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5z"/></svg>',
   pause:'<svg viewBox="0 0 24 24"><rect x="6" y="5" width="4.2" height="14" rx="1"/><rect x="13.8" y="5" width="4.2" height="14" rx="1"/></svg>',
   prev:'<svg viewBox="0 0 24 24"><path d="M14 6l-6 6 6 6"/></svg>',
-  next:'<svg viewBox="0 0 24 24"><path d="M10 6l6 6-6 6"/></svg>'
+  next:'<svg viewBox="0 0 24 24"><path d="M10 6l6 6-6 6"/></svg>',
+  sel:'<svg viewBox="0 0 24 24"><path d="M6 3.5l12 7.2-5.3 1.2 3 6.1-2.4 1.2-3-6.1L6.4 17z"/></svg>',
+  zone:'<svg viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="13" rx="3" stroke-dasharray="3 2.4"/></svg>',
+  link:'<svg viewBox="0 0 24 24"><circle cx="5.5" cy="17" r="2.2"/><circle cx="12" cy="8" r="2.2"/><circle cx="18.5" cy="15" r="2.2"/><path d="M7 15.2l3.6-5.2M13.6 9.6l3.4 3.8"/></svg>',
+  cube:'<svg viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg>',
+  eye:'<svg viewBox="0 0 24 24"><path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></svg>',
+  film:'<svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="2.5"/><path d="M10 9.2v5.6l4.8-2.8z"/></svg>'
 };
 function tacUI_(){
   var w=document.getElementById('tacWrap'); if(!w||!TAC) return;
-  var d=TAC.doc, plan=tacPlan_(), ed=(TAC.mode==='edit'), v=d.view||'full';
+  var d=TAC.doc, plan=tacPlan_(), ed=(TAC.mode==='edit');
   var meTk=TAC.me?d.our.filter(function(t){ return t.k===TAC.me; })[0]:null;
   var h='<div class="tac-top">'
     + '<button class="tac-ib" onclick="tacBack_()" aria-label="닫기">'+TAC_SVG.back+'</button>'
     + '<div class="tac-ttl" '+(ed?'onclick="tacRename_()"':'')+'><b>'+esc(d.title||'전술')+'</b><span id="tacSub">'+tacCatLabel_(d.cat)+(ed?' · 저장됨':(d.by?' · '+esc(d.by):''))+'</span></div>'
     + (ed?'<button class="tac-ib" id="tacUndo" onclick="tacUndo_()" aria-label="되돌리기" '+(TAC.undo.length?'':'disabled')+'>'+TAC_SVG.undo+'</button>'
          :(isAdmin()?'<button class="tac-tb" onclick="tacSetMode_(\'edit\')">편집</button>':''))
-    + '<button class="tac-tb gold" onclick="tacShareSheet_()">공유</button>'
+    + '<button class="tac-tb gold" onclick="tacShareSheet_()">'+TAC_SVG.film+'공유</button>'
     + (ed?'<button class="tac-ib" onclick="tacMenu_()" aria-label="더보기">'+TAC_SVG.more+'</button>':'')
     + '</div>';
   h+='<div class="tac-row"><div class="tac-chips">'
@@ -12270,51 +13135,84 @@ function tacUI_(){
     + (ed?'<button class="tac-chip opp" onclick="tacOppSheet_()"><i>상대</i>'+esc(d.oppForm)+' · '+(plan.auto?tacStyleLabel_(plan.style):'직접 배치')+'</button>'
          :'<button class="tac-chip opp" onclick="tacMeSheet_()"><i>내 위치</i>'+(meTk?esc((meTk.num!==''&&meTk.num!=null?meTk.num+' ':'')+(meTk.n||meTk.pos)):'선택')+'</button>')
     + '</div>';
-  h+='<div class="tac-stage" id="tacStage"><canvas id="tacCv"></canvas><div class="tac-tip" id="tacTip"></div></div>';
+  h+='<div class="tac-stage'+(TAC.v3?' v3':'')+'" id="tacStage"><canvas id="tacCv"></canvas><div class="tac-tip" id="tacTip"></div>'
+    + (TAC.v3?'<div class="tac-badge">'+(ed?'미리보기 · 편집은 2D':'LIVE TACTICS')+'</div>':'')+'</div>';
   h+='<div class="tac-cap" id="tacCap"></div><div class="tac-steps" id="tacSteps"></div>';
-  h+='<div class="tac-tools"><div class="tac-vw">'
-    + [['full','전체'],['att','공격'],['def','수비']].map(function(x){ return '<button class="'+(v===x[0]?'on':'')+'" onclick="tacView_(\''+x[0]+'\')">'+x[1]+'</button>'; }).join('')+'</div><span class="sp"></span>'
-    + (v!=='full'?'<button class="tac-chip '+(d.zoom?'on':'')+'" onclick="tacZoom_()">확대</button>':'')
-    + '<button class="tac-chip '+((d.focus&&d.focus.keys&&d.focus.keys.length)?'on':'')+'" onclick="tacFocusSheet_()">부분</button>'
-    + '<button class="tac-chip '+(TAC.names?'on':'')+'" onclick="tacNames_()">이름</button>'
+  h+='<div class="tac-tools">';
+  if(ed){
+    h+='<div class="tac-vw tac-toolseg">'
+      + [['sel','선택',TAC_SVG.sel],['zone','구역',TAC_SVG.zone],['link','연결',TAC_SVG.link]].map(function(x){ return '<button class="'+(TAC.tool===x[0]&&!TAC.v3?'on':'')+'" onclick="tacTool_(\''+x[0]+'\')">'+x[2]+x[1]+'</button>'; }).join('')+'</div>';
+  } else {
+    h+='<div class="tac-vw"><button class="'+(TAC.v3?'on':'')+'" onclick="tac3D_(true)">중계</button><button class="'+(TAC.v3?'':'on')+'" onclick="tac3D_(false)">보드</button></div>';
+  }
+  h+='<span class="sp"></span>'
+    + (ed?'<button class="tac-chip ic '+(TAC.v3?'on':'')+'" onclick="tac3D_(!TAC.v3)">'+TAC_SVG.cube+'3D</button>':'')
+    + '<button class="tac-chip ic" onclick="tacViewSheet_()">'+TAC_SVG.eye+'보기</button>'
     + (ed?'':'<button class="tac-chip" onclick="tacSpeed_()">'+TAC.speed+'x</button>')
     + '</div>';
   w.innerHTML=h;
   tacCapUI_(); tacStepsUI_(); tacFit_(); tacBind_();
 }
+function tac3D_(on){ if(!TAC) return; TAC.v3=!!on; if(on){ tacClearSel_(); TAC.tool='sel'; } TAC.R3=null; tacUI_(); }
+function tacTool_(t){
+  if(!TAC) return;
+  if(TAC.v3){ TAC.v3=false; }
+  tacStop_(); tacClearSel_(); TAC.tool=t;
+  if(t==='link') TAC.draft=[];
+  tacUI_();
+  if(t==='zone') tacTip_('경기장을 끌어서 강조할 구역을 그리세요');
+  if(t==='link') tacTip_('연결할 선수를 차례로 누르세요 (라인 · 삼각형 등)');
+}
 function tacCapUI_(){
   var el=document.getElementById('tacCap'); if(!el||!TAC) return;
   var d=TAC.doc, plan=tacPlan_(), st=tacStep_(), ed=(TAC.mode==='edit'), n=plan.steps.length;
-  if(ed && TAC.sel && !TAC.playing){
-    var k=TAC.sel, h='';
-    if(k==='ball'){ h='<b>⚽ 공 — 끌어서 받는 선수 위에 놓으세요</b>'; }
-    else {
-      var opp=tacIsOpp_(k), tk=(opp?d.opp:d.our).filter(function(t){ return t.k===k; })[0]||{};
-      h='<b>'+(opp?'상대 ':'')+esc(String(tk.num!==''&&tk.num!=null?tk.num:'')+' '+(tk.n||tk.pos||''))+'</b>'
-        + (st.own===k?'':'<button onclick="tacGiveBall_(\''+k+'\')">⚽ 공 주기</button>')
-        + (opp?((st.lock&&st.lock[k])?'<button onclick="tacUnlock_(\''+k+'\')">자동 위치로</button>':''):'<button onclick="tacSwapSheet_(\''+k+'\')">선수 변경</button>');
+  if(ed && !TAC.playing && !TAC.v3){
+    var h='';
+    if(TAC.tool==='link'){
+      var dn=(TAC.draft||[]).length;
+      h='<b>연결선 · '+dn+'명 선택</b><button onclick="tacLinkDone_()" '+(dn<2?'disabled':'')+'>완료</button><button onclick="tacTool_(\'sel\')">취소</button>';
+    } else if(TAC.tool==='zone'){
+      h='<b>구역 그리기 · 경기장을 끌어 주세요</b>'+['gold','red','blue','mint'].map(function(c){ return '<i class="tac-dotc '+(TAC.zc===c||(!TAC.zc&&c==='gold')?'on':'')+'" style="background:'+TAC_FXC[c]+'" onclick="TAC.zc=\''+c+'\';tacCapUI_()"></i>'; }).join('')+'<button onclick="tacTool_(\'sel\')">취소</button>';
+    } else if(TAC.fxSel){
+      var f=(st.fx||[]).filter(function(x){ return x.id===TAC.fxSel; })[0];
+      if(f && f.t==='zone') h=['gold','red','blue','mint'].map(function(c){ return '<i class="tac-dotc '+(f.c===c?'on':'')+'" style="background:'+TAC_FXC[c]+'" onclick="tacFxColor_(\''+c+'\')"></i>'; }).join('')
+        + '<input id="tacFxL" type="text" maxlength="12" placeholder="이름 (예: 받을 공간)" value="'+esc(f.l||'')+'" oninput="tacFxLabel_(this.value)" onfocus="tacNoteFocus_()">'
+        + '<button onclick="tacFxDel_()">삭제</button>';
+      else if(f) h='<b>연결선 · '+(f.ks||[]).length+'명</b><button onclick="tacFxDel_()">삭제</button>';
+    } else {
+      var mk=Object.keys(TAC.multi||{}).filter(function(k){ return TAC.multi[k]; });
+      if(mk.length>1){ h='<b>'+mk.length+'명 선택 · 끌면 함께 움직여요</b><button onclick="tacLinkFromMulti_()">연결선</button><button onclick="tacClearSel_();tacCapUI_();tacDrawNow_()">해제</button>'; }
+      else if(TAC.sel){
+        var k=TAC.sel;
+        if(k==='ball'){ h='<b>⚽ 공 — 끌어서 받는 선수 위에 놓으세요</b>'; }
+        else {
+          var opp=tacIsOpp_(k), tk=(opp?d.opp:d.our).filter(function(t){ return t.k===k; })[0]||{}, cv=st.cv&&st.cv[k];
+          h='<b>'+(opp?'상대 ':'')+esc(String(tk.num!==''&&tk.num!=null?tk.num:'')+' '+(tk.n||tk.pos||''))+'</b>'
+            + (st.own===k?'':'<button onclick="tacGiveBall_(\''+k+'\')">⚽ 공</button>')
+            + (opp?'':'<button class="'+(st.hl&&st.hl[k]?'on':'')+'" onclick="tacHl_(\''+k+'\')">★ 강조</button>')
+            + (cv?'<button onclick="tacCurveOff_(\''+k+'\')">직선</button>':'')
+            + (opp?((st.lock&&st.lock[k])?'<button onclick="tacUnlock_(\''+k+'\')">자동</button>':''):'<button onclick="tacSwapSheet_(\''+k+'\')">교체</button>');
+        }
+      }
     }
-    el.innerHTML='<div class="tac-sel">'+h+'</div>';
-    return;
-  }
-  if(ed && !TAC.playing){
-    el.innerHTML='<span class="cap-n">'+(TAC.stepIdx+1)+'/'+n+'</span><input id="tacNote" type="text" maxlength="60" autocomplete="off" placeholder="이 장면 설명 (예: 6번이 내려와 받는다)" value="'+esc(st.note||'')+'" oninput="tacNote_(this.value)" onfocus="tacNoteFocus_()">';
+    if(h){ el.innerHTML='<div class="tac-sel">'+h+'</div>'; return; }
+    el.innerHTML='<span class="cap-n">'+(TAC.stepIdx+1)+'/'+n+'</span><input id="tacNote" type="text" maxlength="60" autocomplete="off" placeholder="이 장면 설명 (자막으로 나가요)" value="'+esc(st.note||'')+'" oninput="tacNote_(this.value)" onfocus="tacNoteFocus_()">';
   } else {
-    el.innerHTML='<span class="cap-n">'+(TAC.stepIdx+1)+'/'+n+'</span><div class="cap-t '+(st.note?'':'dim')+'">'+(st.note?esc(st.note):(TAC.stepIdx===0?'시작 배치':'설명 없음'))+'</div>';
+    el.innerHTML='<span class="cap-n">'+(TAC.stepIdx+1<10?'0':'')+(TAC.stepIdx+1)+'</span><div class="cap-t '+(st.note?'':'dim')+'">'+(st.note?esc(st.note):(TAC.stepIdx===0?'시작 배치':'설명 없음'))+'</div>';
   }
 }
 function tacStepsUI_(){
   var el=document.getElementById('tacSteps'); if(!el||!TAC) return;
   var plan=tacPlan_(), ed=(TAC.mode==='edit'), n=plan.steps.length, h='';
   if(ed){
-    h='<div class="tac-strip" id="tacStrip">'+plan.steps.map(function(s,i){ return '<button class="tac-st '+(i===TAC.stepIdx?'on':'')+'" onclick="tacStepGo_('+i+')">'+(i+1)+'</button>'; }).join('')
+    h='<div class="tac-strip" id="tacStrip">'+plan.steps.map(function(s,i){ return '<button class="tac-st '+(i===TAC.stepIdx?'on':'')+(s.note?' has':'')+'" onclick="tacStepGo_('+i+')">'+(i+1)+'</button>'; }).join('')
       + (n<12?'<button class="tac-st add" onclick="tacStepAdd_()">＋ 장면</button>':'')+'</div>'
-      + '<button class="tac-play" id="tacPlayB" onclick="tacPlayToggle_()">'+(TAC.playing?TAC_SVG.pause+'멈춤':TAC_SVG.play+'재생')+'</button>';
+      + '<button class="tac-play" id="tacPlayB" onclick="tacPlayToggle_()">'+(TAC.playing?TAC_SVG.pause+'멈춤':TAC_SVG.play+'미리보기')+'</button>';
   } else {
     h='<button class="tac-ib" onclick="tacStepRel_(-1)" aria-label="이전">'+TAC_SVG.prev+'</button>'
-      + '<button class="tac-play" id="tacPlayB" onclick="tacPlayToggle_()">'+(TAC.playing?TAC_SVG.pause:TAC_SVG.play)+'</button>'
+      + '<button class="tac-play round" id="tacPlayB" onclick="tacPlayToggle_()">'+(TAC.playing?TAC_SVG.pause:TAC_SVG.play)+'</button>'
       + '<button class="tac-ib" onclick="tacStepRel_(1)" aria-label="다음">'+TAC_SVG.next+'</button>'
-      + '<div class="tac-strip" id="tacStrip" style="justify-content:center;">'+plan.steps.map(function(s,i){ return '<button class="tac-dot '+(i<=TAC.stepIdx?'on':'')+'" onclick="tacStepGo_('+i+')" aria-label="'+(i+1)+'단계"></button>'; }).join('')+'</div>';
+      + '<div class="tac-strip" id="tacStrip" style="justify-content:center;">'+plan.steps.map(function(s,i){ return '<button class="tac-dot '+(i<=TAC.stepIdx?'on':'')+'" onclick="tacStepGo_('+i+')" aria-label="'+(i+1)+'장면"></button>'; }).join('')+'</div>';
   }
   el.innerHTML=h;
   var on=el.querySelector('.tac-st.on'), sp=document.getElementById('tacStrip');
@@ -12322,52 +13220,59 @@ function tacStepsUI_(){
 }
 function tacFit_(){
   var st=document.getElementById('tacStage'), cv=document.getElementById('tacCv'); if(!st||!cv||!TAC) return;
-  var a=tacAspect_(TAC.doc.view||'full', TAC.doc.zoom), aw=st.clientWidth-16, ah=st.clientHeight-6;
-  var cw=Math.max(140, Math.floor(Math.min(aw, ah/a, 780))), ch=Math.round(cw*a), dpr=Math.min(3, window.devicePixelRatio||1);
+  var dpr=Math.min(3, window.devicePixelRatio||1), aw=st.clientWidth-16, ah=st.clientHeight-6, cw, ch;
+  if(TAC.v3){ cw=Math.max(160, Math.floor(Math.min(aw, 900))); ch=Math.max(160, Math.floor(Math.min(ah, cw*1.9))); }
+  else { var a=tacAspect_(TAC.doc.view||'full', TAC.doc.zoom); cw=Math.max(140, Math.floor(Math.min(aw, ah/a, 780))); ch=Math.round(cw*a); }
   cv.style.width=cw+'px'; cv.style.height=ch+'px'; cv.width=Math.round(cw*dpr); cv.height=Math.round(ch*dpr);
-  TAC.cv=cv; TAC.ctx=cv.getContext('2d'); TAC.dpr=dpr; TAC.G=tacGeomDoc_(TAC.doc, tacPlan_(), cw, ch);
+  TAC.cv=cv; TAC.ctx=cv.getContext('2d'); TAC.dpr=dpr; TAC.G=tacGeomDoc_(TAC.doc, tacPlan_(), cw, ch); TAC.cw=cw; TAC.ch=ch; TAC.R3=null;
   tacDrawNow_();
 }
+function tacR3_now_(){
+  if(TAC.R3 && TAC.R3.plan===tacPlan_() && TAC.R3._sp===TAC.speed) return TAC.R3;
+  var a=TAC.assets||{};
+  TAC.R3=tvPrep_(TAC.doc, tacPlan_(), {W:TAC.cw, H:TAC.ch, overlay:'stage', names:TAC.names, me:(TAC.mode==='view'?TAC.me:''), imgs:a.imgs||{}, emblem:a.emblem, speed:TAC.speed});
+  TAC.R3._sp=TAC.speed;
+  return TAC.R3;
+}
+function tacTLnow_(){ if(!TAC.TL || TAC.TL._plan!==tacPlan_() || TAC.TL._sp!==TAC.speed || TAC.TL._rev!==TAC.rev){ TAC.TL=tacTL_(tacPlan_(), {speed:TAC.speed}); TAC.TL._plan=tacPlan_(); TAC.TL._sp=TAC.speed; TAC.TL._rev=TAC.rev; } return TAC.TL; }
 function tacDrawNow_(){
   if(!TAC || !TAC.ctx) return;
-  var plan=tacPlan_(), steps=plan.steps, sc;
-  if(TAC.playing){ var at=tacAt_(steps.length, TAC.clock); sc={A:(at.a>=0?steps[at.a]:null), B:steps[at.b], p:at.p}; }
+  var plan=tacPlan_(), steps=plan.steps, ctx=TAC.ctx;
+  ctx.setTransform(TAC.dpr,0,0,TAC.dpr,0,0);
+  if(TAC.v3){
+    var R=tacR3_now_(); R.o.me=(TAC.mode==='view'?TAC.me:''); R.o.names=TAC.names;
+    if(TAC.playing) tvFrame_(ctx, R, TAC.clock); else tvStill_(ctx, R, Math.min(TAC.stepIdx, steps.length-1), (performance.now()/1000)%60);
+    return;
+  }
+  var sc;
+  if(TAC.playing){ var at=tacTLAt_(tacTLnow_(), plan, TAC.clock); sc={A:at.A, B:at.B, p:at.p, hold:at.hold}; }
   else { var i=Math.min(TAC.stepIdx, steps.length-1); sc={A:(i>0?steps[i-1]:null), B:steps[i], p:1}; }
-  var ctx=TAC.ctx; ctx.setTransform(TAC.dpr,0,0,TAC.dpr,0,0);
-  tacScene_(ctx, TAC.G, TAC.doc, sc, {names:TAC.names, sel:(TAC.mode==='edit'&&!TAC.playing)?(TAC.hot||TAC.sel):'', me:(TAC.mode==='view'?TAC.me:''), edit:(TAC.mode==='edit'&&plan.auto), t:TAC.clock});
+  var ed=(TAC.mode==='edit' && !TAC.playing), ui=null;
+  if(ed){ ui={fx:TAC.fxSel, box:TAC.box||null, draft:(TAC.tool==='link'?TAC.draft:null), zdraw:TAC.zdraw||null, zc:TAC.zc, handle:tacHandle_()}; }
+  tacScene_(ctx, TAC.G, TAC.doc, sc, {names:TAC.names, sel:ed?(TAC.hot||TAC.sel):'', multi:ed?TAC.multi:null, me:(TAC.mode==='view'?TAC.me:''), edit:(ed&&plan.auto), t:(TAC.playing?TAC.clock:0), ui:ui});
 }
 window.addEventListener('resize', function(){ if(TAC && tacIsOpen_()) setTimeout(tacFit_, 60); });
 
 /* ---------- 재생 ---------- */
-var TAC_T={hold0:0.9, move:1.6, hold:0.9, end:1.6};
-function tacTotal_(n){ return n<=1 ? TAC_T.end : TAC_T.hold0+(n-1)*(TAC_T.move+TAC_T.hold)+(TAC_T.end-TAC_T.hold); }
-function tacAt_(n, c){
-  if(n<=1) return {a:-1,b:0,p:1};
-  if(c<TAC_T.hold0) return {a:-1,b:0,p:1};
-  c-=TAC_T.hold0;
-  var seg=Math.floor(c/(TAC_T.move+TAC_T.hold));
-  if(seg>=n-1) return {a:n-2,b:n-1,p:1};
-  return {a:seg, b:seg+1, p:Math.min(1,(c-seg*(TAC_T.move+TAC_T.hold))/TAC_T.move)};
-}
 function tacPlayToggle_(){
   if(!TAC) return;
-  if(TAC.playing){ tacStop_(); tacSyncStep_(true); return; }
+  if(TAC.playing){ tacStop_(); tacSyncStep_(true); tacDrawNow_(); return; }
   var n=tacPlan_().steps.length; if(n<2){ tacTip_(TAC.mode==='edit'?'＋ 장면을 눌러 다음 움직임을 만들면 재생할 수 있어요':'장면이 하나뿐이에요'); return; }
-  TAC.sel=''; TAC.playing=true;
-  /* 보고 있던 장면부터 재생 (마지막 장면이면 처음부터) */
-  TAC.clock=(TAC.stepIdx>=n-1 || TAC.stepIdx<=0) ? 0 : TAC_T.hold0+(TAC.stepIdx-1)*(TAC_T.move+TAC_T.hold)+TAC_T.move;
+  tacClearSel_(); TAC.playing=true;
+  var TL=TAC.v3 ? tacR3_now_().TL : tacTLnow_();
+  TAC.clock=(TAC.stepIdx>=n-1 || TAC.stepIdx<=0) ? 0 : tacTLStepT_(TL, TAC.stepIdx);
   TAC._last=performance.now(); TAC._shown=-1;
   tacSyncStep_(true);
   var loop=function(now){
     if(!TAC || !TAC.playing) return;
-    var dt=Math.min(0.1,(now-TAC._last)/1000); TAC._last=now; TAC.clock+=dt*TAC.speed;
-    var tot=tacTotal_(n);
-    if(TAC.clock>=tot){
+    var TL2=TAC.v3 ? tacR3_now_().TL : tacTLnow_();
+    var dt=Math.min(0.1,(now-TAC._last)/1000); TAC._last=now; TAC.clock+=dt*(TAC.v3?1:TAC.speed);
+    if(TAC.clock>=TL2.total){
       if(TAC.loop && TAC.mode==='view'){ TAC.clock=0; }
       else { TAC.playing=false; TAC.stepIdx=n-1; tacSyncStep_(true); tacDrawNow_(); return; }
     }
-    var at=tacAt_(n, TAC.clock);
-    if(at.b!==TAC._shown){ TAC._shown=at.b; TAC.stepIdx=at.b; tacSyncStep_(false); }
+    var at=tacTLAt_(TL2, tacPlan_(), TAC.clock);
+    if(at.i!==TAC._shown){ TAC._shown=at.i; TAC.stepIdx=at.i; tacSyncStep_(false); }
     tacDrawNow_();
     TAC._raf=requestAnimationFrame(loop);
   };
@@ -12379,6 +13284,7 @@ function tacSyncStep_(full){
   else {
     var sp=document.getElementById('tacStrip');
     if(sp) Array.prototype.forEach.call(sp.children, function(b,i){ if(b.classList.contains('tac-dot')) b.classList.toggle('on', i<=TAC.stepIdx); else if(!b.classList.contains('add')) b.classList.toggle('on', i===TAC.stepIdx); });
+    var pb=document.getElementById('tacPlayB'); if(pb && TAC.playing && pb.getAttribute('data-p')!=='1'){ pb.setAttribute('data-p','1'); pb.innerHTML=(TAC.mode==='edit')?TAC_SVG.pause+'멈춤':TAC_SVG.pause; }
   }
   tacCapUI_();
 }
@@ -12386,22 +13292,37 @@ function tacStepGo_(i){
   if(!TAC) return;
   var was=TAC.playing; tacStop_();
   if(!was && TAC.mode==='edit' && i===TAC.stepIdx){ tacStepMenu_(); return; }
-  TAC.stepIdx=i; TAC.sel=''; tacSyncStep_(true); tacDrawNow_();
+  TAC.stepIdx=i; tacClearSel_(); if(TAC.tool==='link') TAC.draft=[]; tacSyncStep_(true); tacDrawNow_();
 }
 function tacStepRel_(dir){ if(!TAC) return; var n=tacPlan_().steps.length; tacStop_(); TAC.stepIdx=tacClamp_(TAC.stepIdx+dir,0,n-1); tacSyncStep_(true); tacDrawNow_(); }
-function tacSpeed_(){ if(!TAC) return; TAC.speed=(TAC.speed===1?0.5:(TAC.speed===0.5?1.5:1)); tacUI_(); }
-function tacNames_(){ if(!TAC) return; TAC.names=!TAC.names; tacUI_(); }
+function tacSpeed_(){ if(!TAC) return; TAC.speed=(TAC.speed===1?0.5:(TAC.speed===0.5?1.5:1)); TAC.R3=null; tacStop_(); tacUI_(); }
+function tacNames_(){ if(!TAC) return; TAC.names=!TAC.names; TAC.R3=null; tacUI_(); }
 function tacView_(v){
   if(!TAC) return;
   if(TAC.mode==='edit'){ if(TAC.doc.view!==v){ tacSnap_(); TAC.doc.view=v; tacTouch_(); } } else TAC.doc.view=v;
   tacUI_();
 }
-/* 확대: 박스 근처를 1.6배로 (세트피스용). 빈 곳을 좌우로 끌면 보이는 범위가 움직인다 */
 function tacZoom_(){
   if(!TAC) return;
   if(TAC.mode==='edit'){ tacSnap_(); TAC.doc.zoom=!TAC.doc.zoom; TAC.doc.cx=null; tacTouch_(); } else { TAC.doc.zoom=!TAC.doc.zoom; }
   tacUI_();
-  if(TAC.doc.zoom) tacTip_('빈 곳을 좌우로 끌면 보이는 범위가 움직여요');
+}
+function tacPan_(v){ if(!TAC) return; TAC.doc.cx=tacR3_(tacClamp_(Number(v),0.31,0.69)); if(TAC.mode==='edit') tacTouch_(); TAC.G=tacGeomDoc_(TAC.doc, tacPlan_(), TAC.cw, TAC.ch); tacDrawNow_(); }
+/* 보기 설정: 2D 범위 · 확대 · 부분 · 이름 */
+function tacViewSheet_(){
+  if(!TAC) return;
+  var d=TAC.doc, v=d.view||'full', f=(d.focus&&d.focus.keys&&d.focus.keys.length);
+  showSheet('<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>보기</h3><button class="x" onclick="closeSheet()">✕</button></div>'
+   + '<div class="sheet-body">'
+   +   '<div class="eyebrow" style="margin-top:0;">보드 범위 <span style="font-weight:600;color:var(--steel-soft);">2D 화면</span></div>'
+   +   '<div class="qtabs" style="margin-bottom:10px;">'+[['full','전체'],['att','공격 진영'],['def','수비 진영']].map(function(x){ return '<button class="qtab '+(v===x[0]?'on':'')+'" onclick="tacView_(\''+x[0]+'\');tacViewSheet_()">'+x[1]+'</button>'; }).join('')+'</div>'
+   +   (v!=='full'?'<div class="qtabs" style="margin-bottom:10px;"><button class="qtab '+(d.zoom?'':'on')+'" onclick="if(TAC.doc.zoom)tacZoom_();tacViewSheet_()">기본</button><button class="qtab '+(d.zoom?'on':'')+'" onclick="if(!TAC.doc.zoom)tacZoom_();tacViewSheet_()">박스 확대</button></div>'
+       + (d.zoom?'<div class="field"><label>좌우 위치</label><input type="range" min="0.31" max="0.69" step="0.01" value="'+tacCamX_(d, tacPlan_())+'" oninput="tacPan_(this.value)" style="width:100%;accent-color:var(--red);"></div>':''):'')
+   +   '<div class="eyebrow">표시</div>'
+   +   '<button class="btn-ghost" style="margin-top:0;" onclick="tacNames_();tacViewSheet_()">선수 이름 '+(TAC.names?'끄기':'켜기')+'</button>'
+   +   '<button class="btn-ghost" onclick="tacFocusSheet_()">부분 보기'+(f?' · 켜짐':'')+' — 일부 선수만 강조</button>'
+   + '</div>');
 }
 
 /* ---------- 편집: 장면 · 대응안 ---------- */
@@ -12410,21 +13331,27 @@ function tacNoteFocus_(){ if(TAC) TAC._noteSnap=0; }
 function tacStepAdd_(){
   if(!TAC || TAC.mode!=='edit') return;
   tacStop_(); tacSnap_();
-  var plan=tacPlan_(), cp=tacClone_(tacStep_()); cp.note='';
-  plan.steps.splice(TAC.stepIdx+1, 0, cp); TAC.stepIdx++; TAC.sel='';
+  var plan=tacPlan_(), cp=tacClone_(tacStep_()); cp.note=''; cp.cv={}; cp.hl={}; delete cp.dur;
+  plan.steps.splice(TAC.stepIdx+1, 0, cp); TAC.stepIdx++; tacClearSel_();
+  if(TAC.v3) TAC.v3=false;
   tacUI_(); tacTouch_();
   tacTip_('선수와 공을 끌어 다음 움직임을 만드세요');
 }
 function tacStepMenu_(){
-  var n=tacPlan_().steps.length, i=TAC.stepIdx;
+  var n=tacPlan_().steps.length, i=TAC.stepIdx, st=tacStep_(), du=st.dur||1;
   showSheet('<div class="grabber"></div>'
    + '<div class="sheet-head"><h3>장면 '+(i+1)+'</h3><button class="x" onclick="closeSheet()">✕</button></div>'
    + '<div class="sheet-body">'
-   +   (i>0?'<button class="btn-ghost" style="margin-top:0;" onclick="tacStepMove_(-1)">앞 장면과 순서 바꾸기</button>':'')
+   +   (i>0?'<div class="eyebrow" style="margin-top:0;">이 장면으로 가는 움직임 속도</div><div class="qtabs" style="margin-bottom:14px;">'
+       + [[0.7,'빠르게'],[1,'보통'],[1.5,'느리게']].map(function(x){ return '<button class="qtab '+(du===x[0]?'on':'')+'" onclick="tacStepDur_('+x[0]+')">'+x[1]+'</button>'; }).join('')+'</div>':'')
+   +   '<button class="btn-ghost" style="margin-top:0;" onclick="tacStepDup_()">이 장면 복제</button>'
+   +   (i>0?'<button class="btn-ghost" onclick="tacStepMove_(-1)">앞 장면과 순서 바꾸기</button>':'')
    +   (i<n-1?'<button class="btn-ghost" onclick="tacStepMove_(1)">뒤 장면과 순서 바꾸기</button>':'')
-   +   (n>1?'<button class="btn-ghost btn-danger" onclick="tacStepDel_()">이 장면 삭제</button>':'<p class="hint" style="margin-top:0;">장면이 하나뿐이라 삭제할 수 없어요.</p>')
+   +   (n>1?'<button class="btn-ghost btn-danger" onclick="tacStepDel_()">이 장면 삭제</button>':'')
    + '</div>');
 }
+function tacStepDur_(v){ tacSnap_(); var st=tacStep_(); if(v===1) delete st.dur; else st.dur=v; tacTouch_(); tacStepMenu_(); }
+function tacStepDup_(){ tacSnap_(); var plan=tacPlan_(), cp=tacClone_(tacStep_()); cp.cv={}; plan.steps.splice(TAC.stepIdx+1,0,cp); TAC.stepIdx++; closeSheet(); tacUI_(); tacTouch_(); }
 function tacStepMove_(dir){
   var plan=tacPlan_(), i=TAC.stepIdx, j=i+dir; if(j<0||j>=plan.steps.length) return;
   tacSnap_(); var t=plan.steps[i]; plan.steps[i]=plan.steps[j]; plan.steps[j]=t; TAC.stepIdx=j;
@@ -12439,14 +13366,14 @@ function tacPlanGo_(i){
   if(!TAC) return;
   var was=TAC.playing; tacStop_();
   if(TAC.mode==='edit' && i===TAC.planIdx && !was){ tacPlanMenu_(); return; }
-  TAC.planIdx=i; TAC.stepIdx=0; TAC.sel=''; TAC.clock=0; tacUI_();
+  TAC.planIdx=i; TAC.stepIdx=0; tacClearSel_(); TAC.clock=0; TAC.R3=null; tacUI_();
   if(was || TAC.mode==='view') setTimeout(function(){ if(TAC && !TAC.playing && tacPlan_().steps.length>1) tacPlayToggle_(); }, 250);
 }
 function tacPlanAdd_(){
   if(!TAC || TAC.mode!=='edit' || TAC.doc.plans.length>=4) return;
   tacStop_(); tacSnap_();
   var cp=tacClone_(tacPlan_()); cp.id=uid_('pl'); cp.name='ABCD'.charAt(TAC.doc.plans.length)+'안';
-  TAC.doc.plans.push(cp); TAC.planIdx=TAC.doc.plans.length-1; TAC.stepIdx=0; TAC.sel='';
+  TAC.doc.plans.push(cp); TAC.planIdx=TAC.doc.plans.length-1; TAC.stepIdx=0; tacClearSel_();
   tacUI_(); tacTouch_();
   tacTip_('지금 안을 복사했어요 — 같은 상황을 다르게 풀어 보세요');
 }
@@ -12467,50 +13394,89 @@ function tacPlanDel_(){
   closeSheet(); tacUI_(); tacTouch_();
 }
 
-/* ---------- 편집: 끌어서 배치 ---------- */
+/* ---------- 편집: 선택 · 끌기 · 곡선 · 구역 · 연결선 ---------- */
+/* 곡선 손잡이: 선택한 선수가 이 장면에서 움직였다면 경로 가운데에 표시 */
+function tacHandle_(){
+  if(!TAC || !TAC.sel || TAC.sel==='ball' || Object.keys(TAC.multi).length>1) return null;
+  var A=tacPrev_(), B=tacStep_(), k=TAC.sel; if(!A || !A.pos[k] || !B.pos[k]) return null;
+  if(tacDist_(A.pos[k],B.pos[k])<0.04) return null;
+  var cv=(B.cv&&B.cv[k])||[0,0]; return [(A.pos[k][0]+B.pos[k][0])/2+cv[0], (A.pos[k][1]+B.pos[k][1])/2+cv[1]];
+}
 function tacBind_(){
   var cv=document.getElementById('tacCv'); if(!cv) return;
   function pt(ev){ var r=cv.getBoundingClientRect(); return [ev.clientX-r.left, ev.clientY-r.top]; }
-  function hit(px,py){
+  function tokAt(px,py){
     var G=TAC.G, st=tacStep_(), best='', bd=1e9, d;
-    var bp=tacBallXY_(st); d=Math.hypot(px-G.X(bp[0]), py-G.Y(bp[1])); if(d<Math.max(17,G.r*1.15)){ best='ball'; bd=d-2; }
+    var bq=st.own&&st.pos[st.own]?[st.pos[st.own][0]+G.boff[0], st.pos[st.own][1]+G.boff[1]]:(st.ball||[.5,.5]);
+    d=Math.hypot(px-G.X(bq[0]), py-G.Y(bq[1])); if(d<Math.max(16,G.r*1.1)){ best='ball'; bd=d-3; }
     TAC.doc.our.concat(TAC.doc.opp).forEach(function(t){
       var q=st.pos[t.k]; if(!q) return;
       var f=TAC.doc.focus; if(f&&f.keys&&f.keys.length){ if(tacIsOpp_(t.k)){ if(f.opp===false) return; } else if(f.hide && f.keys.indexOf(t.k)<0) return; }
-      d=Math.hypot(px-G.X(q[0]), py-G.Y(q[1])); if(d<Math.max(24,G.r*1.5) && d<bd){ bd=d; best=t.k; }
+      d=Math.hypot(px-G.X(q[0]), py-G.Y(q[1])); if(d<Math.max(22,G.r*1.45) && d<bd){ bd=d; best=t.k; }
     });
     return best;
   }
+  function fxAt(px,py){
+    var G=TAC.G, st=tacStep_(), q=G.inv(px,py), hit='';
+    (st.fx||[]).forEach(function(f){
+      if(f.t==='zone'){ var r=f.r; if(q[0]>=r[0] && q[0]<=r[0]+r[2] && q[1]>=r[1] && q[1]<=r[1]+r[3]) hit=f.id; }
+      else { var pts=(f.ks||[]).map(function(k){ return st.pos[k]; }).filter(Boolean);
+        for(var i=1;i<pts.length;i++){ var a=[G.X(pts[i-1][0]),G.Y(pts[i-1][1])], b=[G.X(pts[i][0]),G.Y(pts[i][1])], dx=b[0]-a[0], dy=b[1]-a[1], l2=dx*dx+dy*dy||1, t=tacClamp_(((px-a[0])*dx+(py-a[1])*dy)/l2,0,1);
+          if(Math.hypot(px-(a[0]+dx*t), py-(a[1]+dy*t))<10) hit=f.id; } }
+    });
+    return hit;
+  }
+  function clampQ(q){ var G=TAC.G; return [tacR3_(tacClamp_(q[0],Math.max(0.015,G.x0+0.01),Math.min(0.985,G.x1-0.01))), tacR3_(tacClamp_(q[1],Math.max(0.012,G.y0+0.008),Math.min(0.988,G.y1-0.008)))]; }
   cv.onpointerdown=function(ev){
     if(!TAC || TAC.playing) return;
-    var p=pt(ev), k=hit(p[0],p[1]);
-    var pan=(TAC.G.zoom && (!k || TAC.mode!=='edit'));
-    if(TAC.mode!=='edit' && !pan){ if(k && k!=='ball' && !tacIsOpp_(k)){ TAC.me=(TAC.me===k?'':k); tacUI_(); } return; }
-    var ae=document.activeElement; if(ae && ae.id==='tacNote') ae.blur();
-    TAC.drag={k:(pan&&TAC.mode!=='edit')?'':k, tapK:k, pan:pan, sx:p[0], sy:p[1], cx0:(TAC.G.x0+TAC.G.x1)/2, moved:false};
+    var p=pt(ev);
+    if(TAC.v3){ if(TAC.mode==='edit') tacTip_('3D는 미리보기예요 · 편집은 아래 선택 · 구역 · 연결 도구로'); return; }
+    var k=tokAt(p[0],p[1]);
+    if(TAC.mode!=='edit'){ if(k && k!=='ball' && !tacIsOpp_(k)){ TAC.me=(TAC.me===k?'':k); tacUI_(); } return; }
+    var ae=document.activeElement; if(ae && (ae.id==='tacNote'||ae.id==='tacFxL')) ae.blur();
+    var G=TAC.G, D={sx:p[0], sy:p[1], moved:false, q0:G.inv(p[0],p[1])};
+    if(TAC.tool==='zone'){ D.kind='zdraw'; }
+    else if(TAC.tool==='link'){ D.kind='ltap'; D.k=k; }
+    else {
+      var hh=tacHandle_(), st=tacStep_();
+      var zs=TAC.fxSel?(st.fx||[]).filter(function(f){ return f.id===TAC.fxSel && f.t==='zone'; })[0]:null;
+      if(hh && Math.hypot(p[0]-G.X(hh[0]), p[1]-G.Y(hh[1]))<18){ D.kind='curve'; D.k=TAC.sel; }
+      else if(zs && Math.hypot(p[0]-G.X(zs.r[0]+zs.r[2]), p[1]-G.Y(zs.r[1]+zs.r[3]))<18){ D.kind='zsize'; D.f=zs; D.r0=zs.r.slice(); }
+      else if(k){ D.kind='tok'; D.k=k; D.group=(TAC.multi[k] && Object.keys(TAC.multi).length>1); D.start={}; (D.group?Object.keys(TAC.multi):[k]).forEach(function(x){ var q=(x==='ball')?null:st.pos[x]; if(q) D.start[x]=q.slice(); }); if(k==='ball') D.start.ball=(st.ball||[.5,.5]).slice(); }
+      else { var fid=fxAt(p[0],p[1]); if(fid){ D.kind='fx'; D.fid=fid; var ff=(st.fx||[]).filter(function(f){ return f.id===fid; })[0]; D.r0=ff&&ff.r?ff.r.slice():null; } else D.kind='box'; }
+    }
+    TAC.drag=D;
     try{ cv.setPointerCapture(ev.pointerId); }catch(e){}
     ev.preventDefault();
   };
   cv.onpointermove=function(ev){
     if(!TAC || !TAC.drag) return;
-    var D=TAC.drag, p=pt(ev), G=TAC.G;
-    if(!D.k){
-      if(!D.pan) return;
-      if(!D.moved){ if(Math.abs(p[0]-D.sx)<6) return; D.moved=true; if(TAC.mode==='edit') tacSnap_(); }
-      TAC.doc.cx=tacR3_(tacClamp_(D.cx0-(p[0]-D.sx)/G.sx, 0.31, 0.69));
-      TAC.G=tacGeomDoc_(TAC.doc, tacPlan_(), G.W, G.H); tacDrawNow_(); ev.preventDefault(); return;
+    var D=TAC.drag, p=pt(ev), G=TAC.G, st=tacStep_(), plan=tacPlan_();
+    if(!D.moved){ if(Math.hypot(p[0]-D.sx,p[1]-D.sy)<5) return; D.moved=true; if(D.kind!=='box' && D.kind!=='zdraw' && D.kind!=='ltap') tacSnap_(); }
+    var q=G.inv(p[0],p[1]), dq=[q[0]-D.q0[0], q[1]-D.q0[1]];
+    if(D.kind==='tok'){
+      if(D.k==='ball'){
+        st.own=''; st.ball=clampQ(q); TAC.hot='';
+        var bd=0.06; TAC.doc.our.concat(TAC.doc.opp).forEach(function(t){ var dd=st.pos[t.k]?tacDist_(st.pos[t.k],q):9; if(dd<bd){ bd=dd; TAC.hot=t.k; } });
+      } else {
+        Object.keys(D.start).forEach(function(x){ var s0=D.start[x]; st.pos[x]=clampQ([s0[0]+dq[0], s0[1]+dq[1]]); if(tacIsOpp_(x) && plan.auto){ st.lock=st.lock||{}; st.lock[x]=1; } });
+        if(!D.group) TAC.sel='';
+      }
+      if(plan.auto && (D.k==='ball' || Object.keys(D.start).some(function(x){ return !tacIsOpp_(x) || x===st.own; }))) tacOppApply_(TAC.doc, plan, st);
+    } else if(D.kind==='curve'){
+      var A=tacPrev_(), k=D.k, mid=[(A.pos[k][0]+st.pos[k][0])/2, (A.pos[k][1]+st.pos[k][1])/2];
+      st.cv=st.cv||{}; st.cv[k]=[tacR3_(q[0]-mid[0]), tacR3_(q[1]-mid[1])];
+      if(Math.abs(st.cv[k][0])<0.012 && Math.abs(st.cv[k][1])<0.008) delete st.cv[k];
+    } else if(D.kind==='zsize'){
+      D.f.r=[D.r0[0], D.r0[1], tacR3_(Math.max(0.04, D.r0[2]+dq[0])), tacR3_(Math.max(0.03, D.r0[3]+dq[1]))];
+    } else if(D.kind==='fx'){
+      var ff=(st.fx||[]).filter(function(f){ return f.id===D.fid; })[0];
+      if(ff && ff.t==='zone' && D.r0){ ff.r=[tacR3_(tacClamp_(D.r0[0]+dq[0],0,1-D.r0[2])), tacR3_(tacClamp_(D.r0[1]+dq[1],0,1-D.r0[3])), D.r0[2], D.r0[3]]; TAC.fxSel=D.fid; }
+    } else if(D.kind==='box'){
+      TAC.box=[D.sx, D.sy, p[0], p[1]];
+    } else if(D.kind==='zdraw'){
+      var q0=D.q0; TAC.zdraw=[tacR3_(q0[0]),tacR3_(q0[1]),tacR3_(tacClamp_(q[0],0,1)),tacR3_(tacClamp_(q[1],0,1))];
     }
-    if(!D.moved){ if(Math.hypot(p[0]-D.sx,p[1]-D.sy)<5) return; D.moved=true; tacSnap_(); TAC.sel=''; }
-    var q=G.inv(p[0],p[1]), st=tacStep_(), plan=tacPlan_();
-    q=[tacR3_(tacClamp_(q[0],Math.max(0.015,G.x0+0.01),Math.min(0.985,G.x1-0.01))), tacR3_(tacClamp_(q[1],Math.max(0.012,G.y0+0.008),Math.min(0.988,G.y1-0.008)))];
-    if(D.k==='ball'){
-      st.own=''; st.ball=q; TAC.hot='';
-      var bd=0.06; TAC.doc.our.concat(TAC.doc.opp).forEach(function(t){ var dd=st.pos[t.k]?tacDist_(st.pos[t.k],q):9; if(dd<bd){ bd=dd; TAC.hot=t.k; } });
-    } else {
-      st.pos[D.k]=q;
-      if(tacIsOpp_(D.k) && plan.auto){ st.lock=st.lock||{}; st.lock[D.k]=1; }
-    }
-    if(plan.auto && (D.k==='ball' || !tacIsOpp_(D.k) || D.k===st.own)) tacOppApply_(TAC.doc, plan, st);
     tacDrawNow_();
     ev.preventDefault();
   };
@@ -12518,21 +13484,48 @@ function tacBind_(){
     if(!TAC || !TAC.drag) return;
     var D=TAC.drag; TAC.drag=null;
     try{ cv.releasePointerCapture(ev.pointerId); }catch(e){}
-    var st=tacStep_(), plan=tacPlan_();
-    if(!D.k){
-      if(D.moved){ if(TAC.mode==='edit') tacTouch_(); return; }
-      if(TAC.mode!=='edit'){ var tk=D.tapK; if(tk && tk!=='ball' && !tacIsOpp_(tk)){ TAC.me=(TAC.me===tk?'':tk); tacUI_(); } return; }
-      TAC.sel=''; tacCapUI_(); tacDrawNow_(); return;
+    var st=tacStep_(), plan=tacPlan_(), G=TAC.G;
+    if(D.kind==='ltap'){
+      if(D.k && D.k!=='ball'){ TAC.draft=TAC.draft||[]; var ix=TAC.draft.indexOf(D.k); if(ix>=0) TAC.draft.splice(ix,1); else TAC.draft.push(D.k); }
+      tacCapUI_(); tacDrawNow_(); return;
     }
+    if(D.kind==='zdraw'){
+      var z=TAC.zdraw; TAC.zdraw=null;
+      if(z && Math.abs(z[2]-z[0])>0.04 && Math.abs(z[3]-z[1])>0.03){
+        tacSnap_(); st.fx=st.fx||[];
+        var f={id:uid_('fx'), t:'zone', r:[Math.min(z[0],z[2]),Math.min(z[1],z[3]),tacR3_(Math.abs(z[2]-z[0])),tacR3_(Math.abs(z[3]-z[1]))], c:TAC.zc||'gold', l:''};
+        st.fx.push(f); TAC.tool='sel'; TAC.fxSel=f.id; tacUI_(); tacTouch_();
+        setTimeout(function(){ var el=document.getElementById('tacFxL'); if(el) el.focus(); }, 60);
+      } else { tacDrawNow_(); tacTip_('조금 더 크게 끌어서 그려 주세요'); }
+      return;
+    }
+    if(D.kind==='box'){
+      var b=TAC.box; TAC.box=null;
+      if(D.moved && b){
+        var x0=Math.min(b[0],b[2]), x1=Math.max(b[0],b[2]), y0=Math.min(b[1],b[3]), y1=Math.max(b[1],b[3]); TAC.multi={}; TAC.sel=''; TAC.fxSel='';
+        TAC.doc.our.concat(TAC.doc.opp).forEach(function(t){ var q=st.pos[t.k]; if(!q) return; var x=G.X(q[0]), y=G.Y(q[1]); if(x>=x0&&x<=x1&&y>=y0&&y<=y1) TAC.multi[t.k]=1; });
+        var ks=Object.keys(TAC.multi); if(ks.length===1){ TAC.sel=ks[0]; TAC.multi={}; }
+      } else { tacClearSel_(); if(TAC.tool==='link') TAC.draft=[]; }
+      tacCapUI_(); tacDrawNow_(); return;
+    }
+    if(D.kind==='fx'){
+      if(!D.moved){ TAC.sel=''; TAC.multi={}; TAC.fxSel=(TAC.fxSel===D.fid)?'':D.fid; }
+      else tacTouch_();
+      tacCapUI_(); tacDrawNow_(); return;
+    }
+    if(D.kind==='curve' || D.kind==='zsize'){ if(D.moved) tacTouch_(); tacCapUI_(); tacDrawNow_(); return; }
+    /* tok */
     if(D.moved){
       if(D.k==='ball'){
         if(TAC.hot){ st.own=TAC.hot; st.ball=tacBallXY_(st).map(tacR3_); }
         TAC.hot='';
         if(plan.auto) tacOppApply_(TAC.doc, plan, st);
-      } else if(st.own===D.k){ st.ball=tacBallXY_(st).map(tacR3_); }
+      } else if(st.own && D.start[st.own]){ st.ball=tacBallXY_(st).map(tacR3_); }
       tacTouch_(); tacCapUI_(); tacDrawNow_();
     } else {
-      TAC.sel=(D.k && TAC.sel!==D.k)?D.k:''; tacCapUI_(); tacDrawNow_();
+      TAC.fxSel=''; if(!(TAC.multi[D.k])) TAC.multi={};
+      TAC.sel=(D.k && TAC.sel!==D.k)?D.k:''; if(Object.keys(TAC.multi).length) TAC.sel='';
+      tacCapUI_(); tacDrawNow_();
     }
   };
 }
@@ -12546,6 +13539,23 @@ function tacUnlock_(k){
   if(!TAC) return; var st=tacStep_(), plan=tacPlan_();
   tacSnap_(); if(st.lock) delete st.lock[k]; TAC.sel='';
   tacOppApply_(TAC.doc, plan, st); tacCapUI_(); tacDrawNow_(); tacTouch_();
+}
+function tacHl_(k){ if(!TAC) return; var st=tacStep_(); tacSnap_(); st.hl=st.hl||{}; if(st.hl[k]) delete st.hl[k]; else st.hl[k]=1; tacCapUI_(); tacDrawNow_(); tacTouch_(); }
+function tacCurveOff_(k){ if(!TAC) return; var st=tacStep_(); tacSnap_(); if(st.cv) delete st.cv[k]; tacCapUI_(); tacDrawNow_(); tacTouch_(); }
+function tacFxCur_(){ var st=tacStep_(); return (st.fx||[]).filter(function(f){ return f.id===TAC.fxSel; })[0]||null; }
+function tacFxColor_(c){ var f=tacFxCur_(); if(!f) return; tacSnap_(); f.c=c; TAC.zc=c; tacCapUI_(); tacDrawNow_(); tacTouch_(); }
+function tacFxLabel_(v){ var f=tacFxCur_(); if(!f) return; if(!TAC._noteSnap){ tacSnap_(); TAC._noteSnap=1; } f.l=String(v||'').slice(0,12); tacDrawNow_(); tacTouch_(); }
+function tacFxDel_(){ var st=tacStep_(); if(!TAC.fxSel) return; tacSnap_(); st.fx=(st.fx||[]).filter(function(f){ return f.id!==TAC.fxSel; }); TAC.fxSel=''; tacCapUI_(); tacDrawNow_(); tacTouch_(); }
+function tacLinkDone_(){
+  if(!TAC || !TAC.draft || TAC.draft.length<2) return;
+  var st=tacStep_(); tacSnap_(); st.fx=st.fx||[];
+  var f={id:uid_('fx'), t:'link', ks:TAC.draft.slice(), c:'blue'}; st.fx.push(f);
+  TAC.tool='sel'; TAC.draft=null; TAC.fxSel=f.id; tacUI_(); tacTouch_();
+}
+function tacLinkFromMulti_(){
+  var ks=Object.keys(TAC.multi).filter(function(k){ return !tacIsOpp_(k); }); if(ks.length<2){ toast('우리 선수를 2명 이상 골라 주세요'); return; }
+  var st=tacStep_(); ks.sort(function(a,b){ return st.pos[a][0]-st.pos[b][0]; });
+  TAC.draft=ks; tacLinkDone_();
 }
 /* ---------- 상대 설정 ---------- */
 function tacOppSheet_(){
@@ -12656,7 +13666,7 @@ function tacMenu_(){
    +   '<button class="btn-ghost" onclick="tacRename_()">이름 · 분류 바꾸기</button>'
    +   '<button class="btn-ghost" onclick="tacLoadSquad_()">스쿼드에서 선수 불러오기</button>'
    +   '<button class="btn-ghost" onclick="tacCopy_()">이 전술 복제</button>'
-   +   '<button class="btn-ghost" onclick="closeSheet();tacSetMode_(\'view\')">재생 화면으로 보기</button>'
+   +   '<button class="btn-ghost" onclick="closeSheet();tacSetMode_(\'view\')">팀원 화면으로 보기</button>'
    +   '<button class="btn-ghost btn-danger" onclick="tacDelete_()">전술 삭제</button>'
    + '</div>');
 }
@@ -12667,11 +13677,11 @@ function tacHelp_(){
    + '<div class="sheet-head"><h3>전술 보드 사용법</h3><button class="x" onclick="closeSheet()">✕</button></div>'
    + '<div class="sheet-body">'
    +   li(1,'<b>선수와 공을 끌어서</b> 배치해요. 공을 선수 위에 놓으면 그 선수가 공을 가져요.')
-   +   li(2,'<b>＋ 장면</b>을 누르면 지금 배치가 복사돼요. 다음 위치로 끌어 옮기면 <b>이동 · 패스 · 드리블 화살표</b>가 자동으로 그려져요.')
-   +   li(3,'<b>상대</b>는 성향(전방 압박 · 내려앉기 등)에 맞춰 스스로 움직여요. 직접 끌면 그 장면에서 고정돼요.')
-   +   li(4,'<b>＋ 대응안</b>으로 같은 상황의 A안 · B안을 만들어 비교해요.')
-   +   li(5,'<b>공격 · 수비 · 확대 · 부분</b>으로 일부 지역 · 일부 선수만 크게 보여 줄 수 있어요.')
-   +   li(6,'<b>공유</b>에서 재생 링크 · 영상 · 장면별 이미지를 팀에 보내요. 실수하면 ↶ 되돌리기.')
+   +   li(2,'<b>＋ 장면</b>으로 다음 장면을 만들고 선수를 옮기면 <b>이동 · 패스 · 드리블</b>이 자동으로 그려져요. 선수를 누르면 나오는 <b>노란 점</b>을 끌면 휘어 들어가는 침투가 돼요.')
+   +   li(3,'빈 곳을 끌어 <b>여러 명을 한 번에</b> 골라 라인째 옮겨요. <b>구역</b> 도구로 공간을, <b>연결</b> 도구로 라인 · 삼각형을 표시해요.')
+   +   li(4,'<b>상대</b>는 성향(전방 압박 · 내려앉기 등)에 맞춰 스스로 움직여요. <b>＋ 대응안</b>으로 A안 · B안을 비교해요.')
+   +   li(5,'<b>3D</b>를 누르면 중계 화면처럼 미리 볼 수 있어요. 장면 설명은 영상 자막으로 나가요.')
+   +   li(6,'<b>공유</b>에서 중계 스타일 <b>영상</b> · 이미지 카드 · 재생 링크를 만들어요. 실수하면 ↶ 되돌리기.')
    +   '<button class="btn-primary" onclick="closeSheet()">시작하기</button>'
    + '</div>');
 }
@@ -12757,23 +13767,7 @@ function tacDelete_(){
 function tacUrl_(id){ return location.origin+location.pathname+'#tac='+id; }
 function tacCardUrl_(id){ return location.origin+location.pathname+'?kt_h='+encodeURIComponent('tac='+id); }
 function tacShareText_(d){
-  return '[📋 '+ourTeamName_()+' 전술] '+(d.title||'')+'\n'+d.plans.map(function(p){ return p.name+' · '+p.steps.length+'단계'; }).join(' / ')+'\n\n👇 눌러서 움직임 보기';
-}
-function tacShareSheet_(){
-  if(!TAC) return;
-  tacStop_(); tacSyncStep_(true); tacFlush_();
-  try{ ensureKakaoShare_(function(){}); }catch(e){}
-  var multi=TAC.doc.plans.length>1, pn=esc(tacPlan_().name);
-  showSheet('<div class="grabber"></div>'
-   + '<div class="sheet-head"><h3>전술 공유</h3><button class="x" onclick="closeSheet()">✕</button></div>'
-   + '<div class="sheet-body">'
-   +   '<div class="eyebrow" style="margin-top:0;">재생 링크 <span style="font-weight:600;color:var(--steel-soft);">앱에서 재생 · 내 위치 강조</span></div>'
-   +   '<button class="btn-primary" onclick="tacShareKakao_()">카톡방에 링크 공유</button>'
-   +   '<button class="btn-ghost" onclick="tacCopyLink_()">링크 복사</button>'
-   +   '<div class="eyebrow" style="margin-top:18px;">파일로 보내기'+(multi?' <span style="font-weight:600;color:var(--steel-soft);">지금 보는 '+pn+'</span>':'')+'</div>'
-   +   '<button class="btn-ghost" style="margin-top:0;" onclick="tacVideo_()">영상으로 저장</button>'
-   +   '<button class="btn-ghost" onclick="tacCards_()">장면별 이미지 카드</button>'
-   + '</div>');
+  return '[📋 '+ourTeamName_()+' 전술] '+(d.title||'')+'\n'+d.plans.map(function(p){ return p.name+' · '+p.steps.length+'장면'; }).join(' / ')+'\n\n👇 눌러서 움직임 보기';
 }
 function tacShareKakao_(){
   if(!TAC) return; var d=TAC.doc;
@@ -12815,175 +13809,100 @@ function openPendingTac_(){
   }).catch(function(){ toast('전술을 불러오지 못했습니다'); });
 }
 
-/* 내보내기용 화면 (영상 프레임 · 이미지 카드 공용) — 가로 1080 기준 */
-function tacOutSize_(doc){ var ph=Math.round(1000*tacAspect_(doc.view||'full', doc.zoom)); return {W:1080, H:Math.ceil((186+ph+18+150+18+62)/8)*8, ph:ph}; }
-function tacCompose_(ctx, S, doc, plan, sc, info){
-  var W=S.W, H=S.H, GOLD='#C7A24B';
-  var bg=ctx.createLinearGradient(0,0,0,H); bg.addColorStop(0,'#1B1A21'); bg.addColorStop(0.5,'#121116'); bg.addColorStop(1,'#0B0A0E');
-  ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
-  var gl=ctx.createRadialGradient(W*0.5,-80,40,W*0.5,-80,760); gl.addColorStop(0,'rgba(199,162,75,.20)'); gl.addColorStop(1,'rgba(199,162,75,0)');
-  ctx.fillStyle=gl; ctx.fillRect(0,0,W,520);
-  ctx.fillStyle=GOLD; ctx.fillRect(0,0,W,6);
-  /* 헤더 */
-  var tx=40;
-  if(info.emblem){
-    ctx.save(); ctx.beginPath(); ctx.arc(88,96,50,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.fill(); ctx.clip();
-    var em=info.emblem, iw=em.width||1, ih=em.height||1, s=Math.min(88/iw, 88/ih); ctx.drawImage(em, 88-iw*s/2, 96-ih*s/2, iw*s, ih*s); ctx.restore();
-    ctx.beginPath(); ctx.arc(88,96,50,0,Math.PI*2); ctx.lineWidth=3; ctx.strokeStyle=GOLD; ctx.stroke();
-    tx=160;
-  }
-  ctx.textAlign='left'; ctx.textBaseline='alphabetic';
-  ctx.fillStyle=GOLD; ctx.font='600 25px Oswald, sans-serif'; try{ ctx.letterSpacing='4px'; }catch(e){}
-  ctx.fillText(cardEllipsis_(ctx, String(ourTeamName_()).toUpperCase()+'  ·  TACTICS', 560), tx, 76);
-  try{ ctx.letterSpacing='0px'; }catch(e){}
-  ctx.fillStyle='#fff'; ctx.font='800 50px Pretendard, sans-serif';
-  ctx.fillText(cardEllipsis_(ctx, doc.title||'전술', W-tx-290), tx, 134);
-  ctx.textAlign='right';
-  if(doc.plans.length>1 || /안/.test(plan.name)===false){
-    ctx.font='700 26px Pretendard, sans-serif'; var pw=ctx.measureText(plan.name).width+40;
-    rr_(ctx, W-40-pw, 44, pw, 46, 23); ctx.fillStyle='rgba(255,255,255,.10)'; ctx.fill();
-    ctx.fillStyle='#fff'; ctx.textBaseline='middle'; ctx.fillText(plan.name, W-60, 68); ctx.textBaseline='alphabetic';
-  }
-  ctx.fillStyle=GOLD; ctx.font='700 40px Oswald, sans-serif'; try{ ctx.letterSpacing='3px'; }catch(e){}
-  ctx.fillText('STEP '+info.step+' / '+info.total, W-40, 142); try{ ctx.letterSpacing='0px'; }catch(e){}
-  /* 경기장 */
-  ctx.save(); ctx.translate(40,186);
-  ctx.save(); ctx.shadowColor='rgba(0,0,0,.5)'; ctx.shadowBlur=30; ctx.shadowOffsetY=12; rr_(ctx,0,0,1000,S.ph,26); ctx.fillStyle='#1c5737'; ctx.fill(); ctx.restore();
-  rr_(ctx,0,0,1000,S.ph,26); ctx.clip();
-  tacScene_(ctx, tacGeomDoc_(doc, plan, 1000, S.ph), doc, sc, {names:info.names!==false, me:info.me||'', accent:info.accent, t:info.t||0});
-  ctx.restore();
-  /* 설명 */
-  var cy=186+S.ph+18;
-  var note=info.note||(info.step===1?'시작 배치':'');
-  if(note){
-    rr_(ctx,40,cy,1000,150,24); ctx.fillStyle='rgba(255,255,255,.06)'; ctx.fill();
-    ctx.fillStyle=GOLD; ctx.fillRect(40,cy+26,6,98);
-    ctx.textAlign='left'; ctx.textBaseline='middle';
-    ctx.font='700 37px Pretendard, sans-serif'; ctx.fillStyle='#fff';
-    var lines=wrapText_(ctx, note, 920).slice(0,2);
-    lines.forEach(function(ln,i){ ctx.fillText(ln, 76, cy+75+(i-(lines.length-1)/2)*50); });
-  }
-  /* 범례 · 워드마크 */
-  var fy=cy+150+18+26, lx=44;
-  ctx.font='600 22px Pretendard, sans-serif'; ctx.fillStyle='rgba(255,255,255,.62)';
-  [['run','이동'],['pass','패스'],['drib','드리블']].forEach(function(g){
-    tacArrow_(ctx, lx, fy, lx+64, fy, g[0], 1, 1.25, 0, 0); ctx.fillStyle='rgba(255,255,255,.62)'; ctx.textAlign='left'; ctx.textBaseline='middle';
-    ctx.fillText(g[1], lx+78, fy+1); lx+=78+ctx.measureText(g[1]).width+34;
-  });
-  ctx.textAlign='right'; ctx.fillStyle='rgba(199,162,75,.6)'; ctx.font='600 22px Oswald, sans-serif'; try{ ctx.letterSpacing='5px'; }catch(e){}
-  ctx.fillText('TACTICS BOARD', W-40, fy+1); try{ ctx.letterSpacing='0px'; }catch(e){}
+/* ---------- 공유 스튜디오: 미리보기를 보면서 영상 · 이미지 카드 · 링크 ---------- */
+var TV_OPT_KEY='kt_tv_opt';
+function tvOpt_(){
+  var o={ratio:'9:16', cam:'auto', intro:true, names:true, speed:1};
+  try{ var s=JSON.parse(localStorage.getItem(TV_OPT_KEY)||'{}'); for(var k in s) if(s.hasOwnProperty(k)) o[k]=s[k]; }catch(e){}
+  if(!TV_RATIOS[o.ratio]) o.ratio='9:16';
+  return o;
 }
-function tacBusy_(msg, pct){
+function tvOptSet_(k, v){ var o=tvOpt_(); o[k]=v; try{ localStorage.setItem(TV_OPT_KEY, JSON.stringify(o)); }catch(e){} tacStudioUI_(); }
+function tacShareSheet_(){
+  if(!TAC) return;
+  tacStop_(); tacSyncStep_(true); tacFlush_();
+  try{ ensureKakaoShare_(function(){}); }catch(e){}
   var w=document.getElementById('tacWrap'); if(!w) return;
-  var b=document.getElementById('tacBusy');
-  if(msg===null){ if(b) b.parentNode.removeChild(b); return; }
-  if(!b){ b=document.createElement('div'); b.id='tacBusy'; b.className='tac-busy'; b.innerHTML='<div id="tacBusyT"></div><div class="bar"><i id="tacBusyB"></i></div>'; w.appendChild(b); }
-  document.getElementById('tacBusyT').textContent=msg; document.getElementById('tacBusyB').style.width=Math.round((pct||0)*100)+'%';
+  var s=document.getElementById('tacStudio'); if(!s){ s=document.createElement('div'); s.id='tacStudio'; s.className='tac-studio'; w.appendChild(s); }
+  TAC.studio={t0:performance.now()};
+  tacStudioUI_();
+}
+function tacStudioClose_(){ var s=document.getElementById('tacStudio'); if(s) s.parentNode.removeChild(s); if(TAC){ TAC.studio=null; } }
+function tacStudioOpen_(){ return !!document.getElementById('tacStudio'); }
+function tvStudioR_(W, H, o){
+  var a=(TAC.assets||{});
+  return tvPrep_(TAC.doc, tacPlan_(), {W:W, H:H, overlay:'video', intro:o.intro, outro:o.intro, names:o.names, cam:o.cam, speed:o.speed, imgs:a.imgs||{}, emblem:a.emblem});
+}
+function tacStudioUI_(){
+  var s=document.getElementById('tacStudio'); if(!s || !TAC) return;
+  var o=tvOpt_(), d=TAC.doc, plan=tacPlan_(), n=plan.steps.length, wh=TV_RATIOS[o.ratio];
+  var secs=Math.round(tacTL_(plan,{intro:o.intro, outro:o.intro, speed:o.speed}).total);
+  function chip(k, v, lab, sub){ return '<button class="st-chip '+(o[k]===v?'on':'')+'" onclick="tvOptSet_(\''+k+'\','+(typeof v==='string'?'\''+v+'\'':v)+')">'+lab+(sub?'<i>'+sub+'</i>':'')+'</button>'; }
+  s.innerHTML='<div class="st-top"><button class="tac-ib" onclick="tacStudioClose_()" aria-label="닫기">'+TAC_SVG.back+'</button><div class="st-ttl"><b>공유하기</b><span>'+esc(d.title||'전술')+(d.plans.length>1?' · '+esc(plan.name):'')+'</span></div></div>'
+    + '<div class="st-body">'
+    +   '<div class="st-prev"><canvas id="tvPrev"></canvas></div>'
+    +   '<div class="st-panel">'
+    +     (d.plans.length>1?'<div class="st-lab">대응안</div><div class="st-row">'+d.plans.map(function(p,i){ return '<button class="st-chip '+(i===TAC.planIdx?'on':'')+'" onclick="TAC.planIdx='+i+';TAC.stepIdx=0;TAC.R3=null;tacStudioUI_()">'+esc(p.name)+'</button>'; }).join('')+'</div>':'')
+    +     '<div class="st-lab">화면 비율</div><div class="st-row">'+Object.keys(TV_RATIOS).map(function(r){ return chip('ratio', r, TV_RATIOS[r][2], TV_RATIOS[r][3]); }).join('')+'</div>'
+    +     '<div class="st-lab">카메라</div><div class="st-row">'+chip('cam','auto','따라가기','공 · 움직임 중심')+chip('cam','wide','전체 보기','고정 · 넓게')+'</div>'
+    +     '<div class="st-lab">구성</div><div class="st-row">'+chip('intro',true,'인트로 · 엔딩')+chip('intro',false,'본편만')+chip('names',true,'이름 표시')+chip('names',false,'번호만')+'</div>'
+    +     '<div class="st-lab">속도</div><div class="st-row">'+chip('speed',0.75,'느리게')+chip('speed',1,'보통')+chip('speed',1.3,'빠르게')+'</div>'
+    +     '<button class="st-go" onclick="tacMakeVideo_()">'+TAC_SVG.film+'영상 만들기 <i>약 '+secs+'초 · '+wh[0]+'×'+wh[1]+'</i></button>'
+    +     '<button class="st-go2" onclick="tacMakeCards_()">장면별 이미지 '+n+'장</button>'
+    +     '<div class="st-lab" style="margin-top:16px;">재생 링크 <span>팀원이 앱에서 직접 재생 · 내 위치 강조</span></div>'
+    +     '<div class="st-row2"><button class="st-go2 kakao" onclick="tacShareKakao_()">카톡방에 링크 공유</button><button class="st-go2" onclick="tacCopyLink_()">링크 복사</button></div>'
+    +   '</div>'
+    + '</div>';
+  var cv=document.getElementById('tvPrev'), box=cv.parentNode, bw=box.clientWidth-4, bh=box.clientHeight-4, a=wh[1]/wh[0];
+  var cw=Math.max(120, Math.floor(Math.min(bw, bh/a))), ch=Math.round(cw*a), dpr=Math.min(2, window.devicePixelRatio||1);
+  cv.style.width=cw+'px'; cv.style.height=ch+'px'; cv.width=Math.round(cw*dpr); cv.height=Math.round(ch*dpr);
+  var R=tvStudioR_(cw, ch, o), ctx=cv.getContext('2d'), t0=performance.now(), tok={};
+  TAC.studio={R:R, tok:tok};
+  fontsReady_(function(){
+    (function loop(now){
+      if(!TAC || !TAC.studio || TAC.studio.tok!==tok || !document.getElementById('tvPrev')) return;
+      var t=((now-t0)/1000)%(R.TL.total+0.6);
+      ctx.setTransform(dpr,0,0,dpr,0,0); tvFrame_(ctx, R, Math.min(t, R.TL.total));
+      requestAnimationFrame(loop);
+    })(t0);
+  });
 }
 function tacFileBase_(){ return 'FCJEMIRO_TACTIC_'+String(TAC.doc.title||'').replace(/[\\\/:*?"<>|\s]+/g,'_').slice(0,20)+(TAC.doc.plans.length>1?'_'+String(tacPlan_().name).replace(/[^0-9A-Za-z가-힣]+/g,''):''); }
-/* 장면별 이미지 카드 */
-function tacCards_(){
+function tacBusy_(msg, pct){
+  var w=document.getElementById('tacStudio')||document.getElementById('tacWrap'); if(!w) return;
+  var b=document.getElementById('tacBusy');
+  if(msg===null){ if(b) b.parentNode.removeChild(b); return; }
+  if(!b){ b=document.createElement('div'); b.id='tacBusy'; b.className='tac-busy'; b.innerHTML='<div class="tb-ring"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="27"/><circle id="tacBusyC" cx="32" cy="32" r="27"/></svg><b id="tacBusyP">0%</b></div><div id="tacBusyT"></div><span>화면을 켜 둔 채로 기다려 주세요</span>'; w.appendChild(b); }
+  var p=Math.round((pct||0)*100), c=document.getElementById('tacBusyC');
+  document.getElementById('tacBusyT').textContent=msg; document.getElementById('tacBusyP').textContent=p+'%';
+  if(c){ var L=2*Math.PI*27; c.style.strokeDasharray=L; c.style.strokeDashoffset=L*(1-(pct||0)); }
+}
+function tacMakeVideo_(){
   if(!TAC) return;
-  closeSheet(); tacBusy_('이미지 카드 만드는 중…', 0.05);
-  var d=tacClone_(TAC.doc), plan=d.plans[TAC.planIdx], S=tacOutSize_(d), acc=tacAccent_(), me='', names=TAC.names, base=tacFileBase_();
+  var o=tvOpt_(), plan=tacPlan_(); if(plan.steps.length<2){ toast('장면이 2개 이상이어야 영상을 만들 수 있어요'); return; }
+  var wh=TV_RATIOS[o.ratio], base=tacFileBase_();
+  if(TAC.studio) TAC.studio.tok={};
+  tacBusy_('영상 만드는 중', 0);
   fontsReady_(function(){
-    loadImg_(teamEmblemSrc_()).then(function(em){
-      var cards=[], jobs=[];
-      plan.steps.forEach(function(st,i){
-        var c=document.createElement('canvas'); c.width=S.W; c.height=S.H;
-        tacCompose_(c.getContext('2d'), S, d, plan, {A:(i>0?plan.steps[i-1]:null), B:st, p:1}, {emblem:em, step:i+1, total:plan.steps.length, note:st.note, accent:acc, me:me, names:names});
-        var cd={c:c, name:base+'_'+(i+1)+'.png', label:(i+1)+'/'+plan.steps.length, blob:null}; cards.push(cd);
-        jobs.push(new Promise(function(res){ try{ c.toBlob(function(b){ cd.blob=b; res(); }, 'image/png'); }catch(e){ res(); } }));
-      });
-      Promise.all(jobs).then(function(){ tacBusy_(null); state._tacCards=cards; tacCardsSheet_(); });
-    });
-  });
-}
-function tacCardsSheet_(){
-  var cs=state._tacCards||[];
-  showSheet('<div class="grabber"></div>'
-   + '<div class="sheet-head"><h3>장면별 이미지 카드</h3><button class="x" onclick="closeSheet()">✕</button></div>'
-   + '<div class="sheet-body">'
-   +   '<div class="tac-cards">'+cs.map(function(cd,i){ return '<div onclick="tacCardZoom_('+i+')"><img src="'+cd.c.toDataURL('image/jpeg',0.6)+'" alt=""><span>'+cd.label+'</span></div>'; }).join('')+'</div>'
-   +   '<button class="btn-primary" onclick="tacCardsShare_()">'+cs.length+'장 공유 · 저장</button>'
-   +   '<button class="btn-ghost" onclick="tacCardsSave_()">모두 다운로드</button>'
-   +   '<p class="hint" style="margin-top:10px;">카드를 누르면 크게 보고 한 장씩 저장할 수 있어요.</p>'
-   + '</div>');
-}
-function tacCardZoom_(i){
-  var cd=(state._tacCards||[])[i]; if(!cd) return;
-  showCardPreview_(cd.c, cd.name);
-  var x=document.querySelector('#sheet .sheet-head .x'); if(x) x.setAttribute('onclick','tacCardsSheet_()');
-}
-function tacCardsShare_(){
-  var files=(state._tacCards||[]).map(function(cd){ try{ return cd.blob?new File([cd.blob], cd.name, {type:'image/png'}):null; }catch(e){ return null; } }).filter(Boolean);
-  if(!files.length){ toast('카드를 만들지 못했어요'); return; }
-  try{ logEvent_('share','전술 이미지 카드 공유', files.length+'장'); }catch(e){}
-  if(navigator.canShare && navigator.share && navigator.canShare({files:files})){
-    navigator.share({files:files}).catch(function(e){ if(!e || e.name!=='AbortError') tacCardsSave_(); });
-  } else tacCardsSave_();
-}
-function tacCardsSave_(){ (state._tacCards||[]).forEach(function(cd,i){ if(cd.blob) setTimeout(function(){ dlBlob_(cd.blob, cd.name); }, i*350); }); }
-/* 영상 저장: 캔버스를 실시간으로 녹화 (mp4 우선, 안 되면 webm) */
-function tacVideoMime_(){
-  if(!(window.MediaRecorder && MediaRecorder.isTypeSupported)) return '';
-  var c=['video/mp4;codecs=avc1.42E01E','video/mp4','video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];
-  for(var i=0;i<c.length;i++){ try{ if(MediaRecorder.isTypeSupported(c[i])) return c[i]; }catch(e){} }
-  return '';
-}
-function tacVideo_(){
-  if(!TAC) return;
-  var mime=tacVideoMime_(), cvOK=!!(window.HTMLCanvasElement && HTMLCanvasElement.prototype.captureStream);
-  if(!mime || !cvOK){ toast('이 기기에서는 영상 저장이 안 돼요 · 이미지 카드를 이용해 주세요'); return; }
-  var d=tacClone_(TAC.doc), plan=d.plans[TAC.planIdx], n=plan.steps.length;
-  if(n<2){ toast('장면이 2개 이상이어야 영상을 만들 수 있어요'); return; }
-  closeSheet(); tacBusy_('영상 만드는 중… 화면을 켜 두세요', 0);
-  var S=tacOutSize_(d), k=720/1080, acc=tacAccent_(), me='', names=TAC.names, base=tacFileBase_();
-  var c=document.createElement('canvas'); c.width=720; c.height=Math.round(S.H*k/2)*2;
-  var ctx=c.getContext('2d'), tot=tacTotal_(n)+0.5;
-  fontsReady_(function(){
-    loadImg_(teamEmblemSrc_()).then(function(em){
-      var frame=function(clock){
-        var at=tacAt_(n, Math.max(0,clock));
-        ctx.setTransform(k,0,0,k,0,0);
-        tacCompose_(ctx, S, d, plan, {A:(at.a>=0?plan.steps[at.a]:null), B:plan.steps[at.b], p:at.p}, {emblem:em, step:at.b+1, total:n, note:plan.steps[at.b].note, accent:acc, me:me, names:names, t:clock});
-      };
-      frame(0);
-      var rec, chunks=[], stream;
-      try{ stream=c.captureStream(30); rec=new MediaRecorder(stream, {mimeType:mime, videoBitsPerSecond:4500000}); }
-      catch(e){ tacBusy_(null); toast('영상을 만들지 못했어요 · 이미지 카드를 이용해 주세요'); return; }
-      rec.ondataavailable=function(ev){ if(ev.data && ev.data.size) chunks.push(ev.data); };
-      rec.onstop=function(){
-        tacBusy_(null);
-        try{ stream.getTracks().forEach(function(t){ t.stop(); }); }catch(e){}
-        var ext=/mp4/.test(mime)?'mp4':'webm', blob=new Blob(chunks, {type:mime.split(';')[0]});
-        if(!blob.size){ toast('영상을 만들지 못했어요'); return; }
-        state._tacVid={blob:blob, name:base+'.'+ext, url:URL.createObjectURL(blob), ext:ext};
-        try{ logEvent_('share','전술 영상 만들기', d.title); }catch(e){}
-        tacVideoSheet_();
-      };
-      rec.start(250);
-      var t0=performance.now();
-      var tick=function(now){
-        var clock=(now-t0)/1000-0.25;
-        frame(clock); tacBusy_('영상 만드는 중… 화면을 켜 두세요', Math.min(1,(clock+0.25)/tot));
-        if(clock>=tot){ try{ rec.stop(); }catch(e){ tacBusy_(null); } return; }
-        requestAnimationFrame(tick);
-      };
-      requestAnimationFrame(tick);
-    });
+    var R=tvStudioR_(wh[0], wh[1], o);
+    tvExport_(R, function(p){ tacBusy_('영상 만드는 중', p); }).then(function(res){
+      tacBusy_(null);
+      if(!res){ toast('이 기기에서는 영상 저장이 안 돼요 · 이미지 카드를 이용해 주세요'); tacStudioUI_(); return; }
+      state._tacVid={blob:res.blob, name:base+'.'+res.ext, url:URL.createObjectURL(res.blob), ext:res.ext, ratio:o.ratio};
+      try{ logEvent_('share','전술 영상 만들기', TAC.doc.title); }catch(e){}
+      tacVideoSheet_();
+    }).catch(function(e){ tacBusy_(null); toast('영상을 만들지 못했어요'); try{ console.warn(e); }catch(_){} tacStudioUI_(); });
   });
 }
 function tacVideoSheet_(){
-  var v=state._tacVid; if(!v) return;
-  showSheet('<div class="grabber"></div>'
-   + '<div class="sheet-head"><h3>전술 영상</h3><button class="x" onclick="closeSheet()">✕</button></div>'
-   + '<div class="sheet-body">'
-   +   '<video src="'+v.url+'" controls loop autoplay muted playsinline style="display:block;margin:0 auto;max-width:100%;max-height:58vh;border-radius:14px;border:1px solid var(--line-strong);background:#000;"></video>'
-   +   '<button class="btn-primary" style="margin-top:14px;" onclick="tacVideoShare_()">공유 · 저장</button>'
-   +   '<button class="btn-ghost" onclick="tacVideoSave_()">다운로드</button>'
-   +   (v.ext==='webm'?'<p class="hint" style="margin-top:10px;">이 기기에서는 WEBM 형식으로 저장돼요. 카톡에서 재생되지 않으면 이미지 카드나 재생 링크를 보내 주세요.</p>':'')
-   + '</div>');
+  var v=state._tacVid, s=document.getElementById('tacStudio'); if(!v || !s) return;
+  s.innerHTML='<div class="st-top"><button class="tac-ib" onclick="tacStudioUI_()" aria-label="뒤로">'+TAC_SVG.back+'</button><div class="st-ttl"><b>영상이 준비됐어요</b><span>'+esc(v.name)+' · '+(v.blob.size/1048576).toFixed(1)+'MB</span></div></div>'
+    + '<div class="st-body"><div class="st-prev"><video src="'+v.url+'" controls loop autoplay muted playsinline></video></div>'
+    + '<div class="st-panel"><button class="st-go" onclick="tacVideoShare_()">'+TAC_SVG.film+'공유 · 저장</button><button class="st-go2" onclick="tacVideoSave_()">다운로드</button>'
+    + (v.ext==='webm'?'<p class="st-note">이 기기에서는 WEBM 형식으로 저장돼요. 카톡에서 재생되지 않으면 이미지 카드나 재생 링크를 보내 주세요.</p>':'<p class="st-note">카톡 · 인스타 · 유튜브 쇼츠에 바로 올릴 수 있는 MP4예요. 음악은 각 앱에서 넣어 주세요.</p>')
+    + '</div></div>';
+  var vid=s.querySelector('video'), box=vid.parentNode, wh=TV_RATIOS[v.ratio]||[1080,1920], a=wh[1]/wh[0], cw=Math.floor(Math.min(box.clientWidth-4, (box.clientHeight-4)/a));
+  vid.style.width=cw+'px'; vid.style.height=Math.round(cw*a)+'px';
 }
 function tacVideoSave_(){ var v=state._tacVid; if(!v) return; var a=document.createElement('a'); a.href=v.url; a.download=v.name; document.body.appendChild(a); a.click(); setTimeout(function(){ try{ a.parentNode.removeChild(a); }catch(e){} }, 600); toast('영상을 저장했습니다'); }
 function tacVideoShare_(){
@@ -12993,6 +13912,40 @@ function tacVideoShare_(){
     navigator.share({files:[file]}).catch(function(e){ if(!e || e.name!=='AbortError') tacVideoSave_(); });
   } else tacVideoSave_();
 }
+/* 장면별 이미지 카드 (영상과 같은 그래픽 · 정지 화면) */
+function tacMakeCards_(){
+  if(!TAC) return;
+  var o=tvOpt_(), wh=TV_RATIOS[o.ratio], plan=tacPlan_(), base=tacFileBase_(), n=plan.steps.length;
+  if(TAC.studio) TAC.studio.tok={};
+  tacBusy_('이미지 만드는 중', 0.05);
+  fontsReady_(function(){
+    var R=tvStudioR_(wh[0], wh[1], o), cards=[], i=0;
+    R.o.overlay='card';
+    (function next(){
+      if(i>=n){ tacBusy_(null); state._tacCards=cards; state._tacCardsRatio=o.ratio; tacCardsSheet_(); return; }
+      var c=document.createElement('canvas'); c.width=wh[0]; c.height=wh[1];
+      tvStill_(c.getContext('2d'), R, i, 0.8);
+      var cd={c:c, name:base+'_'+(i+1)+'.jpg', label:(i+1)+'/'+n, blob:null}; cards.push(cd);
+      c.toBlob(function(b){ cd.blob=b; i++; tacBusy_('이미지 만드는 중', i/n); setTimeout(next, 0); }, 'image/jpeg', 0.92);
+    })();
+  });
+}
+function tacCardsSheet_(){
+  var cs=state._tacCards||[], s=document.getElementById('tacStudio'); if(!s) return;
+  s.innerHTML='<div class="st-top"><button class="tac-ib" onclick="tacStudioUI_()" aria-label="뒤로">'+TAC_SVG.back+'</button><div class="st-ttl"><b>이미지 '+cs.length+'장</b><span>누르면 크게 보고 한 장씩 저장할 수 있어요</span></div></div>'
+    + '<div class="st-body cards"><div class="st-cards">'+cs.map(function(cd,i){ return '<div onclick="tacCardZoom_('+i+')"><img src="'+cd.c.toDataURL('image/jpeg',0.6)+'" alt=""><span>'+cd.label+'</span></div>'; }).join('')+'</div>'
+    + '<div class="st-panel"><button class="st-go" onclick="tacCardsShare_()">'+cs.length+'장 공유 · 저장</button><button class="st-go2" onclick="tacCardsSave_()">모두 다운로드</button></div></div>';
+}
+function tacCardZoom_(i){ var cd=(state._tacCards||[])[i]; if(!cd) return; showCardPreview_(cd.c, cd.name); }
+function tacCardsShare_(){
+  var files=(state._tacCards||[]).map(function(cd){ try{ return cd.blob?new File([cd.blob], cd.name, {type:'image/jpeg'}):null; }catch(e){ return null; } }).filter(Boolean);
+  if(!files.length){ toast('이미지를 만들지 못했어요'); return; }
+  try{ logEvent_('share','전술 이미지 공유', files.length+'장'); }catch(e){}
+  if(navigator.canShare && navigator.share && navigator.canShare({files:files})){
+    navigator.share({files:files}).catch(function(e){ if(!e || e.name!=='AbortError') tacCardsSave_(); });
+  } else tacCardsSave_();
+}
+function tacCardsSave_(){ (state._tacCards||[]).forEach(function(cd,i){ if(cd.blob) setTimeout(function(){ dlBlob_(cd.blob, cd.name); }, i*350); }); }
 /* ================= 전술 보드 끝 ================= */
 /* TAC-JS-END */
 </script>
