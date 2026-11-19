@@ -1345,6 +1345,39 @@
 .tac-pick button{height:42px;border-radius:11px;border:1px solid var(--line-strong);background:var(--card);color:var(--ink);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 8px;}
 .tac-pick button.on{background:var(--solid);color:var(--solid-fg);border-color:var(--solid);}
 .tac-pick button i{font-style:normal;font-family:'Oswald',sans-serif;margin-right:5px;opacity:.7;}
+/* MATCHDAY UI 키트: 배경 #101317 · 도구 버튼 44px(#24282E / 선택 #321E25 + 빨강 2px) · 주 버튼 #D92C48 */
+.tac-wrap{background:#101317;color:#F1F3F5;}
+.tac-ib{width:44px;height:44px;border-radius:10px;border:1px solid #444A53;background:#24282E;color:#F1F3F5;box-shadow:inset 0 1px 0 rgba(255,255,255,.07);}
+.tac-ib:active{background:#171b20;}
+.tac-ib:disabled{opacity:1;background:#202328;color:#626974;border-color:#333840;}
+.tac-ib svg{width:24px;height:24px;}
+.tac-ib:focus-visible,.tac-tb:focus-visible,.tac-chip:focus-visible,.tac-st:focus-visible,.tac-play:focus-visible{outline:2px solid #F1F3F5;outline-offset:3px;}
+.tac-ttl span{color:#A8AFB8;}
+.tac-tb{height:44px;border-radius:10px;border:1px solid #444A53;background:#24282E;color:#F1F3F5;}
+.tac-tb.gold{background:#D92C48;border:1px solid #EF536B;color:#fff;}
+.tac-chip{height:36px;border-radius:9px;border:1px solid #444A53;background:#24282E;color:#A8AFB8;}
+.tac-chip.on{background:#321E25;color:#F1F3F5;border:2px solid #E63852;}
+.tac-chip.dash{border-style:dashed;color:#A8AFB8;}
+.tac-chip.opp{border-color:#444A53;background:#191D22;color:#F1F3F5;}
+.tac-chip.opp i{color:#E8BD50;}
+.tac-stage canvas{border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.5),0 0 0 1px #2a2f36;}
+.tac-tip{background:rgba(25,29,34,.94);border:1px solid #444A53;color:#F1F3F5;}
+.tac-cap input{height:44px;border-radius:10px;border:1px solid #444A53;background:#191D22;color:#F1F3F5;}
+.tac-cap input::placeholder{color:#A8AFB8;}
+.tac-cap input:focus{border-color:#E63852;}
+.tac-cap .cap-n{color:#E8BD50;}
+.tac-cap .cap-t.dim{color:#A8AFB8;}
+.tac-sel button{height:36px;border-radius:9px;border:1px solid #444A53;background:#24282E;color:#F1F3F5;}
+.tac-st{min-width:40px;height:40px;border-radius:9px;border:1px solid #444A53;background:#24282E;color:#A8AFB8;}
+.tac-st.on{background:#321E25;color:#F1F3F5;border:2px solid #E63852;}
+.tac-st.add{border-style:dashed;color:#E8BD50;border-color:rgba(232,189,80,.55);background:transparent;}
+.tac-dot{background:#444A53;}
+.tac-dot.on{background:#E63852;}
+.tac-play{height:44px;min-width:44px;border-radius:10px;border:1px solid #EF536B;background:#D92C48;box-shadow:0 6px 16px rgba(217,44,72,.32);}
+.tac-play:active{background:#B8233C;}
+.tac-vw{background:#191D22;border:1px solid #444A53;border-radius:10px;}
+.tac-vw button{height:34px;border-radius:8px;color:#A8AFB8;}
+.tac-vw button.on{background:#321E25;color:#F1F3F5;box-shadow:inset 0 0 0 2px #E63852;}
 @media(min-width:1024px){
   /* PC: 경기장은 왼쪽에 크게, 조작은 오른쪽 패널 */
   .tac-wrap.open{display:grid;grid-template-columns:minmax(0,1fr) 400px;grid-template-rows:auto auto auto auto auto 1fr;column-gap:6px;padding:0 14px 14px;}
@@ -1385,17 +1418,17 @@ body.tac-open #ktDemoBadge{display:none !important;}
 .tac-toolseg button{display:flex;align-items:center;gap:4px;}
 .tac-toolseg button svg,.tac-chip.ic svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;}
 .tac-chip.ic{display:flex;align-items:center;gap:5px;}
-.tac-sel input{flex:1;min-width:0;height:34px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-family:inherit;font-size:13px;padding:0 10px;-webkit-user-select:text;user-select:text;}
-.tac-sel input:focus{outline:none;border-color:var(--gold);}
-.tac-sel button.on{background:#FFD84D;color:#15130a;border-color:#FFD84D;}
-.tac-sel button:disabled{opacity:.35;}
+.tac-sel input{flex:1;min-width:0;height:36px;border-radius:9px;border:1px solid #444A53;background:#191D22;color:#F1F3F5;font-family:inherit;font-size:13px;padding:0 10px;-webkit-user-select:text;user-select:text;}
+.tac-sel input:focus{outline:none;border-color:#E63852;}
+.tac-sel button.on{background:#321E25;color:#F1F3F5;border:2px solid #E63852;}
+.tac-sel button:disabled{opacity:1;background:#202328;color:#626974;border-color:#333840;}
 .tac-dotc{flex:0 0 auto;width:24px;height:24px;border-radius:50%;cursor:pointer;border:2px solid rgba(255,255,255,.25);box-sizing:border-box;}
 .tac-dotc.on{border-color:#fff;box-shadow:0 0 0 2px rgba(255,255,255,.25);}
-.tac-st.has{box-shadow:inset 0 -3px 0 rgba(199,162,75,.85);}
+.tac-st.has{box-shadow:inset 0 -3px 0 rgba(232,189,80,.85);}
 .tac-play.round{width:48px;height:48px;padding:0;border-radius:50%;}
 .tac-play.round svg{width:18px;height:18px;}
 /* 공유 스튜디오 */
-.tac-studio{position:absolute;inset:0;z-index:6;display:flex;flex-direction:column;background:radial-gradient(120% 60% at 50% 0%,#1d2027 0%,#0b0c0f 60%);color:#fff;}
+.tac-studio{position:absolute;inset:0;z-index:6;display:flex;flex-direction:column;background:#101317;color:#F1F3F5;}
 .st-top{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:8px 10px;padding-top:calc(8px + env(safe-area-inset-top));}
 .st-ttl{flex:1;min-width:0;}
 .st-ttl b{display:block;font-size:16px;font-weight:800;letter-spacing:-.02em;}
@@ -1425,12 +1458,21 @@ body.tac-open #ktDemoBadge{display:none !important;}
 .st-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:6px 14px;}
 .st-cards div{position:relative;border-radius:10px;overflow:hidden;cursor:zoom-in;box-shadow:0 6px 16px rgba(0,0,0,.4);}
 .st-cards img{display:block;width:100%;}
+/* MATCHDAY 스튜디오: 선택 칩 · 주 버튼 */
+.st-chip{border-radius:10px;border:1px solid #444A53;background:#24282E;color:#F1F3F5;}
+.st-chip i{color:#A8AFB8;}
+.st-chip.on{background:#321E25;color:#F1F3F5;border:2px solid #E63852;}
+.st-chip.on i{color:#E8BD50;}
+.st-go{border-radius:10px;border:1px solid #EF536B;background:#D92C48;color:#fff;box-shadow:0 8px 20px rgba(217,44,72,.3);}
+.st-go2{border-radius:10px;border:1px solid #444A53;background:#24282E;color:#F1F3F5;}
+.st-go2.kakao{background:#FEE500;color:#191919;border-color:#FEE500;}
+.st-lab,.st-ttl span,.st-note{color:#A8AFB8;}
 .st-cards span{position:absolute;left:6px;top:6px;font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:99px;background:rgba(10,10,12,.7);color:#fff;}
 .tac-busy{position:absolute;inset:0;z-index:9;background:rgba(6,7,9,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:#fff;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
 .tac-busy .tb-ring{position:relative;width:96px;height:96px;}
 .tac-busy svg{width:96px;height:96px;transform:rotate(-90deg);}
 .tac-busy circle{fill:none;stroke-width:5;stroke:rgba(255,255,255,.12);}
-.tac-busy circle#tacBusyC{stroke:#C7A24B;stroke-linecap:round;transition:stroke-dashoffset .2s;}
+.tac-busy circle#tacBusyC{stroke:#E63852;stroke-linecap:round;transition:stroke-dashoffset .2s;}
 .tac-busy .tb-ring b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-size:22px;}
 .tac-busy #tacBusyT{font-size:15px;font-weight:800;}
 .tac-busy span{font-size:12px;color:rgba(255,255,255,.5);}
@@ -1448,15 +1490,15 @@ body.tac-open #ktDemoBadge{display:none !important;}
 .sheet-head .x{width:42px;height:42px}
 @media(prefers-reduced-motion:reduce){.sheet,.tab,.tab svg{animation:none;transition:none}}
 button:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-visible{outline:3px solid #e8bc63;outline-offset:2px}
-.tac-top{border-bottom:1px solid #ffffff19}
-.tac-st.on{box-shadow:inset 0 -4px #eac470}
-.tac-stage canvas{border-radius:14px}
+.tac-top{border-bottom:1px solid #2a2f36}
+.tac-st.on{box-shadow:none}
+.tac-stage canvas{border-radius:10px}
 .tac-cap input{font:inherit;line-height:1.45}
 @media(min-width:1024px){
 .tac-wrap.open{column-gap:18px}
-.tac-row,.tac-cap,.tac-steps,.tac-tools{background:#191c22;padding-left:16px;padding-right:16px;border-inline:1px solid #ffffff12}
-.tac-row{border-radius:16px 16px 0 0;border-top:2px solid #b39758;padding-top:15px}
-.tac-tools{border-radius:0 0 16px 16px;padding-bottom:16px}
+.tac-row,.tac-cap,.tac-steps,.tac-tools{background:#191D22;padding-left:16px;padding-right:16px;border-inline:1px solid #2f343c}
+.tac-row{border-radius:10px 10px 0 0;border-top:2px solid #E63852;padding-top:15px}
+.tac-tools{border-radius:0 0 10px 10px;padding-bottom:16px;border-bottom:1px solid #2f343c}
 }
 @media(hover:hover){.tac-st:hover,.tac-chip:hover,.tac-ib:hover{filter:brightness(1.17)}}
 
@@ -1690,7 +1732,7 @@ var APP_SUB = 'FOOTBALL CLUB';
 var APP_REGION = '';   /* 새 팀 설치 시 헤더 지역 표기 (팀 정보에서 변경 가능) */
 var APP_NOTE = '';     /* 새 팀 설치 시 헤더 소개 문구 */
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '16.3.2';
+var APP_VERSION = '16.4.0';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -12120,7 +12162,7 @@ function tacGeomDoc_(doc, plan, W, H){ return tacGeom_(doc.view||'full', W, H, d
  * 한 장면 전환(A→B)의 진행도 p(0~1) 안에서:
  *   화살표 미리 그리기 0~0.30 · 선수 이동 0.12~1 · 패스 0.18~0.90 (받는 선수가 도착할 때 공도 도착) */
 var TAC_PH={arr:0.30, mv0:0.12, bp0:0.18, bp1:0.90};
-var TAC_FXC={gold:'#F2C94C', red:'#FF5A5F', blue:'#4FB3FF', mint:'#3FE0B0'};
+var TAC_FXC={gold:'#E8BD50', red:'#E63852', blue:'#4FB3FF', mint:'#3FE0B0'};
 function tacEaseOut_(t){ return 1-(1-t)*(1-t); }
 function tacSmooth_(t){ return t*t*(3-2*t); }
 function tacMeters_(a,b){ var dx=(a[0]-b[0])*68, dy=(a[1]-b[1])*105; return Math.sqrt(dx*dx+dy*dy); }
@@ -12224,15 +12266,20 @@ function tacTLStepT_(TL, i){
 /* ---------- 2D 보드 그리기 ---------- */
 function tacPitch_(ctx, G){
   var X=G.X, Y=G.Y, sx=G.sx, fh=G.fhF, i;
-  var bg=ctx.createLinearGradient(0,0,0,G.H); bg.addColorStop(0,'#174a30'); bg.addColorStop(1,'#123d27');
-  ctx.fillStyle=bg; ctx.fillRect(0,0,G.W,G.H);
+  ctx.fillStyle='#17392B'; ctx.fillRect(0,0,G.W,G.H);
   ctx.save(); ctx.beginPath(); ctx.rect(0,0,G.W,G.H); ctx.clip();
-  for(i=0;i<14;i++){ ctx.fillStyle=(i%2)?'#20594c':'#256451'; ctx.fillRect(X(0), Y(i/14), sx, fh/14+0.6); }
-  for(i=0;i<6;i++){ if(i%2) continue; ctx.fillStyle='rgba(255,255,255,.028)'; ctx.fillRect(X(i/6), Y(0), sx/6, fh); }
+  var surf=tacSprites.pitch;
+  if(surf){
+    /* MATCHDAY 잔디 이미지: 1080x1668 안의 경기장(64.8, 100.24, 950.4 x 1467.53)을 보드의 경기장 좌표에 맞춘다 */
+    var ks=sx/950.4, kv=fh/1467.5294; ctx.save(); ctx.imageSmoothingQuality='high';
+    ctx.drawImage(surf, X(0)-64.8*ks, Y(0)-100.2353*kv, 1080*ks, 1668*kv); ctx.restore();
+  } else {
+    for(i=0;i<13;i++){ ctx.fillStyle=(i%2)?'#104105':'#1B5408'; ctx.fillRect(X(0), Y(i/13), sx, fh/13+0.6); }
+  }
   var vg=ctx.createRadialGradient(G.W/2,G.H*0.42,G.W*0.15,G.W/2,G.H*0.5,Math.max(G.W,G.H)*0.78);
-  vg.addColorStop(0,'rgba(255,255,230,.07)'); vg.addColorStop(1,'rgba(0,0,0,.22)');
+  vg.addColorStop(0,'rgba(255,255,230,.04)'); vg.addColorStop(1,'rgba(0,0,0,.18)');
   ctx.fillStyle=vg; ctx.fillRect(0,0,G.W,G.H);
-  var lw=Math.max(1.2, G.W*0.0032*(G.zoom?1.25:1)); ctx.lineWidth=lw; ctx.strokeStyle='rgba(255,255,255,.86)'; ctx.fillStyle='rgba(255,255,255,.86)'; ctx.lineJoin='round';
+  var lw=Math.max(1.2, G.W*0.0032*(G.zoom?1.25:1)); ctx.lineWidth=lw; ctx.strokeStyle='rgba(241,243,245,.9)'; ctx.fillStyle='rgba(241,243,245,.9)'; ctx.lineJoin='round';
   ctx.strokeRect(X(0),Y(0),sx,fh);
   ctx.beginPath(); ctx.moveTo(X(0),Y(.5)); ctx.lineTo(X(1),Y(.5)); ctx.stroke();
   var cr=sx*0.1346;
@@ -12260,21 +12307,13 @@ function tacArrow2_(ctx, pts, kind, from, to, sc, head){
   var tot=L[L.length-1]; if(tot<4*sc) return;
   function at(d){ for(var j=1;j<L.length;j++){ if(L[j]>=d){ var u=(d-L[j-1])/((L[j]-L[j-1])||1); return [pts[j-1][0]+(pts[j][0]-pts[j-1][0])*u, pts[j-1][1]+(pts[j][1]-pts[j-1][1])*u, j]; } } var q=pts[pts.length-1]; return [q[0],q[1],pts.length-1]; }
   var d0=from*tot, d1=to*tot, col, w, hd=(kind==='opp'?6.5:10)*sc;
-  if(kind==='pass' || kind==='drib'){ col='#FFD34D'; w=2.4*sc; }
-  else if(kind==='opp'){ col='rgba(8,14,11,.62)'; w=1.6*sc; }
+  if(kind==='pass' || kind==='drib'){ col='#E8BD50'; w=2.4*sc; }
+  else if(kind==='opp'){ col='rgba(184,192,200,.9)'; w=1.7*sc; }
   else if(kind==='link'){ col='#7FE3FF'; w=2.6*sc; }
-  else { col='#FFFFFF'; w=2.6*sc; }
-  var arrow=tacSprites[kind];
-  if(arrow && head && pts.length===3 && (kind==='run'||kind==='pass') && d1-d0>hd*2){
-    var start=at(d0), end=at(d1), mid=pts[1], dx=end[0]-start[0], dy=end[1]-start[1];
-    if(Math.abs(dx*(mid[1]-start[1])-dy*(mid[0]-start[0]))<0.01*tot){
-      ctx.save(); ctx.translate(start[0],start[1]); ctx.rotate(Math.atan2(dy,dx));
-      ctx.drawImage(arrow,0,-hd*.48,Math.hypot(dx,dy),hd*.96); ctx.restore(); return;
-    }
-  }
+  else { col='#F1F3F5'; w=2.6*sc; }
   var e0=at(d0), e1=at(Math.max(d0, d1-(head?hd*0.55:0)));
   ctx.save(); ctx.lineCap='round'; ctx.lineJoin='round'; ctx.lineWidth=w; ctx.strokeStyle=col; ctx.fillStyle=col;
-  if(kind==='pass') ctx.setLineDash([8*sc,6*sc]); else if(kind==='opp') ctx.setLineDash([2*sc,5*sc]);
+  if(kind==='pass') ctx.setLineDash([8*sc,6*sc]); else if(kind==='opp') ctx.setLineDash([2.2*sc,3.9*sc]);
   ctx.shadowColor='rgba(0,0,0,.38)'; ctx.shadowBlur=3*sc; ctx.shadowOffsetY=1*sc;
   ctx.beginPath(); ctx.moveTo(e0[0],e0[1]);
   if(kind==='drib'){
@@ -12301,11 +12340,11 @@ function tacTrim_(pts, a, b){
   if(tot<1) return [0,0]; return [Math.min(0.45,a/tot), Math.max(0.55,1-b/tot)];
 }
 /* 공통 전술 그래픽. 보드와 내보내기의 좌표계를 단위 반지름으로 통일한다. */
-var tacImageSources={"home": "tac-home.png?v=163", "away": "tac-away.png?v=163", "keeper": "tac-keeper.png?v=163", "ball": "tac-ball.png?v=163", "run": "tac-run.png?v=163", "pass": "tac-pass.png?v=163"};
+var tacImageSources={"home": "tac-home.png?v=164", "away": "tac-away.png?v=164", "keeper": "tac-keeper.png?v=164", "ball": "tac-ball.png?v=164", "pitch": "tac-pitch.jpg?v=164"};
 var tacSprites={};
 var tacSpriteLoad;
 function tacLoadSprites_(){
-  if(!tacSpriteLoad) tacSpriteLoad=Promise.all(['home','away','keeper','ball','run','pass'].map(function(key){
+  if(!tacSpriteLoad) tacSpriteLoad=Promise.all(['home','away','keeper','ball','pitch'].map(function(key){
     return loadImg_(tacImageSources[key]).then(function(image){ if(image) tacSprites[key]=image; });
   }));
   return tacSpriteLoad;
@@ -12338,9 +12377,20 @@ function tacHomeKit_(){
     x.putImageData(d,0,0); _tacKitTint[acc]=c; return c;
   }catch(e){ _tacKitTint[acc]=null; return img; }
 }
+/* 상대 골키퍼: 우리 키퍼(주황) 이미지를 회청색으로 바꿔 구분 */
+var _tacOppGk=null;
+function tacOppGk_(){
+  var img=tacSprites.keeper; if(!img) return null; if(_tacOppGk) return _tacOppGk;
+  try{
+    var c=document.createElement('canvas'); c.width=img.naturalWidth||img.width; c.height=img.naturalHeight||img.height;
+    var x=c.getContext('2d'); x.drawImage(img,0,0); var d=x.getImageData(0,0,c.width,c.height), px=d.data;
+    for(var i=0;i<px.length;i+=4){ if(px[i+3]<8) continue; var g=0.3*px[i]+0.59*px[i+1]+0.11*px[i+2]; px[i]=Math.round(g*0.6); px[i+1]=Math.round(g*0.67); px[i+2]=Math.round(g*0.76); }
+    x.putImageData(d,0,0); _tacOppGk=c; return c;
+  }catch(e){ return null; }
+}
 function tacKit_(ctx,x,y,r,col,ink,striped,kit){
-  var image=(kit==='home')?tacHomeKit_():tacSprites[kit];
-  if(image){ctx.drawImage(image,x-r,y-r,2*r,2*r); return;}
+  var image=(kit==='home')?tacHomeKit_():(kit==='oppgk')?tacOppGk_():tacSprites[kit];
+  if(image){ var iw=image.naturalWidth||image.width, ih=image.naturalHeight||image.height, kh=2.04*r, kw=kh*iw/(ih||1); ctx.save(); ctx.imageSmoothingQuality='high'; ctx.drawImage(image,x-kw/2,y-kh/2,kw,kh); ctx.restore(); return;}
   ctx.save();
   ctx.translate(x,y); ctx.scale(r,r);
   ctx.beginPath();
@@ -12362,7 +12412,7 @@ function tacKit_(ctx,x,y,r,col,ink,striped,kit){
   ctx.restore(); ctx.restore();
 }
 function tacMatchBall_(ctx,x,y,r){
-  if(tacSprites.ball){ctx.drawImage(tacSprites.ball,x-r,y-r,2*r,2*r); return;}
+  if(tacSprites.ball){ ctx.save(); ctx.imageSmoothingQuality='high'; ctx.drawImage(tacSprites.ball,x-r*1.04,y-r*1.04,2.08*r,2.08*r); ctx.restore(); return;}
   ctx.save(); ctx.translate(x,y); ctx.scale(r,r);
   var shell=ctx.createRadialGradient(-.36,-.42,.04,0,0,1);
   shell.addColorStop(0,'#ffffff'); shell.addColorStop(.65,'#eef3f3'); shell.addColorStop(1,'#98acb3');
@@ -12390,11 +12440,11 @@ function tacToken_(ctx, cx, cy, r, tk, o){
     ctx.fillStyle=gg; ctx.beginPath(); ctx.arc(cx,cy,r*2.5,0,Math.PI*2); ctx.fill();
     ctx.strokeStyle='rgba('+gcol+','+(0.55+0.35*pu)+')'; ctx.lineWidth=r*0.2; ctx.beginPath(); ctx.arc(cx,cy,r*(1.36+0.1*pu),0,Math.PI*2); ctx.stroke();
   }
-  tacKit_(ctx,cx,cy,r,fill,o.hi?'#FFD84D':ring,ours && !gk,ours?(gk?'keeper':'home'):(gk?null:'away'));
-  if(o.sel){ ctx.setLineDash([r*0.32,r*0.24]); ctx.lineWidth=Math.max(1.4,r*0.12); ctx.strokeStyle='#fff'; ctx.beginPath(); ctx.arc(cx,cy,r*1.4,0,Math.PI*2); ctx.stroke(); ctx.setLineDash([]); }
+  tacKit_(ctx,cx,cy,r,fill,o.hi?'#FFD84D':ring,ours && !gk,ours?(gk?'keeper':'home'):(gk?'oppgk':'away'));
+  if(o.sel) tacSelBox_(ctx,cx,cy,r*1.5);
   if(!o.mini){
     var lab=String(tk.num==null||tk.num===''?(tk.pos||''):tk.num);
-    ctx.fillStyle=!ours && !gk && tacSprites.away?'#182128':ink; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillStyle=(!ours && gk && tacSprites.keeper)?'#fff':(!ours && !gk && tacSprites.away?'#182128':ink); ctx.textAlign='center'; ctx.textBaseline='middle';
     ctx.font='700 '+Math.round(r*(lab.length>2?0.78:1.02))+'px Oswald, sans-serif';
     if(ours && !gk){ ctx.strokeStyle='#30111b'; ctx.lineJoin='round'; ctx.lineWidth=r*.14; ctx.strokeText(lab,cx,cy+r*.06); ctx.fillStyle='#fff'; }
     ctx.fillText(lab, cx, cy+r*0.06);
@@ -12408,6 +12458,11 @@ function tacToken_(ctx, cx, cy, r, tk, o){
   }
   ctx.restore();
 }
+/* MATCHDAY 선택 표시: 둥근 사각 · 빨강 테두리 · 옅은 채움 */
+function tacSelBox_(ctx,cx,cy,h){
+  ctx.save(); ctx.setLineDash([]); rr_(ctx,cx-h,cy-h,2*h,2*h,h*0.38);
+  ctx.fillStyle='rgba(230,56,82,.10)'; ctx.fill(); ctx.lineWidth=Math.max(1.6,h*0.085); ctx.strokeStyle='#E63852'; ctx.stroke(); ctx.restore();
+}
 function tacBallDraw_(ctx, cx, cy, r, sel, lift){
   lift=lift||0;
   ctx.save();
@@ -12415,21 +12470,21 @@ function tacBallDraw_(ctx, cx, cy, r, sel, lift){
   cy-=lift;
   if(lift>1){ ctx.shadowColor='rgba(255,240,180,.7)'; ctx.shadowBlur=r*1.6; }
   tacMatchBall_(ctx,cx,cy,r);
-  if(sel){ ctx.setLineDash([r*0.5,r*0.4]); ctx.lineWidth=Math.max(1.2,r*0.2); ctx.strokeStyle='#FFD84D'; ctx.beginPath(); ctx.arc(cx,cy,r*1.9,0,Math.PI*2); ctx.stroke(); }
+  if(sel) tacSelBox_(ctx,cx,cy,r*2.1);
   ctx.restore();
 }
 function tacZone2_(ctx, G, f, a, sel, sc){
-  var c=TAC_FXC[f.c]||TAC_FXC.gold, r=f.r, x=G.X(r[0]), y=G.Y(r[1]), w=r[2]*G.sx, h=r[3]*G.fhF, rad=Math.min(14*sc, w/4, h/4);
+  var c=TAC_FXC[f.c]||TAC_FXC.gold, r=f.r, x=G.X(r[0]), y=G.Y(r[1]), w=r[2]*G.sx, h=r[3]*G.fhF, rad=Math.min(6*sc, w/4, h/4);
   ctx.save(); ctx.globalAlpha*=a;
   rr_(ctx,x,y,w,h,rad);
-  var g=ctx.createLinearGradient(0,y,0,y+h); g.addColorStop(0,tacRgba_(c,.30)); g.addColorStop(1,tacRgba_(c,.14)); ctx.fillStyle=g; ctx.fill();
-  ctx.lineWidth=(sel?2.4:1.8)*sc; ctx.strokeStyle=tacRgba_(c,.95); if(!sel) ctx.setLineDash([6*sc,4*sc]); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle=tacRgba_(c,.18); ctx.fill();
+  ctx.lineWidth=(sel?2.2:1.6)*sc; ctx.strokeStyle=tacRgba_(c,.95); if(!sel) ctx.setLineDash([5*sc,3.5*sc]); ctx.stroke(); ctx.setLineDash([]);
   if(f.l){
     ctx.font='800 '+Math.round(11.5*sc)+'px Pretendard, sans-serif'; var tw=ctx.measureText(f.l).width+14*sc, th=20*sc;
     rr_(ctx,x+6*sc,y+6*sc,tw,th,th/2); ctx.fillStyle=c; ctx.fill();
     ctx.fillStyle=tacLum_(c)>0.6?'#15171b':'#fff'; ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.fillText(f.l, x+13*sc, y+6*sc+th/2+0.5*sc);
   }
-  if(sel){ ctx.fillStyle='#fff'; ctx.strokeStyle=c; ctx.lineWidth=2*sc; ctx.beginPath(); ctx.arc(x+w,y+h,7*sc,0,Math.PI*2); ctx.fill(); ctx.stroke(); }
+  if(sel){ ctx.fillStyle='#F1F3F5'; ctx.strokeStyle='#E63852'; ctx.lineWidth=2*sc; ctx.beginPath(); ctx.arc(x+w,y+h,6*sc,0,Math.PI*2); ctx.fill(); ctx.stroke(); }
   ctx.restore();
 }
 function tacRgba_(hex, a){ var m=/^#?([0-9a-f]{6})$/i.exec(String(hex||'')); if(!m) return 'rgba(255,255,255,'+a+')'; var n=parseInt(m[1],16); return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')'; }
@@ -12464,12 +12519,12 @@ function tacScene_(ctx, G, doc, sc, o){
       ctx.save(); if(m.kind==='opp') ctx.globalAlpha=vis(m.k);
       if(p<1 && P.arr<1){ ctx.globalAlpha*=0.3; tacArrow2_(ctx, pts, m.kind, tr[0], tr[1], k2, false); ctx.globalAlpha/=0.3; }
       tacArrow2_(ctx, pts, m.kind, tr[0], to, k2, true);
+      if(m.k!=='ball' && p>=1){ ctx.globalAlpha*=0.5; ctx.strokeStyle='#F1F3F5'; ctx.lineWidth=Math.max(1.2,1.4*k2); ctx.beginPath(); ctx.arc(pts[0][0],pts[0][1],r*0.62,0,Math.PI*2); ctx.stroke(); }
       ctx.restore();
     });
   }
   /* 곡선 손잡이 (편집 중 선택한 선수) */
-  if(o.ui && o.ui.handle){ var hh=o.ui.handle; ctx.save(); ctx.fillStyle='#fff'; ctx.strokeStyle='#FFD34D'; ctx.lineWidth=2.4*k2; ctx.beginPath(); ctx.arc(X(hh[0]),Y(hh[1]),7.5*k2,0,Math.PI*2); ctx.fill(); ctx.stroke();
-    ctx.fillStyle='#FFD34D'; ctx.beginPath(); ctx.arc(X(hh[0]),Y(hh[1]),3*k2,0,Math.PI*2); ctx.fill(); ctx.restore(); }
+  if(o.ui && o.ui.handle){ var hh=o.ui.handle; ctx.save(); ctx.fillStyle='#F1F3F5'; ctx.strokeStyle='#E63852'; ctx.lineWidth=2.4*k2; ctx.beginPath(); ctx.arc(X(hh[0]),Y(hh[1]),7*k2,0,Math.PI*2); ctx.fill(); ctx.stroke(); ctx.restore(); }
   /* 선수 */
   var hi=tacHi_(A, B, o.me);
   doc.opp.concat(doc.our).forEach(function(t){
@@ -12478,11 +12533,12 @@ function tacScene_(ctx, G, doc, sc, o){
       sel:(o.sel===t.k || (o.multi && o.multi[t.k])), hi:(o.mini?0:(hi[t.k]||0)), lock:(o.edit && B.lock && B.lock[t.k] && tacIsOpp_(t.k)), t:o.t});
   });
   /* 공 */
+  if(P.owner && P.pos[P.owner] && !o.mini && vis(P.owner)>0){ var oq=P.pos[P.owner]; ctx.save(); ctx.strokeStyle='rgba(232,189,80,.8)'; ctx.lineWidth=Math.max(1.4,r*0.11); ctx.beginPath(); ctx.arc(X(oq[0]),Y(oq[1]),r*1.32,0,Math.PI*2); ctx.stroke(); ctx.restore(); }
   var bq=P.owner && P.pos[P.owner] ? [P.pos[P.owner][0]+G.boff[0], P.pos[P.owner][1]+G.boff[1]] : P.ball;
   tacBallDraw_(ctx, X(bq[0]), Y(bq[1]), r*(o.mini?0.72:0.66), o.sel==='ball', P.bz*G.sx/68*0.9);
   /* 편집 표시: 선택 상자 · 연결 중인 선 · 그리는 구역 */
   if(o.ui){
-    if(o.ui.box){ var b=o.ui.box; ctx.save(); ctx.fillStyle='rgba(255,255,255,.08)'; ctx.strokeStyle='rgba(255,255,255,.85)'; ctx.lineWidth=1.2*k2; ctx.setLineDash([5*k2,4*k2]);
+    if(o.ui.box){ var b=o.ui.box; ctx.save(); ctx.fillStyle='rgba(230,56,82,.08)'; ctx.strokeStyle='#E63852'; ctx.lineWidth=1.4*k2; ctx.setLineDash([5*k2,4*k2]);
       ctx.fillRect(Math.min(b[0],b[2]),Math.min(b[1],b[3]),Math.abs(b[2]-b[0]),Math.abs(b[3]-b[1])); ctx.strokeRect(Math.min(b[0],b[2]),Math.min(b[1],b[3]),Math.abs(b[2]-b[0]),Math.abs(b[3]-b[1])); ctx.restore(); }
     if(o.ui.draft && o.ui.draft.length){ var dp=o.ui.draft.map(function(k){ var q=P.pos[k]; return q?[X(q[0]),Y(q[1])]:null; }).filter(Boolean);
       if(dp.length>1){ ctx.save(); ctx.globalAlpha=0.9; tacArrow2_(ctx, dp, 'link', 0, 1, k2, false); ctx.restore(); }
@@ -12671,16 +12727,16 @@ function tvPitch3_(ctx, c, R){
     if(tvPoly_(ctx,c,q)){ ctx.fillStyle='#0b1014'; ctx.fill(); }
   });
   /* 경기장 바깥 잔디 */
-  if(tvPoly_(ctx,c,[[-hx-8,-hy-8],[hx+8,-hy-8],[hx+8,hy+9],[-hx-8,hy+9]])){ ctx.fillStyle='#1f5636'; ctx.fill(); }
+  if(tvPoly_(ctx,c,[[-hx-8,-hy-8],[hx+8,-hy-8],[hx+8,hy+9],[-hx-8,hy+9]])){ ctx.fillStyle='#17392B'; ctx.fill(); }
   /* 잔디 줄무늬 */
-  var NB=18;
+  /* 잔디: MATCHDAY 경기장 이미지와 같은 13줄 · 같은 색 (2D 보드와 통일) */
+  if(tvPoly_(ctx,c,[[-hx-4,-hy-4],[hx+4,-hy-4],[hx+4,hy+4],[-hx-4,hy+4]])){ ctx.fillStyle='#1B5408'; ctx.fill(); }
+  var NB=13;
   for(i=0;i<NB;i++){ var a0=-hy+i*TV_PL/NB, a1=a0+TV_PL/NB;
-    if(tvPoly_(ctx,c,[[-hx-6,a0],[hx+6,a0],[hx+6,a1],[-hx-6,a1]])){ ctx.fillStyle=(i%2)?'#2e8350':'#36925b'; ctx.fill(); } }
-  for(i=0;i<8;i+=2){ var b0=-hx+i*TV_PW/8, b1=b0+TV_PW/8;
-    if(tvPoly_(ctx,c,[[b0,-hy],[b1,-hy],[b1,hy],[b0,hy]])){ ctx.fillStyle='rgba(255,255,255,.035)'; ctx.fill(); } }
+    if(tvPoly_(ctx,c,[[-hx,a0],[hx,a0],[hx,a1],[-hx,a1]])){ ctx.fillStyle=(i%2)?'#104105':'#1B5408'; ctx.fill(); } }
   /* 라인 */
   ctx.lineJoin='round'; ctx.lineCap='round';
-  function stroke(pts, cx2, cy2){ var p=tvP_(c,cx2,cy2,0), lw=tacClamp_((p?p.s:6)*0.13, 1.1*u, 4.2*u); if(tvLine_(ctx,c,pts)){ ctx.lineWidth=lw; ctx.strokeStyle='rgba(255,255,255,.88)'; ctx.stroke(); } }
+  function stroke(pts, cx2, cy2){ var p=tvP_(c,cx2,cy2,0), lw=tacClamp_((p?p.s:6)*0.13, 1.1*u, 4.2*u); if(tvLine_(ctx,c,pts)){ ctx.lineWidth=lw; ctx.strokeStyle='rgba(241,243,245,.9)'; ctx.stroke(); } }
   stroke(tvRect_(-hx,-hy,hx,hy,14), 0, 0);
   stroke(tvSeg_([-hx,0],[hx,0],14), 0, 0);
   stroke(tvArc_(0,0,9.15,0,Math.PI*2,56), 0, 0);
@@ -12814,10 +12870,10 @@ function tvToken_(ctx, c, R, X, Y, tk, o){
   }
   var top=g, R0=tacClamp_(g.s*1.62,25*u,56*u)*(ours?1:.82)*(1+.12*hi), dy=g.y-R0*.78;
   var lab=String(tk.num==null||tk.num===''?(tk.pos||''):tk.num);
-  tacKit_(ctx,g.x,dy,R0,col,hi?'#FFD84D':(ours?'#fff':'#454d53'),ours && !gk,ours?(gk?'keeper':'home'):(gk?null:'away'));
+  tacKit_(ctx,g.x,dy,R0,col,hi?'#FFD84D':(ours?'#fff':'#454d53'),ours && !gk,ours?(gk?'keeper':'home'):(gk?'oppgk':'away'));
   ctx.font='700 '+Math.round(R0*(lab.length>2?.70:.94))+'px Oswald, sans-serif';
   ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.fillStyle=ours?(gk?'#191503':'#fff'):((!gk && tacSprites.away)||R.oppLight?'#16191e':'#fff');
+  ctx.fillStyle=ours?(gk?'#191503':'#fff'):((gk && tacSprites.keeper)?'#fff':((!gk && tacSprites.away)||R.oppLight?'#16191e':'#fff'));
   if(ours && !gk){ctx.strokeStyle='#30111b';ctx.lineWidth=R0*.14;ctx.lineJoin='round';ctx.strokeText(lab,g.x,dy+R0*.06);}
   ctx.fillText(lab,g.x,dy+R0*.06);
   /* 이름표 */
@@ -12873,14 +12929,14 @@ function tvScene_(ctx, R, st, still, t){
       var to=(B.own && P.pos[B.own]) ? tvW_(P.pos[B.own]) : pts[pts.length-1], fr=(A.own && A.pos[A.own]) ? tvW_(A.pos[A.own]) : pts[0];
       var line=tvTrimM_(tvSeg_(fr,to,8), 0.9, 1.6); if(!line) return;
       var la=still?1:(P.bt>=1?Math.max(0,1-(st.hold||0)/0.5):Math.min(1,P.arr*1.4));
-      if(la>0){ ctx.save(); ctx.globalAlpha*=la*(still?1:0.75); tvDashes_(ctx, c, line, 0.2, 1.7, 1.1, '#FFD34D', [2.2,0.85]); ctx.restore(); }
+      if(la>0){ ctx.save(); ctx.globalAlpha*=la*(still?1:0.75); tvDashes_(ctx, c, line, 0.2, 1.7, 1.25, '#E8BD50', [2.2,0.85]); ctx.restore(); }
       if(!still && P.bt<1 && P.bt>0){
         var tr=[], fl=tacMeters_(m.a,m.b), hm=(fl>24)?Math.min(9,fl*0.17):fl*0.025, e=tacSmooth_(P.bt), e0=Math.max(0,e-0.5);
         for(var j=0;j<=16;j++){ var s=e0+(e-e0)*j/16, q=[fr[0]+(to[0]-fr[0])*s, fr[1]+(to[1]-fr[1])*s], bt=s; tr.push([q[0],q[1], 0.24+4*hm*bt*(1-bt)]); }
         ctx.save(); ctx.lineCap='round';
-        if(tvLine_(ctx,c,tr)){ ctx.strokeStyle='rgba(255,211,77,.28)'; ctx.lineWidth=12*u; ctx.stroke(); ctx.strokeStyle='rgba(255,236,160,.95)'; ctx.lineWidth=3.2*u; ctx.stroke(); }
+        if(tvLine_(ctx,c,tr)){ ctx.strokeStyle='rgba(232,189,80,.28)'; ctx.lineWidth=12*u; ctx.stroke(); ctx.strokeStyle='rgba(246,226,160,.95)'; ctx.lineWidth=3.2*u; ctx.stroke(); }
         ctx.restore();
-        var rp=(P.bt*2)%1; if(tvPoly_(ctx,c,tvCircle_(to[0],to[1],1.0+rp*2.2,26))){ ctx.lineWidth=2.4*u; ctx.strokeStyle='rgba(255,211,77,'+(1-rp)+')'; ctx.stroke(); }
+        var rp=(P.bt*2)%1; if(tvPoly_(ctx,c,tvCircle_(to[0],to[1],1.0+rp*2.2,26))){ ctx.lineWidth=2.4*u; ctx.strokeStyle='rgba(232,189,80,'+(1-rp)+')'; ctx.stroke(); }
       }
       return;
     }
@@ -12889,10 +12945,10 @@ function tvScene_(ctx, R, st, still, t){
     if(!still){ s1=P.arr; s0=Math.min(s1, Math.max(0, P.mp-0.02)); if(p>=1) return; }
     if(s1-s0<0.01) return;
     var seg=tvSub_(body, s0, s1).pts, hd=(m.kind==='opp')?[1.4,0.55]:[2.5,1.05];
-    if(m.kind==='opp'){ ctx.save(); ctx.globalAlpha*=0.6*vis(m.k); tvDashes_(ctx, c, seg, 0.13, 0.7, 0.7, R.oppLight?'rgba(255,255,255,.75)':'rgba(10,14,12,.8)', hd); ctx.restore(); return; }
+    if(m.kind==='opp'){ ctx.save(); ctx.globalAlpha*=0.6*vis(m.k); tvDashes_(ctx, c, seg, 0.13, 0.7, 0.7, 'rgba(184,192,200,.9)', hd); ctx.restore(); return; }
     ctx.save();
     tvRibbon_(ctx, c, seg, 0.42, [hd[0]+0.25, hd[1]+0.22], 'rgba(0,0,0,.28)');
-    tvRibbon_(ctx, c, seg, m.kind==='drib'?0.22:0.3, hd, m.kind==='drib'?'#FFD34D':'rgba(255,255,255,.96)');
+    tvRibbon_(ctx, c, seg, m.kind==='drib'?0.22:0.3, hd, m.kind==='drib'?'#E8BD50':'rgba(241,243,245,.96)');
     ctx.restore();
     if(!still && P.mp>0.02 && P.mp<1){ var tl=tvSub_(trim, Math.max(0,P.mp-0.3), P.mp).pts; ctx.save(); ctx.globalAlpha*=0.35; tvRibbon_(ctx, c, tl, 0.16, null, tacRgba_(R.accent,1)); ctx.restore(); }
   });
