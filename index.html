@@ -2166,7 +2166,7 @@ var APP_SUB = 'FOOTBALL CLUB';
 var APP_REGION = '';   /* 새 팀 설치 시 헤더 지역 표기 (팀 정보에서 변경 가능) */
 var APP_NOTE = '';     /* 새 팀 설치 시 헤더 소개 문구 */
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '17.1.0';
+var APP_VERSION = '17.2.0';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -12585,19 +12585,28 @@ function tacOppToks_(form){
 function tacOppShape_(doc, plan, st){
   var F=TAC_FORMS[doc.oppForm]||TAC_FORMS['4-4-2'], P=TAC_STYLE_P[plan.style]||TAC_STYLE_P.mid;
   var B=tacBallBase_(st), own=st.own||'', res={}, i, k;
-  if(tacIsOpp_(own)){
+  if(tacIsOpp_(own) || (!own && st.oa)){   /* st.oa: 주인 없는 공이지만 상대가 공격 중 (상대의 크로스 · 롱볼이 날아가는 장면) */
     var fwdY=tacClamp_(B[1]+0.20, 0.50, 0.90), dep=0.46, dY=fwdY-dep;
+    /* 공 가진 선수가 수비수 · 골키퍼면 그 줄이 공 높이에 오게 (풀백이 자기 골라인에 서 있지 않게) */
+    F.forEach(function(s0,i0){ if('b'+(i0+1)===own) dY=Math.min(0.90-dep, Math.max(dY, s0[1]<0 ? B[1]+0.09 : B[1]-s0[1]*dep)); });
     F.forEach(function(s,i2){ var k2='b'+(i2+1);
       if(s[1]<0){ res[k2]=[.5, tacClamp_(0.06+Math.max(0,dY-0.2)*0.3, 0.05, 0.16)]; return; }
       res[k2]=[0.5+(s[0]-0.5)*0.94+(B[0]-0.5)*0.12, dY+s[1]*dep]; });
+    /* 상대 공격수가 우리 최종 수비보다 앞(오프사이드 자리)에 서 있지 않게 */
+    var oys2=doc.our.map(function(t){ return st.pos[t.k]?st.pos[t.k][1]:0; }).sort(function(a,b){ return b-a; }), oln=Math.max(oys2[1]||0.9, B[1])-0.012;
+    for(k in res){ if(k!==own && res[k][1]>oln) res[k][1]=oln; }
+    for(var ia2=0; ia2<2; ia2++) for(k in res){ if(k===own || k==='b1') continue; var a3=res[k];
+      doc.our.forEach(function(t){ var q3=st.pos[t.k]; if(!q3) return; var d3=tacDist_(a3,q3);
+        if(d3<0.066){ var ex3=(a3[0]-q3[0])||0.004, ey3=(a3[1]-q3[1])-0.004, el3=Math.sqrt(ex3*ex3+ey3*ey3*2.25)||0.001, m3=(0.066-d3)/el3; a3[0]+=ex3*m3; a3[1]+=ey3*m3; } }); }
   } else {
-    var defY=tacClamp_(B[1]-P.gap, P.minDef, P.maxDef);
+    var defY=tacClamp_(B[1]-P.gap*(plan.sq?tacClamp_(B[1]/0.6, 0.5, 1):1), P.minDef, P.maxDef);   /* 패턴: 공이 상대 진영 깊이 들어올수록 수비 라인이 한꺼번에 주저앉지 않게 */
     defY=Math.max(0.05, Math.min(defY, B[1]-0.02));
     var depth=P.depth*tacClamp_((B[1]+0.25)/0.6, 0.45, 1);
+    var sq=(plan.sq||0)*tacClamp_((B[1]-0.15)/0.25, 0, 1), PW=P.width*(1-sq*0.10), PS=P.shift+sq*0.12;   /* 골문 앞에서는 더 좁히지 않는다 (박스 안이 너무 붐비지 않게) */   /* sq: 공 쪽으로 더 좁혀 서는 정도 (패턴 라이브러리) */
     var outs=[];
     F.forEach(function(s,i2){ var k2='b'+(i2+1);
       if(s[1]<0){ res[k2]=[0.5+(B[0]-0.5)*0.10, tacClamp_(0.035+(defY-0.14)*0.22, 0.035, 0.11)]; return; }
-      res[k2]=[0.5+(s[0]-0.5)*P.width+(B[0]-0.5)*P.shift, defY+s[1]*depth]; outs.push({k:k2, d:s[1]}); });
+      res[k2]=[0.5+(s[0]-0.5)*PW+(B[0]-0.5)*PS, defY+s[1]*depth]; outs.push({k:k2, d:s[1]}); });
     var ours=doc.our.map(function(t){ return t.k; }).filter(function(k2){ return k2!=='gk' && st.pos[k2]; });
     var busy={};
     if(plan.style==='man'){
@@ -12652,9 +12661,37 @@ function tacOppShape_(doc, plan, st){
   return res;
 }
 /* 한 단계에 자동 반응 적용 (고정한 선수 · 공을 가진 상대는 그대로) */
-function tacOppApply_(doc, plan, st){
-  var res=tacOppShape_(doc, plan, st);
-  doc.opp.forEach(function(t){ if((st.lock&&st.lock[t.k]) || t.k===st.own) { if(st.pos[t.k]) return; } st.pos[t.k]=res[t.k]||st.pos[t.k]||[.5,.3]; });
+/* plan.lag(미터): 상대가 한 장면 사이에 움직일 수 있는 거리. 공이 멀리 한 번에 넘어가면 상대는 다 따라오지 못하고 반대쪽에 공간이 남는다.
+ * prev 를 주지 않으면 plan.steps 에서 바로 앞 장면을 찾는다 (편집 중 다시 계산해도 같은 결과) */
+function tacStepTo_(a, b, cap){ var d=tacDist_(a,b); if(d<=cap || d<1e-6) return [b[0],b[1]]; var t=cap/d; return [a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t]; }
+function tacOppApply_(doc, plan, st, prev){
+  var res=tacOppShape_(doc, plan, st), cap=0, near='';
+  if(plan.lag){
+    if(prev===undefined){ var ix=plan.steps.indexOf(st); prev=ix>0?plan.steps[ix-1]:null; }
+    if(prev && prev.pos){ cap=((st.react!=null)?st.react:plan.lag)/68;
+      var B=tacBallBase_(st), nd=9; doc.opp.forEach(function(t){ if(t.pos==='GK' || !res[t.k]) return; var d=tacDist_(res[t.k],B); if(d<nd){ nd=d; near=t.k; } }); }
+  }
+  doc.opp.forEach(function(t){ if((st.lock&&st.lock[t.k]) || t.k===st.own) { if(st.pos[t.k]) return; }
+    var tg=res[t.k]||st.pos[t.k]||[.5,.3];
+    if(cap>0 && t.pos!=='GK' && prev.pos[t.k]){ tg=tacStepTo_(prev.pos[t.k], tg, cap*(t.k===near?1.5:1)); tg=[tacR3_(tg[0]), tacR3_(tg[1])]; }
+    st.pos[t.k]=tg; });
+  if(plan.lag) tacOppSep_(doc, st);
+}
+/* 따라오는 도중의 상대가 다른 선수와 겹쳐 서지 않게 벌린다 (고정한 선수 · 공 가진 선수 · 골키퍼는 그대로 두고 나머지만 비킨다) */
+function tacOppSep_(doc, st){
+  var mov=doc.opp.filter(function(t){ return t.pos!=='GK' && t.k!==st.own && !(st.lock&&st.lock[t.k]) && st.pos[t.k]; }).map(function(t){ return t.k; });
+  if(!mov.length) return;
+  var all=doc.our.concat(doc.opp).map(function(t){ return t.k; }).filter(function(k){ return st.pos[k]; }), isMov={};
+  mov.forEach(function(k){ isMov[k]=1; st.pos[k]=[st.pos[k][0], st.pos[k][1]]; });
+  for(var it=0; it<4; it++){
+    mov.forEach(function(k){ var a=st.pos[k];
+      all.forEach(function(k2){ if(k2===k) return; var q=st.pos[k2], d=tacDist_(a,q), min=tacIsOpp_(k2)?0.074:0.07; if(d>=min) return;
+        var ex=a[0]-q[0], ey=a[1]-q[1]; if(Math.abs(ex)+Math.abs(ey)<0.004){ ex=(a[0]<0.5?0.004:-0.004); ey=-0.006; }
+        var el=Math.sqrt(ex*ex+ey*ey*2.25)||0.001, m=(min-d)/el*(isMov[k2]?0.5:1);
+        a[0]=tacClamp_(a[0]+ex*m, 0.03, 0.97); a[1]=tacClamp_(a[1]+ey*m, 0.02, 0.98); });
+    });
+  }
+  mov.forEach(function(k){ st.pos[k]=[tacR3_(st.pos[k][0]), tacR3_(st.pos[k][1])]; });
 }
 
 /* 설명 문구의 {역할:조사} → 그 선수의 '등번호+번' (번호가 없으면 이름·포지션, 조사는 받침에 맞춤) */
@@ -12686,26 +12723,75 @@ function tacBuild_(tpl, our){
   var doc={id:uid_('tc'), clubId:state.activeClubId||'', v:1, title:tpl.name, cat:tpl.cat, tpl:tpl.id, view:tpl.view||'full', zoom:!!tpl.zoom,
     oppForm:tpl.oppForm||'4-4-2', our:our.toks, opp:tacOppToks_(tpl.oppForm||'4-4-2'), focus:null,
     by:whoName_()||'', createdAt:now, updatedAt:now, plans:[]};
+  if(tpl.cx!=null) doc.cx=tpl.cx;
   if(tpl.pat){ doc.pat=tpl.pat; doc.pos=tpl.pos; doc.tag=tpl.tag; doc.key=(tpl.key||[]).slice(); doc.desc=tpl.desc||''; doc.pts=(tpl.pts||[]).map(function(x){ return tacNoteFill_(x, our.toks); }); }
   tpl.plans.forEach(function(tp){
     var plan={id:uid_('pl'), name:tp.name, auto:(tp.auto!==false), style:tp.style||'mid', steps:[]};
-    var cur={}, ocur=null, ball=[.5,.5], own='';
+    if(tp.lag) plan.lag=tp.lag; if(tp.sq) plan.sq=tp.sq;
+    var cur={}, ocur=null, ball=[.5,.5], own='', mk=null, live=!!tp.live, dr=tp.drift||[.16,.24], side='', everSet={}, lastSet={};
     TAC_ROLES.forEach(function(r){ cur[r[0]]=(tpl.useSquad && our.homes[r[0]]) ? our.homes[r[0]].slice() : [r[1],r[2]]; });
     tp.steps.forEach(function(ts){
-      var k;
-      if(ts.our){ for(k in ts.our) cur[k]=ts.our[k].slice(); }
-      if(typeof ts.ball==='string'){ own=ts.ball; } else if(ts.ball){ own=''; ball=ts.ball.slice(); }
+      var k, set={}, sub={}, pst=plan.steps[plan.steps.length-1]||null;
+      if(ts.our){ for(k in ts.our){ cur[k]=ts.our[k].slice(); set[k]=1; if(plan.steps.length){ everSet[k]=1; lastSet[k]=plan.steps.length; } } }
+      if(typeof ts.ball==='string'){ own=ts.ball; side=tacIsOpp_(own)?'opp':'our'; } else if(ts.ball){ own=''; ball=ts.ball.slice(); }
       if(ts.opp){
         if(Array.isArray(ts.opp)){ ocur={}; ts.opp.forEach(function(p,i){ ocur['b'+(i+1)]=p.slice(); }); }
-        else { ocur=ocur||{}; for(k in ts.opp) ocur['b'+k]=ts.opp[k].slice(); }
+        else { ocur=ocur||{}; for(k in ts.opp){ if(ts.opp[k]===null) delete ocur['b'+k]; else { ocur['b'+k]=ts.opp[k].slice(); if(mk) delete mk['b'+k]; } } }
+      }
+      /* mk: 상대 n번이 우리 선수를 따라다닌다 (null 로 풀 때까지) */
+      if(ts.mk){ mk=mk||{}; for(k in ts.mk){ if(ts.mk[k]===null) delete mk['b'+k]; else { mk['b'+k]=ts.mk[k]; if(ocur) delete ocur['b'+k]; } } }
+      /* 살아 있는 패턴: 적지 않은 선수도 공을 따라 조금씩 움직인다 (화살표는 그리지 않는다) */
+      if(live && pst && !ts.still){
+        var pb=tacBallBase_(pst), nb=(own && cur[own]) ? cur[own] : (own && ocur && ocur[own]) ? ocur[own] : (own && pst.pos[own]) ? pst.pos[own] : ball;
+        var ddx=tacClamp_(nb[0]-pb[0], -0.4, 0.4), ddy=tacClamp_(nb[1]-pb[1], -0.25, 0.25);   /* 긴 패스 한 번에 팀이 통째로 쓸려 가지 않게 */
+        if(Math.abs(ddx)+Math.abs(ddy)>0.03){
+          for(k in cur){ if(set[k] || k===own || lastSet[k]===plan.steps.length-1) continue;   /* 바로 앞 장면에서 자리를 잡은 선수는 그대로 */
+            var wide=(k==='lb'||k==='rb'||k==='lw'||k==='rw'), fwd=(k==='st'||k==='lw'||k==='rw');
+            var fx=(k==='gk')?0.05:(wide?dr[0]*0.4:dr[0]), fy=(k==='gk')?dr[1]*0.5:(fwd?dr[1]*0.7:dr[1]);
+            var nx=tacClamp_(cur[k][0]+ddx*fx, 0.04, 0.96), ny=tacClamp_(cur[k][1]+ddy*fy, 0.05, 0.965);
+            if(k==='gk') ny=tacClamp_(ny, 0.70, 0.965);
+            cur[k]=[nx,ny]; sub[k]=1; }
+          for(var it0=0;it0<2;it0++) for(k in sub){ for(var k2 in cur){ if(k2===k) continue; var pa=cur[k], pq=cur[k2], dd0=tacDist_(pa,pq);
+            if(dd0<0.062){ var ex0=(pa[0]-pq[0])||0.01, ey0=(pa[1]-pq[1])||0.006, el0=Math.sqrt(ex0*ex0+ey0*ey0*2.25)||0.001, mm0=(0.062-dd0)/el0*(sub[k2]?0.5:1); pa[0]=tacClamp_(pa[0]+ex0*mm0,0.03,0.97); pa[1]=tacClamp_(pa[1]+ey0*mm0,0.03,0.97); } } }
+        }
       }
       var st={note:tacNoteFill_(ts.note||'', our.toks), pos:{}, ball:ball.slice(), own:own, lock:{}};
+      if(ts.react!=null) st.react=ts.react;
+      if(!own && (ts.oa!=null ? ts.oa : (live && side==='opp'))) st.oa=1;
       if(ts.fx) st.fx=ts.fx.map(function(f){ var o={id:uid_('fx'), t:f.t||'zone', c:f.c||'gold'}; if(o.t==='zone'){ o.r=f.r.slice(); o.l=f.l||''; } else o.ks=f.ks.slice(); return o; });
       if(ts.hl){ st.hl={}; ts.hl.forEach(function(k){ st.hl[k]=1; }); }
       for(k in cur) st.pos[k]=[tacR3_(cur[k][0]), tacR3_(cur[k][1])];
       if(ocur){ for(k in ocur){ st.pos[k]=ocur[k].slice(); if(plan.auto) st.lock[k]=1; } }   /* 자동 반응 중에도 적어 둔 상대는 그 자리에 고정 */
+      if(ts.op1){ for(k in ts.op1){ st.pos['b'+k]=ts.op1[k].slice(); st.lock['b'+k]=1; } }   /* 이 장면에서만 고정 */
+      if(mk){ for(k in mk){ var mq=cur[mk[k]]; if(!mq) continue;
+        var mt=[mq[0]+(0.5-mq[0])*0.07, mq[1]-(mk[k]===own?0.036:0.042)];
+        if(mt[1]<0.055) mt=[mq[0]+((mq[0]<0.5)?0.05:-0.05), Math.max(0.05, mq[1]-0.012)];
+        if(pst && pst.pos[k]) mt=tacStepTo_(pst.pos[k], mt, ((plan.lag||11)*1.7)/68);
+        st.pos[k]=[tacR3_(mt[0]), tacR3_(mt[1])]; st.lock[k]=1; st.ohl=st.ohl||{}; st.ohl[k]=1; } }
+      if(ts.oh){ st.ohl=st.ohl||{}; ts.oh.forEach(function(n){ st.ohl['b'+n]=1; }); }
       if(ts.cv){ st.cv={}; for(k in ts.cv) st.cv[k]=ts.cv[k].slice(); }
-      if(!ocur || plan.auto) tacOppApply_(doc, plan, st);
+      if(!ocur || plan.auto) tacOppApply_(doc, plan, st, live?pst:undefined);
+      /* 적지 않은 공격수가 오프사이드 위치에 서 있지 않게 (공보다 앞 · 상대 최종 수비보다 앞이면 선까지 내려온다) */
+      if(live && !tacIsOpp_(own) && !ts.still){
+        var oys=doc.opp.map(function(t){ return st.pos[t.k]?st.pos[t.k][1]:9; }).sort(function(a,b){ return a-b; }), oline=Math.min(oys[1], tacBallBase_(st)[1], 0.5)+0.004;
+        var moved0=false;
+        for(k in cur){ if(((set[k] || everSet[k]) && plan.steps.length) || k===own || k==='gk') continue; if(st.pos[k][1]<oline-0.02){   /* 첫 장면은 모두, 그 뒤로는 직접 적지 않은 선수만 */ var ny0=(oline-0.004<oys[1]+0.001 && oys[1]<=tacBallBase_(st)[1]) ? oline+0.03 : oline; cur[k]=[cur[k][0], ny0]; st.pos[k]=[st.pos[k][0], tacR3_(ny0)]; sub[k]=1; moved0=true; } }
+        if(moved0 && plan.lag) tacOppSep_(doc, st);
+      }
+      /* 적어 둔 상대가 우리 선수 · 골키퍼와 포개져 보이지 않게 살짝 벌린다 */
+      if(live){
+        var lks=doc.opp.filter(function(t){ return st.lock[t.k] && t.k!==own && t.pos!=='GK'; }).map(function(t){ return t.k; }), nud=false;
+        if(lks.length){
+          var oth=doc.our.map(function(t){ return t.k; }).concat(doc.opp.filter(function(t){ return t.pos==='GK' || st.lock[t.k]; }).map(function(t){ return t.k; }));
+          for(var it1=0; it1<3; it1++) lks.forEach(function(k1){ var a1=st.pos[k1];
+            oth.forEach(function(k2){ if(k2===k1 || !st.pos[k2]) return; var q1=st.pos[k2], d1=tacDist_(a1,q1); if(d1>=0.047) return;
+              var ex1=a1[0]-q1[0], ey1=a1[1]-q1[1]; if(Math.abs(ex1)+Math.abs(ey1)<0.004){ ex1=(a1[0]<0.5?0.004:-0.004); ey1=-0.006; }
+              var el1=Math.sqrt(ex1*ex1+ey1*ey1*2.25)||0.001, m1=(0.047-d1)/el1*((tacIsOpp_(k2) && k2!==own && st.lock[k2] && lks.indexOf(k2)>=0)?0.5:1);
+              st.pos[k1]=a1=[tacClamp_(a1[0]+ex1*m1,0.03,0.97), tacClamp_(a1[1]+ey1*m1,0.02,0.98)]; nud=true; }); });
+          if(nud){ lks.forEach(function(k1){ st.pos[k1]=[tacR3_(st.pos[k1][0]), tacR3_(st.pos[k1][1])]; }); if(plan.lag) tacOppSep_(doc, st); }
+        }
+      }
+      for(k in sub){ if(pst && pst.pos[k] && tacDist_(pst.pos[k], st.pos[k])>0.021){ st.sub=st.sub||{}; st.sub[k]=1; } }
       if(st.own && st.pos[st.own]) st.ball=tacBallXY_(st).map(tacR3_);
       plan.steps.push(st);
     });
@@ -13167,7 +13253,7 @@ function aiXY_(v){ if(!Array.isArray(v) || v.length<2) return null; var x=Number
 function aiPos_(m, ok){ var o={}; if(m && typeof m==='object' && !Array.isArray(m)) Object.keys(m).forEach(function(k){ if(ok(k)){ var p=aiXY_(m[k]); if(p) o[k]=p; } }); return o; }
 function tacAiOk_(doc){ var our={}, opp={}; doc.our.forEach(function(t){ our[t.k]=1; }); doc.opp.forEach(function(t){ opp[t.k]=1; });
   return {our:function(k){ return !!our[k]; }, opp:function(k){ return !!opp[k]; }, any:function(k){ return !!(our[k]||opp[k]); }}; }
-function tacAiApplyOne_(doc, plan, s, S, ok){
+function tacAiApplyOne_(doc, plan, s, S, ok, prev){
   var po=aiPos_(S.our, ok.our), pp=aiPos_(S.opp, ok.opp), k;
   for(k in po) s.pos[k]=po[k]; for(k in pp) s.pos[k]=pp[k];
   if(typeof S.owner==='string'){
@@ -13183,6 +13269,7 @@ function tacAiApplyOne_(doc, plan, s, S, ok){
   if(fx.length) s.fx=fx;
   (Array.isArray(S.highlight)?S.highlight:[]).forEach(function(q){ if(ok.our(q)){ s.hl=s.hl||{}; s.hl[q]=1; } });
   if(plan.auto && !Object.keys(pp).length) tacOppApply_(doc, plan, s);
+  else if(prev && !Object.keys(pp).length && doc.cat!=='set' && (doc.view||'full')==='full' && tacDist_(tacBallBase_(prev), tacBallBase_(s))>0.12) tacOppApply_(doc, {style:plan.style, lag:9, steps:[]}, s, prev);   /* 공이 크게 움직였는데 AI가 상대를 세워 둔 장면: 상대가 공을 따라 움직이게 */
   if(s.own && s.pos[s.own]) s.ball=tacBallXY_(s).map(tacR3_);
   return s;
 }
@@ -13191,7 +13278,7 @@ function tacAiSteps_(doc, plan, base, steps){
   (Array.isArray(steps)?steps:[]).slice(0,12).forEach(function(S){
     if(!S || typeof S!=='object') return;
     var s=tacClone_(prev); s.note=String(S.note||'').replace(/[{}]/g,'').trim().slice(0,60); s.cv={}; s.hl={}; s.lock={}; delete s.fx; delete s.dur;
-    tacAiApplyOne_(doc, plan, s, S, ok); out.push(s); prev=s;
+    tacAiApplyOne_(doc, plan, s, S, ok, prev); out.push(s); prev=s;
   });
   return out;
 }
@@ -13324,9 +13411,13 @@ function tacAiRule_(){
 }
 
 /* ================= 포지션 패턴 라이브러리 =================
- * 포지션 7개 × 5~6개 패턴. 템플릿과 같은 형식(역할 이름 · 단계별 변경분)이라 tacBuild_ 로 보드가 된다.
- * base: 시작 대형 이름 · key: 주인공 역할(금색 강조) · pts: 코칭 포인트 · steps: [설명, 공(역할 또는 [x,y]), 우리 변경, {opp, fx, cv}]
- * 상대는 자동 반응이 기본이고, opp 에 적은 번호만 그 자리에 고정된다. */
+ * 포지션 7개 × 5~6개 패턴, 패턴마다 6~8 장면. 템플릿과 같은 형식(역할 이름 · 단계별 변경분)이라 tacBuild_ 로 보드가 된다.
+ * base: 시작 대형 이름 · key: 주인공 역할(금색 강조) · pts: 코칭 포인트 · view/zoom/cx: 화면(박스 안 장면은 확대)
+ * steps: [설명, 공(역할 또는 [x,y]), 우리 변경, {opp, op1, mk, oh, fx, cv, react, still, oa}]
+ *   opp {번호:[x,y]} 그 자리에 계속 고정(null 로 풀기) · op1 이 장면에서만 고정 · mk {번호:'역할'} 그 선수를 따라다님(끌려 나오는 수비, null 로 풀기)
+ *   oh [번호] 이동 화살표를 붉게 강조 · react 이 장면에서 상대가 움직일 수 있는 거리(m, 기본 lag 11) · still 적지 않은 우리 선수는 제자리 · oa 주인 없는 공이지만 상대 공격 중
+ * 살아 있는 패턴(live): 적지 않은 우리 선수도 공을 따라 조금씩 움직이고(화살표 없음), 상대는 공 쪽으로 좁혀 서되 한 장면에 lag 미터까지만 따라온다
+ *   → 한쪽으로 끌어모은 뒤 길게 전환하면 반대편에 공간이 남는다. 장면 구성은 끌어내기 → 빈 공간 → 활용 순서. */
 var TAC_BASE={
   build:{gk:[.5,.93],lcb:[.32,.82],rcb:[.68,.82],lb:[.08,.70],rb:[.92,.70],dm:[.5,.70],lcm:[.33,.58],rcm:[.67,.58],lw:[.10,.40],rw:[.90,.40],st:[.5,.36]},
   mid:  {gk:[.5,.88],lcb:[.36,.70],rcb:[.64,.70],lb:[.10,.58],rb:[.90,.58],dm:[.5,.60],lcm:[.34,.47],rcm:[.66,.47],lw:[.12,.30],rw:[.88,.30],st:[.5,.25]},
@@ -13340,231 +13431,367 @@ var TAC_TAGC={'공격':'#E63852','수비':'#4FB3FF','빌드업':'#3FE0B0','전�
 var TAC_PATS=[];
 function PT_(id,pos,name,tag,desc,o){ o.id=id; o.pos=pos; o.name=name; o.tag=tag; o.desc=desc; TAC_PATS.push(o); }
 /* ───── 골키퍼 ───── */
-PT_('gk_short','GK','짧은 골킥 빌드업','빌드업','키퍼가 한 명 더 많은 숫자를 만들어 압박을 푼다',{base:'build',opp:'4-4-2',style:'high',key:['gk'],
- pts:['공을 받기 전에 반대편을 먼저 본다','센터백과 삼각형을 만들 만큼 앞으로 나온다','상대가 6명 이상 올라오면 길게 — 고집하지 않는다'],
- steps:[['센터백이 박스 옆으로 벌리고 {dm:이} 박스 앞에 선다','gk',{gk:[.5,.94],lcb:[.28,.87],rcb:[.72,.87],dm:[.5,.77],lb:[.07,.72],rb:[.93,.72]}],
-  ['{gk:이} 압박이 덜한 {rcb}에게 짧게','rcb',{rcb:[.72,.85],rb:[.94,.66],dm:[.56,.75]}],
-  ['막히면 다시 {gk}에게 — 키퍼까지 세면 우리가 한 명 많다','gk',{gk:[.46,.92],lcb:[.24,.85],dm:[.44,.74]}],
-  ['{gk:이} 반대편 {lcb}에게 전환해 압박을 벗어난다','lcb',{lcb:[.24,.82],lb:[.06,.62],lcm:[.30,.60]},{fx:[{t:'link',ks:['gk','lcb','rcb'],c:'blue'}]}]]});
+PT_('gk_short','GK','짧은 골킥 빌드업','빌드업','압박을 한쪽으로 불러들인 뒤 키퍼를 거쳐 빈 쪽으로 푼다',{base:'build',opp:'4-4-2',style:'high',key:['gk'],
+ pts:['키퍼까지 세면 우리가 늘 한 명 많다','한쪽에서 두세 번 돌려 압박을 그쪽으로 모은다','받기 전에 반대편을 먼저 본다 — 첫 터치로 방향을 바꾼다','상대가 6명 이상 올라오면 고집하지 말고 길게'],
+ steps:[['골킥 — 센터백은 박스 옆으로 벌리고 {dm:이} 박스 앞에 선다','gk',{gk:[.5,.94],lcb:[.27,.88],rcb:[.73,.88],dm:[.5,.78],lb:[.06,.70],rb:[.94,.70],lcm:[.34,.63],rcm:[.66,.63]}],
+  ['{gk:이} {rcb}에게 짧게 — {dm:과} {rb:이} 받아 줄 각을 만든다','rcb',{rcb:[.74,.86],dm:[.58,.77],rb:[.95,.73],gk:[.54,.935]},{op1:{10:[.70,.79]},oh:[10]}],
+  ['{rcb:이} {rb}에게 — 상대 압박이 오른쪽으로 몰려온다','rb',{rb:[.95,.72],dm:[.64,.76],rcm:[.76,.64],lcb:[.24,.87]},{op1:{6:[.93,.655],10:[.78,.80],7:[.75,.60]},oh:[6,10,7],fx:[{t:'zone',r:[.48,.52,.50,.34],c:'red',l:'상대 쏠림'}]}],
+  ['{rb:이} 안쪽 {dm}에게 — {gk:은} 받을 자리로 옆 걸음, {lcb:은} 더 벌린다','dm',{gk:[.47,.925],lcb:[.21,.86],lb:[.05,.66]},{mk:{7:'dm'},op1:{6:[.90,.70],10:[.72,.82]}}],
+  ['{dm:은} 돌지 않고 원터치로 {gk}에게 — 압박 5명이 오른쪽에 묶였다','gk',{dm:[.60,.74],lcm:[.34,.61],lb:[.05,.62]},{op1:{10:[.63,.83],11:[.50,.80]},oh:[10,11]}],
+  ['{gk:이} 첫 터치로 방향을 바꿔 빈 쪽 {lcb}에게','lcb',{lcb:[.21,.84],lcm:[.33,.58],lw:[.08,.45]},{mk:{7:null},react:6,fx:[{t:'zone',r:[.02,.70,.30,.22],c:'gold',l:'빈 공간'}]}],
+  ['{lcb:이} 빈 공간으로 몰고 올라간다 — {lb:은} 높이, {lcm:은} 앞에서 받을 준비','lcb',{lcb:[.22,.72],lb:[.05,.52],lcm:[.34,.52],dm:[.48,.70]},{react:8}],
+  ['상대가 넘어오기 전에 {lcm}에게 — 압박 한 줄을 통째로 넘었다','lcm',{lcm:[.34,.50],lw:[.10,.32],st:[.46,.32],lb:[.05,.46]},{fx:[{t:'link',ks:['lcb','lcm','lb'],c:'blue'}]}]]});
 PT_('gk_sweeper','GK','스위퍼 키퍼','수비','수비 뒤로 넘어오는 공을 박스 밖에서 먼저 처리한다',{base:'att',opp:'4-4-2',style:'mid',key:['gk'],
- pts:['수비 라인이 올라가면 키퍼도 올라간다 — 라인과 20~25m','롱볼이 뜨는 순간 2초 안에 결정: 나간다 / 지킨다','나가기로 했으면 끝까지, 처리는 측면으로'],
- steps:[['우리 라인이 높다 — {gk:은} 박스 밖까지 나와 뒷공간을 본다','b7',{gk:[.5,.74]},{opp:{7:[.56,.40],10:[.60,.52]}}],
-  ['상대가 수비 뒤로 길게 — {gk:이} 공격수보다 먼저 출발','gk',{gk:[.57,.70],rcb:[.63,.62],lcb:[.44,.62]},{opp:{10:[.61,.61]},fx:[{t:'zone',r:[.36,.60,.44,.14],c:'gold',l:'뒷공간'}]}],
-  ['{gk:이} 발로 처리해 {rb}에게 연결','rb',{rb:[.90,.56]},{opp:{10:[.60,.65]}}]]});
-PT_('gk_switch','GK','백패스 받아 반대 전환','빌드업','압박받는 쪽에서 받아 첫 터치로 반대편을 연다',{base:'build',opp:'4-4-2',style:'high',key:['gk'],
- pts:['백패스는 골문 바깥쪽 발로 받는다','받기 전 어깨 너머로 반대편 확인','터치는 두 번 이내 — 끌면 압박에 걸린다'],
- steps:[['{rcb:이} 측면에서 압박을 받는다','rcb',{rcb:[.74,.80]}],
-  ['{gk:이} 박스 모서리로 나와 백패스를 받는다','gk',{gk:[.57,.90],lcb:[.26,.84],lb:[.06,.68]}],
-  ['첫 터치를 반대쪽으로 — {lb}에게 길게 전환','lb',{lb:[.07,.63],lcm:[.28,.57]},{fx:[{t:'zone',r:[.02,.52,.30,.16],c:'gold',l:'빈 쪽'}]}]]});
+ pts:['수비 라인이 올라가면 키퍼도 올라간다 — 라인과 20~25m','공이 상대 발을 떠나는 순간 결정: 나간다 / 지킨다','나가기로 했으면 끝까지 — 처리는 측면으로','처리한 뒤에는 바로 골문으로 돌아온다'],
+ steps:[['우리가 공격 중 — 라인이 높다. {gk:은} 박스 밖까지 나와 뒷공간을 본다','rcm',{gk:[.5,.75]},{fx:[{t:'zone',r:[.24,.60,.52,.13],c:'gold',l:'뒷공간'}]}],
+  ['패스가 끊긴다 — {rcm:이} 바로 압박, 상대 공격수는 수비 어깨에서 출발 준비','b7',{rcm:[.63,.38],dm:[.54,.47],gk:[.52,.74]},{opp:{7:[.60,.345],10:[.60,.50]},oh:[10]}],
+  ['상대가 고개를 든다 — 공격수가 센터백과 풀백 사이로 뛴다. {gk:은} 앞발에 체중','b7',{rcb:[.64,.60],lcb:[.44,.59],rb:[.86,.50],gk:[.54,.735]},{opp:{10:[.66,.565]},oh:[10]}],
+  ['수비 뒤로 긴 공 — {gk:이} 공격수보다 먼저 출발한다',[.66,.685],{gk:[.60,.725],rcb:[.665,.635],lcb:[.50,.65],rb:[.84,.58]},{opp:{10:[.675,.61]},oh:[10]}],
+  ['{gk:이} 박스 밖에서 먼저 잡는다 — {rb:은} 측면으로 벌려 받을 자리','gk',{gk:[.645,.70],rb:[.90,.66],lcb:[.50,.73],dm:[.55,.60]},{opp:{10:[.67,.655]},oh:[10]}],
+  ['발로 측면 {rb}에게 — 중앙으로는 절대 처리하지 않는다','rb',{rb:[.91,.65],rcb:[.66,.70],gk:[.58,.78],rcm:[.72,.52]},{opp:{10:null,7:null}}],
+  ['{gk:은} 곧장 골문 앞으로 복귀 — 팀은 다시 라인을 올린다','rcm',{rcm:[.72,.50],gk:[.5,.80],rb:[.92,.56],rcb:[.64,.64],lcb:[.42,.64],dm:[.54,.54]}]]});
+PT_('gk_switch','GK','백패스 받아 반대 전환','빌드업','막힌 쪽에서 받아 첫 터치로 반대편을 연다',{base:'build',opp:'4-4-2',style:'high',key:['gk'],
+ pts:['백패스는 골문 바깥쪽 발로 받는다','받기 전 어깨 너머로 반대편 확인','터치는 두 번 이내 — 끌면 압박에 걸린다','반대편 센터백 · 풀백은 미리 벌려 서 있는다'],
+ steps:[['오른쪽에서 빌드업을 시작한다','rcb',{rcb:[.70,.81]}],
+  ['{rcb:이} {rb}에게 — {rcm:과} {rw:이} 내려와 받아 주려 하지만 따라붙는다','rb',{rb:[.94,.70],rcm:[.76,.62],rw:[.94,.52],dm:[.60,.72]},{mk:{7:'rcm',2:'rw'},op1:{6:[.92,.635]},oh:[6]}],
+  ['앞이 모두 막혔다 — 상대 6명이 오른쪽에 몰렸다','rb',{gk:[.57,.915],lcb:[.25,.86],lb:[.05,.67],dm:[.63,.74]},{op1:{6:[.935,.66],10:[.76,.74],11:[.60,.69]},oh:[10,11],fx:[{t:'zone',r:[.46,.44,.52,.38],c:'red',l:'상대 쏠림'}]}],
+  ['{rb:이} 무리하지 않고 뒤 {rcb}에게 — {gk:은} 박스 모서리로 나와 손을 든다','rcb',{rcb:[.76,.82],gk:[.58,.905],lcb:[.23,.855],lb:[.05,.64]},{op1:{10:[.76,.765],6:[.90,.69]},oh:[10]}],
+  ['{rcb:이} {gk}에게 백패스 — 반대편 {lcb:과} {lb:은} 이미 넓게 벌려 있다','gk',{lcb:[.21,.85],lb:[.05,.61],lcm:[.31,.60],dm:[.52,.76]},{op1:{10:[.67,.86]},oh:[10]}],
+  ['{gk:이} 첫 터치를 반대쪽으로 — 곧바로 {lcb}에게','lcb',{gk:[.55,.90],lcb:[.21,.83]},{mk:{7:null,2:null},react:6,fx:[{t:'zone',r:[.02,.66,.32,.26],c:'gold',l:'빈 쪽'}]}],
+  ['{lcb:이} 원터치로 {lb}에게 — {lcm:과} {lw:이} 앞에서 받을 자리를 잡는다','lb',{lb:[.06,.57],lcm:[.28,.54],lw:[.08,.41],lcb:[.22,.78]},{react:7}],
+  ['{lb:이} 빈 측면으로 전진 — 상대는 아직 넘어오는 중이다','lb',{lb:[.07,.46],lw:[.20,.27],lcm:[.26,.45],st:[.42,.30],dm:[.44,.64]},{cv:{lw:[.03,.02]}}]]});
 PT_('gk_distribute','GK','잡은 뒤 빠른 배급','전환','상대가 정비하기 전 6초 안에 역습을 시작한다',{base:'dlow',opp:'4-3-3',style:'mid',key:['gk'],
- pts:['잡는 순간 고개를 든다','던질 때는 발 앞 공간으로 — 뛰면서 받게','확실하지 않으면 지킨다'],
- steps:[['상대 크로스 상황 — {gk:은} 공과 골문 사이','b9',{},{opp:{9:[.90,.80]}}],
-  ['{gk:이} 크로스를 잡는다 — 그 순간 양 윙어가 출발','gk',{gk:[.54,.92],rw:[.86,.56],lw:[.14,.56],st:[.5,.46]}],
-  ['비어 있는 측면 {rw}에게 바로 던진다','rw',{rw:[.86,.44],st:[.52,.38],lw:[.18,.42],rcm:[.68,.58]},{fx:[{t:'zone',r:[.68,.30,.28,.2],c:'gold',l:'역습 공간'}]}]]});
-PT_('gk_cross','GK','크로스 수비 위치와 콜','수비','서는 자리와 "키퍼!" 한마디가 박스를 정리한다',{base:'dlow',opp:'4-3-3',style:'mid',key:['gk'],view:'def',
- pts:['콜은 크고 짧게: "키퍼" 아니면 "클리어"','니어는 수비에게 맡기고 중앙~파 포스트를 책임진다','가장 높은 지점에서 잡고 무릎으로 몸을 보호'],
- steps:[['공이 측면에 있다 — {gk:은} 골문 중앙에서 반 걸음 뒤, 몸은 열어 둔다','b9',{gk:[.52,.965],rb:[.86,.82]},{opp:{9:[.92,.84],10:[.54,.89],11:[.40,.87]}}],
-  ['크로스가 뜬다 — "키퍼!" 골 에어리어 안 공은 직접 나간다','b9',{gk:[.535,.935]},{opp:{10:[.56,.905]},fx:[{t:'zone',r:[.37,.90,.27,.10],c:'blue',l:'키퍼 구역'}]}],
-  ['가장 높은 지점에서 잡는다 — 착지 후 바로 전개','gk',{gk:[.535,.925]}]]});
-PT_('gk_1v1','GK','1 대 1 각 좁히기','수비','빠르게 나가서 멈추고, 먼저 눕지 않는다',{base:'dmid',opp:'4-4-2',style:'mid',key:['gk'],view:'def',
- pts:['상대의 터치가 길 때 전진, 슈팅 자세에서는 멈춘다','낮은 자세 · 손은 옆으로 넓게','먼저 눕지 않는다 — 공격수가 결정하게 만든다'],
- steps:[['상대 공격수가 수비 뒤로 빠져나온다','b10',{},{opp:{10:[.56,.75]}}],
-  ['{gk:이} 빠르게 전진해 슈팅 각도를 좁힌다','b10',{gk:[.53,.86],rcb:[.58,.77]},{opp:{10:[.55,.80]}}],
-  ['멈춰서 낮은 자세 — 터치가 길어진 순간 덮친다','gk',{gk:[.545,.845],rcb:[.57,.82]},{opp:{10:[.56,.825]}}]]});
+ pts:['잡는 순간 고개를 든다 — 올라온 상대 풀백 뒤가 비어 있다','윙어는 공이 잡히는 순간 이미 출발해야 한다','던질 때는 발 앞 공간으로 — 뛰면서 받게','확실하지 않으면 지킨다'],
+ steps:[['상대가 크게 올라와 측면에서 크로스를 노린다','b9',{rb:[.84,.79]},{opp:{9:[.91,.76],2:[.95,.64],7:[.70,.70],10:[.54,.86],11:[.40,.84]},oh:[2]}],
+  ['크로스가 올라온다 — {gk:이} "키퍼!" 외치고 나간다',[.56,.905],{gk:[.545,.93],rcb:[.60,.885],lcb:[.47,.88]},{opp:{9:[.92,.79],10:[.57,.885]}}],
+  ['{gk:이} 잡는다 — 그 순간 {rw:과} {lw:이} 동시에 출발, {st:은} 중앙에서 돌아 뛴다','gk',{gk:[.55,.925],rw:[.86,.58],lw:[.15,.58],st:[.52,.47]}],
+  ['{gk:이} 박스 끝까지 달려 나오며 본다 — 올라온 풀백 뒤가 비었다','gk',{gk:[.57,.865],rw:[.89,.47],lw:[.14,.50],st:[.54,.42],rcm:[.70,.62]},{opp:{2:[.93,.62],9:[.90,.74]},oh:[2],fx:[{t:'zone',r:[.70,.28,.28,.26],c:'gold',l:'풀백 뒤'}]}],
+  ['발 앞 공간으로 던진다 — {rw:이} 뛰면서 받는다','rw',{rw:[.89,.41],st:[.56,.34],lw:[.18,.40],rcm:[.72,.52],lcm:[.40,.56]},{opp:{2:[.90,.52],9:null,7:null,10:null,11:null},oh:[2],react:7}],
+  ['{rw:이} 몰고 간다 — {st:은} 니어 쪽으로 센터백을 끌고, {lw:은} 반대편으로','rw',{rw:[.86,.28],st:[.62,.20],lw:[.28,.24],lcm:[.44,.40],rcm:[.72,.40]},{opp:{2:[.88,.40]},mk:{3:'st'},oh:[2]}],
+  ['비어 버린 중앙으로 {lw:이} 들어와 마무리 — 잡은 지 6초','lw',{lw:[.42,.12],st:[.62,.10],rw:[.84,.20]},{opp:{2:null},fx:[{t:'zone',r:[.385,.06,.17,.12],c:'gold',l:'빈 중앙'}]}]]});
+PT_('gk_cross','GK','크로스 수비 위치와 콜','수비','서는 자리와 "키퍼!" 한마디가 박스를 정리한다',{base:'dlow',opp:'4-3-3',style:'mid',key:['gk'],view:'def',drift:[.08,.10],
+ pts:['콜은 크고 짧게: "키퍼" 아니면 "클리어"','니어는 수비에게 맡기고 중앙~파 포스트를 책임진다','가장 높은 지점에서 잡고 무릎으로 몸을 보호','잡은 뒤에는 상대가 몰려 있던 반대쪽으로 전개'],
+ steps:[['공이 측면에 있다 — {gk:은} 골문 중앙에서 반 걸음 앞, 몸은 열어 둔다','b9',{gk:[.52,.962],rb:[.85,.76]},{opp:{9:[.91,.72],10:[.56,.80],11:[.40,.79],7:[.66,.70]}}],
+  ['상대가 골라인 쪽으로 — 수비는 니어 · 중앙 · 파로 나눠 선다','b9',{rb:[.87,.84],rcb:[.61,.90],lcb:[.50,.89],lb:[.39,.885],dm:[.52,.83],gk:[.545,.958]},{opp:{9:[.93,.83],10:[.585,.875],11:[.42,.865],7:[.56,.79]},fx:[{t:'link',ks:['rcb','lcb','lb'],c:'blue'}]}],
+  ['크로스 직전 — {gk:은} 한 걸음 나와 "키퍼 구역"을 정한다','b9',{gk:[.545,.945],rcm:[.64,.80],lcm:[.40,.80]},{opp:{9:[.935,.855],10:[.59,.89],11:[.44,.88]},fx:[{t:'zone',r:[.37,.895,.27,.10],c:'blue',l:'키퍼 구역'}]}],
+  ['공이 뜬다 — "키퍼!" 수비는 공격수 앞을 몸으로 막아 길을 열어 준다',[.565,.915],{gk:[.553,.932],rcb:[.605,.905],lcb:[.505,.898]},{opp:{10:[.595,.885],11:[.455,.885]},still:1}],
+  ['{gk:이} 가장 높은 지점에서 잡는다 — {lw:과} {rw:은} 벌써 돌아서 뛴다','gk',{gk:[.553,.925],lw:[.14,.58],rw:[.86,.60],st:[.48,.46]},{opp:{9:[.93,.84]}}],
+  ['착지하자마자 상대가 비워 둔 왼쪽으로 — {lw}에게 던져 역습','lw',{gk:[.50,.88],lw:[.13,.46],st:[.46,.38],lcm:[.34,.64],lb:[.24,.74]},{opp:{9:null,10:null,11:null,7:null},react:7,fx:[{t:'zone',r:[.03,.37,.26,.25],c:'gold',l:'빈 쪽'}]}]]});
+PT_('gk_1v1','GK','1 대 1 각 좁히기','수비','빠르게 나가서 멈추고, 먼저 눕지 않는다',{base:'dmid',opp:'4-4-2',style:'mid',key:['gk'],view:'def',drift:[.08,.10],
+ pts:['상대의 터치가 길 때 전진, 슈팅 자세에서는 멈춘다','낮은 자세 · 손은 옆으로 넓게','먼저 눕지 않는다 — 공격수가 결정하게 만든다','수비는 따라붙어 한쪽으로만 몰아 준다'],
+ steps:[['상대 미드필더가 앞을 본다 — 공격수가 {rcb}의 어깨에 걸쳐 있다','b7',{},{opp:{7:[.56,.50],10:[.585,.665]},oh:[10]}],
+  ['수비 뒤로 스루패스 — 공격수가 빠져나온다. {gk:은} 터치가 길 때 전진',[.572,.765],{gk:[.515,.895],rcb:[.61,.715],lcb:[.47,.725]},{opp:{10:[.578,.715]},oh:[10]}],
+  ['공격수가 공을 잡는다 — {gk:이} 빠르게 나가 슈팅 각도를 좁힌다','b10',{gk:[.535,.865],rcb:[.605,.765],lcb:[.485,.775],rb:[.76,.74]},{opp:{10:[.566,.775]},fx:[{t:'zone',r:[.44,.80,.20,.20],c:'blue',l:'각도'}]}],
+  ['슈팅 자세 — {gk:은} 멈춘다. 낮은 자세, 손은 넓게. {rcb:이} 옆에서 한쪽을 막는다','b10',{gk:[.545,.848],rcb:[.603,.786],lcb:[.50,.80]},{opp:{10:[.563,.793]},still:1}],
+  ['공격수가 한 번 더 친다 — 터치가 길어진 순간 {gk:이} 발밑으로 덮친다','gk',{gk:[.552,.826],rcb:[.605,.80],lcb:[.49,.815]},{opp:{10:[.566,.806]},still:1}],
+  ['잡으면 바로 일어난다 — 수비는 세컨볼 자리, {rb:은} 벌려서 받을 준비','gk',{gk:[.55,.835],rb:[.84,.76],lb:[.18,.72],dm:[.50,.70]},{opp:{10:[.59,.80]},still:1}]]});
 /* ───── 센터백 ───── */
-PT_('cb_carry','CB','벌리고 직접 운반','빌드업','앞이 비면 패스보다 운반이 먼저다',{base:'build',opp:'4-4-2',style:'mid',key:['rcb'],
- pts:['앞에 압박이 없으면 몰고 올라가 상대 한 명을 끌어낸다','끌어낸 만큼 동료가 자유로워진다','뒤에는 항상 {dm:이} 남는다'],
- steps:[['{rcb:이} 공을 잡는다 — 앞에 압박이 없다','rcb',{}],
-  ['{rcb:이} 직접 몰고 올라가 상대 미드필더를 끌어낸다','rcb',{rcb:[.68,.66],dm:[.52,.74],rb:[.93,.60]}],
-  ['상대가 나오면 비는 {rcm}에게 — 라인 사이에서 받는다','rcm',{rcm:[.66,.50]},{fx:[{t:'zone',r:[.54,.45,.28,.10],c:'gold',l:'라인 사이'}]}]]});
-PT_('cb_cover','CB','도전과 커버','수비','한 명이 붙으면 다른 한 명은 대각선 뒤에 선다',{base:'dmid',opp:'4-4-2',style:'mid',key:['rcb','lcb'],
- pts:['둘이 같이 덤비지 않는다','커버는 골문 쪽 대각선 3~5m','풀백은 안으로 좁혀 간격을 메운다'],
- steps:[['상대 공격수가 공을 받는다','b10',{},{opp:{10:[.60,.63],11:[.42,.65]}}],
-  ['{rcb:이} 붙어서 돌아서지 못하게 — {lcb:은} 한 발 뒤 대각 커버','b10',{rcb:[.60,.665],lcb:[.47,.73],rb:[.78,.70],lb:[.24,.71]},{fx:[{t:'link',ks:['rcb','lcb'],c:'blue'}]}],
-  ['상대가 돌아서면 {lcb:이} 정리한다','lcb',{lcb:[.53,.71]},{opp:{10:[.565,.675]}}]]});
-PT_('cb_line','CB','라인 컨트롤','수비','공이 뒤로 가는 순간 다 같이 올린다',{base:'dlow',opp:'4-4-2',style:'low',key:['lcb','rcb'],
- pts:['신호: 백패스 · 공이 뒤로 갈 때 · 상대가 등을 질 때','콜은 한 사람이 — 한 명이 늦으면 오프사이드가 깨진다','올린 뒤에는 몸을 반쯤 돌려 롱볼에 대비'],
- steps:[['상대가 우리 박스 앞에서 공을 돌린다','b7',{},{opp:{7:[.60,.62]}}],
-  ['상대가 백패스 — "올려!" 한 번에 라인을 올린다','b3',{lb:[.22,.69],lcb:[.41,.71],rcb:[.59,.71],rb:[.78,.69],dm:[.5,.63],lcm:[.34,.59],rcm:[.66,.59],gk:[.5,.90]},{opp:{3:[.60,.42]},fx:[{t:'link',ks:['lb','lcb','rcb','rb'],c:'blue'}]}],
-  ['공이 다시 앞으로 오면 멈춘다 — 뒷공간은 {gk:이} 맡는다','b7',{},{opp:{7:[.58,.55]},fx:[{t:'link',ks:['lb','lcb','rcb','rb'],c:'blue'}]}]]});
+PT_('cb_carry','CB','벌리고 직접 운반','빌드업','앞이 비면 몰고 올라가 상대 한 명을 끌어낸다',{base:'build',opp:'4-4-2',style:'mid',key:['rcb'],
+ pts:['앞에 압박이 없으면 패스보다 운반이 먼저다','동료는 가까이 오지 말고 길을 비켜 준다','상대가 나오는 순간이 패스 타이밍 — 끌어낸 만큼 동료가 자유롭다','뒤에는 항상 {dm:이} 남는다'],
+ steps:[['{gk:이} 공을 잡는다 — 센터백은 넓게 벌린다. 상대 투톱은 가운데 {dm}만 막고 서 있다','gk',{lcb:[.28,.84],rcb:[.72,.84],dm:[.5,.72],lb:[.06,.64],rb:[.94,.64]},{opp:{10:[.58,.635],11:[.42,.635]}}],
+  ['{gk:이} {rcb}에게 — {rb:은} 높이 올라가며 상대 측면 미드필더를 데려간다','rcb',{rcb:[.72,.81],rb:[.95,.50],lcb:[.30,.83]},{mk:{6:'rb'}}],
+  ['앞이 비었다 — {rcb:이} 직접 몰고 올라간다. {rcm:은} 길을 비켜 주고 {dm:이} 뒤를 메운다','rcb',{rcb:[.74,.69],dm:[.60,.77],rcm:[.60,.43],lcb:[.38,.80],rw:[.94,.31]},{opp:{10:[.65,.645]},mk:{2:'rw'},fx:[{t:'zone',r:[.66,.47,.16,.20],c:'gold',l:'운반할 길'}]}],
+  ['계속 전진 — 더는 둘 수 없는 상대 미드필더가 막으러 튀어나온다','rcb',{rcb:[.74,.575],rcm:[.645,.405],st:[.52,.27],dm:[.60,.70]},{op1:{7:[.725,.505]},oh:[7]}],
+  ['나온 순간 그 뒤가 빈다 — {rcm:이} 빈 자리에서 받는다','rcm',{rcm:[.66,.395],rw:[.93,.27],st:[.50,.24]},{op1:{7:[.73,.51]},fx:[{t:'zone',r:[.57,.335,.20,.11],c:'gold',l:'빈 자리'}]}],
+  ['{rcm:이} 돌아선다 — {rw:은} 풀백 등 뒤로, {st:은} 센터백을 묶어 둔다','rcm',{rcm:[.67,.35],rw:[.90,.19],st:[.50,.20],lw:[.14,.24],rb:[.94,.42]},{opp:{10:null,11:null},mk:{2:null,6:null,3:'st'},cv:{rw:[.03,.02]}}],
+  ['뒷공간의 {rw}에게 스루패스 — {rcb:은} 제자리로, 뒤는 {dm:이} 지킨다','rw',{rw:[.85,.105],st:[.56,.10],lw:[.34,.13],rcb:[.71,.58],dm:[.56,.62]},{react:7,fx:[{t:'zone',r:[.76,.04,.20,.13],c:'gold',l:'뒷공간'}]}]]});
+PT_('cb_cover','CB','도전과 커버','수비','한 명이 붙으면 다른 한 명은 대각선 뒤에 선다',{base:'dmid',opp:'4-4-2',style:'mid',key:['rcb','lcb'],drift:[.10,.12],
+ pts:['둘이 같이 덤비지 않는다','커버는 골문 쪽 대각선 3~5m','공이 옆 공격수에게 가면 역할을 바꾼다 — 커버가 도전, 도전이 커버','풀백은 안으로 좁혀 간격을 메운다'],
+ steps:[['상대 미드필더가 공을 잡고 공격수를 찾는다','b7',{},{opp:{7:[.58,.47],10:[.59,.61],11:[.44,.665]}}],
+  ['공격수 발밑으로 패스 — {rcb:이} 등 뒤에 바짝 붙는다. {lcb:은} 대각선 뒤로 커버','b10',{rcb:[.595,.652],lcb:[.49,.725],rb:[.77,.70],lb:[.25,.705],dm:[.55,.555]},{opp:{10:[.59,.615]},fx:[{t:'link',ks:['rcb','lcb'],c:'blue'}]}],
+  ['돌아서지 못한다 — 앞에서는 {dm:이} 조여 온다. 풀백은 안으로 좁힌다','b10',{rcb:[.575,.655],dm:[.545,.575],rb:[.74,.705],lb:[.27,.71],rcm:[.66,.58]},{opp:{10:[.555,.62]},fx:[{t:'zone',r:[.47,.56,.17,.11],c:'red',l:'가둔다'}]}],
+  ['공이 옆 공격수에게 — 역할 교대! {lcb:이} 나가 붙고 {rcb:이} 뒤로 돌아 커버','b11',{lcb:[.468,.698],rcb:[.545,.735],lb:[.30,.715],rb:[.72,.715]},{opp:{11:[.455,.66]},fx:[{t:'link',ks:['lcb','rcb'],c:'blue'}]}],
+  ['{lcb:이} 앞에서 건드린다 — 흐른 공은 커버하던 {rcb} 차지','rcb',{rcb:[.527,.722],lcb:[.462,.686],dm:[.50,.61]},{opp:{11:[.465,.672]}}],
+  ['뺏으면 넓게 — 풀백이 벌리고 {dm:이} 받아 준다','dm',{dm:[.50,.60],lb:[.13,.66],rb:[.87,.66],lcm:[.32,.52],rcm:[.68,.52]},{opp:{7:null,10:null,11:null}}]]});
+PT_('cb_line','CB','라인 컨트롤','수비','공이 뒤로 가는 순간 다 같이 올린다',{base:'dlow',opp:'4-4-2',style:'low',key:['lcb','rcb'],drift:[0,0],
+ pts:['올리는 신호: 백패스 · 횡패스 · 상대가 등을 질 때','콜은 한 사람이 — 한 명이 늦으면 오프사이드가 깨진다','공 가진 상대가 자유로우면 멈추고 몸을 반쯤 돌린다','뒷공간으로 넘어오는 공은 {gk:이} 맡는다'],
+ steps:[['상대가 우리 박스 앞에서 공을 돌린다 — 라인이 낮다','b7',{},{opp:{7:[.60,.62],8:[.42,.60],10:[.60,.80],11:[.42,.81],3:[.60,.44],4:[.40,.44],2:[.90,.52],5:[.10,.52],6:[.84,.64],9:[.16,.64]}}],
+  ['백패스 — "올려!" 네 명이 한 번에 올라간다. 미드필더와 {st:도} 같이 압박','b3',{lb:[.22,.73],lcb:[.41,.745],rcb:[.59,.745],rb:[.78,.73],dm:[.5,.66],lcm:[.34,.62],rcm:[.66,.61],st:[.57,.50],lw:[.18,.58],rw:[.82,.58],gk:[.5,.91]},{opp:{7:[.62,.57]},fx:[{t:'link',ks:['lb','lcb','rcb','rb'],c:'blue'},{t:'zone',r:[.34,.755,.34,.09],c:'red',l:'오프사이드'}]}],
+  ['횡패스 — 한 번 더 올린다. 상대 공격수는 따라 나올 수밖에 없다','b4',{lb:[.20,.66],lcb:[.39,.675],rcb:[.57,.675],rb:[.76,.66],dm:[.48,.59],lcm:[.33,.55],rcm:[.63,.55],st:[.46,.46],lw:[.20,.50],rw:[.80,.52],gk:[.5,.87]},{opp:{10:[.58,.695],11:[.42,.70],7:[.60,.52]},fx:[{t:'link',ks:['lb','lcb','rcb','rb'],c:'blue'}]}],
+  ['상대가 고개를 들고 길게 차려 한다 — 멈춘다. 몸을 반쯤 돌려 뒷공간에 대비','b4',{lb:[.20,.665],lcb:[.39,.685],rcb:[.57,.685],rb:[.76,.665],gk:[.5,.855]},{opp:{11:[.425,.675],10:[.585,.68]},fx:[{t:'zone',r:[.24,.70,.52,.13],c:'gold',l:'뒷공간'}]}],
+  ['수비 뒤로 긴 공 — {lcb:이} 돌아 뛰고 {gk:이} 먼저 나온다',[.45,.785],{lcb:[.42,.745],rcb:[.56,.735],lb:[.24,.72],gk:[.47,.825]},{opp:{11:[.435,.725]}}],
+  ['{gk:이} 처리해 {lb}에게 — 라인은 다시 올라간다','lb',{lb:[.16,.70],gk:[.49,.85],lcb:[.40,.72],rcb:[.58,.72],rb:[.80,.69],dm:[.48,.62]},{opp:{11:[.44,.74]}}]]});
 PT_('cb_stepin','CB','앞에서 끊기','수비','내려와 받는 공격수를 따라 나가 먼저 건드린다',{base:'dmid',opp:'4-4-2',style:'mid',key:['rcb'],
- pts:['패스가 떠나는 순간 출발 — 늦으면 따라가지 않는다','나간 자리는 {dm:이} 메운다','끊으면 바로 앞으로: 역습의 시작'],
- steps:[['상대 공격수가 내려와 받으려 한다','b7',{},{opp:{7:[.56,.44],10:[.58,.59]}}],
-  ['{rcb:이} 따라 나가 앞에서 끊는다 — {dm:이} 뒤를 메운다','rcb',{rcb:[.59,.60],dm:[.58,.69],lcb:[.46,.72]},{opp:{10:[.585,.575]}}],
-  ['끊은 공은 바로 {rcm}에게 — 역습','rcm',{rcm:[.68,.50],rw:[.86,.40],st:[.5,.36]}]]});
-PT_('cb_diag','CB','대각선 롱패스 전환','공격','한쪽으로 모은 뒤 반대편 넓은 공간으로 한 번에',{base:'mid',opp:'4-4-2',style:'mid',key:['lcb'],
- pts:['먼저 한쪽에서 돌려 상대를 모은다','받는 윙어는 터치라인을 밟고 선다','낮고 빠른 공 — 뜨면 상대가 따라온다'],
- steps:[['왼쪽에서 공을 돌려 상대를 한쪽으로 모은다','lb',{}],
-  ['{lcb}에게 뒤로 — 반대편 {rw:은} 터치라인에 넓게','lcb',{rw:[.94,.30],rb:[.88,.50]}],
-  ['{lcb:이} 대각선 롱패스로 반대 전환','rw',{rw:[.92,.26],rb:[.90,.40],rcm:[.72,.38]},{fx:[{t:'zone',r:[.70,.16,.28,.22],c:'gold',l:'넓은 쪽'}]}]]});
-PT_('cb_box','CB','크로스 수비 · 박스 구역','수비','니어 · 중앙 · 파를 나눠 서고 먼저 건드린다',{base:'dlow',opp:'4-3-3',style:'low',key:['rcb','lcb'],view:'def',
- pts:['공과 사람을 같이 볼 수 있게 몸을 연다','니어 포스트를 먼저 잠근다','걷어낼 때는 높이 · 멀리 · 측면으로'],
- steps:[['상대가 측면에서 크로스를 준비한다','b9',{rb:[.86,.82]},{opp:{9:[.92,.82],10:[.54,.88],11:[.40,.86]}}],
-  ['{rcb:은} 니어, {lcb:은} 중앙, {lb:은} 파 포스트','b9',{rcb:[.60,.905],lcb:[.50,.90],lb:[.38,.895],dm:[.52,.83]},{fx:[{t:'link',ks:['rcb','lcb','lb'],c:'blue'}]}],
-  ['{rcb:이} 니어에서 먼저 잘라 낸다 — 측면으로 멀리',[.84,.64],{rcb:[.62,.915]}]]});
+ pts:['패스가 떠나는 순간 출발 — 늦으면 따라가지 않는다','나간 자리는 {dm:이} 메우고 옆 센터백이 좁힌다','끊으면 바로 앞으로: 상대는 공격하느라 벌어져 있다'],
+ steps:[['상대가 뒤에서 공을 돌린다 — 양 풀백이 높이 올라와 있다','b7',{},{opp:{7:[.56,.40],10:[.60,.64],2:[.92,.44],5:[.08,.44]}}],
+  ['공격수가 내려와 받으려 한다 — {rcb:이} 몇 걸음 따라 나선다','b7',{rcb:[.60,.665],dm:[.54,.645]},{opp:{10:[.59,.575]},oh:[10]}],
+  ['패스가 떠나는 순간 출발 — {rcb:이} 앞에서 끊는다. {dm:이} 빈 자리로, {lcb:이} 좁힌다','rcb',{rcb:[.588,.588],dm:[.585,.70],lcb:[.49,.715],rb:[.77,.69]},{opp:{10:[.592,.56]},fx:[{t:'link',ks:['lcb','dm','rb'],c:'blue'}]}],
+  ['끊자마자 앞의 {rcm}에게 — {rw:과} {st:이} 동시에 출발','rcm',{rcm:[.68,.50],rw:[.88,.40],st:[.54,.36],lw:[.16,.42]},{opp:{7:null,10:null}}],
+  ['{rcm:이} 몰고 간다 — 올라와 있던 상대 풀백 뒤가 비었다','rcm',{rcm:[.69,.40],rw:[.90,.28],st:[.60,.25],lw:[.22,.32],lcm:[.40,.46]},{opp:{2:[.90,.40],5:null},mk:{3:'st'},oh:[2],fx:[{t:'zone',r:[.78,.10,.20,.19],c:'gold',l:'풀백 뒤'}]}],
+  ['{st:이} 센터백을 끌고 안으로 — 열린 바깥의 {rw}에게','rw',{rw:[.89,.17],st:[.58,.14],lw:[.34,.18],rcb:[.62,.63],lcb:[.43,.645],dm:[.53,.55]},{opp:{2:[.86,.27]},react:7}],
+  ['{rw:이} 낮게 깔아 준다 — {st:은} 니어, {lw:은} 파 포스트','st',{st:[.56,.08],lw:[.42,.09],rw:[.88,.10],rcm:[.66,.22]},{opp:{2:null},mk:{3:null}}]]});
+PT_('cb_diag','CB','대각선 롱패스 전환','공격','한쪽으로 불러들인 뒤 반대편 넓은 공간으로 한 번에',{base:'mid',opp:'4-4-2',style:'mid',key:['lcb'],
+ pts:['먼저 한쪽에서 세 번 이상 주고받아 상대를 모은다','반대편 윙어는 공이 없어도 터치라인을 밟고 기다린다','뒤로 빼는 패스가 신호 — 받기 전에 이미 반대편을 봤다','낮고 빠른 공: 뜨면 상대가 따라올 시간이 생긴다'],
+ steps:[['{lcb:이} 공을 잡는다 — 반대편 {rw:은} 터치라인에서 넓게 기다린다','lcb',{lcb:[.36,.70],rw:[.95,.33]}],
+  ['왼쪽 {lb}에게 — {lw:과} {lcm:이} 가까이 내려와 삼각형을 만든다','lb',{lb:[.08,.58],lw:[.09,.42],lcm:[.25,.50],dm:[.42,.62]},{mk:{5:'lw',8:'lcm'}}],
+  ['{lb:이} 앞의 {lw}에게 — {st:도} 왼쪽으로 넘어와 상대를 더 끌어온다','lw',{lw:[.08,.41],st:[.34,.29],lb:[.10,.54],lcm:[.24,.47]},{mk:{4:'st'},op1:{9:[.13,.47]},oh:[9]}],
+  ['{lw:이} 등지고 {lcm}에게 내준다 — 상대 일곱 명이 왼쪽에 몰렸다','lcm',{lcm:[.25,.485],lcb:[.31,.665],rb:[.90,.50],rcm:[.68,.44]},{op1:{9:[.17,.47],7:[.36,.44]},oh:[7],fx:[{t:'zone',r:[.02,.22,.46,.36],c:'red',l:'상대 쏠림'}]}],
+  ['{lcm:이} 뒤의 {lcb}에게 — {lcb:은} 받기 전에 이미 반대편을 봤다','lcb',{lcb:[.30,.655],dm:[.45,.60],rw:[.95,.30]},{op1:{11:[.34,.585]},oh:[11],fx:[{t:'zone',r:[.73,.14,.25,.36],c:'gold',l:'넓은 쪽'}]}],
+  ['{lcb:이} 대각선으로 길게 — 반대편 {rw}에게 한 번에','rw',{rw:[.94,.29],rb:[.89,.42],rcm:[.72,.37]},{mk:{5:null,8:null,4:null},react:5,fx:[{t:'zone',r:[.73,.14,.25,.36],c:'gold',l:'넓은 쪽'}]}],
+  ['상대가 넘어오는 중 — {rw:은} 풀백과 1 대 1, {rb:이} 바깥으로 돌아 2 대 1','rw',{rw:[.91,.23],rb:[.96,.27],rcm:[.76,.28],st:[.54,.20],lw:[.26,.22]},{react:7,cv:{rb:[.03,0]}}],
+  ['{rw:이} 안쪽 {rcm}에게 — {st:은} 니어, {lw:은} 반대편에서 파 포스트로','rcm',{rcm:[.74,.20],st:[.57,.125],lw:[.40,.13],rb:[.96,.16],rw:[.88,.20]},{fx:[{t:'zone',r:[.36,.04,.28,.11],c:'gold',l:'마무리'}]}]]});
+PT_('cb_box','CB','크로스 수비 · 박스 구역','수비','니어 · 중앙 · 파를 나눠 서고 먼저 건드린다',{base:'dlow',opp:'4-3-3',style:'low',key:['rcb','lcb'],view:'def',drift:[.08,.10],
+ pts:['공과 사람을 같이 볼 수 있게 몸을 연다','니어 포스트를 먼저 잠근다 — 내 앞으로 뛰는 선수는 내 것','걷어낼 때는 높이 · 멀리 · 측면으로','걷어낸 뒤에는 다 같이 박스 밖으로 올라간다'],
+ steps:[['상대가 측면에서 공을 잡는다 — 센터백은 어깨 너머로 공격수 위치를 확인','b9',{rb:[.85,.75]},{opp:{9:[.90,.72],10:[.55,.80],11:[.40,.79],7:[.66,.69]}}],
+  ['상대가 골라인 쪽으로 — {rcb:은} 니어, {lcb:은} 중앙, {lb:은} 파 포스트로 내려선다','b9',{rb:[.885,.85],rcb:[.605,.90],lcb:[.50,.895],lb:[.39,.885],dm:[.52,.835],rcm:[.66,.79],gk:[.545,.958]},{opp:{9:[.93,.835],10:[.565,.855],11:[.415,.855],7:[.60,.76]},fx:[{t:'link',ks:['rcb','lcb','lb'],c:'blue'}]}],
+  ['공격수가 파로 가는 척 니어로 뛴다 — {rcb:이} 앞자리를 내주지 않는다','b9',{rcb:[.607,.903],lcb:[.515,.90],dm:[.535,.84]},{opp:{10:[.59,.882],11:[.43,.872],7:[.545,.80]},oh:[10],still:1,fx:[{t:'zone',r:[.56,.885,.10,.07],c:'red',l:'니어'}]}],
+  ['낮고 빠른 크로스 — {rcb:이} 한 발 먼저 나가 끊는다',[.632,.905],{rcb:[.618,.908],rb:[.86,.86]},{opp:{9:[.935,.86],10:[.60,.888]},still:1}],
+  ['높이 · 멀리 · 측면으로 걷어낸다 — 그 순간 다 같이 박스 밖으로',[.86,.66],{rcb:[.60,.855],lcb:[.50,.85],lb:[.37,.835],rb:[.84,.80],dm:[.54,.775],rcm:[.72,.73],lcm:[.38,.74],rw:[.84,.69],gk:[.52,.93]},{opp:{10:[.59,.865],11:[.44,.85]},fx:[{t:'link',ks:['lb','lcb','rcb','rb'],c:'blue'}]}],
+  ['{rw:이} 세컨볼을 잡는다 — 상대 공격수는 오프사이드에 남았다','rw',{rw:[.855,.665],st:[.52,.50],rcm:[.72,.68],lw:[.20,.60]},{opp:{9:null,10:null,11:null,7:null}}]]});
 /* ───── 풀백 ───── */
-PT_('fb_overlap','FB','오버래핑','공격','윙어가 안으로 좁히는 순간 바깥으로 돌아 뛴다',{base:'mid',opp:'4-4-2',style:'mid',key:['rb'],
- pts:['윙어가 공을 잡고 안쪽을 볼 때가 출발 신호','윙어보다 바깥 · 한 발 뒤에서 출발해 속도를 살린다','크로스는 컷백과 니어를 먼저 본다'],
- steps:[['공이 오른쪽으로 온다 — {rb:은} 윙어 뒤에서 준비','rcm',{}],
-  ['{rw:이} 공을 잡고 안쪽으로 좁힌다 — 그 순간 {rb} 출발','rw',{rw:[.82,.32],rb:[.92,.48]}],
-  ['{rb:이} 바깥으로 돌아 뛰고 {rw:이} 앞 공간에 내준다','rb',{rb:[.94,.20],rw:[.78,.28],st:[.54,.16],lw:[.30,.18]},{cv:{rb:[.03,0]},fx:[{t:'zone',r:[.84,.10,.14,.2],c:'gold',l:'바깥 공간'}]}],
-  ['{rb:이} 낮게 컷백 — {st:은} 니어, {lw:은} 파','st',{st:[.56,.09],lw:[.40,.08],rcm:[.62,.22]}]]});
-PT_('fb_underlap','FB','언더래핑','공격','윙어가 넓게 서면 안쪽 하프스페이스로 파고든다',{base:'mid',opp:'4-4-2',style:'mid',key:['rb'],
- pts:['윙어가 터치라인에서 상대 풀백을 붙잡아 둔다','풀백과 센터백 사이로 — 대각이 아니라 곧게','골라인까지 가면 컷백'],
- steps:[['{rw:이} 터치라인에 넓게 서서 받는다','rw',{rw:[.94,.32]}],
-  ['{rb:이} 안쪽 하프스페이스로 파고든다','rw',{rb:[.76,.27]},{fx:[{t:'zone',r:[.66,.12,.16,.2],c:'gold',l:'하프스페이스'}]}],
-  ['{rw:이} 침투하는 {rb}에게 찔러 준다','rb',{rb:[.75,.14],st:[.52,.12],lw:[.34,.14]}],
-  ['골라인 근처에서 컷백 — {st} 마무리','st',{st:[.55,.08],rcm:[.62,.20]}]]});
+PT_('fb_overlap','FB','오버래핑','공격','윙어가 안으로 수비를 끌고 들어가면 비는 바깥으로 돌아 뛴다',{base:'mid',opp:'4-4-2',style:'mid',key:['rb'],
+ pts:['윙어가 공을 잡고 안쪽으로 치는 순간이 출발 신호','윙어보다 바깥 · 한 발 뒤에서 출발해 속도를 살린다','올라간 자리는 {dm:이} 옮겨 와 메운다','크로스는 컷백과 니어를 먼저 본다'],
+ steps:[['{dm:이} 공을 잡는다 — {rb:은} 윙어 뒤에서 거리를 두고 준비','dm',{dm:[.5,.60],rb:[.90,.56]}],
+  ['오른쪽 {rcm}에게 — 상대가 오른쪽으로 밀려온다. {rb:은} 조금씩 올라선다','rcm',{rcm:[.67,.46],rb:[.91,.50],rw:[.94,.31],st:[.52,.24]}],
+  ['{rcm:이} 넓게 선 {rw}에게 — 상대 풀백과 미드필더 둘이 막아선다','rw',{rw:[.94,.30],rb:[.92,.45],rcm:[.72,.40]},{mk:{2:'rw'},op1:{6:[.86,.36]},oh:[6]}],
+  ['{rw:이} 안쪽으로 치고 들어간다 — 수비 둘이 따라 들어오고 바깥이 열린다. {rb} 출발!','rw',{rw:[.84,.265],rb:[.955,.34],st:[.56,.17],rcm:[.72,.36]},{op1:{6:[.80,.315]},oh:[6],fx:[{t:'zone',r:[.87,.07,.12,.24],c:'gold',l:'바깥 공간'}]}],
+  ['{rw:이} 바깥 공간으로 내준다 — {dm:은} 올라간 풀백 자리로 옮겨 뒤를 지킨다','rb',{rb:[.955,.19],dm:[.66,.52],rcb:[.72,.62],st:[.57,.13],lw:[.34,.17],rcm:[.68,.24]},{cv:{rb:[.02,0]},react:7,fx:[{t:'link',ks:['dm','rcb'],c:'blue'}]}],
+  ['{rb:이} 골라인까지 — 센터백이 막으러 끌려 나온다. {st:은} 니어, {lw:은} 파, {rcm:은} 뒤에서','rb',{rb:[.935,.10],st:[.60,.065],lw:[.40,.085],rcm:[.56,.20],rw:[.80,.21]},{mk:{2:null},op1:{3:[.84,.105]},oh:[3]}],
+  ['낮게 컷백 — 수비가 골문 쪽으로 물러난 자리에서 {rcm:이} 마무리','rcm',{rcm:[.515,.135]},{op1:{3:[.86,.10]},fx:[{t:'zone',r:[.43,.10,.20,.08],c:'gold',l:'컷백 존'}]}]]});
+PT_('fb_underlap','FB','언더래핑','공격','윙어가 넓게 서서 풀백을 붙잡으면 안쪽 틈으로 파고든다',{base:'mid',opp:'4-4-2',style:'mid',key:['rb'],
+ pts:['윙어가 터치라인을 밟고 상대 풀백을 밖으로 끌어낸다','주고 멈추지 않는다 — 풀백과 센터백 사이로 곧게','{st:이} 센터백을 묶어 두면 틈이 닫히지 않는다','골라인까지 가면 컷백'],
+ steps:[['{rcb:이} 공을 잡는다 — {rw:은} 터치라인을 밟고 넓게 선다','rcb',{rcb:[.64,.70],rw:[.955,.32],rb:[.86,.58]}],
+  ['{rcb:이} {rb}에게 — 상대 측면 미드필더가 압박하러 나온다','rb',{rb:[.87,.56],rcm:[.72,.46],dm:[.56,.60]},{op1:{6:[.84,.495]},oh:[6]}],
+  ['{rb:이} 터치라인의 {rw}에게 — 상대 풀백이 밖으로 끌려 나온다. {st:은} 센터백 옆에 붙어 선다','rw',{rw:[.955,.315],st:[.565,.185]},{mk:{2:'rw',3:'st'},op1:{6:[.87,.48]},fx:[{t:'zone',r:[.70,.08,.17,.185],c:'gold',l:'풀백과 센터백 사이'}]}],
+  ['{rb:은} 주고 멈추지 않는다 — 안쪽으로 파고든다. {rcm:이} 뒤에서 받아 줄 자리','rw',{rb:[.79,.33],rcm:[.82,.43],dm:[.64,.52],rcb:[.72,.62]},{op1:{6:[.88,.44]},fx:[{t:'zone',r:[.70,.08,.17,.185],c:'gold',l:'풀백과 센터백 사이'}]}],
+  ['{rw:이} 틈으로 찔러 준다 — 센터백은 {st} 때문에 나오지 못한다','rb',{rb:[.765,.17],lw:[.34,.17],rcm:[.76,.34]},{react:7,op1:{6:[.88,.40]}}],
+  ['{rb:이} 박스 안 골라인까지 — 이제야 센터백이 나온다. {st:은} 뒤로 빠져 스폿으로','rb',{rb:[.75,.075],st:[.565,.125],lw:[.41,.085],rcm:[.66,.21],rw:[.90,.22]},{mk:{3:null,2:null},op1:{3:[.685,.085]},oh:[3]}],
+  ['컷백 — 센터백이 비운 자리에서 {st:이} 마무리','st',{st:[.56,.12]},{op1:{3:[.70,.08]},fx:[{t:'zone',r:[.47,.085,.20,.08],c:'gold',l:'비운 자리'}]}]]});
 PT_('fb_invert','FB','인버티드 풀백','빌드업','측면이 아니라 중앙으로 들어와 미드필더가 된다',{base:'build',opp:'4-4-2',style:'mid',key:['rb'],
- pts:['{dm} 옆에 서서 중앙에 2명을 만든다','대신 윙어가 터치라인을 지킨다','뺏겨도 중앙이 두꺼워 역습을 막기 쉽다'],
- steps:[['{rcb:이} 공을 잡는다 — {rb:은} 터치라인이 아니라 안쪽으로','rcb',{}],
-  ['{rb:이} {dm} 옆으로 들어온다 · {rw:은} 넓게','rcb',{rb:[.64,.66],dm:[.42,.68],rw:[.94,.42]},{fx:[{t:'link',ks:['dm','rb'],c:'blue'}]}],
-  ['{rb:이} 중앙에서 받아 앞을 본다','rb',{rb:[.64,.63]}],
-  ['측면 길이 열렸다 — {rw}에게 전진 패스','rw',{rw:[.94,.36],rcm:[.74,.46]}]]});
-PT_('fb_1v1','FB','1 대 1 지연과 협력 수비','수비','덤비지 않고 바깥으로 몰아 윙어와 둘이 뺏는다',{base:'dmid',opp:'4-3-3',style:'mid',key:['rb'],
- pts:['2m 앞에서 속도를 죽이고 옆으로 선다','안쪽을 막아 터치라인으로 몬다','윙어가 돌아올 시간을 버는 것이 목표'],
- steps:[['상대 윙어가 공을 잡는다','b9',{},{opp:{9:[.88,.56]}}],
-  ['{rb:은} 안쪽을 막고 바깥으로 몬다 — {rw:이} 복귀','b9',{rb:[.85,.635],rw:[.90,.51],rcb:[.66,.71],dm:[.60,.62]},{opp:{9:[.90,.60]}}],
-  ['터치라인에 가두고 {rw:과} 둘이 뺏는다','rb',{rb:[.90,.645],rw:[.92,.585]},{opp:{9:[.935,.62]},fx:[{t:'zone',r:[.82,.54,.17,.14],c:'red',l:'가둔다'}]}]]});
-PT_('fb_tuck','FB','반대편 좁히기','수비','공이 반대쪽에 있으면 센터백 옆까지 들어온다',{base:'dmid',opp:'4-3-3',style:'mid',key:['rb'],
- pts:['반대편 풀백은 넓게 서지 않는다','파 포스트는 내 책임','몸을 열어 공과 뒤에 오는 윙어를 같이 본다'],
- steps:[['공이 반대편(왼쪽)에 있다','b11',{},{opp:{11:[.12,.58]}}],
-  ['{rb:은} 센터백 옆까지 좁힌다','b11',{rb:[.68,.72],rcb:[.54,.73],lcb:[.37,.72],lb:[.16,.66],dm:[.40,.62]},{fx:[{t:'link',ks:['lb','lcb','rcb','rb'],c:'blue'}]}],
-  ['반대 크로스가 와도 파 포스트는 {rb:이} 지킨다','rb',{rb:[.66,.855],rcb:[.54,.87],lcb:[.42,.86],lb:[.20,.78],gk:[.5,.95]},{opp:{11:[.10,.72],9:[.72,.80]}}]]});
+ pts:['{dm} 옆에 서서 중앙에 한 명을 더 만든다','대신 윙어가 터치라인을 지킨다','상대가 따라 들어오면 측면이, 안 오면 중앙이 빈다','뺏겨도 중앙이 두꺼워 역습을 막기 쉽다'],
+ steps:[['{rcb:이} 공을 잡는다 — 측면의 {rb} 앞에는 상대 측면 미드필더가 기다린다','rcb',{rcb:[.68,.82],rb:[.92,.70]},{op1:{6:[.90,.60]}}],
+  ['{rb:이} 안쪽으로 들어와 {dm} 옆에 선다 — {rw:이} 내려와 터치라인을 지킨다','rcb',{rb:[.66,.69],dm:[.42,.69],rw:[.955,.50]},{op1:{6:[.87,.585]},oh:[6],fx:[{t:'link',ks:['dm','rb'],c:'blue'}]}],
+  ['상대는 따라 들어올지 망설인다 — 그 사이 {rcb:이} 중앙의 {rb}에게','rb',{rb:[.655,.675],rcm:[.72,.50],lcm:[.34,.54]},{op1:{6:[.85,.575]},fx:[{t:'zone',r:[.34,.47,.44,.25],c:'gold',l:'중앙 3 대 2'}]}],
+  ['{rb:이} 앞을 보고 전진 — 상대 중앙 미드필더가 끌려 나온다','rb',{rb:[.655,.595],rcm:[.73,.44],dm:[.46,.64],st:[.52,.30]},{op1:{7:[.66,.535],10:[.595,.655]},oh:[7]}],
+  ['나온 선수 뒤의 {rcm}에게 — {rw:은} 풀백 등 뒤로 출발','rcm',{rcm:[.73,.43],rw:[.94,.34],st:[.50,.25]},{op1:{7:[.665,.54],10:[.60,.64]},fx:[{t:'zone',r:[.62,.37,.22,.11],c:'gold',l:'빈 자리'}]}],
+  ['{rcm:이} 측면 뒷공간의 {rw}에게 — {rb:과} {dm:은} 중앙에 남아 뒤를 지킨다','rw',{rw:[.92,.20],rb:[.62,.50],dm:[.44,.55],st:[.54,.16],lw:[.24,.22]},{react:7,fx:[{t:'link',ks:['dm','rb'],c:'blue'}]}],
+  ['{rw:이} 크로스 — 뺏겨도 중앙의 둘이 역습 길을 막고 있다','rw',{rw:[.93,.11],st:[.57,.08],lw:[.42,.09],rcm:[.66,.20],rb:[.62,.42],dm:[.44,.46]},{fx:[{t:'link',ks:['dm','rb'],c:'blue'},{t:'zone',r:[.36,.38,.36,.12],c:'blue',l:'역습 차단'}]}]]});
+PT_('fb_1v1','FB','1 대 1 지연과 협력 수비','수비','덤비지 않고 바깥으로 몰아 윙어와 둘이 뺏는다',{base:'dmid',opp:'4-3-3',style:'mid',key:['rb'],drift:[.10,.14],
+ pts:['공이 오는 동안 거리를 좁히고, 2m 앞에서 속도를 죽인다','옆으로 서서 안쪽을 막고 터치라인으로 몬다','윙어가 돌아올 시간을 버는 것이 목표','터치라인이 세 번째 수비수다'],
+ steps:[['상대 미드필더가 공을 잡는다 — 측면에는 상대 윙어가 넓게 서 있다','b7',{},{opp:{7:[.66,.46],9:[.91,.52]}}],
+  ['윙어에게 패스 — 공이 가는 동안 {rb:이} 거리를 좁힌다','b9',{rb:[.865,.625],rcb:[.66,.705],dm:[.60,.615]},{opp:{9:[.91,.55]}}],
+  ['2m 앞에서 멈춘다 — 옆으로 서서 안쪽을 막는다. {rcb:이} 대각선 뒤에서 커버','b9',{rb:[.872,.605],rcb:[.70,.70],lcb:[.52,.72],dm:[.66,.60],rw:[.865,.505]},{opp:{9:[.905,.565]},still:1,fx:[{t:'link',ks:['rb','rcb'],c:'blue'}]}],
+  ['상대가 바깥으로 친다 — {rb:은} 덤비지 않고 같이 물러나며 몬다. {rw:이} 뒤에서 따라온다','b9',{rb:[.892,.655],rw:[.915,.575],rcb:[.735,.725],dm:[.69,.635],gk:[.54,.925]},{opp:{9:[.93,.63]}}],
+  ['{rcm:이} 안쪽 패스길을 지운다 — 이제 갈 곳이 없다','b9',{rcm:[.775,.60],rb:[.905,.675],rw:[.928,.607]},{opp:{9:[.94,.648],7:[.72,.52]},still:1,fx:[{t:'zone',r:[.84,.585,.15,.12],c:'red',l:'가둔다'}]}],
+  ['터치라인에 가두고 {rw:과} 둘이 뺏는다','rb',{rb:[.915,.668],rw:[.93,.62]},{opp:{9:[.945,.64]},still:1}],
+  ['뺏자마자 {rcm}에게 — {rw:과} {st:이} 앞으로 달린다','rcm',{rcm:[.775,.585],rw:[.90,.50],st:[.52,.36],lw:[.16,.44]},{opp:{7:null,9:null}}]]});
+PT_('fb_tuck','FB','반대편 좁히기','수비','공이 반대쪽에 있으면 센터백 옆까지 들어온다',{base:'dmid',opp:'4-3-3',style:'mid',key:['rb'],drift:[.10,.14],
+ pts:['반대편 풀백은 넓게 서지 않는다 — 멀리 있는 윙어는 버려 둔다','파 포스트는 내 책임','몸을 열어 공과 뒤에서 들어오는 윙어를 같이 본다','공이 넘어오면 공이 날아오는 시간 동안 달려 나간다'],
+ steps:[['공이 반대편(왼쪽)에 있다 — {rb} 쪽 상대 윙어는 멀리 넓게 서 있다','b11',{lb:[.15,.63]},{opp:{11:[.12,.56],9:[.90,.52],10:[.50,.66]}}],
+  ['수비 전체가 공 쪽으로 — {rb:은} 센터백 옆까지 좁힌다. 먼 쪽은 버려 둔다','b11',{lcb:[.33,.70],rcb:[.49,.72],rb:[.655,.71],dm:[.40,.61],rw:[.72,.53],lw:[.135,.525]},{fx:[{t:'link',ks:['lb','lcb','rcb','rb'],c:'blue'},{t:'zone',r:[.78,.42,.20,.20],c:'red',l:'버려 둔다'}]}],
+  ['상대가 {lb:을} 제치고 측면을 판다 — 수비 라인은 박스 쪽으로 물러선다. 좁힌 간격은 그대로','b11',{lb:[.135,.69],lcb:[.37,.79],rcb:[.50,.80],rb:[.64,.79],dm:[.45,.73],rcm:[.66,.68],lcm:[.33,.69],lw:[.15,.60],gk:[.47,.945]},{opp:{11:[.10,.665],10:[.47,.755],9:[.84,.64],7:[.58,.66]},oh:[9],fx:[{t:'link',ks:['lb','lcb','rcb','rb'],c:'blue'}]}],
+  ['골라인까지 왔다 — 수비는 박스 안에서 니어 · 중앙 · 파. {rb:은} 파 포스트 쪽','b11',{lb:[.125,.765],lcb:[.40,.885],rcb:[.505,.89],rb:[.625,.875],dm:[.50,.825],rcm:[.64,.79],lcm:[.34,.78],gk:[.46,.955]},{opp:{11:[.085,.765],10:[.445,.86],9:[.76,.765],7:[.57,.76]},oh:[9]}],
+  ['{rb:은} 몸을 열어 공과 뒤에서 들어오는 윙어를 같이 본다','b11',{rb:[.64,.87],gk:[.465,.95]},{opp:{9:[.695,.83],11:[.08,.80]},oh:[9],still:1,fx:[{t:'zone',r:[.58,.84,.14,.10],c:'blue',l:'파 포스트'}]}],
+  ['크로스가 모두를 넘어 파 포스트로 — {rb:이} 먼저 자리를 잡고 걷어낸다',[.66,.878],{rb:[.652,.872]},{opp:{9:[.685,.855]},still:1}],
+  ['측면으로 걷어낸 공을 {rw:이} 잡는다 — 다 같이 박스 밖으로','rw',{rw:[.85,.66],rb:[.70,.80],rcb:[.52,.82],lcb:[.41,.815],lb:[.20,.76],dm:[.52,.74],st:[.5,.52]},{opp:{9:null,10:null,11:null,7:null}}]]});
 PT_('fb_recover','FB','역습 때 복귀 런','전환','공이 아니라 골문 쪽으로 뛰어 안쪽부터 막는다',{base:'att',opp:'4-4-2',style:'mid',key:['rb'],
- pts:['뺏기는 순간 바로 돌아선다','복귀 방향은 공이 아니라 골문 쪽 대각선','따라잡으면 안쪽을 막고 지연한다'],
- steps:[['공격 중 공을 뺏긴다 — {rb:은} 높이 올라가 있다','b7',{rb:[.90,.30],gk:[.5,.82]},{opp:{7:[.60,.36],6:[.84,.44]}}],
-  ['상대가 뒷공간으로 — {rb:은} 골문 쪽으로 전력 복귀','b6',{rb:[.80,.53],rcb:[.64,.64],lcb:[.44,.64],dm:[.54,.54],gk:[.5,.88]},{opp:{6:[.85,.58]},cv:{rb:[-.03,0]}}],
-  ['안쪽을 먼저 막고 지연 — 동료가 돌아올 시간을 번다','b6',{rb:[.80,.70],rcb:[.64,.74],lcb:[.46,.74],dm:[.56,.66],rw:[.84,.52],gk:[.5,.92]},{opp:{6:[.87,.66]}}]]});
+ pts:['뺏기는 순간 바로 돌아선다 — 첫 3초가 전부다','복귀 방향은 공이 아니라 골문 쪽 대각선','센터백은 덤비지 않고 시간을 번다','따라잡으면 안쪽을 막고, 센터백은 가운데로 돌아간다'],
+ steps:[['공격 중 — {rb:은} 윙어 바깥으로 높이 올라가 있다','rw',{rw:[.85,.22],rb:[.945,.27],gk:[.5,.80]}],
+  ['패스가 끊긴다 — {rb:은} 그 순간 돌아선다. {rcm:은} 바로 압박해 시간을 번다','b7',{rcm:[.635,.375],rb:[.925,.33],dm:[.54,.47]},{opp:{7:[.60,.335],6:[.83,.37]},oh:[6]}],
+  ['상대가 비어 있는 측면으로 — {rb:은} 공이 아니라 골문 쪽으로 전력 질주','b6',{rb:[.832,.505],rcb:[.71,.60],lcb:[.50,.61],gk:[.5,.85],dm:[.56,.52]},{opp:{6:[.85,.46],10:[.60,.52]},cv:{rb:[-.03,0]},fx:[{t:'zone',r:[.74,.46,.24,.24],c:'red',l:'비운 자리'}]}],
+  ['{rcb:이} 나가 막아선다 — 덤비지 않고 시간을 번다. {lcb:은} 가운데 공격수를 맡는다','b6',{rcb:[.775,.655],rb:[.80,.60],lcb:[.585,.66],lb:[.30,.60],dm:[.58,.60],gk:[.53,.89]},{opp:{6:[.865,.585],10:[.60,.625]}}],
+  ['{rb:이} 따라잡아 안쪽을 막는다 — {rcb:은} 가운데로 돌아간다','b6',{rb:[.835,.69],rcb:[.68,.72],lcb:[.54,.725],dm:[.62,.665],rw:[.87,.56]},{opp:{6:[.885,.665],10:[.585,.685]},fx:[{t:'link',ks:['lb','lcb','rcb','rb'],c:'blue'}]}],
+  ['상대는 속도를 잃었다 — {rw:이} 뒤에서 돌아와 둘이 막는다. 수비가 다시 정렬됐다','b6',{rb:[.86,.725],rw:[.90,.655],rcm:[.74,.66],lb:[.30,.72],lcm:[.40,.66]},{opp:{6:[.905,.70],7:[.70,.56]},fx:[{t:'zone',r:[.82,.63,.16,.13],c:'red',l:'가둔다'}]}]]});
 /* ───── 수비형 미드필더 ───── */
 PT_('dm_drop','DM','센터백 사이로 내려오기','빌드업','투톱 압박에는 뒤에 3명을 만들어 한 명을 남긴다',{base:'build',opp:'4-4-2',style:'high',key:['dm'],
- pts:['상대 공격수가 2명일 때 쓰는 방법','내려오면 풀백은 높이 올라간다','비는 센터백이 공을 몰고 전진'],
- steps:[['상대 투톱이 센터백 둘을 압박한다','gk',{}],
-  ['{dm:이} 센터백 사이로 내려와 3명을 만든다','dm',{dm:[.5,.84],lcb:[.24,.82],rcb:[.76,.82],lb:[.06,.60],rb:[.94,.60]},{fx:[{t:'link',ks:['lcb','dm','rcb'],c:'blue'}]}],
-  ['3 대 2 — 비는 {rcb}에게','rcb',{rcb:[.76,.78]}],
-  ['{rcb:이} 전진해 {rcm}에게 — 압박 한 줄을 넘는다','rcm',{rcb:[.76,.70],rcm:[.68,.54]}]]});
-PT_('dm_pivot','DM','받아서 방향 전환','빌드업','반쯤 열린 몸으로 받아 한 번에 반대편을 연다',{base:'mid',opp:'4-4-2',style:'mid',key:['dm'],
- pts:['받기 전 어깨 너머로 두 번 확인','몸을 반쯤 열어 먼 발로 받는다','막혔으면 무리하지 말고 받은 쪽으로 돌려준다'],
- steps:[['{lcb:이} 공을 잡는다 — {dm:은} 상대 공격수 뒤에서 주변을 확인','lcb',{}],
-  ['{dm:이} 열린 몸으로 받는다','dm',{dm:[.48,.60]}],
-  ['한 번에 돌아 반대편 {rb}에게 전환','rb',{rb:[.92,.52],rw:[.90,.28]},{fx:[{t:'zone',r:[.74,.38,.24,.2],c:'gold',l:'반대편'}]}]]});
-PT_('dm_screen','DM','수비 앞 스크린','수비','사람이 아니라 패스길을 막는다',{base:'dmid',opp:'4-2-3-1',style:'mid',key:['dm'],
- pts:['공과 상대 10번 사이에 선다','공이 옆으로 가면 같이 미끄러지듯 이동','끌려 나가지 않는다 — 내 자리는 수비 앞'],
- steps:[['상대 미드필더가 공을 잡고 10번을 찾는다','b6',{},{opp:{6:[.58,.44],9:[.5,.565],11:[.5,.66]}}],
-  ['{dm:은} 공과 10번 사이 패스길에 선다','b6',{dm:[.535,.51]},{fx:[{t:'zone',r:[.40,.52,.22,.10],c:'red',l:'닫는 공간'}]}],
-  ['공이 옆으로 가면 같이 이동 — 늘 패스길 위','b7',{dm:[.445,.51],lcm:[.34,.50],rcm:[.60,.54]},{opp:{7:[.40,.44],9:[.46,.57]}}],
-  ['무리한 전진 패스를 {dm:이} 끊는다','dm',{dm:[.45,.525]}]]});
+ pts:['상대 공격수가 2명일 때 쓰는 방법 — 3 대 2를 만든다','내려오면 센터백은 더 벌리고 풀백은 높이 올라간다','남는 센터백이 공을 몰고 전진한다','첫 줄을 넘으면 다시 미드필드로 올라온다'],
+ steps:[['{gk:이} 공을 잡는다 — 상대 투톱이 센터백 둘을 1 대 1로 막아 줄 곳이 없다','gk',{lcb:[.34,.86],rcb:[.66,.86],dm:[.5,.74]},{mk:{10:'rcb',11:'lcb'}}],
+  ['{dm:이} 센터백 사이로 내려온다 — 센터백은 더 벌리고 풀백은 높이. 투톱도 따라 벌어진다','gk',{dm:[.5,.855],lcb:[.22,.84],rcb:[.78,.84],lb:[.06,.60],rb:[.94,.60],lcm:[.38,.64],rcm:[.62,.64]},{fx:[{t:'link',ks:['lcb','dm','rcb'],c:'blue'}]}],
+  ['{gk:이} 가운데 {dm}에게 — 상대 공격수 한 명이 막으러 안으로 들어온다','dm',{dm:[.5,.845],gk:[.5,.945]},{mk:{10:null},op1:{10:[.585,.80]},oh:[10]}],
+  ['그러면 {rcb:이} 빈다 — 3 대 2, 한 명은 반드시 남는다','rcb',{rcb:[.78,.825],rb:[.95,.56],rcm:[.68,.60]},{op1:{10:[.63,.805]},fx:[{t:'zone',r:[.66,.62,.24,.20],c:'gold',l:'남는 한 명'}]}],
+  ['{rcb:이} 몰고 올라간다 — 상대 측면 미드필더가 막으러 나오면 {rb:이} 그 뒤에서 자유','rcb',{rcb:[.78,.72],rb:[.955,.50],rcm:[.68,.56],rw:[.93,.34],dm:[.52,.80]},{mk:{11:null},op1:{6:[.80,.645]},oh:[6]}],
+  ['{rcb:이} 안쪽 {rcm}에게 — 압박 첫 줄을 넘었다. {dm:은} 다시 미드필드로 올라온다','rcm',{rcm:[.68,.555],dm:[.52,.70],lcm:[.40,.56],st:[.52,.32]},{op1:{6:[.81,.64]}}],
+  ['{rcm:이} 돌아서 넓게 선 {rb}에게 — 팀 전체가 올라간다','rb',{rb:[.955,.46],rw:[.90,.28],st:[.56,.26],rcb:[.76,.66],lcb:[.34,.76],dm:[.54,.62]},{react:8}]]});
+PT_('dm_pivot','DM','받아서 방향 전환','빌드업','한쪽에 상대를 모은 뒤 열린 몸으로 받아 반대편을 연다',{base:'mid',opp:'4-4-2',style:'mid',key:['dm'],
+ pts:['공이 측면에 있을 때 공 뒤 대각선에 선다 — 늘 받아 줄 수 있는 자리','받기 전 어깨 너머로 두 번 확인','몸을 반쯤 열어 먼 발로 받는다 — 첫 터치가 곧 방향 전환','막혔으면 무리하지 말고 받은 쪽으로 돌려준다'],
+ steps:[['{lcb:이} 공을 잡는다 — {dm:은} 상대 공격수 뒤에서 주변을 확인','lcb',{lcb:[.36,.70],rb:[.92,.56],rw:[.95,.31]}],
+  ['왼쪽 {lb}에게 — {lcm:과} {lw:이} 내려와 받아 줄 자리를 만든다. 상대가 왼쪽으로 밀려온다','lb',{lb:[.08,.58],lcm:[.24,.50],lw:[.09,.42],dm:[.44,.61]},{mk:{5:'lw'}}],
+  ['{lb:이} 안쪽 {lcm}에게 — 상대가 등 뒤에서 덮친다. {dm:은} 공 뒤 대각선으로 옮겨 선다','lcm',{lcm:[.245,.50],dm:[.385,.605],lb:[.09,.55]},{mk:{8:'lcm'},op1:{9:[.14,.50]},oh:[9]}],
+  ['{dm:은} 받기 전에 반대편을 본다 — 상대 일곱 명이 왼쪽에, {rb:과} {rw:은} 비어 있다','lcm',{dm:[.39,.60],rb:[.93,.52],rcm:[.68,.47]},{op1:{9:[.16,.49],7:[.42,.46]},oh:[7],still:1,fx:[{t:'zone',r:[.02,.30,.48,.32],c:'red',l:'상대 쏠림'},{t:'zone',r:[.745,.20,.235,.40],c:'gold',l:'빈 쪽'}]}],
+  ['{lcm:이} {dm}에게 내준다 — {dm:은} 몸을 열어 먼 발로 받는다','dm',{dm:[.40,.60],lcm:[.25,.48]},{op1:{11:[.40,.535]},oh:[11]}],
+  ['첫 터치로 돌아선다 — 달려든 상대는 헛걸음','dm',{dm:[.455,.585],rcm:[.70,.45],rw:[.95,.28]},{op1:{11:[.385,.565]},fx:[{t:'zone',r:[.745,.20,.235,.40],c:'gold',l:'빈 쪽'}]}],
+  ['{dm:이} 반대편 {rb}에게 길게 — 상대는 통째로 넘어와야 한다','rb',{rb:[.93,.50],rcm:[.74,.42],rw:[.95,.26],st:[.56,.22]},{mk:{5:null,8:null},react:5}],
+  ['{rb:이} 전진 — {rw:과} {rcm:이} 붙어 3 대 2. {dm:은} 공 뒤 가운데에서 다음 전환을 준비','rb',{rb:[.93,.40],rw:[.94,.22],rcm:[.78,.32],st:[.58,.215],lw:[.24,.23],dm:[.56,.52]},{react:7,fx:[{t:'link',ks:['rb','rw','rcm'],c:'blue'}]}]]});
+PT_('dm_screen','DM','수비 앞 스크린','수비','사람이 아니라 패스길을 막는다',{base:'dmid',opp:'4-2-3-1',style:'mid',key:['dm'],drift:[.10,.12],
+ pts:['공과 상대 10번 사이에 선다','공이 옆으로 가면 같이 미끄러지듯 이동 — 늘 패스길 위','끌려 나가지 않는다 — 내 자리는 수비 앞','끊으면 첫 패스는 앞으로'],
+ steps:[['상대 미드필더가 공을 잡는다 — 10번이 라인 사이에서 받으려 한다','b6',{},{opp:{6:[.58,.44],7:[.40,.45],9:[.50,.575],11:[.50,.665]},oh:[9]}],
+  ['{dm:이} 공과 10번 사이 패스길에 선다 — 10번은 다른 길을 찾아 움직인다','b6',{dm:[.54,.515],rcm:[.655,.525]},{opp:{9:[.455,.58]},oh:[9],fx:[{t:'zone',r:[.44,.49,.16,.08],c:'red',l:'닫은 길'}]}],
+  ['막힌 상대가 옆으로 돌린다 — {dm:도} 같이 미끄러져 다시 길 위에. {lcm:이} 나가 압박','b7',{dm:[.435,.52],lcm:[.385,.495],rcm:[.60,.54]},{opp:{9:[.50,.585]},oh:[9]}],
+  ['측면으로 — {lb:과} {lw:이} 둘이 막는다. 10번이 공 쪽으로 다가온다','b10',{lb:[.175,.60],lw:[.155,.50],dm:[.33,.545],lcm:[.30,.495],lcb:[.36,.70],rcb:[.54,.71],rb:[.74,.69]},{opp:{10:[.14,.535],9:[.345,.60],7:[.36,.44]},oh:[9],fx:[{t:'zone',r:[.08,.47,.20,.16],c:'red',l:'가둔다'}]}],
+  ['갈 곳 없는 상대가 10번에게 무리하게 넣는다 — 기다리던 {dm:이} 끊는다','dm',{dm:[.31,.565]},{opp:{9:[.35,.605]},still:1}],
+  ['끊자마자 앞으로 — {st}에게. {rw:과} {rcm:이} 빈 반대편으로 달린다','st',{st:[.47,.41],rw:[.86,.40],rcm:[.66,.46],lw:[.14,.42]},{opp:{6:null,7:null,9:null,10:null,11:null},fx:[{t:'zone',r:[.64,.22,.32,.16],c:'gold',l:'빈 쪽'}]}],
+  ['{st:이} 돌아서 반대편 {rw}에게 — 역습','rw',{rw:[.87,.30],st:[.52,.28],rcm:[.70,.36],lw:[.20,.30],dm:[.40,.52]},{react:7}]]});
 PT_('dm_cover','DM','풀백 뒤 커버','전환','풀백이 올라가면 그 뒤로 옮겨 균형을 잡는다',{base:'att',opp:'4-4-2',style:'mid',key:['dm'],
- pts:['공격할 때 이미 수비 위치를 잡는다','풀백이 올라간 쪽으로 반 칸 이동','뺏기면 측면 역습 길부터 막는다'],
- steps:[['{rb:이} 공격에 가담해 높이 올라간다','rw',{rb:[.92,.24],rw:[.82,.22]}],
-  ['{dm:은} 풀백이 비운 쪽으로 옮긴다','rw',{dm:[.66,.50],lcm:[.42,.40]},{fx:[{t:'zone',r:[.70,.36,.26,.2],c:'gold',l:'비운 자리'}]}],
-  ['공을 뺏겨도 {dm:이} 측면 길을 먼저 막는다','b6',{dm:[.77,.49],rcb:[.66,.58],rb:[.90,.34]},{opp:{6:[.84,.40]}}]]});
-PT_('dm_second','DM','세컨볼 회수','수비','헤딩 경합 뒤 떨어지는 자리를 미리 읽는다',{base:'dmid',opp:'4-4-2',style:'mid',key:['dm'],
- pts:['경합하는 동료 5~8m 앞뒤에 선다','공이 뜬 동안 몸을 앞으로 향하게 돌린다','잡으면 첫 패스는 앞으로'],
- steps:[['상대 골키퍼가 길게 찬다','b1',{},{opp:{10:[.57,.60]}}],
-  ['{rcb:이} 헤딩 경합 — {dm:은} 떨어질 자리를 읽는다',[.575,.615],{rcb:[.575,.635],dm:[.53,.535]},{fx:[{t:'zone',r:[.42,.48,.24,.10],c:'gold',l:'세컨볼'}]}],
-  ['세컨볼은 {dm} 차지','dm',{dm:[.52,.53]}],
-  ['바로 앞을 보고 {rcm}에게 — 공격 전개','rcm',{rcm:[.68,.46],rw:[.88,.38]}]]});
+ pts:['공격할 때 이미 수비 위치를 잡는다','풀백이 올라간 쪽으로 반 칸 이동','공격에 끼고 싶어도 남는다 — 뒤는 셋 더하기 하나','뺏기면 측면 역습 길부터 막는다'],
+ steps:[['{rcm:이} 공을 잡는다 — {rb:이} 올라가기 시작한다','rcm',{rcm:[.66,.36],rb:[.90,.40],dm:[.5,.46]}],
+  ['{rw}에게 — {rb:이} 바깥으로 높이 올라간다. {dm:은} 그 뒤로 옮기고 {lb:은} 안으로 좁힌다','rw',{rw:[.87,.22],rb:[.955,.27],dm:[.65,.47],rcb:[.69,.58],lcb:[.46,.58],lb:[.22,.50]},{fx:[{t:'zone',r:[.76,.32,.22,.22],c:'gold',l:'비운 자리'},{t:'link',ks:['lb','lcb','rcb'],c:'blue'}]}],
+  ['{rw:이} {rb}에게 — 박스 안으로 넷이 들어간다. {dm:은} 따라가지 않고 남는다','rb',{rb:[.955,.155],st:[.565,.09],lw:[.40,.11],rcm:[.64,.19],lcm:[.47,.24],rw:[.84,.20],dm:[.66,.44]},{fx:[{t:'link',ks:['lb','lcb','rcb','dm'],c:'blue'}]}],
+  ['크로스가 걷어내진다 — 상대가 풀백이 비운 측면으로 역습을 시작한다','b6',{rb:[.94,.20],rcm:[.70,.26]},{opp:{6:[.80,.315]},oh:[6],fx:[{t:'zone',r:[.74,.30,.24,.24],c:'red',l:'역습 길'}]}],
+  ['{dm:이} 이미 그 길 위에 있다 — 앞을 막아선다. {rcb:이} 뒤를 받치고 {rb:은} 전력 복귀','b6',{dm:[.775,.455],rcb:[.72,.575],rb:[.92,.31],rcm:[.735,.33],lcb:[.50,.585]},{opp:{6:[.815,.405]},cv:{rb:[.02,0]}}],
+  ['상대는 속도를 잃는다 — 뒤에서 {rcm:이} 덮쳐 둘이 가둔다','b6',{dm:[.80,.475],rcm:[.795,.385],rb:[.90,.42]},{opp:{6:[.835,.43]},still:1,fx:[{t:'zone',r:[.75,.37,.17,.13],c:'red',l:'가둔다'}]}],
+  ['{dm:이} 뺏는다 — 역습을 시작도 못 하게 했다. 다시 우리 공격','dm',{dm:[.815,.455],rb:[.93,.38],rw:[.86,.26],st:[.54,.215],lw:[.34,.225]},{opp:{6:null},still:1}]]});
+PT_('dm_second','DM','세컨볼 회수','수비','헤딩 경합 뒤 떨어지는 자리를 미리 읽는다',{base:'dmid',opp:'4-4-2',style:'mid',key:['dm'],drift:[.08,.10],
+ pts:['공이 뜬 동안 움직인다 — 경합하는 동료 5~8m 앞','미드필더 셋이 경합 지점을 삼각형으로 둘러싼다','몸은 미리 앞으로 향하게','잡으면 첫 패스는 앞으로 — 상대는 올라와 있다'],
+ steps:[['상대 골키퍼가 길게 찰 준비 — 상대가 통째로 올라온다','b1',{},{opp:{1:[.5,.07],10:[.575,.60],11:[.43,.62],7:[.60,.47],8:[.40,.47]}}],
+  ['공이 뜬다 — {rcb:이} 경합하러 나가고 {lcb:이} 뒤를 받친다. {dm:은} 떨어질 자리를 읽는다',[.575,.44],{rcb:[.582,.642],lcb:[.50,.725],dm:[.535,.555],rcm:[.665,.575],lcm:[.42,.565],rb:[.78,.69],lb:[.24,.70]},{opp:{10:[.578,.612]},oa:1,fx:[{t:'link',ks:['dm','lcm','rcm'],c:'blue'}]}],
+  ['{rcb:이} 헤딩으로 이긴다 — 공은 경합 지점 앞에 떨어진다',[.555,.575],{rcb:[.58,.63]},{opp:{7:[.60,.505]},oh:[7],still:1,oa:1,fx:[{t:'zone',r:[.44,.50,.24,.11],c:'gold',l:'세컨볼'}]}],
+  ['상대보다 먼저 — 미리 와 있던 {dm:이} 잡는다. 몸은 이미 앞을 향해 있다','dm',{dm:[.548,.565],st:[.50,.43],rcm:[.68,.54]},{opp:{7:[.585,.525]},oh:[7],still:1}],
+  ['압박을 피해 옆의 {rcm}에게 — 올라와 있던 상대 뒤가 비었다','rcm',{rcm:[.685,.525],rw:[.87,.42],st:[.52,.38],lw:[.15,.44]},{opp:{1:null,10:null,11:null,7:null,8:null},fx:[{t:'zone',r:[.62,.25,.34,.11],c:'gold',l:'미드필더 뒤'}]}],
+  ['{rcm:이} 달리는 {rw}에게 — 긴 공 싸움은 두 번째 공이 승부','rw',{rw:[.88,.31],st:[.56,.26],lw:[.22,.32],rcm:[.70,.44],dm:[.54,.52]},{react:7}]]});
 /* ───── 중앙 · 공격형 미드필더 ───── */
 PT_('cm_third','CM','3자 패스','공격','올리고 · 내리고 · 넘긴다 — 세 번째 선수가 주인공',{base:'mid',opp:'4-4-2',style:'mid',key:['lcm','rcm'],
- pts:['세 번째 선수는 두 번째 패스가 나가기 전에 출발','떨구는 패스는 원터치','수비는 공을 보느라 침투를 놓친다'],
- steps:[['{rcb:이} 공을 잡는다','rcb',{}],
-  ['{st:이} 내려와 등지고 받는다','st',{st:[.56,.36]}],
-  ['{st:이} {rcm}에게 떨군다 — 그 사이 {lcm} 출발','rcm',{rcm:[.64,.44],lcm:[.40,.30]}],
-  ['{rcm:이} 원터치로 침투하는 {lcm}에게','lcm',{lcm:[.44,.17]},{fx:[{t:'zone',r:[.32,.10,.26,.12],c:'gold',l:'뒷공간'}]}]]});
-PT_('cm_late','CM','박스 늦은 침투','공격','수비가 물러난 뒤 생기는 컷백 공간으로 들어간다',{base:'att',opp:'4-4-2',style:'low',key:['rcm'],
- pts:['먼저 들어가지 않는다 — 수비가 골문 쪽으로 물러날 때까지','페널티 스폿 근처가 목표','논스톱 슈팅'],
- steps:[['{rw:이} 측면에서 공을 잡는다','rw',{}],
-  ['{rw:이} 골라인 쪽으로 — {rcm:은} 아직 박스 밖','rw',{rw:[.90,.12],st:[.54,.09],lw:[.38,.09]}],
-  ['수비가 물러난 순간 {rcm:이} 스폿으로 늦게 침투','rw',{rcm:[.56,.125]},{fx:[{t:'zone',r:[.44,.09,.24,.08],c:'gold',l:'컷백 존'}]}],
-  ['컷백 — {rcm} 논스톱 마무리','rcm',{}]]});
-PT_('cm_pocket','CM','라인 사이에서 받기','공격','상대 미드필더와 수비 사이, 몸을 열고 받는다',{base:'mid',opp:'4-4-2',style:'mid',key:['rcm'],
- pts:['상대 미드필더의 등 뒤, 시야 밖에서 기다린다','받기 전에 돌아설지 내줄지 정한다','돌아서면 수비 4명과 마주 본다'],
- steps:[['{dm:이} 공을 잡는다','dm',{}],
-  ['{rcm:이} 미드필더와 수비 사이 포켓으로','dm',{rcm:[.70,.36]},{fx:[{t:'zone',r:[.58,.31,.24,.09],c:'gold',l:'포켓'}]}],
-  ['{dm:이} 라인을 넘기는 패스 — {rcm:은} 몸을 열어 받는다','rcm',{}],
-  ['돌아서서 {st}에게 스루패스','st',{st:[.56,.14],rw:[.86,.18]}]]});
-PT_('cm_wall','CM','원투 패스 돌파','공격','주고 멈추지 않는다 — 벽을 맞고 나온 공을 받는다',{base:'mid',opp:'4-4-2',style:'mid',key:['rcm'],
- pts:['패스와 동시에 출발','돌려받는 공은 수비 등 뒤 공간으로','벽이 되는 선수는 원터치'],
- steps:[['{rcm:이} 공을 몰고 올라간다','rcm',{rcm:[.64,.42]}],
-  ['{st}에게 주고 그대로 뛴다','st',{st:[.56,.30],rcm:[.67,.34]}],
-  ['{st:이} 원터치로 돌려준다 — 수비 한 명이 벗겨진다','rcm',{rcm:[.66,.22]},{fx:[{t:'link',ks:['rcm','st'],c:'blue'}]}],
-  ['박스 앞에서 {rw}에게 마지막 패스','rw',{rw:[.82,.12]}]]});
-PT_('cm_trap','CM','측면 압박 함정','수비','측면으로 보내고, 안쪽 패스길을 지운 뒤 끊는다',{base:'dmid',opp:'4-3-3',style:'mid',key:['rcm'],
- pts:['공이 풀백에게 가는 순간이 신호','윙어는 공, 미드필더는 안쪽 길','터치라인이 수비 한 명 역할을 한다'],
- steps:[['상대 센터백이 공을 잡는다 — {st:이} 안쪽을 막아 측면으로 유도','b3',{st:[.54,.34]},{opp:{3:[.60,.30],2:[.88,.36],7:[.70,.42]}}],
-  ['풀백에게 가는 순간 — {rw} 압박, {rcm:은} 안쪽 길을 지운다','b2',{rw:[.86,.41],rcm:[.72,.46],dm:[.60,.54],rb:[.84,.56]},{fx:[{t:'zone',r:[.66,.30,.32,.2],c:'red',l:'압박 함정'}]}],
-  ['갈 곳 없는 패스를 {rcm:이} 끊는다','rcm',{rcm:[.73,.445]}]]});
-PT_('cm_rest','CM','공격 때 남는 자리','전환','한 명은 박스로, 한 명은 박스 밖에서 흐르는 공과 역습을 맡는다',{base:'att',opp:'4-4-2',style:'low',key:['rcm'],
- pts:['둘 다 박스에 들어가지 않는다','박스 밖 선수는 아크 근처 — 흘러나온 공의 주인','뺏기면 가장 먼저 압박해 역습을 늦춘다'],
- steps:[['오른쪽에서 크로스 직전','rw',{rw:[.90,.14]}],
-  ['{lcm:은} 박스로, {rcm:은} 박스 밖에 남는다','rw',{lcm:[.46,.13],rcm:[.62,.26],dm:[.5,.38]},{fx:[{t:'link',ks:['rcm','dm'],c:'blue'}]}],
-  ['흘러나온 공은 {rcm} 차지 — 다시 공격','rcm',{rcm:[.60,.25]},{fx:[{t:'zone',r:[.46,.20,.28,.10],c:'gold',l:'세컨볼'}]}]]});
+ pts:['{st:이} 내려오면 센터백이 따라 나온다 — 그 뒤가 목표','세 번째 선수는 두 번째 패스가 나가기 전에 출발','떨구는 패스 · 넘기는 패스 모두 원터치','수비는 공을 보느라 등 뒤 침투를 놓친다'],
+ steps:[['{rcb:이} 공을 잡는다 — 앞은 상대 미드필더 넷으로 막혀 있다','rcb',{rcb:[.64,.70]}],
+  ['{st:이} 미드필더 사이로 내려온다 — 센터백이 따라 나오고 그 뒤가 빈다','rcb',{st:[.565,.375],rw:[.93,.34],lw:[.07,.34]},{mk:{3:'st'},fx:[{t:'zone',r:[.48,.17,.18,.13],c:'gold',l:'센터백이 비운 자리'}]}],
+  ['올린다 — {rcb:이} {st}의 발밑으로 강하게. {rcm:은} 공 밑으로 받으러 온다','st',{rcm:[.655,.455],lcm:[.39,.39],dm:[.50,.61]}],
+  ['내린다 — {st:이} 원터치로 {rcm}에게. 그 전에 {lcm:은} 이미 출발했다','rcm',{lcm:[.435,.265],lw:[.10,.27],rw:[.92,.27]},{cv:{lcm:[-.02,.01]},oh:[8],op1:{8:[.40,.375]}}],
+  ['넘긴다 — {rcm:이} 원터치로 수비 뒤 빈 자리에. {lcm:이} 달려 들어간다','lcm',{lcm:[.475,.15],st:[.60,.30],rcm:[.65,.42]},{react:6,fx:[{t:'zone',r:[.435,.08,.16,.12],c:'gold',l:'뒷공간'}]}],
+  ['{lcm:이} 골키퍼와 1 대 1 — {st:과} {rw:은} 흘러나오는 공을 보고 들어온다','lcm',{lcm:[.485,.095],st:[.60,.16],rw:[.78,.13],lw:[.24,.14]},{mk:{3:null}}]]});
+PT_('cm_late','CM','박스 늦은 침투','공격','동료가 수비를 골문 쪽으로 끌고 간 뒤 생기는 공간으로 들어간다',{base:'att',opp:'4-4-2',style:'low',view:'att',zoom:true,cx:.67,key:['rcm'],
+ pts:['먼저 들어가지 않는다 — 수비가 골문 쪽으로 물러날 때까지 박스 밖','{st:과} {lw:이} 니어 · 파로 뛰며 수비를 끌고 간다','페널티 스폿 근처가 목표 — 수비의 시야 밖에서 출발','논스톱 슈팅'],
+ steps:[['{dm:이} 공을 잡는다 — 상대는 박스 앞에 내려서 있다','dm',{dm:[.52,.40],rcm:[.66,.33],lw:[.42,.20],lcm:[.47,.30]}],
+  ['측면 {rw}에게 — {rb:이} 뒤에서 받쳐 준다. {rcm:은} 박스 밖에서 걸으며 기다린다','rw',{rw:[.905,.22],rb:[.90,.37],rcm:[.665,.30],st:[.52,.12]},{mk:{2:'rw'}}],
+  ['{rw:이} 골라인 쪽으로 돌파 — {st:은} 니어, {lw:은} 파로 뛰며 수비를 골문 쪽으로 끌고 간다','rw',{rw:[.935,.12],st:[.59,.065],lw:[.43,.08],rcm:[.665,.265],lcm:[.47,.26]},{mk:{3:'st',4:'lw'},op1:{5:[.375,.10],9:[.39,.19],10:[.50,.255],11:[.63,.225]},fx:[{t:'zone',r:[.45,.095,.20,.085],c:'gold',l:'컷백 존'}]}],
+  ['수비는 모두 공과 골문을 본다 — 그 등 뒤에서 {rcm:이} 속도를 올린다','rw',{rw:[.945,.075],rcm:[.61,.205]},{mk:{2:null},op1:{2:[.905,.085],7:[.67,.105],8:[.44,.115],5:[.375,.09],9:[.39,.19],10:[.50,.255],11:[.63,.225]},oh:[7,8],still:1,fx:[{t:'zone',r:[.45,.095,.20,.085],c:'gold',l:'컷백 존'}]}],
+  ['컷백 — 물러난 수비 앞 빈 자리로 {rcm:이} 들어와 받는다','rcm',{rcm:[.535,.135],dm:[.52,.36],lcm:[.47,.25]},{op1:{2:[.905,.085],7:[.675,.095],8:[.44,.105],5:[.375,.09],9:[.39,.19],10:[.50,.255],11:[.63,.225]},still:1}],
+  ['논스톱 슈팅 — {lcm:과} {dm:은} 박스 밖에서 흘러나올 공을 맡는다',[.47,.0],{rcm:[.53,.125]},{op1:{2:[.905,.085],7:[.675,.09],8:[.44,.10],5:[.375,.09],9:[.39,.19],10:[.50,.255],11:[.63,.225]},still:1,fx:[{t:'link',ks:['lcm','dm'],c:'blue'}]}]]});
+PT_('cm_pocket','CM','라인 사이에서 받기','공격','상대 미드필더의 등 뒤로 사라졌다가 몸을 열고 받는다',{base:'mid',opp:'4-4-2',style:'mid',key:['rcm'],
+ pts:['상대 미드필더 앞에 서 있으면 압박의 먹이 — 등 뒤로 들어간다','공을 옆으로 한 번 돌려 상대 미드필더를 끌어내면 길이 열린다','받기 전에 돌아설지 내줄지 정한다','돌아서면 수비 넷과 마주 본다 — {st:이} 센터백을 묶어 둔다'],
+ steps:[['{lcb:이} 공을 잡는다 — {rcm:은} 상대 미드필더 앞에 서 있다','lcb',{lcb:[.36,.70]}],
+  ['{dm}에게 — 그 사이 {rcm:은} 상대 미드필더의 등 뒤 포켓으로 사라진다. {st:은} 센터백을 깊이 묶어 둔다','dm',{dm:[.5,.61],rcm:[.69,.365],st:[.50,.20],rw:[.94,.27]},{mk:{3:'st'},fx:[{t:'zone',r:[.58,.31,.19,.10],c:'gold',l:'포켓'}]}],
+  ['{dm:이} 옆의 {rcb}에게 — 상대 미드필더가 막으러 끌려 나오며 길이 열린다','rcb',{rcb:[.66,.665],rb:[.92,.52]},{op1:{7:[.645,.565]},oh:[7],fx:[{t:'zone',r:[.58,.31,.19,.10],c:'gold',l:'포켓'}]}],
+  ['{rcb:이} 라인을 넘기는 패스 — {rcm:은} 몸을 반쯤 열고 받는다','rcm',{rcm:[.69,.37],dm:[.54,.56]},{op1:{7:[.65,.555]}}],
+  ['{rcm:이} 돌아서 수비를 향해 몰고 간다 — 센터백이 막으러 나오는 순간 {st:이} 그 등 뒤로','rcm',{rcm:[.685,.285],st:[.585,.155],rw:[.86,.17],lw:[.18,.20]},{mk:{3:null},op1:{3:[.665,.215]},oh:[3],cv:{st:[.02,.02]},fx:[{t:'zone',r:[.52,.07,.16,.11],c:'gold',l:'빈 자리'}]}],
+  ['스루패스 — {st:이} 센터백이 비운 자리에서 받아 마무리','st',{st:[.575,.105],rw:[.80,.12],lw:[.30,.14],rcm:[.68,.24]},{react:6}]]});
+PT_('cm_wall','CM','원투 패스 돌파','공격','주고 멈추지 않는다 — 벽을 맞고 나온 공을 수비 등 뒤에서 받는다',{base:'mid',opp:'4-4-2',style:'mid',key:['rcm'],
+ pts:['먼저 수비에게 다가가 발을 묶는다','패스와 동시에 출발 — 수비가 공을 보는 그 순간','벽이 되는 선수는 원터치, 수비 등 뒤 공간으로','한 명이 벗겨지면 다음 수비가 나온다 — 그 옆이 빈다'],
+ steps:[['{rcm:이} 공을 잡는다 — 앞에는 상대 미드필더','rcm',{rcm:[.665,.48]},{op1:{7:[.645,.40]}}],
+  ['몰고 다가가 수비의 발을 묶는다 — {st:이} 내려와 벽이 되어 준다','rcm',{rcm:[.66,.435],st:[.575,.31],rw:[.93,.25]},{mk:{3:'st'},op1:{7:[.645,.385]},oh:[7]}],
+  ['{st}에게 주고 그대로 뛴다 — 수비는 공을 따라 고개를 돌린다','st',{rcm:[.705,.355],lcm:[.40,.42]},{op1:{7:[.635,.375]},cv:{rcm:[.03,0]}}],
+  ['{st:이} 원터치로 돌려준다 — {rcm:은} 수비 등 뒤에서 받는다','rcm',{rcm:[.70,.27],st:[.565,.265],lw:[.14,.22]},{op1:{7:[.645,.345]},oh:[7],fx:[{t:'link',ks:['rcm','st'],c:'blue'},{t:'zone',r:[.62,.20,.18,.11],c:'gold',l:'수비 등 뒤'}]}],
+  ['{rcm:이} 박스로 — 상대 풀백이 막으러 안으로 들어오고 바깥의 {rw:이} 빈다','rcm',{rcm:[.69,.20],rw:[.89,.15],st:[.55,.13],lw:[.32,.15]},{mk:{3:null},op1:{2:[.745,.165]},oh:[2],fx:[{t:'zone',r:[.80,.05,.17,.15],c:'gold',l:'빈 바깥'}]}],
+  ['빈 바깥의 {rw}에게 — {st:은} 니어, {lw:은} 파 포스트','rw',{rw:[.875,.105],st:[.565,.07],lw:[.42,.085],rcm:[.68,.17]},{op1:{2:[.77,.14]}}],
+  ['{rw:이} 낮게 깔아 준다 — {st} 마무리','st',{st:[.555,.06]},{op1:{2:[.80,.12]},still:1}]]});
+PT_('cm_trap','CM','측면 압박 함정','수비','측면으로 보내고, 안쪽 길 하나만 열어 둔 뒤 그 패스를 끊는다',{base:'dmid',opp:'4-3-3',style:'mid',key:['rcm'],
+ pts:['{st:이} 휘어 압박해 공을 측면으로 보낸다','공이 풀백에게 가는 순간이 신호 — 다 같이 한 칸씩','안쪽 길은 일부러 열어 둔다: 거기로 오는 공이 목표','터치라인이 수비 한 명 역할을 한다'],
+ steps:[['상대 센터백이 공을 잡는다 — {st:이} 가운데를 막으며 휘어 다가간다','b3',{st:[.545,.335]},{opp:{3:[.60,.29],4:[.38,.28],2:[.90,.36],7:[.715,.42],6:[.52,.40],9:[.91,.52]},cv:{st:[-.03,0]}}],
+  ['반대편 길이 막힌 센터백은 풀백에게 — 이 패스가 신호다','b2',{rw:[.865,.415],rcm:[.735,.475],dm:[.555,.465],rb:[.875,.585],st:[.63,.315]},{fx:[{t:'zone',r:[.62,.28,.36,.27],c:'red',l:'압박 함정'}]}],
+  ['{rw:이} 바깥에서 붙고, {rb:은} 윙어를, {st:은} 백패스를 막는다 — 안쪽 한 곳만 열려 있다','b2',{rw:[.875,.395],st:[.665,.31],rcm:[.745,.485],lcm:[.44,.50]},{still:1,fx:[{t:'zone',r:[.66,.395,.12,.07],c:'gold',l:'열어 둔 길'}]}],
+  ['급해진 풀백이 안쪽으로 넣는다 — 기다리던 {rcm:이} 앞에서 끊는다','rcm',{rcm:[.725,.44]},{still:1}],
+  ['끊자마자 {st}에게 — 올라와 있던 풀백 뒤로 {rw:이} 달린다','st',{st:[.635,.29],rw:[.90,.28],lw:[.20,.34]},{opp:{3:null,4:null,2:null,7:null,6:null,9:null},fx:[{t:'zone',r:[.78,.08,.20,.16],c:'gold',l:'풀백 뒤'}]}],
+  ['{st:이} 뒷공간의 {rw}에게 — {lw:은} 반대편에서 파 포스트로','rw',{rw:[.885,.165],st:[.60,.17],lw:[.34,.18],rcm:[.72,.32]},{react:6}],
+  ['{rw:이} 깔아 준다 — {st:은} 니어, {lw:은} 파','st',{st:[.565,.075],lw:[.43,.085],rw:[.885,.10]}]]});
+PT_('cm_rest','CM','공격 때 남는 자리','전환','한 명은 박스로, 한 명은 박스 밖에서 흐르는 공과 역습을 맡는다',{base:'att',opp:'4-4-2',style:'low',view:'att',key:['rcm'],
+ pts:['둘 다 박스에 들어가지 않는다','박스 밖 선수는 아크 근처 — 흘러나온 공의 주인','뺏기면 가장 먼저 압박해 역습을 늦춘다','뒤에서는 {dm:이} 받친다: 앞뒤로 조인다'],
+ steps:[['{rw:이} 측면에서 공을 잡는다 — 두 미드필더가 박스 앞에 있다','rw',{rw:[.90,.22],lcm:[.42,.28],rcm:[.62,.30]}],
+  ['크로스 직전 — {lcm:은} 박스로 뛰고 {rcm:은} 아크에 남는다. 뒤에는 {dm}','rw',{rw:[.925,.14],lcm:[.47,.12],rcm:[.60,.25],dm:[.50,.39],st:[.565,.075],lw:[.39,.085]},{fx:[{t:'link',ks:['rcm','dm'],c:'blue'}]}],
+  ['크로스가 걷어내진다 — 공은 박스 밖으로 흘러나온다',[.585,.215],{},{still:1,fx:[{t:'zone',r:[.46,.18,.28,.10],c:'gold',l:'세컨볼'}]}],
+  ['남아 있던 {rcm:이} 먼저 잡는다 — 다시 측면으로 열어 공격을 잇는다','rcm',{rcm:[.59,.235],rb:[.90,.30],lcm:[.47,.15]}],
+  ['이번에는 뺏긴다 — 상대 공격수가 받아 역습하려 한다. {rcm:이} 가장 먼저 덮친다','b10',{rcm:[.585,.315],dm:[.535,.425],rcb:[.63,.52],lcb:[.44,.53]},{opp:{10:[.565,.355]},oh:[10]}],
+  ['앞에서 {rcm}, 뒤에서 {dm} — 돌아서지 못하게 조인다','b10',{rcm:[.575,.33],dm:[.545,.40]},{opp:{10:[.56,.365]},still:1,fx:[{t:'zone',r:[.48,.31,.16,.11],c:'red',l:'가둔다'}]}],
+  ['{dm:이} 뺏는다 — 역습은 시작도 못 했다. 넓게 열어 다시 공격','dm',{dm:[.55,.385],lb:[.10,.40],rb:[.90,.36],st:[.56,.185],lw:[.38,.19],lcm:[.46,.20]},{opp:{10:null},still:1}]]});
 /* ───── 윙어 ───── */
-PT_('w_cutin','W','안으로 치고 들어와 슈팅','공격','넓게 받아 안쪽 발로 들어온다 — 풀백이 바깥을 연다',{base:'att',opp:'4-4-2',style:'low',key:['rw'],
- pts:['첫 터치는 안쪽으로 길게','풀백의 오버래핑이 수비를 한 명 데려간다','파 포스트로 감아 찬다'],
- steps:[['{rw:이} 넓게 서서 공을 받는다','rw',{rw:[.92,.26]}],
-  ['{rw:이} 안으로 치고 들어온다 — {rb:이} 바깥으로 돌아 수비를 끈다','rw',{rw:[.76,.20],rb:[.94,.26]}],
-  ['아크 옆에서 파 포스트로 감아 찬다',[.455,0],{st:[.52,.08]}]]});
-PT_('w_byline','W','바깥 돌파 후 컷백','공격','골라인까지 가서 물러난 수비 앞으로 낮게',{base:'att',opp:'4-4-2',style:'low',key:['rw'],
- pts:['바깥 발로 길게 치고 속도로 이긴다','고개를 들고 — 높은 크로스보다 컷백','박스 안 3명: 니어 · 스폿 · 파'],
- steps:[['{rw:이} 공을 잡고 수비와 마주 선다','rw',{rw:[.90,.24]}],
-  ['바깥으로 치고 나가 골라인까지','rw',{rw:[.94,.08],st:[.56,.10],lw:[.38,.10],rcm:[.62,.20]}],
-  ['낮게 컷백 — {rcm} 마무리','rcm',{},{fx:[{t:'zone',r:[.48,.14,.26,.10],c:'gold',l:'컷백 존'}]}]]});
-PT_('w_behind','W','뒷공간 대각 침투','공격','풀백의 등 뒤에서 바깥→안으로 출발한다',{base:'mid',opp:'4-4-2',style:'mid',key:['rw'],
- pts:['풀백이 공을 보는 순간 출발','오프사이드 선과 나란히 달리다 꺾는다','패스는 발이 아니라 공간으로'],
- steps:[['{rcm:이} 공을 잡고 앞을 본다','rcm',{}],
-  ['{rw:이} 풀백 등 뒤에서 대각으로 출발','rcm',{rw:[.72,.16]},{cv:{rw:[.04,.02]},fx:[{t:'zone',r:[.58,.08,.26,.14],c:'gold',l:'뒷공간'}]}],
-  ['{rcm:이} 수비 뒤 공간에 떨어뜨린다','rw',{}],
-  ['{rw:이} 골키퍼와 1 대 1','rw',{rw:[.64,.09]}]]});
-PT_('w_far','W','반대편 파 포스트 침투','공격','반대쪽 크로스 때 수비의 시야 밖에서 들어온다',{base:'att',opp:'4-4-2',style:'low',key:['rw'],
- pts:['크로스 전에는 박스 밖 — 수비 등 뒤에서 기다린다','공이 뜨는 순간 출발','넘어오는 공은 내 것'],
- steps:[['반대편에서 {lw:이} 공을 잡는다','lw',{lw:[.10,.20]}],
-  ['{lw:이} 크로스 준비 — {rw:은} 파 포스트 뒤에서 기다린다','lw',{lw:[.08,.12],rw:[.80,.18],st:[.48,.10]}],
-  ['크로스가 뜨는 순간 {rw:이} 파 포스트로 쇄도','rw',{rw:[.62,.07],st:[.46,.07]},{fx:[{t:'zone',r:[.55,.02,.14,.10],c:'gold',l:'파 포스트'}]}]]});
-PT_('w_track','W','수비 가담 · 풀백 추적','수비','올라오는 상대 풀백을 끝까지 따라간다',{base:'dmid',opp:'4-4-2',style:'mid',key:['rw'],
- pts:['내 뒤로 뛰는 선수는 내 책임','안쪽 어깨를 맞추고 같이 달린다','우리 풀백이 2 대 1에 걸리지 않게'],
- steps:[['상대 측면 미드필더가 공을 잡고, 풀백이 뒤에서 올라온다','b6',{},{opp:{6:[.84,.50],2:[.90,.40]}}],
-  ['{rw:은} 풀백을 따라간다 — {rb:은} 공 가진 선수를 맡는다','b6',{rw:[.90,.60],rb:[.80,.635]},{opp:{2:[.94,.62],6:[.82,.56]}}],
-  ['풀백에게 패스가 가도 {rw:이} 옆에 붙어 있다','b2',{rw:[.90,.675],rb:[.82,.70]},{opp:{2:[.945,.68]}}]]});
-PT_('w_press','W','전방 압박 · 휘어 들어가기','수비','풀백으로 가는 길을 등 뒤에 두고 센터백을 압박한다',{base:'high',opp:'4-3-3',style:'high',key:['rw'],
- pts:['곧게 뛰지 않는다 — 바깥에서 안으로 휘어서','내 등 뒤 그림자로 풀백을 지운다','상대는 안쪽밖에 줄 곳이 없다'],
- steps:[['상대 골키퍼가 센터백에게 짧게 준다','b3',{},{opp:{3:[.66,.12],2:[.92,.20],1:[.5,.04]}}],
-  ['{rw:이} 휘어 들어가며 센터백을 압박','b3',{rw:[.74,.15],st:[.52,.10],rcm:[.74,.28]},{cv:{rw:[.05,0]}}],
-  ['안쪽으로 나온 패스를 {rcm:이} 끊는다','rcm',{rcm:[.66,.22]},{fx:[{t:'zone',r:[.54,.16,.24,.12],c:'red',l:'끊는 자리'}]}]]});
+PT_('w_cutin','W','안으로 치고 들어와 슈팅','공격','동료가 수비를 한 명씩 데려가 열어 준 길로 들어온다',{base:'att',opp:'4-4-2',style:'low',view:'att',zoom:true,cx:.67,key:['rw'],
+ pts:['넓게 받아야 안쪽 공간이 생긴다','풀백의 오버래핑이 수비 한 명, {st}의 움직임이 또 한 명을 데려간다','첫 터치는 안쪽으로 길게','파 포스트로 감아 찬다'],
+ steps:[['{rcm:이} 공을 잡는다 — {rw:은} 터치라인까지 넓게 벌린다','rcm',{rcm:[.66,.36],rw:[.935,.26],lw:[.42,.20],lcm:[.46,.33],dm:[.56,.40]}],
+  ['{rw}에게 — 상대 풀백이 붙는다. {rb:이} 뒤에서 올라오기 시작한다','rw',{rw:[.935,.255],rb:[.90,.38]},{mk:{2:'rw'}}],
+  ['{rb:이} 바깥으로 돌아 뛴다 — 상대 측면 미드필더가 따라간다. {st:은} 반대쪽으로 움직여 센터백을 데려간다','rw',{rb:[.965,.20],st:[.475,.115],rcm:[.63,.31],dm:[.53,.41]},{mk:{6:'rb',3:'st'},cv:{rb:[.02,0]}}],
+  ['{rcm:이} 박스 안으로 뛰어 상대 미드필더까지 데려간다 — 안쪽이 열렸다. {rw:이} 첫 터치를 안쪽으로 길게','rw',{rw:[.815,.215],rcm:[.665,.125],lw:[.42,.14]},{mk:{7:'rcm'},op1:{8:[.50,.20]},fx:[{t:'zone',r:[.62,.16,.17,.10],c:'gold',l:'열린 안쪽'}]}],
+  ['아크 옆까지 — 남은 미드필더가 막으러 달려오지만 이미 슈팅 거리','rw',{rw:[.715,.195],rb:[.955,.15],lw:[.425,.10]},{op1:{8:[.615,.185]},oh:[8],fx:[{t:'zone',r:[.62,.16,.17,.10],c:'gold',l:'열린 안쪽'}]}],
+  ['파 포스트로 감아 찬다 — {st:과} {lw:은} 흘러나오는 공을 노린다',[.455,0],{st:[.515,.075],lw:[.43,.07]},{op1:{8:[.65,.185]},still:1}]]});
+PT_('w_byline','W','바깥 돌파 후 컷백','공격','동료가 1 대 1 공간을 비워 주면 골라인까지 가서 낮게',{base:'att',opp:'4-4-2',style:'low',view:'att',zoom:true,cx:.67,key:['rw'],
+ pts:['동료는 가까이 오지 않는다 — 1 대 1 공간을 비워 준다','안으로 가는 척, 바깥 발로 길게 치고 속도로 이긴다','고개를 들고 — 높은 크로스보다 컷백','박스 안 3명: 니어 · 스폿 · 파'],
+ steps:[['{rcm:이} {rw}에게 — {rw:이} 공을 잡고 풀백과 마주 선다','rw',{rw:[.905,.245],rcm:[.68,.33],lw:[.42,.20],lcm:[.47,.31],dm:[.56,.40]},{mk:{2:'rw'}}],
+  ['{rcm:은} 안쪽으로 빠지며 상대 미드필더를 데려가고, {rb:은} 뒤에 남는다 — 1 대 1 공간이 생겼다','rw',{rcm:[.62,.275],rb:[.86,.37]},{mk:{7:'rcm'},opp:{6:[.80,.305]},fx:[{t:'zone',r:[.86,.05,.12,.15],c:'gold',l:'1 대 1 공간'}]}],
+  ['안으로 가는 척 — 풀백의 체중이 안쪽으로 쏠린다','rw',{rw:[.885,.225]},{still:1,fx:[{t:'zone',r:[.86,.05,.12,.15],c:'gold',l:'1 대 1 공간'}]}],
+  ['바깥으로 길게 치고 나간다 — 풀백을 따돌렸다. {st:은} 니어, {lw:은} 파로 출발','rw',{rw:[.94,.125],st:[.575,.085],lw:[.42,.11],lcm:[.47,.25]},{mk:{2:null,7:null},op1:{2:[.905,.175]},oh:[2]}],
+  ['골라인까지 — 센터백이 끌려 나온다. {rcm:이} 스폿으로 늦게 들어온다','rw',{rw:[.935,.07],st:[.60,.06],lw:[.43,.075],rcm:[.575,.165]},{opp:{6:null},op1:{2:[.915,.12],3:[.815,.075],8:[.47,.075],7:[.655,.085]},oh:[3],fx:[{t:'zone',r:[.45,.095,.20,.085],c:'gold',l:'컷백 존'}]}],
+  ['낮게 컷백 — {rcm:이} 논스톱 마무리','rcm',{rcm:[.53,.13]},{op1:{2:[.915,.10],3:[.83,.07],8:[.47,.075],7:[.655,.085]},still:1}]]});
+PT_('w_behind','W','뒷공간 대각 침투','공격','내려오는 척 풀백을 끌어낸 뒤 그 등 뒤로 달린다',{base:'mid',opp:'4-4-2',style:'mid',key:['rw'],
+ pts:['먼저 발밑으로 받으러 내려와 풀백을 끌어낸다','풀백이 공을 보는 순간 방향을 바꾼다 — 바깥에서 안으로','{st:이} 센터백을 반대쪽으로 데려가야 길이 열린다','패스는 발이 아니라 공간으로'],
+ steps:[['{dm:이} 공을 잡는다 — {rw:은} 넓게 서 있고 풀백이 붙어 있다','dm',{dm:[.5,.60],rw:[.925,.33]},{mk:{2:'rw'}}],
+  ['{rcm}에게 — {rw:이} 발밑으로 받으러 내려온다. 풀백이 따라 나온다','rcm',{rcm:[.665,.465],rw:[.905,.395],rb:[.88,.55]},{fx:[{t:'zone',r:[.74,.10,.22,.17],c:'gold',l:'풀백 뒤'}]}],
+  ['{st:이} 왼쪽으로 움직여 센터백을 데려간다 — 오른쪽 길이 통째로 열렸다','rcm',{rcm:[.67,.43],st:[.44,.195],lw:[.10,.24]},{mk:{3:'st'},fx:[{t:'zone',r:[.60,.08,.34,.19],c:'gold',l:'열린 길'}]}],
+  ['풀백이 공을 보는 순간 — {rw:이} 돌아서 등 뒤로 달린다','rcm',{rw:[.815,.215]},{mk:{2:null},op1:{2:[.875,.345]},oh:[2],cv:{rw:[.05,.03]},fx:[{t:'zone',r:[.60,.08,.34,.19],c:'gold',l:'열린 길'}]}],
+  ['{rcm:이} 발이 아니라 공간으로 — 수비 뒤에 떨어뜨린다','rw',{rw:[.765,.135],st:[.48,.15],lw:[.20,.18]},{op1:{2:[.84,.25]},oh:[2],react:6}],
+  ['{rw:이} 골키퍼와 마주 선다 — {st:이} 옆으로 따라 들어온다','rw',{rw:[.69,.09],st:[.525,.085],lw:[.34,.11],rcm:[.68,.28]},{mk:{3:null},op1:{2:[.78,.16]}}],
+  ['옆으로 내주면 빈 골문 — {st} 마무리','st',{st:[.52,.07]},{still:1}]]});
+PT_('w_far','W','반대편 파 포스트 침투','공격','공이 반대쪽에 있을 때 수비의 시야 밖에서 기다렸다 들어온다',{base:'att',opp:'4-4-2',style:'low',view:'att',zoom:true,cx:.49,key:['rw'],
+ pts:['공이 반대쪽으로 가면 상대는 그쪽으로 쏠린다 — 내 쪽 풀백도 안으로 좁힌다','크로스 전에는 박스 밖, 풀백의 등 뒤에서 기다린다','공이 뜨는 순간 출발','{st:이} 니어로 뛰어 센터백을 데려가면 파 포스트가 빈다'],
+ steps:[['{lcm:이} 왼쪽에서 공을 잡는다 — {rw:은} 반대편에 서 있다','lcm',{lcm:[.36,.33],rw:[.775,.24],lw:[.215,.225],rcm:[.62,.30],st:[.50,.13],dm:[.50,.40]}],
+  ['{lw}에게 — 상대가 왼쪽으로 쏠린다. {rw} 쪽 풀백도 안으로 좁혀 들어간다','lw',{lw:[.215,.22],rw:[.77,.215]},{mk:{5:'lw'},fx:[{t:'zone',r:[.19,.06,.30,.24],c:'red',l:'상대 쏠림'}]}],
+  ['{lw:이} 골라인 쪽으로 — {st:은} 니어로 뛰어 센터백을 데려간다. {rw:은} 박스 밖 풀백의 등 뒤','lw',{lw:[.215,.135],st:[.455,.075],lcm:[.40,.19],rw:[.765,.185]},{mk:{4:'st'},op1:{2:[.64,.095]},fx:[{t:'zone',r:[.57,.03,.15,.10],c:'gold',l:'파 포스트'}]}],
+  ['풀백은 공만 본다 — 등 뒤의 {rw:이} 보이지 않는다','lw',{lw:[.21,.115],rcm:[.62,.22]},{op1:{2:[.63,.09]},oh:[2],still:1,fx:[{t:'zone',r:[.57,.03,.15,.10],c:'gold',l:'파 포스트'}]}],
+  ['크로스가 뜨는 순간 {rw} 출발 — 공은 모두를 넘어 파 포스트로',[.645,.06],{rw:[.685,.085]},{op1:{2:[.62,.09]},cv:{rw:[.02,.02]},still:1}],
+  ['{rw:이} 풀백 등 뒤에서 마무리','rw',{rw:[.665,.07]},{op1:{2:[.615,.09]},still:1}]]});
+PT_('w_track','W','수비 가담 · 풀백 추적','수비','내 뒤로 올라오는 상대 풀백을 끝까지 따라간다',{base:'dmid',opp:'4-4-2',style:'mid',key:['rw'],drift:[.10,.14],
+ pts:['내 뒤로 뛰는 선수는 내 책임','안쪽 어깨를 맞추고 같이 달린다','우리 풀백이 2 대 1에 걸리지 않게','공이 뒤로 가면 다시 내 자리로'],
+ steps:[['상대 미드필더가 공을 잡는다 — 측면에는 상대 둘(미드필더와 그 뒤 풀백)','b7',{rw:[.845,.475]},{opp:{7:[.62,.47],6:[.87,.505],2:[.91,.385]}}],
+  ['측면 미드필더에게 — {rb:이} 나가 막는다. 그 순간 상대 풀백이 바깥으로 뛰기 시작한다','b6',{rb:[.845,.605],rcb:[.665,.705],dm:[.60,.62]},{opp:{6:[.87,.54],2:[.94,.45]},oh:[2]}],
+  ['{rw:이} 돌아서 따라간다 — 내 뒤로 뛰는 선수는 내 책임','b6',{rw:[.905,.50],rcm:[.72,.575]},{opp:{2:[.955,.525]},oh:[2],cv:{rw:[.02,0]}}],
+  ['풀백이 계속 올라간다 — {rw:은} 안쪽 어깨를 맞추고 같이 달린다. {rb:은} 공 가진 선수에게만 집중','b6',{rw:[.92,.605],rb:[.85,.615]},{opp:{2:[.955,.625],6:[.875,.555]},oh:[2],fx:[{t:'link',ks:['rw','rb'],c:'blue'}]}],
+  ['풀백에게 패스가 가도 {rw:이} 옆에 붙어 있다 — 2 대 1이 아니라 2 대 2','b2',{rw:[.912,.672],rb:[.85,.66],rcb:[.70,.72]},{opp:{2:[.955,.665],6:[.87,.585]},fx:[{t:'zone',r:[.83,.60,.16,.12],c:'red',l:'2 대 2'}]}],
+  ['갈 곳 없는 상대는 뒤로 돌린다 — 다 같이 한 칸 올라가고 {rw:은} 제자리로','b7',{rw:[.86,.545],rb:[.83,.66],rcm:[.70,.545],dm:[.58,.60],rcb:[.64,.71]},{opp:{7:[.66,.50],2:[.95,.61],6:[.875,.57]}}]]});
+PT_('w_press','W','전방 압박 · 휘어 들어가기','수비','풀백으로 가는 길을 등 뒤에 두고 센터백을 압박한다',{base:'high',opp:'4-3-3',style:'high',view:'att',key:['rw'],
+ pts:['곧게 뛰지 않는다 — 바깥에서 안으로 휘어서','내 등 뒤 그림자로 풀백을 지운다','동료는 안쪽 받을 선수에게 미리 붙는다','상대는 안쪽밖에 줄 곳이 없다 — 거기서 끊는다'],
+ steps:[['상대 골키퍼가 공을 잡는다 — 센터백은 벌리고 풀백은 넓게 선다','b1',{rw:[.80,.21],st:[.5,.155],lw:[.20,.21]},{opp:{1:[.5,.05],3:[.68,.11],4:[.32,.11],2:[.935,.20],5:[.065,.20],6:[.5,.21],7:[.68,.28],8:[.32,.28]}}],
+  ['골키퍼가 센터백에게 — 이 패스가 신호. {rw:이} 바깥에서 안으로 휘어 뛴다','b3',{rw:[.765,.15],st:[.565,.125],rcm:[.69,.305],lcm:[.49,.255]},{cv:{rw:[.045,0]}}],
+  ['{rw}의 등 뒤 그림자가 풀백으로 가는 길을 지운다 — {st:은} 골키퍼로 돌아가는 길을 막는다','b3',{rw:[.735,.13],st:[.595,.10],rb:[.89,.37],lw:[.33,.19]},{still:1,fx:[{t:'zone',r:[.775,.11,.15,.10],c:'red',l:'그림자'}]}],
+  ['남은 길은 안쪽뿐 — 거기에는 {rcm:이} 이미 붙어 있다','b3',{rcm:[.685,.295],dm:[.56,.36]},{still:1,fx:[{t:'zone',r:[.61,.20,.15,.10],c:'gold',l:'열어 둔 길'}]}],
+  ['급하게 안쪽으로 넣은 공을 {rcm:이} 앞에서 끊는다','rcm',{rcm:[.68,.26]},{still:1}],
+  ['끊자마자 골문 앞 — {rw}에게. {st:과} {lw:이} 같이 들어간다','rw',{rw:[.73,.135],st:[.56,.09],lw:[.36,.12]},{opp:{1:null,3:null,4:null,2:null,5:null,6:null,7:null,8:null},react:6}],
+  ['{rw:이} 옆으로 내주고 {st:이} 마무리','st',{st:[.545,.075],rw:[.70,.10]},{still:1}]]});
 /* ───── 스트라이커 ───── */
-PT_('st_hold','ST','등지고 받아 떨구기','공격','몸으로 지키고, 올라오는 미드필더에게 내준다',{base:'mid',opp:'4-4-2',style:'mid',key:['st'],
- pts:['수비와 공 사이에 몸을 넣는다','한두 번 터치 안에 내준다','내주고 바로 돌아 뛴다'],
- steps:[['{rcb:이} {st}의 발밑으로 강하게 넣는다','rcb',{}],
-  ['{st:이} 수비를 등지고 받는다','st',{st:[.52,.32],rcm:[.64,.40],lcm:[.38,.40]}],
-  ['올라오는 {rcm}에게 떨구고 돌아 뛴다','rcm',{rcm:[.62,.36],st:[.50,.20],rw:[.86,.22],lw:[.14,.22]}]]});
-PT_('st_channel','ST','채널 런','공격','센터백과 풀백 사이로 대각 침투해 수비를 끌어낸다',{base:'mid',opp:'4-4-2',style:'mid',key:['st'],
- pts:['센터백의 바깥 어깨 쪽으로 달린다','공을 못 받아도 중앙이 빈다','받으면 컷백이나 직접 마무리'],
- steps:[['{rcm:이} 공을 잡는다','rcm',{}],
-  ['{st:이} 센터백과 풀백 사이 채널로 침투','rcm',{st:[.70,.14]},{cv:{st:[-.03,.02]},fx:[{t:'zone',r:[.62,.07,.17,.16],c:'gold',l:'채널'}]}],
-  ['{rcm:이} 채널로 스루패스','st',{}],
-  ['비어 버린 중앙으로 {lw:이} 들어온다','st',{st:[.74,.09],lw:[.44,.10]}]]});
-PT_('st_near','ST','니어 포스트 쇄도','공격','파로 가는 척, 방향을 바꿔 수비 앞을 자른다',{base:'att',opp:'4-4-2',style:'low',key:['st'],
- pts:['먼저 수비를 파 포스트 쪽으로 끌고 간다','크로스 직전 방향을 바꾼다','공에 발만 갖다 댄다'],
- steps:[['{rw:이} 크로스를 준비 — {st:은} 일부러 파 포스트 쪽으로','rw',{rw:[.90,.14],st:[.46,.14]}],
-  ['수비가 따라오면 방향을 바꿔 니어로 쇄도','rw',{st:[.56,.065],lw:[.40,.09]},{cv:{st:[-.04,0]},fx:[{t:'zone',r:[.52,.02,.12,.09],c:'gold',l:'니어'}]}],
-  ['낮고 빠른 크로스 — {st:이} 수비 앞에서 마무리','st',{}]]});
+PT_('st_hold','ST','등지고 받아 떨구기','공격','센터백을 끌고 내려와 지키고, 올라오는 동료에게 내준 뒤 돌아 뛴다',{base:'mid',opp:'4-4-2',style:'mid',key:['st'],
+ pts:['수비와 공 사이에 몸을 넣는다','버티는 동안 미드필더 둘이 받을 자리로 올라온다','한두 번 터치 안에 내준다','내주고 바로 돌아 뛴다 — 끌려 나온 센터백 뒤가 비어 있다'],
+ steps:[['{rcb:이} 공을 잡는다 — {st:은} 센터백 어깨에 걸쳐 있다','rcb',{rcb:[.64,.70],st:[.52,.24]}],
+  ['{st:이} 공 쪽으로 내려온다 — 센터백이 따라 나오고 그 뒤가 빈다','rcb',{st:[.545,.335],rw:[.91,.30],lw:[.09,.30]},{mk:{3:'st'},fx:[{t:'zone',r:[.47,.15,.18,.13],c:'gold',l:'센터백 뒤'}]}],
+  ['{rcb:이} 발밑으로 강하게 — {st:이} 등지고 받는다. {rcm:과} {lcm:이} 받을 자리로 올라온다','st',{rcm:[.645,.405],lcm:[.405,.405],dm:[.50,.58],rw:[.905,.265],lw:[.095,.265]},{fx:[{t:'link',ks:['lcm','st','rcm'],c:'blue'}]}],
+  ['{st:이} 몸으로 버틴다 — 상대 미드필더까지 달려들어 둘이 묶인다','st',{st:[.54,.34],rw:[.885,.245]},{op1:{7:[.585,.375]},oh:[7],still:1}],
+  ['비어 있는 {rcm}에게 떨군다 — 그리고 바로 돌아 뛴다','rcm',{rcm:[.645,.39],st:[.565,.225],rw:[.84,.175],lw:[.14,.20]},{mk:{3:null},op1:{3:[.535,.27],7:[.60,.37]},cv:{st:[.03,.02]}}],
+  ['{rcm:이} 원터치로 센터백 뒤에 — {st:이} 달려 들어간다','st',{st:[.575,.125],rw:[.80,.13],lw:[.24,.15]},{op1:{3:[.545,.235]},oh:[3],react:6,fx:[{t:'zone',r:[.48,.06,.18,.12],c:'gold',l:'센터백 뒤'}]}],
+  ['{st:이} 마무리 — {rw:과} {lw:은} 양쪽 포스트로','st',{st:[.565,.085],rw:[.70,.09],lw:[.38,.10]}]]});
+PT_('st_channel','ST','채널 런','공격','센터백과 풀백 사이로 대각 침투해 센터백을 끌어내고 중앙을 비운다',{base:'mid',opp:'4-4-2',style:'mid',key:['st'],
+ pts:['윙어가 내려와 풀백을 끌어내면 채널이 넓어진다','센터백의 바깥 어깨 쪽으로 대각선으로 달린다','공을 못 받아도 센터백이 따라오면 중앙이 빈다','받으면 버티고, 비어 버린 중앙으로 들어오는 동료에게'],
+ steps:[['{dm:이} 공을 잡는다 — {st:은} 두 센터백 사이에 서 있다','dm',{dm:[.5,.60],st:[.50,.235]}],
+  ['{rcm}에게 — {rw:이} 받으러 내려와 풀백을 끌어낸다. 풀백과 센터백 사이가 벌어진다','rcm',{rcm:[.67,.465],rw:[.875,.365],st:[.555,.225]},{mk:{2:'rw'},fx:[{t:'zone',r:[.66,.08,.17,.17],c:'gold',l:'채널'}]}],
+  ['{st:이} 채널로 대각선 침투 — 센터백이 따라 나오고 중앙이 빈다','rcm',{st:[.705,.155],lw:[.27,.205],rcm:[.675,.43]},{mk:{3:'st'},cv:{st:[-.03,.02]},op1:{4:[.44,.185]},fx:[{t:'zone',r:[.50,.08,.17,.13],c:'gold',l:'빈 중앙'}]}],
+  ['{rcm:이} 채널로 스루패스 — {lw:은} 비어 버린 중앙으로 달린다','st',{st:[.745,.115],lw:[.44,.17],lcm:[.42,.36]},{react:7,cv:{lw:[0,.02]},op1:{4:[.45,.15]}}],
+  ['{st:이} 센터백을 등지고 버틴다 — {lw:이} 중앙으로, {rcm:이} 뒤에서 받치러 온다','st',{st:[.755,.09],lw:[.575,.11],rcm:[.67,.24],rw:[.90,.24]},{mk:{2:null},op1:{4:[.47,.11],8:[.47,.19]},fx:[{t:'zone',r:[.50,.06,.17,.12],c:'gold',l:'빈 중앙'}]}],
+  ['옆으로 내준다 — 센터백이 비운 중앙에서 {lw} 마무리','lw',{lw:[.575,.095]},{op1:{4:[.48,.10],8:[.47,.19]},still:1}]]});
+PT_('st_near','ST','니어 포스트 쇄도','공격','파로 가는 척 센터백을 끌고 간 뒤, 방향을 바꿔 그 앞을 자른다',{base:'att',opp:'4-4-2',style:'low',view:'att',zoom:true,cx:.67,key:['st'],
+ pts:['먼저 수비를 파 포스트 쪽으로 끌고 간다 — 니어가 비어야 한다','크로스 올리는 선수와 눈을 맞춘다','크로스 직전 방향을 바꾼다 — 수비의 앞으로','공에 발만 갖다 댄다'],
+ steps:[['{rcm:이} 측면 {rw}에게 — {st:은} 두 센터백 사이','rw',{rw:[.90,.205],st:[.52,.12],rcm:[.68,.30],lw:[.42,.20],lcm:[.47,.31],dm:[.56,.40]}],
+  ['{rw:이} 크로스 자리로 — {st:은} 일부러 파 포스트 쪽으로 움직인다. 센터백이 따라간다','rw',{rw:[.93,.135],st:[.47,.115],lw:[.41,.15]},{mk:{3:'st',2:'rw'},opp:{4:[.435,.07],5:[.35,.10]},fx:[{t:'zone',r:[.535,.02,.13,.09],c:'gold',l:'비는 니어'}]}],
+  ['{lw:도} 파 포스트로 들어와 수비 시선을 더 끈다 — {rw:과} {st:이} 눈을 맞춘다','rw',{rw:[.94,.115],lw:[.41,.085],rcm:[.63,.215]},{still:1,fx:[{t:'zone',r:[.535,.02,.13,.09],c:'gold',l:'비는 니어'}]}],
+  ['크로스 직전 — {st:이} 방향을 바꿔 센터백의 앞을 가로지른다','rw',{st:[.575,.07]},{mk:{3:null},op1:{3:[.51,.085]},oh:[3],cv:{st:[-.01,.035]},still:1}],
+  ['낮고 빠른 크로스가 니어로 — {st:이} 한 발 먼저','st',{st:[.585,.058]},{op1:{3:[.535,.07]},still:1}],
+  ['발만 갖다 대 마무리 — {lw:과} {rcm:은} 흘러나오는 공 자리',[.52,0],{lw:[.42,.07],rcm:[.61,.17]},{op1:{3:[.545,.062]},still:1}]]});
 PT_('st_false','ST','내려와서 공간 만들기','공격','센터백을 끌고 내려오면 윙어가 그 자리로 들어간다',{base:'mid',opp:'4-4-2',style:'mid',key:['st'],
- pts:['센터백이 따라오는지 본다 — 안 오면 돌아서 전진','따라오면 원터치로 내주고 빈 자리를 쓴다','윙어와 미리 약속한다'],
- steps:[['{dm:이} 공을 잡는다','dm',{}],
-  ['{st:이} 미드필드까지 내려온다 — 센터백이 따라 나온다','st',{st:[.50,.40]},{opp:{3:[.54,.345]}}],
-  ['비어 버린 중앙으로 {rw:이} 대각 침투','st',{rw:[.62,.16]},{opp:{3:[.54,.345]},fx:[{t:'zone',r:[.50,.10,.22,.14],c:'gold',l:'빈 자리'}]}],
-  ['{st:이} 돌아서 {rw}에게 스루패스','rw',{},{opp:{3:[.54,.345]}}]]});
-PT_('st_press','ST','전방 압박의 시작','수비','한쪽을 등지고 휘어 압박해 상대를 한쪽에 가둔다',{base:'high',opp:'4-4-2',style:'high',key:['st'],
- pts:['두 센터백 사이에서 시작한다','반대편 센터백으로 가는 길을 등 뒤 그림자로 지운다','내가 방향을 정하면 팀 전체가 따라온다'],
- steps:[['상대 골키퍼가 공을 잡는다 — {st:은} 두 센터백 사이','b1',{st:[.5,.16]},{opp:{1:[.5,.05],3:[.66,.12],4:[.34,.12]}}],
-  ['공이 한쪽 센터백에게 — {st:은} 반대쪽 길을 등지고 휘어 압박','b3',{st:[.60,.13],rw:[.84,.20],lw:[.30,.22]},{cv:{st:[-.04,0]}}],
-  ['상대는 한쪽에서만 풀어야 한다 — 팀 전체가 그쪽으로','b2',{rw:[.88,.25],rcm:[.74,.32],st:[.68,.15],dm:[.60,.42],lcm:[.46,.34]},{opp:{2:[.90,.22]},fx:[{t:'zone',r:[.62,.10,.36,.26],c:'red',l:'가둔다'}]}]]});
-PT_('st_peel','ST','수비 등 뒤로 빠지기','공격','공 쪽으로 가는 척하다 뒤로 빠져 파 포스트에서 받는다',{base:'att',opp:'4-4-2',style:'low',key:['st'],
- pts:['수비가 공을 보는 순간 등 뒤로','두세 걸음이면 충분하다','머리 위로 넘어오는 공을 노린다'],
- steps:[['{lw:이} 공을 잡고 안으로 들어온다','lw',{lw:[.24,.22]}],
-  ['{st:은} 공 쪽으로 가는 척하다 수비 등 뒤로 빠진다','lw',{st:[.60,.10]},{cv:{st:[0,.04]}}],
-  ['{lw:이} 수비 머리 위로 파 포스트에 — {st} 마무리','st',{},{fx:[{t:'zone',r:[.54,.04,.14,.10],c:'gold',l:'파 포스트'}]}]]});
+ pts:['센터백이 따라오는지 본다 — 안 오면 돌아서 전진','따라오면 원터치로 내주고 센터백을 붙잡아 둔다','윙어는 바깥에서 안으로 — 미리 약속한다','패스는 센터백이 비운 자리로'],
+ steps:[['{lcb:이} 공을 잡는다 — {st:은} 두 센터백 사이 높이 서 있다','lcb',{lcb:[.36,.70],st:[.50,.225]}],
+  ['{dm}에게 — {st:이} 미드필드까지 내려온다. 센터백이 따라 나오고 수비 라인에 구멍이 생긴다','dm',{dm:[.5,.61],st:[.505,.39],rw:[.84,.27],lw:[.16,.27]},{mk:{3:'st'},fx:[{t:'zone',r:[.49,.15,.20,.13],c:'gold',l:'구멍'}]}],
+  ['{dm:이} {st}의 발밑으로 — {rcm:이} 옆에서 받을 자리로. {rw:은} 안쪽으로 좁혀 선다','st',{rcm:[.645,.455],rw:[.80,.25]},{fx:[{t:'zone',r:[.49,.12,.20,.13],c:'gold',l:'구멍'}]}],
+  ['{st:이} 원터치로 {rcm}에게 내주고 센터백을 붙잡아 둔다 — {rw:이} 구멍을 향해 출발','rcm',{rw:[.70,.185],st:[.515,.375]},{cv:{rw:[.03,.03]},op1:{2:[.83,.215]},oh:[2]}],
+  ['{rcm:이} 구멍으로 스루패스 — {rw:이} 바깥에서 안으로 달려 들어간다','rw',{rw:[.615,.12],lw:[.26,.17]},{op1:{2:[.77,.17]},oh:[2],react:6}],
+  ['{rw:이} 골키퍼와 1 대 1 — {lw:은} 파 포스트, {st:은} 뒤에서 흘러나오는 공','rw',{rw:[.585,.085],lw:[.40,.10],st:[.53,.25]},{mk:{3:null},op1:{2:[.70,.13]}}]]});
+PT_('st_press','ST','전방 압박의 시작','수비','한쪽 길을 등지고 휘어 압박해 상대를 한쪽에 가둔다',{base:'high',opp:'4-4-2',style:'high',view:'att',key:['st'],
+ pts:['두 센터백 사이에서 시작한다','반대편 센터백으로 가는 길을 등 뒤 그림자로 지운다','내가 방향을 정하면 팀 전체가 그쪽으로 한 칸씩','먼 쪽 상대는 버려 둔다 — 공 쪽에 한 명 더'],
+ steps:[['상대 골키퍼가 공을 잡는다 — {st:은} 두 센터백 사이','b1',{st:[.5,.165]},{opp:{1:[.5,.05],3:[.67,.12],4:[.33,.12],2:[.91,.22],5:[.09,.22],7:[.64,.30],8:[.38,.30],6:[.86,.36]}}],
+  ['한쪽 센터백에게 — {st:은} 반대쪽 길을 등지고 휘어 압박한다','b3',{st:[.605,.135],rw:[.845,.235],rcm:[.67,.325],lw:[.30,.21]},{cv:{st:[-.045,0]}}],
+  ['돌아갈 길이 지워졌다 — 센터백은 풀백에게 줄 수밖에 없다','b3',{st:[.635,.125],lcm:[.47,.31],dm:[.58,.42]},{still:1,fx:[{t:'zone',r:[.35,.07,.26,.10],c:'red',l:'지운 길'}]}],
+  ['풀백에게 — 팀 전체가 그쪽으로. {rw:이} 붙고 {rcm:은} 안쪽, {rb:은} 측면 미드필더를 잡는다','b2',{rw:[.875,.245],st:[.71,.145],rcm:[.69,.315],rb:[.885,.395],dm:[.62,.40],lcm:[.50,.32],lw:[.37,.225]},{fx:[{t:'zone',r:[.60,.10,.38,.30],c:'red',l:'가둔다'}]}],
+  ['먼 쪽은 버려 둔다 — 공 쪽은 다섯 대 넷. 급해진 풀백이 길게 찬다',[.885,.43],{rb:[.89,.415]},{oa:1,still:1,fx:[{t:'zone',r:[.02,.10,.26,.26],c:'blue',l:'버려 둔다'}]}],
+  ['{rb:이} 앞에서 끊어 {rcm}에게 — 상대는 벌어져 있다','rcm',{rcm:[.70,.30],st:[.63,.17],rw:[.84,.20],lw:[.36,.20]},{opp:{1:null,3:null,4:null,2:null,5:null,7:null,8:null,6:null}}],
+  ['{rcm:이} {st}에게 — 골문 앞에서 마무리','st',{st:[.60,.125],rw:[.78,.13],lw:[.40,.14]},{react:6}]]});
+PT_('st_peel','ST','수비 등 뒤로 빠지기','공격','공 쪽으로 가는 척하다 수비의 시야 밖으로 빠져 파 포스트에서 받는다',{base:'att',opp:'4-4-2',style:'low',view:'att',zoom:true,cx:.36,key:['st'],
+ pts:['먼저 공 쪽으로 움직여 수비의 시선을 공에 묶는다','수비가 공을 보는 순간 등 뒤로 — 두세 걸음이면 충분하다','{lb:이} 바깥으로 돌아 뛰어 수비의 눈을 한 번 더 공 쪽으로 끈다','머리 위로 넘어오는 공을 노린다'],
+ steps:[['{lcm:이} 왼쪽에서 공을 잡는다 — {st:은} 두 센터백 사이','lcm',{lcm:[.36,.32],st:[.50,.13],rcm:[.60,.27],lb:[.11,.36],dm:[.48,.40]}],
+  ['{lw}에게 — {st:은} 공 쪽으로 다가가는 척한다. 센터백 둘이 공과 {st:을} 같이 본다','lw',{lw:[.14,.205],st:[.445,.12],lb:[.10,.31]},{mk:{5:'lw'}}],
+  ['{lb:이} 바깥으로 돌아 뛰고 {lw:이} 안으로 친다 — 수비의 눈이 모두 공으로 쏠린다','lw',{lw:[.225,.21],lb:[.085,.185],rcm:[.61,.25]},{mk:{5:'lb'},opp:{2:[.635,.155]},fx:[{t:'zone',r:[.54,.03,.13,.10],c:'gold',l:'파 포스트'}]}],
+  ['그 순간 {st:이} 센터백의 등 뒤로 빠진다 — 두세 걸음','lw',{st:[.60,.10]},{cv:{st:[0,.035]},op1:{3:[.535,.085],4:[.42,.09]},oh:[3],still:1,fx:[{t:'zone',r:[.54,.03,.13,.10],c:'gold',l:'파 포스트'}]}],
+  ['{lw:이} 수비 머리 위로 띄운다 — 공은 파 포스트로','st',{st:[.605,.085]},{op1:{3:[.545,.085],4:[.43,.09]},still:1}],
+  ['{st:이} 마무리 — {rcm:은} 흘러나올 공을 맡는다',[.53,0],{rcm:[.60,.19]},{op1:{3:[.56,.075],4:[.44,.085]},still:1}]]});
 
 /* 패턴 → 템플릿 (tacBuild_ 가 읽는 형식) */
 function tacPatTpl_(p){
@@ -13575,12 +13802,13 @@ function tacPatTpl_(p){
     for(k in (s[2]||{})) our[k]=s[2][k].slice();
     var o={note:s[0], ball:s[1], our:our};
     if(x.opp) o.opp=x.opp; if(x.fx) o.fx=x.fx; if(x.cv) o.cv=x.cv;
+    if(x.mk) o.mk=x.mk; if(x.op1) o.op1=x.op1; if(x.oh) o.oh=x.oh; if(x.still) o.still=1; if(x.react!=null) o.react=x.react; if(x.oa!=null) o.oa=x.oa;
     o.hl=(p.key||[]).slice();
     return o;
   });
   return {id:'pat:'+p.id, cat:cat, name:p.name, oppForm:p.opp||'4-4-2', view:p.view||'full', zoom:!!p.zoom,
-    pat:p.id, pos:p.pos, tag:p.tag, key:(p.key||[]).slice(), pts:(p.pts||[]).slice(), desc:p.desc,
-    plans:[{name:'A안', style:p.style||'mid', auto:true, steps:steps}]};
+    cx:(p.cx==null?undefined:p.cx), pat:p.id, pos:p.pos, tag:p.tag, key:(p.key||[]).slice(), pts:(p.pts||[]).slice(), desc:p.desc,
+    plans:[{name:'A안', style:p.style||'mid', auto:true, live:(p.live!==false), lag:(p.lag||11), sq:(p.sq==null?1:p.sq), drift:p.drift, steps:steps}]};
 }
 var _tacPatDocs={};
 function tacPatDoc_(id){
@@ -13596,12 +13824,13 @@ function tacDiagram_(ctx, W, H, doc, plan, o){
   o=o||{};
   var G=tacGeom_(doc.view||'full', W, H, doc.zoom, tacCamX_(doc, plan)), k=W/160, acc=o.accent||tacAccent_();
   var key={}; (doc.key||[]).forEach(function(q){ key[q]=1; });
+  var nS=plan.steps.length, from0=(o.step==null && o.last) ? Math.max(0, nS-1-o.last) : 0;
   if(o.crop){
     /* 움직임이 있는 구간만: 주인공 · 움직인 선수 · 공 · 구역이 들어오게 세로를 자른다 (가로는 전체) */
     var ys=[], sts=plan.steps;
-    sts.forEach(function(s2,i2){ ys.push(tacBallBase_(s2)[1]);
-      doc.our.forEach(function(t){ var q=s2.pos[t.k], pq=i2>0?sts[i2-1].pos[t.k]:null; if(!q) return; if(key[t.k]) ys.push(q[1]); else if(pq && tacDist_(q,pq)>0.03){ ys.push(q[1]); ys.push(pq[1]); } });
-      (s2.fx||[]).forEach(function(f){ if(f.t==='zone'){ ys.push(f.r[1]); ys.push(f.r[1]+f.r[3]); } }); });
+    sts.forEach(function(s2,i2){ if(i2<from0) return; ys.push(tacBallBase_(s2)[1]);
+      doc.our.forEach(function(t){ var q=s2.pos[t.k], pq=i2>from0?sts[i2-1].pos[t.k]:null; if(!q) return; if(key[t.k]) ys.push(q[1]); else if(pq && tacDist_(q,pq)>0.05 && !(s2.sub&&s2.sub[t.k])){ ys.push(q[1]); ys.push(pq[1]); } });
+      if(i2===nS-1 || !o.last) (s2.fx||[]).forEach(function(f){ if(f.t==='zone'){ ys.push(f.r[1]); ys.push(f.r[1]+f.r[3]); } }); });
     var ya0=Math.min.apply(null,ys)-0.09, ya1=Math.max.apply(null,ys)+0.09, span0=H/(W*1.5), ff=Math.max(1,(ya1-ya0)/span0), sx2=W/ff, fh2=sx2*1.5, span=H/fh2;
     var yA=(span>=1.06)?(1-span)/2:tacClamp_((ya0+ya1)/2-span/2, -0.03, 1.03-span), xA=0.5-ff/2;
     G={W:W, H:H, sx:sx2, fhF:fh2, X:function(x){ return (x-xA)*sx2; }, Y:function(y){ return (y-yA)*fh2; }};
@@ -13618,8 +13847,8 @@ function tacDiagram_(ctx, W, H, doc, plan, o){
     ctx.strokeRect(X(.204), Math.min(Y(y0),Y(y0+s*.157)), G.sx*.592, G.fhF*.157);
     ctx.strokeRect(X(.365), Math.min(Y(y0),Y(y0+s*.052)), G.sx*.27, G.fhF*.052); });
   var steps=plan.steps, a0, a1;
-  if(o.step!=null){ a1=Math.min(o.step, steps.length-1); a0=Math.max(0,a1-1); } else { a0=0; a1=steps.length-1; }
-  var S0=steps[(o.step!=null)?a1:0], SL=steps[a1];
+  if(o.step!=null){ a1=Math.min(o.step, steps.length-1); a0=Math.max(0,a1-1); } else { a0=from0; a1=steps.length-1; }
+  var S0=steps[(o.step!=null)?a1:a0], SL=steps[a1];
   /* 구역 */
   (SL.fx||[]).forEach(function(f){ if(f.t!=='zone') return; var c=TAC_FXC[f.c]||TAC_FXC.gold, r=f.r;
     ctx.fillStyle=tacRgba_(c,.22); ctx.strokeStyle=tacRgba_(c,.9); ctx.lineWidth=Math.max(0.8,1*k); ctx.setLineDash([3*k,2.4*k]);
@@ -13641,9 +13870,11 @@ function tacDiagram_(ctx, W, H, doc, plan, o){
     tacMotion_(doc, steps[s-1], steps[s]).forEach(function(m){
       var n=m.cv?14:2, pts=[]; for(var j=0;j<=n;j++){ var q=m.f(j/n); pts.push([X(q[0]),Y(q[1])]); }
       if(m.k==='ball'){ var tp=trim(pts, rr*0.6, rr*1.25); if(tp) arrow(tp, '#E8BD50', Math.max(1,1.5*k), [3.4*k,2.6*k], 4.6*k); return; }
-      var opp=tacIsOpp_(m.k); if(opp && o.step==null) return;
+      var opp=tacIsOpp_(m.k); if(m.sub || (opp && o.step==null)) return;
+      if(o.last && o.step==null && !opp && !key[m.k] && m.d<0.06) return;
       var tp2=trim(pts, rr*1.05, rr*1.25); if(!tp2) return;
-      if(opp) arrow(tp2, 'rgba(200,206,214,.75)', Math.max(0.7,0.9*k), [1.6*k,2.2*k], 3*k);
+      if(opp && m.hot) arrow(tp2, '#FF8F8F', Math.max(0.9,1.3*k), [2.6*k,2*k], 4*k);
+      else if(opp) arrow(tp2, 'rgba(200,206,214,.75)', Math.max(0.7,0.9*k), [1.6*k,2.2*k], 3*k);
       else arrow(tp2, (key[m.k]||o.step!=null||!Object.keys(key).length)?'#FFFFFF':'rgba(255,255,255,.45)', Math.max(1,(m.kind==='drib'?1.8:1.5)*k), m.kind==='drib'?[1.2*k,2.2*k]:null, 4.6*k);
     });
   }
@@ -13680,7 +13911,7 @@ function tacPatPaint_(){
   Array.prototype.forEach.call(document.querySelectorAll('canvas[data-pat]'), function(cv){
     var d=tacPatDoc_(cv.getAttribute('data-pat')); if(!d) return;
     var w=cv.parentNode.clientWidth||160, h=Math.round(w*0.84);
-    try{ var ctx=tacCanvasFit_(cv, w, h); tacDiagram_(ctx, w, h, d, d.plans[0], {accent:acc, crop:true}); }catch(e){ try{ console.warn('pat thumb', e); }catch(_){} }
+    try{ var ctx=tacCanvasFit_(cv, w, h); tacDiagram_(ctx, w, h, d, d.plans[0], {accent:acc, crop:true, last:3}); }catch(e){ try{ console.warn('pat thumb', e); }catch(_){} }
   });
 }
 /* 패턴 열기: 저장하지 않은 미리보기 보드 (관리자는 '내 전술로 담기') */
@@ -13746,7 +13977,10 @@ function tacMotion_(doc, A, B){
     var opp=tacIsOpp_(t.k), d=tacDist_(a,b);
     if(d<(opp?0.035:0.022)) return;
     var cv=(B.cv && B.cv[t.k]) || null;
-    mv.push({k:t.k, a:a, b:b, cv:cv, f:tacBez_(a,b,cv), kind:(t.k===drib?'drib':(opp?'opp':'run')), d:d});
+    var m={k:t.k, a:a, b:b, cv:cv, f:tacBez_(a,b,cv), kind:(t.k===drib?'drib':(opp?'opp':'run')), d:d};
+    if(!opp && B.sub && B.sub[t.k] && t.k!==drib) m.sub=1;
+    if(opp && B.ohl && B.ohl[t.k]) m.hot=1;
+    mv.push(m);
   });
   var ba=tacBallBase_(A), bb=tacBallBase_(B);
   if(!drib && tacDist_(ba,bb)>0.025 && (A.own!==B.own || !A.own)) mv.push({k:'ball', a:ba, b:bb, f:tacBez_(ba,bb,null), kind:'pass', d:tacDist_(ba,bb), to:B.own||'', from:A.own||''});
@@ -13881,14 +14115,15 @@ function tacArrow2_(ctx, pts, kind, from, to, sc, head){
   var L=[0], i; for(i=1;i<pts.length;i++) L.push(L[i-1]+Math.hypot(pts[i][0]-pts[i-1][0], pts[i][1]-pts[i-1][1]));
   var tot=L[L.length-1]; if(tot<4*sc) return;
   function at(d){ for(var j=1;j<L.length;j++){ if(L[j]>=d){ var u=(d-L[j-1])/((L[j]-L[j-1])||1); return [pts[j-1][0]+(pts[j][0]-pts[j-1][0])*u, pts[j-1][1]+(pts[j][1]-pts[j-1][1])*u, j]; } } var q=pts[pts.length-1]; return [q[0],q[1],pts.length-1]; }
-  var d0=from*tot, d1=to*tot, col, w, hd=(kind==='opp'?6.5:10)*sc;
+  var d0=from*tot, d1=to*tot, col, w, hd=(kind==='opp'?6.5:kind==='opph'?8:10)*sc;
   if(kind==='pass' || kind==='drib'){ col='#E8BD50'; w=2.4*sc; }
   else if(kind==='opp'){ col='rgba(184,192,200,.9)'; w=1.7*sc; }
+  else if(kind==='opph'){ col='#FF8F8F'; w=2.2*sc; }
   else if(kind==='link'){ col='#7FE3FF'; w=2.6*sc; }
   else { col='#F1F3F5'; w=2.6*sc; }
   var e0=at(d0), e1=at(Math.max(d0, d1-(head?hd*0.55:0)));
   ctx.save(); ctx.lineCap='round'; ctx.lineJoin='round'; ctx.lineWidth=w; ctx.strokeStyle=col; ctx.fillStyle=col;
-  if(kind==='pass') ctx.setLineDash([8*sc,6*sc]); else if(kind==='opp') ctx.setLineDash([2.2*sc,3.9*sc]);
+  if(kind==='pass') ctx.setLineDash([8*sc,6*sc]); else if(kind==='opp') ctx.setLineDash([2.2*sc,3.9*sc]); else if(kind==='opph') ctx.setLineDash([5*sc,4*sc]);
   ctx.shadowColor='rgba(0,0,0,.38)'; ctx.shadowBlur=3*sc; ctx.shadowOffsetY=1*sc;
   ctx.beginPath(); ctx.moveTo(e0[0],e0[1]);
   if(kind==='drib'){
@@ -14094,14 +14329,15 @@ function tacScene_(ctx, G, doc, sc, o){
   /* 움직임 화살표 */
   if(A && !o.mini && o.arrows!==false){
     tacMotion_(doc, A, B).forEach(function(m){
-      if(m.k!=='ball' && vis(m.k)<0.5) return;
+      if(m.sub || (m.k!=='ball' && vis(m.k)<0.5)) return;
       var pts=tacPathPx_(G, m.f, m.cv?24:2), pl=pts[pts.length-1], pp=pts[pts.length-2]||pts[0], tkm=(m.k!=='ball' && !tacIsOpp_(m.k))?doc.our.filter(function(t){ return t.k===m.k; })[0]:null;
       var below=(pl[1]-pp[1])<0 && Math.abs(pl[1]-pp[1])>Math.abs(pl[0]-pp[0])*0.6, extra=(tkm && tkm.n && o.names!==false && below)?r*1.05:0;
       var tr=(m.k==='ball')?tacTrim_(pts, r*0.5, r*1.15):tacTrim_(pts, r*1.12, r*1.22+extra);
       var to=(p>=1)?tr[1]:tr[0]+(tr[1]-tr[0])*P.arr;
       ctx.save(); if(m.kind==='opp') ctx.globalAlpha=vis(m.k);
-      if(p<1 && P.arr<1){ ctx.globalAlpha*=0.3; tacArrow2_(ctx, pts, m.kind, tr[0], tr[1], k2, false); ctx.globalAlpha/=0.3; }
-      tacArrow2_(ctx, pts, m.kind, tr[0], to, k2, true);
+      var ak=m.hot?'opph':m.kind;
+      if(p<1 && P.arr<1){ ctx.globalAlpha*=0.3; tacArrow2_(ctx, pts, ak, tr[0], tr[1], k2, false); ctx.globalAlpha/=0.3; }
+      tacArrow2_(ctx, pts, ak, tr[0], to, k2, true);
       if(m.k!=='ball' && m.kind!=='opp' && p>=1){ ctx.globalAlpha*=0.5; ctx.strokeStyle='#F1F3F5'; ctx.lineWidth=Math.max(1.2,1.4*k2); ctx.beginPath(); ctx.arc(pts[0][0],pts[0][1],r*0.62,0,Math.PI*2); ctx.stroke(); }
       ctx.restore();
     });
@@ -14238,7 +14474,7 @@ function tvInterest_(doc, plan, i){
   function add(p, k){ if(!p) return; if(k){ if(seen[k]) return; seen[k]=1; } pts.push(tvW_(p)); }
   add(tacBallBase_(st));
   var prev=plan.steps[i-1], next=plan.steps[i+1];
-  if(prev) tacMotion_(doc, prev, st).forEach(function(m){ if(m.kind==='opp') return; add(m.a); add(m.b); if(m.cv) add(m.f(0.5)); });
+  if(prev) tacMotion_(doc, prev, st).forEach(function(m){ if(m.kind==='opp' || m.sub) return; add(m.a); add(m.b); if(m.cv) add(m.f(0.5)); });
   else if(next) tacMotion_(doc, st, next).forEach(function(m){ if(m.kind==='opp') return; add(m.a); });
   if(next){ add(tacBallBase_(next)); }
   (st.fx||[]).forEach(function(f){ if(f.t==='zone'){ add([f.r[0],f.r[1]]); add([f.r[0]+f.r[2], f.r[1]+f.r[3]]); } else (f.ks||[]).forEach(function(k){ add(st.pos[k]); }); });
@@ -14504,7 +14740,7 @@ function tvScene_(ctx, R, st, still, t){
   });
   /* 움직임 */
   var mv=A ? tacMotion_(doc, A, B) : [];
-  if(still && A) mv.forEach(function(m){ if(m.kind==='run' && vis(m.k)>0.5){ var tk=doc.our.filter(function(x){ return x.k===m.k; })[0]; if(tk){ var w0=tvW_(m.a); ctx.save(); ctx.globalAlpha=0.45; tvToken_(ctx, c, R, w0[0], w0[1], tk, {ours:true, ghost:true}); ctx.restore(); } } });
+  if(still && A) mv.forEach(function(m){ if(m.kind==='run' && !m.sub && vis(m.k)>0.5){ var tk=doc.our.filter(function(x){ return x.k===m.k; })[0]; if(tk){ var w0=tvW_(m.a); ctx.save(); ctx.globalAlpha=0.45; tvToken_(ctx, c, R, w0[0], w0[1], tk, {ours:true, ghost:true}); ctx.restore(); } } });
   mv.forEach(function(m){
     if(m.k!=='ball' && vis(m.k)<0.5) return;
     var pts=tvMovePts_(m, m.cv?22:6);
@@ -14523,12 +14759,13 @@ function tvScene_(ctx, R, st, still, t){
       }
       return;
     }
+    if(m.sub) return;
     var trim=tvTrimM_(pts, 1.25, 1.55); if(!trim) return;
     var body=(m.kind==='drib')?tvWave_(trim):trim, s0=0, s1=1;
     if(!still){ s1=P.arr; s0=Math.min(s1, Math.max(0, P.mp-0.02)); if(p>=1) return; }
     if(s1-s0<0.01) return;
     var seg=tvSub_(body, s0, s1).pts, hd=(m.kind==='opp')?[1.4,0.55]:[2.5,1.05];
-    if(m.kind==='opp'){ ctx.save(); ctx.globalAlpha*=0.6*vis(m.k); tvDashes_(ctx, c, seg, 0.13, 0.7, 0.7, 'rgba(184,192,200,.9)', hd); ctx.restore(); return; }
+    if(m.kind==='opp'){ ctx.save(); ctx.globalAlpha*=(m.hot?0.95:0.6)*vis(m.k); tvDashes_(ctx, c, seg, m.hot?0.19:0.13, m.hot?1.1:0.7, m.hot?0.8:0.7, m.hot?'#FF8F8F':'rgba(184,192,200,.9)', m.hot?[1.9,0.75]:hd); ctx.restore(); return; }
     ctx.save();
     tvRibbon_(ctx, c, seg, 0.42, [hd[0]+0.25, hd[1]+0.22], 'rgba(0,0,0,.28)');
     tvRibbon_(ctx, c, seg, m.kind==='drib'?0.22:0.3, hd, m.kind==='drib'?'#E8BD50':'rgba(241,243,245,.96)');
@@ -15312,7 +15549,7 @@ function tacBind_(){
         st.own=''; st.ball=clampQ(q); TAC.hot='';
         var bd=0.06; TAC.doc.our.concat(TAC.doc.opp).forEach(function(t){ var dd=st.pos[t.k]?tacDist_(st.pos[t.k],q):9; if(dd<bd){ bd=dd; TAC.hot=t.k; } });
       } else {
-        Object.keys(D.start).forEach(function(x){ var s0=D.start[x]; st.pos[x]=clampQ([s0[0]+dq[0], s0[1]+dq[1]]); if(tacIsOpp_(x) && plan.auto){ st.lock=st.lock||{}; st.lock[x]=1; } });
+        Object.keys(D.start).forEach(function(x){ var s0=D.start[x]; st.pos[x]=clampQ([s0[0]+dq[0], s0[1]+dq[1]]); if(st.sub) delete st.sub[x]; if(tacIsOpp_(x) && plan.auto){ st.lock=st.lock||{}; st.lock[x]=1; } });
         if(!D.group) TAC.sel='';
       }
       if(plan.auto && (D.k==='ball' || Object.keys(D.start).some(function(x){ return !tacIsOpp_(x) || x===st.own; }))) tacOppApply_(TAC.doc, plan, st);
