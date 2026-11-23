@@ -1961,6 +1961,19 @@ body{letter-spacing:-.01em;}
 #splash .sp-sub{font-family:'Oswald',sans-serif;color:#B9BEC8;margin-top:14px;}
 #splash .sp-spin{border-top-color:var(--red);}
 @media (prefers-reduced-motion: reduce){ .dday::after,.tac-hero2::after{animation:none;display:none;} }
+/* 카드 미리보기 · 사진 위치 조절 (v17.3) */
+.cadj{margin-top:12px;padding:12px 12px 10px;border-radius:14px;background:var(--card-2);border:1px solid var(--line);}
+.cadj-h{display:flex;align-items:baseline;gap:8px;margin:0 2px 10px;font-size:14px;color:var(--ink);}
+.cadj-h span{color:var(--steel);font-size:12px;font-weight:500;}
+.cadj-who{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+.cadj-who button{height:32px;padding:0 12px;border-radius:16px;border:1px solid var(--line-strong);background:transparent;color:var(--ink-soft);font-size:13px;font-weight:700;}
+.cadj-who button.on{background:var(--key);border-color:var(--key);color:#fff;}
+.cadj-pad{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+.cadj-pad button{height:42px;border-radius:11px;border:1px solid var(--line-strong);background:var(--card);color:var(--ink);display:flex;align-items:center;justify-content:center;}
+.cadj-pad button:active{transform:translateY(1px);background:var(--card-3);}
+.cadj-pad .kt-icon{width:19px;height:19px;}
+.cadj-pad .kt-icon.up{transform:rotate(90deg);}
+.cadj-pad .kt-icon.dn{transform:rotate(-90deg);}
 /* CREST-END */
 </style>
 </head>
@@ -2180,7 +2193,7 @@ var APP_SUB = 'FOOTBALL CLUB';
 var APP_REGION = '';   /* 새 팀 설치 시 헤더 지역 표기 (팀 정보에서 변경 가능) */
 var APP_NOTE = '';     /* 새 팀 설치 시 헤더 소개 문구 */
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '17.3.0';
+var APP_VERSION = '17.3.1';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -5538,31 +5551,105 @@ function drawCover_(ctx,img,x,y,w,h){
   ctx.drawImage(img,sx,sy,sw,sh,x,y,w,h);
 }
 /* ================= 사진 중심 카드 (v17.3) =================
- * 원본 사진(photoL)을 크게 담는다. 등록 때 고른 영역(얼굴)보다 넓게 — 원본을 조금 줄여 몸 동작까지 보이게 — 자르고,
- * 아래 가장자리를 비스듬히 잘라 움직임을 준다. 원본이 없거나 작으면 큰 등번호 패널로 대신한다. */
+ * 원본 사진(photoL)을 크게 담는다. 얼굴은 등록 때 고른 영역(photoRect)으로 짐작하고,
+ * ① 얼굴이 잘리지 않게 ② 제목 · 이름 같은 글자 자리를 피해서 ③ 몸 동작까지 보이게 사진의 크기와 자리를 고른다.
+ * 사진이 패널을 다 덮지 못하면 빈 곳은 사진 색을 흐리게 깐 배경으로 채우고 가장자리를 부드럽게 녹인다.
+ * 그래도 마음에 안 들면 카드 미리보기에서 손으로 옮긴다 (기기에 기억). */
 function heroSrc_(img, rect, aw, ah, o){
   o=o||{};
   var iw=img.width||img.naturalWidth||1, ih=img.height||img.naturalHeight||1, a=aw/ah;
   var mw=Math.min(iw, ih*a), fx=iw*0.5, fy=ih*0.34, need=mw;
   if(rect && rect.w>0 && rect.h>0){
     fx=(rect.x+rect.w/2)*iw; fy=(rect.y+rect.h/2)*ih;
-    need=Math.max(rect.w*iw, rect.h*ih*a)*(o.k||2.5);          /* 고른 영역의 2.5배까지 넓힌다 */
+    need=Math.max(rect.w*iw, rect.h*ih*a)*(o.k||2.5);
   }
   var sw=Math.min(mw, Math.max(need, mw*(o.min==null?0.74:o.min))), sh=sw/a;
-  var sx=fx-sw*(o.ax==null?0.5:o.ax), sy=fy-sh*(o.ay==null?0.3:o.ay);   /* 얼굴은 위쪽 30% 높이에 */
+  var sx=fx-sw*(o.ax==null?0.5:o.ax), sy=fy-sh*(o.ay==null?0.3:o.ay);
   return {sx:Math.max(0,Math.min(iw-sw,sx)), sy:Math.max(0,Math.min(ih-sh,sy)), sw:sw, sh:sh};
 }
 /* 크게 써도 깨지지 않는 사진인지 (목록용 128px 썸네일은 제외) */
 function photoOk_(img){ if(!img) return false; var iw=img.width||img.naturalWidth||0, ih=img.height||img.naturalHeight||0; return Math.min(iw,ih)>=300; }
 function poly_(ctx, P){ ctx.beginPath(); P.forEach(function(q,i){ if(i) ctx.lineTo(q[0],q[1]); else ctx.moveTo(q[0],q[1]); }); ctx.closePath(); }
 function polyBox_(P){ var xs=P.map(function(q){ return q[0]; }), ys=P.map(function(q){ return q[1]; }), x=Math.min.apply(null,xs), y=Math.min.apply(null,ys); return {x:x, y:y, w:Math.max.apply(null,xs)-x, h:Math.max.apply(null,ys)-y}; }
-/* 사진 패널: 꼭짓점 P 안에 사진을 채우고 색을 입힌다
- * o: k·min·ax·ay(자르기) · top(위 그늘 높이, 0=없음) · fade(아래 그늘 시작 비율) · lines(속도선) · tint(크림슨 빛 세기) */
+/* 볼록 다각형을 세로선 x 로 자른 위 · 아래 y */
+function polyYs_(P, x){
+  var ys=[]; for(var i=0;i<P.length;i++){ var a=P[i], b=P[(i+1)%P.length];
+    if((a[0]<=x && b[0]>=x) || (b[0]<=x && a[0]>=x)){ if(a[0]===b[0]) ys.push(a[1],b[1]); else ys.push(a[1]+(b[1]-a[1])*(x-a[0])/(b[0]-a[0])); } }
+  return ys.length ? [Math.min.apply(null,ys), Math.max.apply(null,ys)] : null;
+}
+function rectOv_(a,b){ var x=Math.max(a.x,b.x), y=Math.max(a.y,b.y), x2=Math.min(a.x+a.w,b.x+b.w), y2=Math.min(a.y+a.h,b.y+b.h); return (x2>x && y2>y)?(x2-x)*(y2-y):0; }
+/* 얼굴 자리 짐작: 등록 때 고른 정사각형(프로필 원)의 가운데 — core 는 이마~턱, halo 는 머리 전체.
+ * 고른 영역이 없으면(예전 사진) 위쪽 가운데로 짐작한다 */
+function heroFace_(img, rect){
+  var iw=img.width||img.naturalWidth||1, ih=img.height||img.naturalHeight||1;
+  if(rect && rect.w>0 && rect.h>0){
+    var rx=rect.x*iw, ry=rect.y*ih, rw=rect.w*iw, rh=rect.h*ih;
+    return {core:{x:rx+rw*0.17, y:ry+rh*0.04, w:rw*0.66, h:rh*0.82}, halo:{x:rx, y:ry, w:rw, h:rh}};
+  }
+  var sd=Math.min(iw,ih)*0.42, cx=iw*0.5, cy=Math.max(sd*0.55, Math.min(ih*0.3, ih-sd*0.6));
+  return {core:{x:cx-sd*0.33, y:cy-sd*0.46, w:sd*0.66, h:sd*0.82}, halo:{x:cx-sd/2, y:cy-sd/2, w:sd, h:sd}, guess:true};
+}
+/* 사진 크기 · 자리 고르기: 점수(벌점)가 가장 낮은 배치
+ * o.zones: 글자 자리 [{x,y,w,h,soft}] · o.faceH: 패널 높이 대비 얼굴 높이 목표 · o.px/py: 얼굴 가운데 선호 자리(0~1) · o.adj: 손으로 옮긴 값 {x,y,z} */
+function heroFit_(img, face, P, o){
+  o=o||{}; var iw=img.width||img.naturalWidth||1, ih=img.height||img.naturalHeight||1, B=polyBox_(P), zones=o.zones||[], m=(o.margin==null?18:o.margin);
+  var C=face.core, Hh=face.halo, tr=o.faceH||0.17, px=(o.px==null?0.5:o.px), py=(o.py==null?0.33:o.py);
+  var sCov=Math.max(B.w/iw, B.h/ih);
+  function cutOf(F){
+    var c=Math.max(0,B.x+m-F.x)+Math.max(0,F.x+F.w-(B.x+B.w-m));
+    [F.x, F.x+F.w].forEach(function(x){ var yy=polyYs_(P, Math.max(B.x+0.5, Math.min(B.x+B.w-0.5, x))); if(yy) c+=Math.max(0,yy[0]+m-F.y)+Math.max(0,F.y+F.h-(yy[1]-m)); });
+    return c;
+  }
+  function score(s, fx, fy){
+    var ox=fx-(C.x+C.w/2)*s, oy=fy-(C.y+C.h/2)*s;
+    var F={x:C.x*s+ox, y:C.y*s+oy, w:C.w*s, h:C.h*s}, Hb={x:Hh.x*s+ox, y:Hh.y*s+oy, w:Hh.w*s, h:Hh.h*s}, aF=F.w*F.h||1, aH=Hb.w*Hb.h||1, pen=0;
+    pen+=cutOf(F)/F.h*3000+cutOf(Hb)/Hb.h*260;                                   /* ① 얼굴 잘림 */
+    zones.forEach(function(z){ pen+=rectOv_(F,z)/aF*(z.soft?260:6000)+rectOv_(Hb,z)/aH*(z.soft?30:600); });   /* ② 글자와 겹침 */
+    var gl=Math.max(0,ox-B.x)/B.w, gr=Math.max(0,B.x+B.w-(ox+iw*s))/B.w, gt=Math.max(0,oy-B.y)/B.h, gb=Math.max(0,B.y+B.h-(oy+ih*s))/B.h;
+    pen+=(gl+gr)*(o.gapSide||260)+gt*(o.gapTop||130)+gb*(o.gapBot||260);         /* ③ 빈 곳 */
+    pen+=Math.abs(Math.log((F.h/B.h)/tr))*(o.wSize||70);                         /* 얼굴 크기 */
+    var dx=(fx-(B.x+px*B.w))/B.w, dy=(fy-(B.y+py*B.h))/B.h; pen+=(dx*dx+dy*dy)*(o.wPos||140);
+    if(s>2.1) pen+=(s-2.1)*60;                                                   /* 너무 키우면 흐려진다 */
+    return {pen:pen, s:s, ox:ox, oy:oy, F:F, H:Hb};
+  }
+  var best=null;
+  for(var i=0;i<=18;i++){ var s=sCov*0.5*Math.pow(3.6, i/18);
+    for(var a=0;a<=14;a++) for(var b=0;b<=26;b++){ var r=score(s, B.x+B.w*(0.15+a*0.05), B.y+B.h*(0.1+b*0.025)); if(!best || r.pen<best.pen) best=r; } }
+  var adj=o.adj;
+  if(adj && (adj.x || adj.y || (adj.z && adj.z!==1))) best=score(best.s*(adj.z||1), best.F.x+best.F.w/2+(adj.x||0)*B.w, best.F.y+best.F.h/2+(adj.y||0)*B.h);
+  return best;
+}
+/* 사진 패널: 꼭짓점 P 안에 사진을 놓고 색을 입힌다 — 고른 배치를 돌려준다
+ * o: zones · faceH · px · py · adj (heroFit_) · top(위 그늘 높이, 0=없음) · fade(아래 그늘 시작 비율) · lines(속도선) · tint(크림슨 빛 세기) */
 function heroPhoto_(ctx, img, rect, P, o){
-  o=o||{}; var B=polyBox_(P), bx=B.x, by=B.y, bw=B.w, bh=B.h;
+  o=o||{}; var B=polyBox_(P), bx=B.x, by=B.y, bw=B.w, bh=B.h, fit=null;
   ctx.save(); poly_(ctx,P); ctx.clip();
   ctx.fillStyle='#15131A'; ctx.fillRect(bx,by,bw,bh);
-  if(img){ var ps=heroSrc_(img, rect, bw, bh, o); try{ ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high'; }catch(e){} ctx.drawImage(img, ps.sx, ps.sy, ps.sw, ps.sh, bx, by, bw, bh); }
+  if(img){
+    var iw=img.width||img.naturalWidth||1, ih=img.height||img.naturalHeight||1;
+    fit=heroFit_(img, heroFace_(img, rect), P, o);
+    var dw=iw*fit.s, dh=ih*fit.s, L=fit.ox-bx, T=fit.oy-by, R=L+dw, D=T+dh;
+    try{ ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high'; }catch(e){}
+    if(L>1 || T>1 || R<bw-1 || D<bh-1){
+      /* 빈 곳: 사진을 아주 작게 줄였다가 키워 흐린 색 배경 → 어둡게 */
+      var tc=document.createElement('canvas'), tw=12, th=Math.max(6, Math.round(12*ih/iw)); tc.width=tw; tc.height=th;
+      tc.getContext('2d').drawImage(img,0,0,tw,th);
+      var k=Math.max(bw/tw, bh/th)*1.08; ctx.drawImage(tc, bx+(bw-tw*k)/2, by+(bh-th*k)/2, tw*k, th*k);
+      ctx.fillStyle='rgba(12,10,16,.58)'; ctx.fillRect(bx,by,bw,bh);
+      /* 선명한 사진은 가장자리를 녹여서 */
+      var oc=document.createElement('canvas'); oc.width=Math.ceil(bw); oc.height=Math.ceil(bh); var o2=oc.getContext('2d');
+      try{ o2.imageSmoothingEnabled=true; o2.imageSmoothingQuality='high'; }catch(e){}
+      o2.drawImage(img, L, T, dw, dh);
+      o2.globalCompositeOperation='destination-out';
+      var Fz=Math.min(160, Math.min(bw,bh)*0.22);
+      function band(x0,y0,x1,y1,rx,ry,rw,rh){ var g=o2.createLinearGradient(x0,y0,x1,y1); g.addColorStop(0,'rgba(0,0,0,1)'); g.addColorStop(1,'rgba(0,0,0,0)'); o2.fillStyle=g; o2.fillRect(rx,ry,rw,rh); }
+      if(T>1) band(0,T,0,T+Fz, 0,T,bw,Fz);
+      if(D<bh-1) band(0,D,0,D-Fz, 0,D-Fz,bw,Fz);
+      if(L>1) band(L,0,L+Fz,0, L,0,Fz,bh);
+      if(R<bw-1) band(R,0,R-Fz,0, R-Fz,0,Fz,bh);
+      ctx.drawImage(oc,bx,by);
+    } else ctx.drawImage(img, fit.ox, fit.oy, dw, dh);
+  }
   /* 크림슨 빛(왼쪽 아래에서) + 가장자리 어둠 */
   ctx.globalCompositeOperation='soft-light';
   var cg=ctx.createLinearGradient(bx, by+bh, bx+bw*0.8, by+bh*0.15); cg.addColorStop(0,'rgba(232,40,64,'+(o.tint==null?0.9:o.tint)+')'); cg.addColorStop(1,'rgba(232,40,64,0)');
@@ -5584,6 +5671,7 @@ function heroPhoto_(ctx, img, rect, P, o){
       ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx+ll, ly-ll*(o.slope||0.14)); ctx.stroke(); }
   }
   ctx.restore();
+  return fit;
 }
 /* 사진 없음 · 작은 사진: 크림슨 사선 패널 + 엠블럼 (큰 번호는 따로 얹는다) */
 function heroEmpty_(ctx, P, emblem){
@@ -5626,11 +5714,20 @@ function heroNum_(ctx, txt, x, y, size, o){
   ctx.lineWidth=o.lw||3; ctx.strokeStyle=o.stroke||'rgba(255,255,255,.5)'; ctx.strokeText(txt,0,0);
   ctx.letterSpacing='0px'; ctx.restore();
 }
-/* 칩: 둥근 알약 (fill · 테두리 · 글자) — 가운데 정렬 기준 x 가 아니라 왼쪽 x 에서 시작, 너비를 돌려준다 */
+/* 큰 등번호를 그려도 되는지: 얼굴(core)과 겹치거나 머리(halo)를 6% 넘게 가리면 생략 */
+function heroNumOk_(fit, nz){ if(!fit || !nz) return true; return rectOv_(fit.F, nz)<=0 && rectOv_(fit.H, nz)<=0.06*fit.H.w*fit.H.h; }
+/* 큰 등번호가 차지하는 자리 (오른쪽 정렬 · 기울임 포함) */
+function heroNumZone_(ctx, txt, x, y, size){
+  txt=String(txt==null?'':txt); if(!txt) return null;
+  ctx.save(); ctx.font='700 '+size+'px Oswald, sans-serif'; ctx.letterSpacing='-4px'; var w=ctx.measureText(txt).width; ctx.letterSpacing='0px'; ctx.restore();
+  return {x:x-w-size*0.04, y:y-size*0.74, w:w+size*0.16, h:size*0.76, soft:true};
+}
+/* 칩: 둥근 알약 — 왼쪽 x 에서 시작, 너비를 돌려준다 (o.measure: 그리지 않고 너비만) */
 function heroChip_(ctx, x, y, txt, o){
   o=o||{}; var h=o.h||48, f=o.font||'700 26px Pretendard, sans-serif';
   ctx.save(); ctx.font=f; if(o.ls) ctx.letterSpacing=o.ls;
   var w=ctx.measureText(txt).width+(o.padX||26)*2+(o.icon?h*0.7:0);
+  if(o.measure){ ctx.letterSpacing='0px'; ctx.restore(); return w; }
   rr_(ctx,x,y,w,h,h/2); ctx.fillStyle=o.bg||'rgba(255,255,255,.14)'; ctx.fill();
   if(o.line!==false){ ctx.lineWidth=1.5; ctx.strokeStyle=o.line||'rgba(255,255,255,.38)'; ctx.stroke(); }
   if(o.icon) drawIcon_(ctx, o.icon, x+(o.padX||26)+h*0.22, y+h/2, h*0.62, o.tier||'gold');
@@ -5638,15 +5735,57 @@ function heroChip_(ctx, x, y, txt, o){
   ctx.fillText(txt, x+(o.padX||26)+(o.icon?h*0.7:0), y+h/2+1); ctx.letterSpacing='0px'; ctx.restore();
   return w;
 }
+/* 이름 글자 크기: 너비에 맞춰 줄인 크기와 실제 너비 */
+function heroNameFs_(ctx, name, size, maxW){
+  var fs=size; ctx.save(); ctx.font='900 '+fs+'px '+CARD_SERIF;
+  while(fs>40 && ctx.measureText(name).width>maxW){ fs-=4; ctx.font='900 '+fs+'px '+CARD_SERIF; }
+  var w=Math.min(maxW, ctx.measureText(name).width); ctx.restore(); return {fs:fs, w:w};
+}
 /* 이름: 명조 · 플래티넘 — 너비에 맞춰 줄인다 */
 function heroName_(ctx, name, x, y, size, maxW, o){
-  o=o||{}; var fs=size; ctx.save(); ctx.font='900 '+fs+'px '+CARD_SERIF;
-  while(fs>40 && ctx.measureText(name).width>maxW){ fs-=4; ctx.font='900 '+fs+'px '+CARD_SERIF; }
+  o=o||{}; var fs=heroNameFs_(ctx, name, size, maxW).fs; ctx.save(); ctx.font='900 '+fs+'px '+CARD_SERIF;
   ctx.textAlign=o.align||'left'; ctx.textBaseline='alphabetic';
   ctx.shadowColor='rgba(0,0,0,.8)'; ctx.shadowBlur=18; ctx.shadowOffsetY=6;
   ctx.fillStyle=cardMetal_(ctx,y-fs*0.78,y+fs*0.08); ctx.fillText(cardEllipsis_(ctx,name,maxW), x, y); ctx.restore();
   return fs;
 }
+/* 카드 사진 손 조절: 미리보기에서 ▲▼◀▶ · 확대/축소 → 기기에 기억 (key = 카드종류:선수) */
+var CARD_ADJ=null;
+function cardAdjAll_(){ if(CARD_ADJ) return CARD_ADJ; try{ CARD_ADJ=JSON.parse(localStorage.getItem('kt_card_adj')||'{}')||{}; }catch(e){ CARD_ADJ={}; } return CARD_ADJ; }
+function cardAdjGet_(k){ return cardAdjAll_()[k]||null; }
+function cardAdjPut_(k, v){ var A=cardAdjAll_(); if(v) A[k]=v; else delete A[k]; try{ localStorage.setItem('kt_card_adj', JSON.stringify(A)); }catch(e){} }
+/* 카드 함수가 미리보기 직전에 부른다: 조절할 사진 목록 · 다시 그리기 */
+function cardAdjSetup_(items, redo){ window._cardAdjNext=(items&&items.length)?{items:items, redo:redo}:null; }
+function cardBusy_(){ if(!window._cardRedoing) toast('카드 만드는 중...'); }
+function cardAdj_(op){
+  var C=window._cardAdjCur; if(!C || !C.items.length) return;
+  var it=C.items[C.sel||0], a=Object.assign({x:0,y:0,z:1}, cardAdjGet_(it.key)||{});
+  if(op==='u') a.y-=0.035; else if(op==='d') a.y+=0.035; else if(op==='l') a.x-=0.035; else if(op==='r') a.x+=0.035;
+  else if(op==='in') a.z=Math.min(2.4, a.z*1.1); else if(op==='out') a.z=Math.max(0.45, a.z/1.1);
+  if(op==='auto') a=null; else { a.x=Math.round(a.x*1000)/1000; a.y=Math.round(a.y*1000)/1000; a.z=Math.round(a.z*1000)/1000; }
+  cardAdjPut_(it.key, a); window._cardRedoing=true;
+  try{ C.redo(); }catch(e){ window._cardRedoing=false; }
+}
+function cardAdjSel_(i){
+  var C=window._cardAdjCur; if(!C) return; C.sel=i;
+  Array.prototype.forEach.call(document.querySelectorAll('.cadj-who button'), function(b,j){ b.classList.toggle('on', j===i); });
+}
+function cardAdjHtml_(C){
+  if(!C || !C.items.length) return '';
+  var ic=function(n,c){ return '<svg class="kt-icon'+(c?' '+c:'')+'" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#kti-'+n+'"/></svg>'; };
+  return '<div class="cadj"><div class="cadj-h"><b>사진 위치</b><span>얼굴이 가리면 옮겨 보세요 · 이 기기에 기억</span></div>'
+    + (C.items.length>1 ? '<div class="cadj-who">'+C.items.map(function(it,i){ return '<button class="'+(i===(C.sel||0)?'on':'')+'" onclick="cardAdjSel_('+i+')">'+esc(it.name||'')+'</button>'; }).join('')+'</div>' : '')
+    + '<div class="cadj-pad">'
+    +   '<button onclick="cardAdj_(\'l\')" aria-label="왼쪽">'+ic('ChevronLeft')+'</button>'
+    +   '<button onclick="cardAdj_(\'u\')" aria-label="위">'+ic('ChevronLeft','up')+'</button>'
+    +   '<button onclick="cardAdj_(\'d\')" aria-label="아래">'+ic('ChevronLeft','dn')+'</button>'
+    +   '<button onclick="cardAdj_(\'r\')" aria-label="오른쪽">'+ic('ChevronRight')+'</button>'
+    +   '<button onclick="cardAdj_(\'out\')" aria-label="축소">'+ic('Minus')+'</button>'
+    +   '<button onclick="cardAdj_(\'in\')" aria-label="확대">'+ic('Plus')+'</button>'
+    +   '<button onclick="cardAdj_(\'auto\')" aria-label="자동">'+ic('RotateCcw')+'</button>'
+    + '</div></div>';
+}
+/* ===== 사진 중심 카드 끝 ===== */
 function fontsReady_(cb, extra){
   /* 카드 글꼴(오스왈드 · 프리텐다드 · 명조)을 미리 불러온다. 네트워크가 느려도 2.5초 뒤에는 그냥 그린다 */
   var done=false, go=function(){ if(done) return; done=true; cb(); };
@@ -5917,10 +6056,17 @@ function showCardPreview_(canvas, name){
   var mime=/\.jpe?g$/i.test(name)?'image/jpeg':'image/png', q=(mime==='image/jpeg')?0.92:undefined;
   try{ canvas.toBlob(function(b){ _cardBlob=b; }, mime, q); }catch(e){}
   var url=canvas.toDataURL(mime, q);
+  /* 사진 카드: 사진 위치 조절 줄 — 다시 그릴 때는 열린 미리보기의 그림만 바꾼다 */
+  var nx=window._cardAdjNext||null, cur=window._cardAdjCur, redo=!!window._cardRedoing; window._cardAdjNext=null; window._cardRedoing=false;
+  if(nx) nx.sel=(cur && cur.items.length===nx.items.length)?(cur.sel||0):0;
+  window._cardAdjCur=nx;
+  var im=document.getElementById('cardPrevImg'), wrap=document.getElementById('sheetWrap');
+  if(redo && im && wrap && wrap.classList.contains('open')){ im.src=url; return; }
   showSheet('<div class="grabber"></div>'
    + '<div class="sheet-head"><h3>카드 미리보기</h3><button class="x" onclick="closeSheet()" aria-label="닫기"><svg class="kt-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#kti-X"/></svg></button></div>'
    + '<div class="sheet-body">'
-   +   '<img src="'+url+'" style="display:block;margin:0 auto;width:auto;max-width:100%;max-height:66vh;border-radius:14px;border:1px solid var(--line-strong);box-shadow:var(--shadow-sm);" alt="card">'
+   +   '<img id="cardPrevImg" src="'+url+'" style="display:block;margin:0 auto;width:auto;max-width:100%;max-height:'+(nx?'58vh':'66vh')+';border-radius:14px;border:1px solid var(--line-strong);box-shadow:var(--shadow-sm);" alt="card">'
+   +   cardAdjHtml_(nx)
    +   '<button class="btn-primary" style="margin-top:14px;" onclick="shareCardNow_()"><svg class="kt-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#kti-Share2"/></svg> 공유 · 저장</button>'
    +   '<button class="btn-ghost" onclick="downloadCardNow_()"><svg class="kt-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#kti-Download"/></svg> 다운로드</button>'
    + '</div>');
@@ -6418,7 +6564,7 @@ function calTap_(ds){
 function sharePlayerCard_(pid){
   var p=(state.players||[]).filter(function(x){ return x.id===pid; })[0];
   if(!p){ toast('선수를 찾을 수 없습니다'); return; }
-  toast('카드 만드는 중...');
+  cardBusy_();
   Promise.all([ API.run('getPlayerCareer', pid), loadPlayerPhotoL_(pid), loadImg_(teamEmblemSrc_()), loadImg_(teamBgSrc_()), hofReady_(), iconsReady_() ]).then(function(rs){
     var career=rs[0]||{}, big=rs[1]||'', emblem=rs[2];
     return loadImg_(big||p.photo||'').then(function(face){
@@ -6445,10 +6591,21 @@ function sharePlayerCard_(pid){
         darkBase_(ctx,W,H);
         // 사진: 원본을 크게 (얼굴보다 넓게 잘라 동작까지) — 원본이 없으면 등번호 패널
         var hero=!!big && photoOk_(face), HP=[[0,0],[W,0],[W,HH-CUT],[0,HH]];
-        if(hero) heroPhoto_(ctx, face, p.photoRect||null, HP, {top:330});
-        else heroEmpty_(ctx, HP, emblem);
         var numTxt=String(numLabel(p.num)); if(numTxt==='미정') numTxt='';
-        heroNum_(ctx, numTxt, W-34, HH-CUT-30, hero?560:660, hero?{}:{fa:0.34, stroke:'rgba(255,255,255,.62)', lw:4});
+        var posTxt=(p.positions&&p.positions.length)?posNormArr_(p.positions).join(' · '):'';
+        var subTxt=(sy?sy.year+' SEASON':'CAREER')+' · PLAYER CARD';
+        var chipNo={font:'700 26px Oswald, sans-serif', ls:'2px', bg:'rgba(200,16,46,.95)', line:'rgba(255,255,255,.55)', padX:22}, chipPos={font:'600 26px Oswald, sans-serif', ls:'3px', bg:'rgba(16,14,20,.55)', padX:22};
+        /* 글자 자리: 사진 속 얼굴이 이 자리를 피한다 */
+        var Z=[];
+        ctx.save(); ctx.font='900 42px '+CARD_SERIF; var tw1=ctx.measureText(ourTeamName_()).width; ctx.font='500 21px Oswald, sans-serif'; ctx.letterSpacing='5px'; var tw2=ctx.measureText(subTxt).width; ctx.letterSpacing='0px'; ctx.restore();
+        Z.push({x:44, y:44, w:Math.max(172+tw1, 174+tw2)-30, h:120});
+        if(myBadges.length){ var bwz=myBadges.length*96+(myBadges.length-1)*14; Z.push({x:W-52-bwz-10, y:44, w:bwz+20, h:124}); }
+        var nfz=heroNameFs_(ctx, String(p.name||''), 136, 720), chw=(numTxt?heroChip_(ctx,0,0,'NO. '+numTxt,Object.assign({measure:1},chipNo))+12:0)+(posTxt?heroChip_(ctx,0,0,posTxt,Object.assign({measure:1},chipPos)):0);
+        Z.push({x:pad-12, y:HH-396, w:Math.max(nfz.w, chw, 360)+28, h:252});
+        var nz=heroNumZone_(ctx, numTxt, W-34, HH-CUT-30, 560); if(nz && hero) Z.push(nz);
+        var fit=hero?heroPhoto_(ctx, face, p.photoRect||null, HP, {top:330, zones:Z, faceH:0.17, px:0.5, py:0.34, adj:cardAdjGet_('player:'+pid)}):null;
+        if(!hero) heroEmpty_(ctx, HP, emblem);
+        if(heroNumOk_(fit, nz)) heroNum_(ctx, numTxt, W-34, HH-CUT-30, hero?560:660, hero?{}:{fa:0.34, stroke:'rgba(255,255,255,.62)', lw:4});
         if(!hero && face){   /* 작은 사진만 있을 때: 가운데 메달 */
           cardRing_(ctx,W/2,600,190,12,'rgba(0,0,0,.75)'); circImg_(ctx,face,W/2,600,190,null);
         }
@@ -6459,7 +6616,7 @@ function sharePlayerCard_(pid){
         ctx.font='900 42px '+CARD_SERIF; ctx.save(); ctx.shadowColor='rgba(0,0,0,.8)'; ctx.shadowBlur=10; ctx.shadowOffsetY=3;
         ctx.fillStyle=cardMetal_(ctx,68,112); ctx.fillText(ourTeamName_(), 172, 90); ctx.restore();
         ctx.save(); ctx.shadowColor='rgba(0,0,0,.8)'; ctx.shadowBlur=8;
-        ctx.fillStyle='#D5D8DF'; ctx.font='500 21px Oswald, sans-serif'; ctx.letterSpacing='5px'; ctx.fillText((sy?sy.year+' SEASON':'CAREER')+' · PLAYER CARD', 174, 132); ctx.letterSpacing='0px'; ctx.restore();
+        ctx.fillStyle='#D5D8DF'; ctx.font='500 21px Oswald, sans-serif'; ctx.letterSpacing='5px'; ctx.fillText(subTxt, 174, 132); ctx.letterSpacing='0px'; ctx.restore();
         // 우상단: 획득 뱃지 (항목별 최고 단계)
         if(myBadges.length){
           var bd0=96, bgap0=14;
@@ -6477,10 +6634,9 @@ function sharePlayerCard_(pid){
         ctx.save(); ctx.fillStyle=CARD_GOLD; ctx.font='700 24px Oswald, sans-serif'; ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.letterSpacing='5px';
         ctx.shadowColor='rgba(0,0,0,.85)'; ctx.shadowBlur=10; ctx.fillText('★ THE BEST PLAYER', pad, HH-372); ctx.letterSpacing='0px'; ctx.restore();
         heroName_(ctx, String(p.name||''), pad-4, HH-232, 136, 720);
-        var posTxt=(p.positions&&p.positions.length)?posNormArr_(p.positions).join(' · '):'';
         var chx=pad;
-        if(numTxt) chx+=heroChip_(ctx, chx, HH-200, 'NO. '+numTxt, {font:'700 26px Oswald, sans-serif', ls:'2px', bg:'rgba(200,16,46,.95)', line:'rgba(255,255,255,.55)', padX:22})+12;
-        if(posTxt) heroChip_(ctx, chx, HH-200, posTxt, {font:'600 26px Oswald, sans-serif', ls:'3px', bg:'rgba(16,14,20,.55)', padX:22});
+        if(numTxt) chx+=heroChip_(ctx, chx, HH-200, 'NO. '+numTxt, chipNo)+12;
+        if(posTxt) heroChip_(ctx, chx, HH-200, posTxt, chipPos);
         // 시즌 스탯 타일 4개
         var s = sy || tt;
         var tiles=[['골', s.g||0], ['도움', s.a||0], ['출석', (s.present||0)+(s.late||0)], ['출석률', rate(s)+'%']];
@@ -6532,10 +6688,11 @@ function sharePlayerCard_(pid){
         var yl=(years||[]).slice(0,4).map(function(y){ return y.year+' '+y.g+'골 '+y.a+'도움'; }).join('   ·   ');
         if(yl){ ctx.fillStyle='rgba(255,255,255,.55)'; ctx.font='500 24px Pretendard, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(cardEllipsis_(ctx, yl, W-pad*2), W/2, ylY); }
         cardFooterW_(ctx, W, H);
+        cardAdjSetup_(hero?[{key:'player:'+pid, name:p.name}]:null, function(){ sharePlayerCard_(pid); });
         showCardPreview_(c, 'FCJEMIRO_player_'+String(p.name||pid)+(hero?'.jpg':'.png'));
       }, p.name);
     });
-  }).catch(function(){ toast('카드를 만들지 못했습니다'); });
+  }).catch(function(){ window._cardRedoing=false; toast('카드를 만들지 못했습니다'); });
 }
 
 /* ── 엑셀 백업 내보내기 ── */
@@ -7433,7 +7590,7 @@ function msBadgeChips_(pid, key, v){
 function shareMilestone_(pid, key, tier){
   var p=(state.players||[]).filter(function(x){ return x.id===pid; })[0] || pname_(pid);
   var cat=MS_CATS[key], T=msTierFor_(key, tier);
-  toast('카드 만드는 중...');
+  cardBusy_();
   Promise.all([ API.run('getPlayerCareer', pid), loadPlayerPhotoL_(pid), loadImg_(teamEmblemSrc_()), iconsReady_() ]).then(function(rs){
     var tt=(rs[0]&&rs[0].total)||{}, big=rs[1]||'', emblem=rs[2];
     var v = key==='g' ? (tt.g||0) : key==='a' ? (tt.a||0) : key==='cs' ? (tt.cs||0) : ((tt.present||0)+(tt.late||0));
@@ -7445,7 +7602,13 @@ function shareMilestone_(pid, key, tier){
         darkBase_(ctx,W,H);
         /* 사진: 원본을 크게 (없으면 크림슨 패널) */
         var hero=!!big && photoOk_(face), HP=[[0,0],[W,0],[W,HH-CUT],[0,HH]];
-        if(hero) heroPhoto_(ctx, face, p.photoRect||null, HP, {top:330, ax:0.42});
+        var mcx=W-250, mcy=HH-CUT-150, TS=330;
+        /* 글자 · 뱃지 자리 — 얼굴이 피한다 */
+        ctx.save(); ctx.font='900 46px '+CARD_SERIF; var hw1=ctx.measureText(ourTeamName_()).width; ctx.font='500 23px Oswald, sans-serif'; ctx.letterSpacing='7px'; var hw2=ctx.measureText('CAREER MILESTONE').width; ctx.letterSpacing='0px';
+        ctx.font='800 42px Pretendard, sans-serif'; var phw=ctx.measureText('통산 '+tier+cat.unit+' 달성!').width; ctx.restore();
+        var hwz=Math.max(hw1,hw2)+40, nfz=heroNameFs_(ctx, String(p.name||''), 124, 560);
+        var Z=[{x:W/2-hwz/2, y:52, w:hwz, h:118}, {x:mcx-TS*0.6, y:mcy-TS*0.62, w:TS*1.2, h:TS*1.24+30}, {x:pad-12, y:HH-352, w:Math.max(nfz.w, phw, 330)+28, h:240}];
+        if(hero) heroPhoto_(ctx, face, p.photoRect||null, HP, {top:330, zones:Z, faceH:0.18, px:0.42, py:0.36, adj:cardAdjGet_('ms:'+pid)});
         else {
           heroEmpty_(ctx, HP, emblem);
           if(face){ cardRing_(ctx,W*0.3,470,170,10,'rgba(0,0,0,.75)'); circImg_(ctx,face,W*0.3,470,170,null); }
@@ -7459,7 +7622,6 @@ function shareMilestone_(pid, key, tier){
         ctx.fillStyle='#D5D8DF'; ctx.font='500 23px Oswald, sans-serif'; ctx.letterSpacing='7px';
         ctx.fillText('CAREER MILESTONE', W/2+3, 146); ctx.letterSpacing='0px'; ctx.restore();
         // 뱃지: 사진 오른쪽 아래, 사선에 걸쳐 크게 + 단계 색 후광
-        var mcx=W-250, mcy=HH-CUT-150, TS=330;
         var hg=ctx.createRadialGradient(mcx,mcy,TS*0.2,mcx,mcy,TS*1.05); hg.addColorStop(0,T.c+'66'); hg.addColorStop(1,T.c+'00');
         ctx.fillStyle=hg; ctx.fillRect(mcx-TS*1.1,mcy-TS*1.1,TS*2.2,TS*2.2);
         if(BADGE_ALPHA && BADGE_IMG){
@@ -7499,10 +7661,11 @@ function shareMilestone_(pid, key, tier){
         if(frac>0.02){ ctx.save(); rr_(ctx,bx+2,by+2,(bw-4)*frac,22,11); ctx.shadowColor=T.c; ctx.shadowBlur=14; var pg=ctx.createLinearGradient(bx,0,bx+bw,0); pg.addColorStop(0,shade_(T.c,0.25)); pg.addColorStop(1,T.c); ctx.fillStyle=pg; ctx.fill(); ctx.restore();
           ctx.save(); rr_(ctx,bx+2,by+2,(bw-4)*frac,22,11); ctx.clip(); var pgl=ctx.createLinearGradient(0,by,0,by+26); pgl.addColorStop(0,'rgba(255,255,255,.5)'); pgl.addColorStop(0.5,'rgba(255,255,255,0)'); ctx.fillStyle=pgl; ctx.fillRect(bx,by,bw,26); ctx.restore(); }
         cardFooterW_(ctx,W,H);
+        cardAdjSetup_(hero?[{key:'ms:'+pid, name:p.name}]:null, function(){ shareMilestone_(pid, key, tier); });
         showCardPreview_(c,'FCJEMIRO_milestone_'+String(p.name||pid)+'_'+key+tier+(hero?'.jpg':'.png'));
       }, p.name);
     });
-  }).catch(function(){ toast('카드를 만들지 못했습니다'); });
+  }).catch(function(){ window._cardRedoing=false; toast('카드를 만들지 못했습니다'); });
 }
 
 /* ── 명예의 전당 ── */
@@ -7604,7 +7767,7 @@ function shareHofCard_(year){
   var b=state._hofBundle||{};
   var s=seasonData_(year,(b.matches||[]),(b.stats||[]),(b.attendance||[]));
   var hon=honors_(); var mv=hofMvp_(year, s.ms, hon);
-  toast('카드 만드는 중...');
+  cardBusy_();
   var rows=[
     {icon:'trophy', k:'MVP', en:'MOST VALUABLE PLAYER', pids:mv.pids||[], names:mv.names||[], val:'', sub:mv.auto?('MOM 투표 '+mv.momN+'회'):''},
     {icon:'boot', k:'득점왕', en:'TOP SCORER', pids:s.scorer?s.scorer.pids:[], names:s.scorer?s.scorer.names:[], val:s.scorer?(s.scorer.v+'골'):''},
@@ -7616,7 +7779,7 @@ function shareHofCard_(year){
     var pid=r.pids[0]; if(!pid) return Promise.resolve(null);
     var p=playerOf(pid);
     return loadPlayerPhotoL_(pid).catch(function(){ return ''; }).then(function(big){
-      return loadImg_(big||p.photo||'').then(function(im){ return im?{img:im, rect:(big&&p.photoRect)||null, big:!!big, num:p.num}:null; });
+      return loadImg_(big||p.photo||'').then(function(im){ return im?{img:im, rect:(big&&p.photoRect)||null, big:!!big, num:p.num, pid:pid, name:p.name||r.names[0]||''}:null; });
     });
   });
   Promise.all([loadImg_(teamEmblemSrc_()), iconsReady_(), Promise.all(faceJobs)]).then(function(rs){
@@ -7625,7 +7788,7 @@ function shareHofCard_(year){
       var W=1080, pad=54, top=384, MH=640, GAP=22, AH=470;
       var ay=top+MH+GAP, H=ay+AH+150;
       var c=document.createElement('canvas'); c.width=W; c.height=H;
-      var ctx=c.getContext('2d'), any=false;
+      var ctx=c.getContext('2d'), any=false, adjItems=[];
       darkBase_(ctx,W,H);
       cardWatermark_(ctx, W, H, emblem, 0.05);
       /* 머리 */
@@ -7648,24 +7811,33 @@ function shareHofCard_(year){
         var has=r.names.length>0, hero=has && f && f.img && f.big && photoOk_(f.img), B=polyBox_(P);
         ctx.save(); ctx.shadowColor=big?'rgba(199,162,75,.35)':'rgba(0,0,0,.6)'; ctx.shadowBlur=big?44:26; ctx.shadowOffsetY=big?10:12;
         poly_(ctx,P); ctx.fillStyle='#121016'; ctx.fill(); ctx.restore();
-        if(hero){ heroPhoto_(ctx, f.img, f.rect, P, {top:big?200:150, fade:big?0.5:0.42, k:big?2.4:2.1, lines:big, tint:big?0.9:0.7}); any=true; }
+        /* 글자 자리 (상 이름 칩 · 공동 수상 표시 · 이름과 기록 · 큰 번호) — 얼굴이 피한다 */
+        var chipO={font:big?'700 24px Oswald, sans-serif':'700 22px Pretendard, sans-serif', ls:big?'3px':'0px', h:big?50:44, padX:big?18:14, icon:r.icon};
+        var chipT=big?(r.k+'  ·  '+r.en):r.k, Z=[{x:B.x+(big?18:8), y:B.y+(big?16:8), w:heroChip_(ctx,0,0,chipT,Object.assign({measure:1},chipO))+16, h:(big?50:44)+16}];
+        if(r.pids.length>1) Z.push({x:B.x+B.w-(big?100:80), y:B.y+(big?20:10), w:(big?90:72), h:52});
+        var x0=B.x+(big?36:20), wmax=B.w-(big?72:36), yb=B.y+B.h-(big?92:24);
+        if(has){ var nfz=heroNameFs_(ctx, r.names.join(' · '), big?110:52, wmax), nbz=yb-(big?44:62);
+          Z.push({x:x0-10, y:nbz-nfz.fs*0.84-10, w:Math.max(nfz.w, big?300:150)+20, h:(yb+(big?26:4))-(nbz-nfz.fs*0.84-10)}); }
+        var nzz=null;
+        if(big && f && f.num!=null && f.num!==''){ nzz=heroNumZone_(ctx, String(f.num), B.x+B.w-40, B.y+B.h-110, 470); if(nzz) Z.push(nzz); }
+        var fit=null;
+        if(hero){ fit=heroPhoto_(ctx, f.img, f.rect, P, {top:big?200:150, fade:big?0.5:0.42, lines:big, tint:big?0.9:0.7, zones:Z, faceH:big?0.34:0.26, px:big?0.6:0.5, py:big?0.42:0.38, margin:big?20:12, adj:cardAdjGet_((big?'hofm:':'hofa:')+f.pid)});
+          any=true; adjItems.push({key:(big?'hofm:':'hofa:')+f.pid, name:(big?'MVP ':r.k+' ')+(f.name||'')}); }
         else {
           heroEmpty_(ctx, P, emblem);
           if(has && f && f.img){ var rr2=Math.min(B.w,B.h)*(big?0.26:0.3); cardRing_(ctx,B.x+B.w*(big?0.62:0.5),B.y+B.h*0.42,rr2,Math.max(5,rr2*0.06),'rgba(0,0,0,.7)'); circImg_(ctx,f.img,B.x+B.w*(big?0.62:0.5),B.y+B.h*0.42,rr2,null); }
           else drawIcon_(ctx, r.icon, B.x+B.w*(big?0.62:0.5), B.y+B.h*0.42, big?220:150, 'gold');
         }
-        if(big && has && f && f.num!=null && f.num!=='' && hero){ ctx.save(); poly_(ctx,P); ctx.clip(); heroNum_(ctx, String(f.num), B.x+B.w-(big?40:16), B.y+B.h-(big?110:96), big?470:230, {fa:0.14}); ctx.restore(); }
+        if(big && has && f && f.num!=null && f.num!=='' && hero && heroNumOk_(fit, nzz)){ ctx.save(); poly_(ctx,P); ctx.clip(); heroNum_(ctx, String(f.num), B.x+B.w-(big?40:16), B.y+B.h-(big?110:96), big?470:230, {fa:0.14}); ctx.restore(); }
         /* 테두리: MVP 는 금, 나머지는 플래티넘 */
         var g=ctx.createLinearGradient(B.x,B.y,B.x+B.w,B.y+B.h);
         if(big){ g.addColorStop(0,'#F3DFA0'); g.addColorStop(0.5,'#C7A24B'); g.addColorStop(1,'#8a6d1f'); } else { g.addColorStop(0,'rgba(255,255,255,.62)'); g.addColorStop(0.5,'rgba(201,205,214,.22)'); g.addColorStop(1,'rgba(255,255,255,.45)'); }
         poly_(ctx,P); ctx.lineWidth=big?4:2; ctx.strokeStyle=g; ctx.stroke();
         /* 위: 상 이름 칩 */
-        heroChip_(ctx, B.x+(big?26:16), B.y+(big?24:16), big?(r.k+'  ·  '+r.en):r.k, {font:big?'700 24px Oswald, sans-serif':'700 22px Pretendard, sans-serif', ls:big?'3px':'0px', h:big?50:44, padX:big?18:14,
-          icon:r.icon, tier:'gold', bg:'rgba(12,10,16,.72)', line:big?'rgba(199,162,75,.75)':'rgba(255,255,255,.3)', color:big?'#F3DFA0':'#F4F3F6'});
+        heroChip_(ctx, B.x+(big?26:16), B.y+(big?24:16), chipT, Object.assign({}, chipO, {tier:'gold', bg:'rgba(12,10,16,.72)', line:big?'rgba(199,162,75,.75)':'rgba(255,255,255,.3)', color:big?'#F3DFA0':'#F4F3F6'}));
         if(r.pids.length>1){ ctx.save(); ctx.font='700 22px Pretendard, sans-serif'; var tw=ctx.measureText('+'+(r.pids.length-1)).width+24, bx2=B.x+B.w-tw-(big?24:14), by2=B.y+(big?28:18);
           rr_(ctx,bx2,by2,tw,36,12); ctx.fillStyle=CARD_RED; ctx.fill(); ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('+'+(r.pids.length-1), bx2+tw/2, by2+19); ctx.restore(); }
         /* 아래: 이름 · 기록 */
-        var x0=B.x+(big?36:20), wmax=B.w-(big?72:36), yb=B.y+B.h-(big?92:24);
         if(has){
           var label=r.names.join(' · ');
           heroName_(ctx, label, x0, yb-(big?44:62), big?110:52, wmax);
@@ -7686,9 +7858,10 @@ function shareHofCard_(year){
       [1,2,3].forEach(function(ri,j){ var x=pad+j*(aw+18), yy=ay+(2-j)*0;
         panel([[x,yy],[x+aw-44,yy],[x+aw,yy+44],[x+aw,yy+AH],[x,yy+AH]], faces[ri], rows[ri], false); });
       cardFooterW_(ctx,W,H);
+      cardAdjSetup_(adjItems, function(){ shareHofCard_(year); });
       showCardPreview_(c,'FCJEMIRO_HOF_'+year+(any?'.jpg':'.png'));
     });
-  }).catch(function(){ toast('카드를 만들지 못했습니다'); });
+  }).catch(function(){ window._cardRedoing=false; toast('카드를 만들지 못했습니다'); });
 }
 
 /* ================= Firestore 데이터 계층 =================
@@ -10959,7 +11132,7 @@ function momCardData_(matchId, voteDoc){
 }
 /* 경기 결과 화면 등에서 호출: 투표 문서가 없으면 조회해 득표를 함께 넣는다 */
 function shareMomCard_(matchId, voteDoc){
-  toast('MOM 카드 만드는 중...');
+  if(!window._cardRedoing) toast('MOM 카드 만드는 중...');
   var vp=Promise.resolve(voteDoc||null);
   if(!voteDoc && window.db && FS.enabled && isAdmin()){
     vp=db.collection(VOTE_COLL).where('matchId','==',matchId).limit(5).get().then(function(qs){
@@ -10967,11 +11140,11 @@ function shareMomCard_(matchId, voteDoc){
       return arr.filter(function(v){ return v.closed; })[0] || arr[0] || null;
     }).catch(function(){ return null; });
   }
-  vp.then(function(vd){ return momCardData_(matchId, vd); }).then(function(d){
+  vp.then(function(vd){ window._momLast={matchId:matchId, voteDoc:vd||null}; return momCardData_(matchId, vd); }).then(function(d){
     if(!d){ toast('이 경기에 확정된 MOM이 없습니다'); return; }
     return Promise.all([loadImg_(teamEmblemSrc_()), iconsReady_()].concat(d.players.map(function(p){ return loadImg_(p.big||p.thumb||''); })))
       .then(function(rs){ fontsReady_(function(){ drawMomCard_(d, rs[0], rs.slice(2)); }, d.players.map(function(p){ return p.name||''; }).join(' ')); });
-  }).catch(function(e){ if(window.console)console.warn(e); toast('카드를 만들지 못했습니다'); });
+  }).catch(function(e){ if(window.console)console.warn(e); window._cardRedoing=false; toast('카드를 만들지 못했습니다'); });
 }
 function drawMomCard_(d, emblem, faces){
   var m=d.match, ps=d.players, n=ps.length;
@@ -10982,23 +11155,43 @@ function drawMomCard_(d, emblem, faces){
   var ctx=c.getContext('2d');
   darkBase_(ctx,W,H);
   function yb(x){ return HH-CUT*x/W; }                  /* 사진 아래 사선의 높이 */
-  /* 사진: 한 명은 화면 가득, 여럿이면 비스듬한 조각으로 나눈다 */
-  var G=14, SK=(n===1)?0:130, any=false;
+  var G=14, SK=(n===1)?0:130, any=false, sl=seasonLabel_(seasonKeyOf_(m.date||''));
+  var chipMom={font:'700 26px Oswald, sans-serif', ls:'3px', bg:'rgba(200,16,46,.95)', line:'rgba(255,255,255,.55)', padX:22}, chipPos={font:'600 26px Oswald, sans-serif', ls:'3px', bg:'rgba(16,14,20,.55)', padX:22};
+  var head={x:60, y:44, w:W-120, h:190};                /* 팀 · MAN OF THE MATCH · 경기 줄 */
+  /* 1) 조각과 글자 자리를 먼저 정한다 — 사진 속 얼굴이 글자 자리를 피하도록 */
   ps.forEach(function(p,i){
     var xb0=(i===0)?0:(W*i/n+G/2), xb1=(i===n-1)?W:(W*(i+1)/n-G/2);
     var xt0=(i===0)?0:xb0+SK/2, xt1=(i===n-1)?W:xb1+SK/2; xb0=(i===0)?0:xb0-SK/2; xb1=(i===n-1)?W:xb1-SK/2;
-    var P=[[xt0,0],[xt1,0],[xb1,yb(xb1)],[xb0,yb(xb0)]], img=faces[i], hero=!!p.big && photoOk_(img);
-    if(hero){ heroPhoto_(ctx, img, p.big?(p.rect||null):null, P, {top:(n===1)?370:330, k:(n===1)?2.5:2.2, lines:(i===0)}); any=true; }
+    var P=[[xt0,0],[xt1,0],[xb1,yb(xb1)],[xb0,yb(xb0)]];
+    var xl=function(y){ return P[0][0]+(P[3][0]-P[0][0])*y/P[3][1]; }, xr=function(y){ return P[1][0]+(P[2][0]-P[1][0])*y/P[2][1]; };
+    var base=yb((n===1?pad:P[3][0])+120), nb=base-(n===1?232:(n===2?150:128)), fs0=(n===1?136:(n===2?92:70));
+    var x0=(n===1)?pad:xl(nb-fs0*0.8)+28, wmax=(n===1)?(W-pad*2-40):(xr(nb)-x0-14);
+    var Z=[head], nm=String(p.name||'');
+    if(n===1){
+      var nf=heroNameFs_(ctx, nm, 136, Math.min(wmax,720)), cw=heroChip_(ctx,0,0,'MOM',Object.assign({measure:1},chipMom))+12+(p.pos?heroChip_(ctx,0,0,posNorm_(p.pos),Object.assign({measure:1},chipPos)):0);
+      ctx.save(); ctx.font='700 24px Oswald, sans-serif'; ctx.letterSpacing='5px'; var gw=ctx.measureText('★ '+sl+' SEASON · MOM #'+(p.nth||1)).width; ctx.letterSpacing='0px'; ctx.restore();
+      Z.push({x:x0-12, y:base-394, w:Math.max(nf.w, cw, gw)+28, h:250});
+      var nx=Math.min(P[1][0],P[2][0])-34, nz=heroNumZone_(ctx, String(p.num!=null?p.num:''), nx, yb(nx)-34, 540); if(nz) Z.push(nz);
+    } else {
+      var nf2=heroNameFs_(ctx, nm, fs0, wmax);
+      Z.push({x:x0-10, y:nb-nf2.fs*0.84-8, w:nf2.w+20, h:nf2.fs*0.84+8+(n===2?58:48)});
+    }
+    p._P=P; p._Z=Z; p._L={x0:x0, wmax:wmax, base:base, nb:nb, fs0:fs0};
+  });
+  /* 2) 사진: 한 명은 화면 가득, 여럿이면 비스듬한 조각으로 */
+  ps.forEach(function(p,i){
+    var P=p._P, img=faces[i], hero=!!p.big && photoOk_(img);
+    if(hero){ p._fit=heroPhoto_(ctx, img, p.rect||null, P, {top:(n===1)?370:330, lines:(i===0), zones:p._Z, faceH:(n===1?0.17:0.13), px:0.5, py:(n===1?0.42:0.4), adj:cardAdjGet_((n===1?'mom1:':'momn:')+p.pid)}); any=true; }
     else {
       heroEmpty_(ctx, P, emblem);
       if(img){ var B=polyBox_(P), rr=Math.min(B.w*0.36, 190); cardRing_(ctx,B.x+B.w/2,B.y+B.h*0.42,rr,Math.max(6,rr*0.06),'rgba(0,0,0,.75)'); circImg_(ctx,img,B.x+B.w/2,B.y+B.h*0.42,rr,null); }
     }
-    p._P=P; p._hero=hero;
+    p._hero=hero;
   });
   /* 큰 등번호 (한 명일 때만 — 여럿이면 이름과 겹친다) */
-  if(n===1) ps.forEach(function(p,i){ var P=p._P, bn=String(p.num!=null?p.num:''); if(!bn) return;
-    var xr=Math.min(P[1][0],P[2][0])+(n===1?-34:-18), sz=(n===1)?540:(n===2?360:250);
-    ctx.save(); poly_(ctx,P); ctx.clip(); heroNum_(ctx, bn, xr, yb(xr)-(n===1?34:26), sz, p._hero?{}:{fa:0.3, stroke:'rgba(255,255,255,.6)'}); ctx.restore(); });
+  if(n===1) ps.forEach(function(p){ var P=p._P, bn=String(p.num!=null?p.num:''); if(!bn) return;
+    var xr=Math.min(P[1][0],P[2][0])-34; if(!heroNumOk_(p._fit, heroNumZone_(ctx, bn, xr, yb(xr)-34, 540))) return;
+    ctx.save(); poly_(ctx,P); ctx.clip(); heroNum_(ctx, bn, xr, yb(xr)-34, 540, p._hero?{}:{fa:0.3, stroke:'rgba(255,255,255,.6)'}); ctx.restore(); });
   heroEdge_(ctx,[0,HH],[W,HH-CUT],{s0:(n===1?70:46)});
   /* 타이틀 (사진 위) */
   ctx.textAlign='center'; ctx.textBaseline='middle';
@@ -11014,20 +11207,16 @@ function drawMomCard_(d, emblem, faces){
   ctx.fillStyle='rgba(255,255,255,.9)'; ctx.font='600 30px Pretendard, sans-serif';
   ctx.fillText(fmtDateDot(m.date||'')+'  ·  vs '+(m.opponent||'상대')+(sc?'  ·  '+sc:''), W/2, 206); ctx.restore();
   /* 이름 (사진 왼쪽 아래) */
-  var sl=seasonLabel_(seasonKeyOf_(m.date||''));
-  ps.forEach(function(p,i){
-    /* 비스듬한 조각: 글자 높이에서의 왼쪽 · 오른쪽 경계를 구해 그 안에 쓴다 */
-    var P=p._P, xl=function(y){ return P[0][0]+(P[3][0]-P[0][0])*y/P[3][1]; }, xr=function(y){ return P[1][0]+(P[2][0]-P[1][0])*y/P[2][1]; };
-    var base=yb((n===1?pad:P[3][0])+120), nb=base-(n===1?232:(n===2?150:128)), fs0=(n===1?136:(n===2?92:70));
-    var x0=(n===1)?pad:xl(nb-fs0*0.8)+28, wmax=(n===1)?(W-pad*2-40):(xr(nb)-x0-14);
+  ps.forEach(function(p){
+    var L=p._L, x0=L.x0, wmax=L.wmax, base=L.base;
     if(n===1){
       ctx.save(); ctx.fillStyle=CARD_GOLD; ctx.font='700 24px Oswald, sans-serif'; ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.letterSpacing='5px';
       ctx.shadowColor='rgba(0,0,0,.85)'; ctx.shadowBlur=10; ctx.fillText('★ '+sl+' SEASON · MOM #'+(p.nth||1), x0, base-372); ctx.letterSpacing='0px'; ctx.restore();
       heroName_(ctx, String(p.name||''), x0-4, base-232, 136, Math.min(wmax,720));
-      var chx=x0; chx+=heroChip_(ctx, chx, base-200, 'MOM', {font:'700 26px Oswald, sans-serif', ls:'3px', bg:'rgba(200,16,46,.95)', line:'rgba(255,255,255,.55)', padX:22})+12;
-      if(p.pos) heroChip_(ctx, chx, base-200, posNorm_(p.pos), {font:'600 26px Oswald, sans-serif', ls:'3px', bg:'rgba(16,14,20,.55)', padX:22});
+      var chx=x0; chx+=heroChip_(ctx, chx, base-200, 'MOM', chipMom)+12;
+      if(p.pos) heroChip_(ctx, chx, base-200, posNorm_(p.pos), chipPos);
     } else {
-      var fs=heroName_(ctx, String(p.name||''), x0-2, nb, fs0, wmax);
+      heroName_(ctx, String(p.name||''), x0-2, L.nb, L.fs0, wmax);
       var lab=(p.pos?posNorm_(p.pos)+'  ·  ':'')+((p.num!=null&&p.num!=='')?'NO.'+p.num+'  ·  ':'')+'MOM';
       ctx.save(); ctx.fillStyle=CARD_GOLD; ctx.font='600 '+(n===2?24:20)+'px Oswald, sans-serif'; ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.letterSpacing='3px';
       ctx.shadowColor='rgba(0,0,0,.85)'; ctx.shadowBlur=8; ctx.fillText(cardEllipsis_(ctx,lab,wmax), x0, base-(n===2?108:92)); ctx.letterSpacing='0px'; ctx.restore();
@@ -11056,6 +11245,8 @@ function drawMomCard_(d, emblem, faces){
   ctx.fillStyle=CARD_GOLD; ctx.font='600 24px Oswald, sans-serif'; ctx.letterSpacing='4px';
   ctx.fillText('CHOSEN BY TEAMMATES', W/2, yy+12); ctx.letterSpacing='0px';
   cardFooterW_(ctx,W,H);
+  var LM=window._momLast||{};
+  cardAdjSetup_(ps.filter(function(p){ return p._hero; }).map(function(p){ return {key:(n===1?'mom1:':'momn:')+p.pid, name:p.name}; }), function(){ shareMomCard_(m.id, LM.matchId===m.id?LM.voteDoc:null); });
   showCardPreview_(c,'FCJEMIRO_MOM_'+String(m.date||'').replace(/-/g,'')+(any?'.jpg':'.png'));
 }
 
