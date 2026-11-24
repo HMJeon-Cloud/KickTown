@@ -2193,7 +2193,7 @@ var APP_SUB = 'FOOTBALL CLUB';
 var APP_REGION = '';   /* 새 팀 설치 시 헤더 지역 표기 (팀 정보에서 변경 가능) */
 var APP_NOTE = '';     /* 새 팀 설치 시 헤더 소개 문구 */
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '17.3.1';
+var APP_VERSION = '17.3.3';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -2849,7 +2849,7 @@ function viewTeam(){
   var absentScore = (state.cfg.absentScore!=null) ? Number(state.cfg.absentScore) : -1;
   if(!isAdmin()){
     return dDayBanner_()
-      + '<div class="ro-bar"><svg class="kt-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#kti-Eye"/></svg> 조회 전용 모드 · 기록과 스쿼드를 볼 수 있어요'
+      + '<div class="ro-bar"><svg class="kt-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#kti-Eye"/></svg> 조회 전용 모드 · 전술 보드는 직접 만들 수 있어요'
       +   '<button class="ro-sw" onclick="adminSwitch_()"><svg class="kt-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#kti-ShieldCheck"/></svg> 관리자</button></div>'
       + '<div class="eyebrow">등록 선수 '+players.length+'명</div>'
       + '<div class="squad">'+body+'</div>'
@@ -5396,7 +5396,7 @@ function openPinAdmin_(){
    +   '<div class="b11-help">'
    +     '<b>총관리자</b> — PIN 변경을 포함한 모든 권한 (지금 이 기기)<br>'
    +     '<b>팀 관리자</b> — 경기·기록·스쿼드 입력과 수정 (PIN 관리는 불가)<br>'
-   +     '<b>팀원</b> — 접속 화면의 <b>팀원으로 접속</b> 버튼 · 조회만 가능'
+   +     '<b>팀원</b> — 접속 화면의 <b>팀원으로 접속</b> 버튼 · 조회 + 전술 보드 직접 만들기 (AI 제외)'
    +   '</div>'
    +   '<div class="eyebrow" style="margin:14px 0 8px;">총관리자 PIN '+(c.ownerPinHash?'<span style="color:#1E9E6A;">설정됨</span>':'<span style="color:var(--red);">미설정</span>')+'</div>'
    +   '<div class="field"><label>현재 총관리자 PIN</label><input id="po_cur" type="password" placeholder="현재 PIN"></div>'
@@ -13520,7 +13520,7 @@ var TAC_TXT_EX=[
   ['압박','제목: 전방 압박으로 뺏기\n상대 4-4-2\n상대 센터백이 공을 잡는다\n9번이 상대 센터백을 압박하고 양 윙어는 상대 풀백 쪽으로 붙는다\n상대 센터백이 상대 풀백에게 패스\n7번이 상대 풀백을 압박, 수비 라인을 올린다\n10번이 공을 빼앗는다']
 ];
 function tacRuleSheet_(mode){
-  if(!requireAdmin()) return;
+  if(!tacAiAllowed_()) return;
   var add=(mode==='add' && TAC), draft=''; try{ draft=localStorage.getItem(add?'kt_tac_txt2':'kt_tac_txt')||''; }catch(e){}
   showSheet('<div class="grabber"></div>'
    + '<div class="sheet-head"><h3>'+(add?'간단 해석으로 장면 잇기':'간단 해석으로 만들기')+'</h3><button class="x" onclick="closeSheet()" aria-label="닫기"><svg class="kt-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#kti-X"/></svg></button></div>'
@@ -13597,6 +13597,7 @@ function tacAiState_(doc, plan, st, idx){
   };
 }
 function tacAiCall_(mode, text, stateObj){
+  if(!isAdmin()) return Promise.reject({error:'admin'});
   var url=tacAiUrl_(); if(!url) return Promise.reject({error:'nourl'});
   var ctl=(typeof AbortController!=='undefined')?new AbortController():null, tm=setTimeout(function(){ try{ ctl&&ctl.abort(); }catch(e){} }, 150000);
   return fetch(url, {method:'POST', headers:{'Content-Type':'application/json', apikey:SUPA_KEY, Authorization:'Bearer '+SUPA_KEY},
@@ -13607,6 +13608,7 @@ function tacAiCall_(mode, text, stateObj){
     .then(function(j){ clearTimeout(tm); return j; });
 }
 function tacAiErrMsg_(e){
+  if(e && e.error==='admin') return 'AI로 만들기는 관리자만 쓸 수 있어요.';
   e=e||{};
   if(e.error==='nourl') return '이 사이트에는 AI 연결이 없어요 (체험판이거나 서버 주소가 비어 있어요).';
   if(e.error==='nofn' || e.status===404) return 'AI 기능이 아직 서버에 설치되지 않았어요. 관리자가 Supabase에 kt-tactic-ai 함수를 배포해야 해요.';
@@ -13685,7 +13687,7 @@ var TAC_AI_EX=[
 ];
 var TAC_AI={mode:'new', busy:false, res:null, t0:0, tick:0};
 function tacTextSheet_(mode){
-  if(!requireAdmin()) return;
+  if(!tacAiAllowed_()) return;
   var add=(mode==='add' && TAC), draft=''; TAC_AI={mode:add?'add':'new', busy:false, res:null, t0:0, tick:0}; TAC_TXT_MODE=TAC_AI.mode;
   try{ draft=localStorage.getItem(add?'kt_tac_ai2':'kt_tac_ai')||''; }catch(e){}
   showSheet('<div class="grabber"></div>'
@@ -14429,8 +14431,8 @@ function tacPatOpen_(id){
   tacOpenDoc_(doc, 'view', {preview:true});
 }
 function tacPatKeep_(){
-  if(!TAC || !TAC.preview) return; if(!requireAdmin()) return;
-  var doc=TAC.doc, same=(state.tactics||[]).filter(function(x){ return x.title===doc.title || String(x.title||'').indexOf(doc.title+' ')===0; }).length;
+  if(!TAC || !TAC.preview) return; if(!tacNameOk_(function(){ tacPatKeep_(); })) return;
+  var doc=tacOwn_(TAC.doc), same=(state.tactics||[]).filter(function(x){ return x.title===doc.title || String(x.title||'').indexOf(doc.title+' ')===0; }).length;
   if(same) doc.title=doc.title+' '+(same+1);
   TAC.preview=false; tacStop_();
   tacSaveDoc_(tacClone_(doc)).catch(function(){ toast('저장 실패 · 네트워크 확인'); });
@@ -15511,6 +15513,32 @@ function tacLoad_(force){
   }).catch(function(e){ state.tacLoaded=true; state.tactics=state.tactics||[]; try{ fsErr_(e,'tactics'); }catch(_){} if(state.screen==='form' && state.formMode==='tac') render(); });
 }
 function tacById_(id){ return (state.tactics||[]).filter(function(x){ return x.id===id; })[0]||null; }
+/* ---------- 전술 권한 (v17.3.2) ----------
+ * 관리자: 모두 · 팀원(조회 전용): 직접 만들기(상황 템플릿 · 패턴 담기 · 복제)와 내가 만든 전술 고치기 · 지우기 · AI 는 관리자만
+ * 서버는 같은 공개 키를 쓰므로 '내가 만든 전술'은 기기 표식(kt_dev)으로 구분한다 */
+function tacDev_(){ var v=''; try{ v=localStorage.getItem('kt_dev')||''; if(!v){ v=uid_('dv'); localStorage.setItem('kt_dev', v); } }catch(e){ v=v||'nodev'; } return v; }
+function tacCanEdit_(doc){ if(isAdmin()) return true; return !!(doc && doc.byRole==='viewer' && doc.dev && doc.dev===tacDev_()); }
+function tacOwn_(doc){ doc.by=whoName_()||doc.by||''; if(!isAdmin()){ doc.byRole='viewer'; doc.dev=tacDev_(); } else { delete doc.byRole; delete doc.dev; } return doc; }
+function tacAiAllowed_(){ if(isAdmin()) return true; toast('AI로 만들기는 관리자만 쓸 수 있어요 · 직접 만들기를 이용해 주세요'); return false; }
+/* 팀원이 처음 전술을 만들 때 이름을 받아 작성자로 남긴다 (이 기기에 기억) */
+function tacNameOk_(next){
+  if(isAdmin() || whoName_()) return true;
+  window._tacNameNext=next;
+  showSheet('<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>이름 적기</h3><button class="x" onclick="closeSheet()" aria-label="닫기"><svg class="kt-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#kti-X"/></svg></button></div>'
+   + '<div class="sheet-body">'
+   +   '<p style="font-size:13px;color:var(--steel);margin:0 0 14px;line-height:1.55;">만든 전술에 작성자로 표시돼요. 이 기기에 기억해요.</p>'
+   +   '<div class="field"><label>이름</label><input id="tac_who" type="text" maxlength="12" placeholder="이름 (예: 박보검)" autocomplete="off" onkeydown="if(event.key===\'Enter\')tacNameSave_()"></div>'
+   +   '<button class="btn-primary" onclick="tacNameSave_()"><svg class="kt-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#kti-Save"/></svg> 저장하고 계속</button>'
+   + '</div>');
+  setTimeout(function(){ var i=document.getElementById('tac_who'); if(i) i.focus(); }, 120);
+  return false;
+}
+function tacNameSave_(){
+  var v=(gv_('tac_who')||'').trim(); if(!v){ toast('이름을 입력하세요'); return; }
+  try{ localStorage.setItem(WHO_KEY, v); }catch(e){}
+  closeSheet(); var n=window._tacNameNext; window._tacNameNext=null; if(n) n();
+}
 function tacSaveDoc_(doc){
   state.tactics=(state.tactics||[]).filter(function(x){ return x.id!==doc.id; }).concat([doc]);
   if(!(window.db && FS.enabled)) return Promise.resolve();
@@ -15531,7 +15559,8 @@ function viewTac_(){
   var SP='<svg class="kt-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#kti-Sparkles"/></svg>';
   var hero='<div class="tac-hero2"><div class="th-k">TACTICS BOARD</div><b>전술 보드</b>'
     + '<p>움직임을 장면으로 만들고<br>중계 화면 같은 영상으로 공유해요</p>'
-    + (isAdmin()?'<div class="th-act"><button class="th-b main" onclick="tacTextSheet_(\'new\')">'+SP+'AI로 만들기</button><button class="th-b" onclick="tacNewSheet_()"><svg class="kt-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#kti-Plus"/></svg>상황 템플릿</button></div>':'')
+    + (isAdmin()?'<div class="th-act"><button class="th-b main" onclick="tacTextSheet_(\'new\')">'+SP+'AI로 만들기</button><button class="th-b" onclick="tacNewSheet_()"><svg class="kt-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#kti-Plus"/></svg>직접 만들기</button></div>'
+        :'<div class="th-act"><button class="th-b main" onclick="tacNewSheet_()"><svg class="kt-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#kti-Plus"/></svg>직접 만들기</button></div>')
     + '</div>';
   var mine='';
   if(all.length){
@@ -15542,8 +15571,8 @@ function viewTac_(){
     mine='<div class="section"><div class="eyebrow">우리 팀 전술 <span class="pat-n">'+all.length+'</span></div>'+cats+'<div class="tac-list">'+list.map(function(d){
       var n=d.plans[0].steps.length;
       return '<div class="tac-card" onclick="tacOpen_(\''+d.id+'\',\'view\')"><canvas data-tac="'+d.id+'"></canvas>'
-        + '<div class="tc-ov"><span class="tc-c">'+(d.pos?esc(d.pos)+' · ':'')+tacCatLabel_(d.cat)+'</span><span class="tc-play"><svg class="kt-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#kti-Play"/></svg></span>'
-        + '<div class="tc-b"><b>'+esc(d.title||'전술')+'</b><i>'+d.plans.map(function(p){ return esc(p.name); }).join(' · ')+'  ·  '+n+'장면  ·  vs '+esc(d.oppForm||'')+'</i></div></div></div>';
+        + '<div class="tc-ov"><span class="tc-c">'+((!isAdmin() && tacCanEdit_(d))?'내 전술 · ':'')+(d.pos?esc(d.pos)+' · ':'')+tacCatLabel_(d.cat)+'</span><span class="tc-play"><svg class="kt-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#kti-Play"/></svg></span>'
+        + '<div class="tc-b"><b>'+esc(d.title||'전술')+'</b><i>'+d.plans.map(function(p){ return esc(p.name); }).join(' · ')+'  ·  '+n+'장면  ·  vs '+esc(d.oppForm||'')+((d.byRole==='viewer' && d.by)?'  ·  '+esc(d.by):'')+'</i></div></div></div>';
     }).join('')+'</div></div>';
   }
   return hero+mine+tacPatSec_();
@@ -15568,7 +15597,6 @@ function tacPaintLoadedList_(){
 
 /* ---------- 새 전술 (템플릿) ---------- */
 function tacNewSheet_(){
-  if(!requireAdmin()) return;
   var sq=state.squadDetail, sqName=(sq&&sq.squad&&((sq.members||[]).filter(function(m){ return m.position; }).length>=7))?sq.squad.name:'';
   var body='';
   TAC_CATS.forEach(function(c){
@@ -15584,14 +15612,14 @@ function tacNewSheet_(){
    + '<div class="sheet-body">'
    +   '<p style="font-size:12.5px;color:var(--steel);margin:0 0 4px;line-height:1.6;">상황을 고르면 <b>예시 움직임</b>이 들어 있는 보드가 열려요. 선수와 공을 끌어서 우리 팀에 맞게 고치면 됩니다.<br>'
    +   (sqName?'선수는 <b>'+esc(sqName)+'</b> 스쿼드에서 불러와요.':'선수는 등번호로 표시돼요 · 편집 화면에서 스쿼드를 불러올 수 있어요.')+'</p>'
-   +   '<button class="tac-new" style="margin-top:14px;" onclick="tacTextSheet_(\'new\')"><span class="tn-i"><svg class="kt-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" style="width:22px;height:22px;"><use href="#kti-Sparkles"/></svg></span><span><b>AI로 전술 만들기</b><i>상황과 전술을 말하듯 적으면 Claude가 장면으로 그려 줘요</i></span></button>'
+   +   (isAdmin()?'<button class="tac-new" style="margin-top:14px;" onclick="tacTextSheet_(\'new\')"><span class="tn-i"><svg class="kt-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" style="width:22px;height:22px;"><use href="#kti-Sparkles"/></svg></span><span><b>AI로 전술 만들기</b><i>상황과 전술을 말하듯 적으면 Claude가 장면으로 그려 줘요</i></span></button>':'')
    +   body
    + '</div>');
 }
 function tacCreate_(tplId){
-  if(!requireAdmin()) return;
+  if(!tacNameOk_(function(){ tacCreate_(tplId); })) return;
   var tpl=TAC_TPLS.filter(function(t){ return t.id===tplId; })[0]; if(!tpl) return;
-  var doc=tacBuild_(tpl, tacOurFromSquad_(state.squadDetail));
+  var doc=tacOwn_(tacBuild_(tpl, tacOurFromSquad_(state.squadDetail)));
   var same=(state.tactics||[]).filter(function(x){ return x.title===doc.title || String(x.title||'').indexOf(doc.title+' ')===0; }).length;
   if(same) doc.title=doc.title+' '+(same+1);
   closeSheet();
@@ -15612,7 +15640,7 @@ function tacOpen_(id, mode){
 /* o.preview: 저장하지 않은 보드(포지션 패턴 미리보기) — 2D 보드로 열고, 담기 전에는 저장하지 않는다 */
 function tacOpenDoc_(doc, mode, o){
   o=o||{};
-  if(mode==='edit' && !isAdmin()) mode='view';
+  if(mode==='edit' && !tacCanEdit_(doc)) mode='view';
   TAC={doc:doc, planIdx:0, stepIdx:0, mode:mode||'view', playing:false, clock:0, speed:1, loop:true, names:true, sel:'', multi:{}, tool:'sel', fxSel:'', draft:null,
     me:'', undo:[], dirty:false, v3:(mode!=='edit' && !o.preview), rev:0, assets:null, preview:!!o.preview};
   var who=whoName_();
@@ -15632,7 +15660,7 @@ function tacBack_(){
   if(state.screen==='form') render();
 }
 function tacSetMode_(m){
-  if(!TAC) return; if(m==='edit' && !requireAdmin()) return;
+  if(!TAC) return; if(m==='edit' && !tacCanEdit_(TAC.doc)){ toast('내가 만든 전술만 고칠 수 있어요 · 복제해서 고쳐 보세요'); return; }
   tacStop_(); TAC.mode=m; tacClearSel_(); TAC.tool='sel'; TAC.v3=(m!=='edit'); tacUI_();
 }
 function tacPlan_(){ return TAC.doc.plans[TAC.planIdx]; }
@@ -15688,9 +15716,10 @@ function tacUI_(){
   var h='<div class="tac-top">'
     + '<button class="tac-ib" onclick="tacBack_()" aria-label="닫기">'+TAC_SVG.back+'</button>'
     + '<div class="tac-ttl" '+(ed?'onclick="tacRename_()"':'')+'><b>'+esc(d.title||'전술')+'</b><span id="tacSub">'+(TAC.preview?(tacPosLabel_(d.pos)+' · '+esc(d.tag||'')+' 패턴'):((d.pos?tacPosLabel_(d.pos)+' · ':'')+tacCatLabel_(d.cat)+(ed?' · 저장됨':(d.by?' · '+esc(d.by):''))))+'</span></div>'
-    + (TAC.preview?(isAdmin()?'<button class="tac-tb gold" onclick="tacPatKeep_()"><svg class="kt-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#kti-Plus"/></svg>내 전술로 담기</button>':''):'')
+    + (TAC.preview?'<button class="tac-tb gold" onclick="tacPatKeep_()"><svg class="kt-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#kti-Plus"/></svg>내 전술로 담기</button>':'')
     + (TAC.preview?'':ed?'<button class="tac-ib" id="tacUndo" onclick="tacUndo_()" aria-label="되돌리기" '+(TAC.undo.length?'':'disabled')+'>'+TAC_SVG.undo+'</button>'
-         :(isAdmin()?'<button class="tac-tb" onclick="tacSetMode_(\'edit\')"><svg class="kt-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#kti-Pencil"/></svg> 편집</button>':''))
+         :(tacCanEdit_(d)?'<button class="tac-tb" onclick="tacSetMode_(\'edit\')"><svg class="kt-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#kti-Pencil"/></svg> 편집</button>'
+           :'<button class="tac-tb" onclick="tacCopy_()"><svg class="kt-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#kti-Copy"/></svg> 복제</button>'))
     + (TAC.preview?'':'<button class="tac-tb gold" onclick="tacShareSheet_()">'+'<svg class="kt-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#kti-Share2"/></svg>공유</button>')
     + (ed?'<button class="tac-ib" onclick="tacMenu_()" aria-label="더보기">'+TAC_SVG.more+'</button>':'')
     + '</div>';
@@ -16263,7 +16292,7 @@ function tacMenu_(){
    + '<div class="sheet-head"><h3>전술 설정</h3><button class="x" onclick="closeSheet()" aria-label="닫기"><svg class="kt-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#kti-X"/></svg></button></div>'
    + '<div class="sheet-body">'
    +   '<button class="btn-ghost" style="margin-top:0;" onclick="tacHelp_()">사용법 보기</button>'
-   +   '<button class="btn-ghost" onclick="tacTextSheet_(\'add\')"><svg class="kt-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#kti-Sparkles"/></svg> AI로 장면 이어 만들기</button>'
+   +   (isAdmin()?'<button class="btn-ghost" onclick="tacTextSheet_(\'add\')"><svg class="kt-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#kti-Sparkles"/></svg> AI로 장면 이어 만들기</button>':'')
    +   '<button class="btn-ghost" onclick="tacRename_()">이름 · 분류 바꾸기</button>'
    +   '<button class="btn-ghost" onclick="tacLoadSquad_()"><svg class="kt-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#kti-LayoutGrid"/></svg> 스쿼드에서 선수 불러오기</button>'
    +   '<button class="btn-ghost" onclick="tacCopy_()"><svg class="kt-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#kti-Network"/></svg> 이 전술 복제</button>'
@@ -16282,7 +16311,7 @@ function tacHelp_(){
    +   li(3,'빈 곳을 끌어 <b>여러 명을 한 번에</b> 골라 라인째 옮겨요. <b>구역</b> 도구로 공간을, <b>연결</b> 도구로 라인 · 삼각형을 표시해요.')
    +   li(4,'<b>상대</b>는 성향(전방 압박 · 내려앉기 등)에 맞춰 스스로 움직여요. <b>＋ 대응안</b>으로 A안 · B안을 비교해요.')
    +   li(5,'<b>3D</b>를 누르면 중계 화면처럼 미리 볼 수 있어요. 장면 설명은 영상 자막으로 나가요.')
-   +   li(6,'<b>AI로 만들기</b> · 상황과 전술을 말하듯 적으면 Claude가 장면을 그려 줘요. ⋯ 메뉴의 <b>AI로 장면 이어 만들기</b>로 지금 보드에 이어 붙일 수도 있어요.')
+   +   (isAdmin()?li(6,'<b>AI로 만들기</b> · 상황과 전술을 말하듯 적으면 Claude가 장면을 그려 줘요. ⋯ 메뉴의 <b>AI로 장면 이어 만들기</b>로 지금 보드에 이어 붙일 수도 있어요.'):li(6,'<b>직접 만들기</b>로 상황 템플릿에서 시작하거나, 포지션 패턴을 <b>내 전술로 담아</b> 고쳐 보세요. 팀 전술은 <b>복제</b>해서 고칠 수 있어요. (AI로 만들기는 관리자만)'))
    +   li(7,'<b>공유</b>에서 중계 스타일 <b>영상</b> · 이미지 카드 · 재생 링크를 만들어요. 실수하면 ↶ 되돌리기.')
    +   '<button class="btn-primary" onclick="closeSheet()">시작하기</button>'
    + '</div>');
@@ -16345,15 +16374,16 @@ function tacSwap_(k, pid){
 }
 function tacCopy_(){
   if(!TAC) return;
+  if(!tacNameOk_(function(){ tacCopy_(); })) return;
   tacFlush_();
   var cp=tacClone_(TAC.doc), now=new Date().toISOString();
-  cp.id=uid_('tc'); cp.title=String(cp.title||'전술').slice(0,20)+' 복사'; cp.createdAt=now; cp.updatedAt=now; cp.by=whoName_()||cp.by||'';
+  cp.id=uid_('tc'); cp.title=String(cp.title||'전술').slice(0,20)+' 복사'; cp.createdAt=now; cp.updatedAt=now; tacOwn_(cp);
   cp.plans.forEach(function(p){ p.id=uid_('pl'); });
   tacSaveDoc_(cp).catch(function(){ toast('저장 실패 · 네트워크 확인'); });
   closeSheet(); tacOpen_(cp.id,'edit'); toast('복제했어요');
 }
 function tacDelete_(){
-  if(!TAC || !requireAdmin()) return;
+  if(!TAC) return; if(!tacCanEdit_(TAC.doc)){ toast('내가 만든 전술만 지울 수 있어요'); return; }
   var id=TAC.doc.id, ttl=TAC.doc.title;
   closeSheet();
   appConfirm_('"'+ttl+'" 전술을 삭제할까요?\n공유한 링크도 더 이상 열리지 않아요.', function(){
