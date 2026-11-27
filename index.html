@@ -2225,7 +2225,7 @@ var APP_SUB = 'FOOTBALL CLUB';
 var APP_REGION = '';   /* 새 팀 설치 시 헤더 지역 표기 (팀 정보에서 변경 가능) */
 var APP_NOTE = '';     /* 새 팀 설치 시 헤더 소개 문구 */
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '17.6.1';
+var APP_VERSION = '17.7.0';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -15109,10 +15109,12 @@ function tacMotion_(doc, A, B){
   return mv;
 }
 /* 진행도 p 에서 모든 선수 · 공의 위치 */
-function tacPose_(doc, A, B, p){
+/* run3: 3D 선수용 — 사람이 달리는 것처럼 서서히 붙였다가 일정하게 뛰고 줄이는 속도 곡선 (최고 속도가 평균의 1.4배 · 기본 곡선은 3배) */
+function tacEaseRun_(x){ var a=0.26, b=0.30, v=1/(1-(a+b)/2); return x<=0?0:(x>=1?1:(x<a ? v*x*x/(2*a) : (x<1-b ? v*(a/2+(x-a)) : 1-v*(1-x)*(1-x)/(2*b)))); }
+function tacPose_(doc, A, B, p, run3){
   var mv=(A && p<1) ? tacMotion_(doc, A, B) : [], by={};
   mv.forEach(function(m){ by[m.k]=m; });
-  var mp=tacEase_(tacClamp_((p-TAC_PH.mv0)/(1-TAC_PH.mv0),0,1)), pos={};
+  var mx=tacClamp_((p-TAC_PH.mv0)/(1-TAC_PH.mv0),0,1), mp=run3?tacEaseRun_(mx):tacEase_(mx), pos={};
   doc.our.concat(doc.opp).forEach(function(t){
     var b=B.pos[t.k]; if(!b) return;
     var m=by[t.k];
@@ -15163,6 +15165,10 @@ function tacTL_(plan, o){
   var h0=tacHoldSec_(plan.steps[0], true)/sp; segs.push({k:'hold', i:0, t0:t, d:h0}); t+=h0;
   for(var i=1;i<n;i++){
     var st=plan.steps[i], m=1.85*(st.dur||1)/sp, h=tacHoldSec_(st)/sp;
+    if(o.run3){      /* 3D 선수: 가장 멀리 뛰는 선수가 사람 속도를 넘지 않을 만큼 장면 전환을 늘린다 */
+      var far=0, pv=plan.steps[i-1].pos||{}, cu=st.pos||{}; for(var k in cu){ if(pv[k] && cu[k]) far=Math.max(far, tacMeters_(pv[k], cu[k])); }
+      m=Math.max(m, Math.min(4.6, 1.4*far/(o.run3*(1-TAC_PH.mv0)))/sp);
+    }
     segs.push({k:'move', i:i, t0:t, d:m}); t+=m;
     segs.push({k:'hold', i:i, t0:t, d:h}); t+=h;
   }
@@ -15550,6 +15556,8 @@ function tvPrep_(doc, plan, o){
   R.lay=tvLayout_(R);
   R.safe=R.lay.safe;
   R.K=tvKeys_(R);
+  /* 3D 선수를 쓰는 화면은 달리기 속도 곡선 · 장면 길이를 사람에 맞춘다 (선수 크기 배율이 클수록 같은 거리도 천천히 뛰는 것처럼 보인다) */
+  if(p3Want_(o)){ R.run3=6.0*p3Scale_(R); R.TL=tacTL_(plan, {intro:!!o.intro, outro:!!o.outro, speed:o.speed||1, run3:R.run3}); }
   return R;
 }
 /* 화면 배치: 상단(진행 바 · 엠블럼 · 제목) / 하단 자막 / 카메라가 선수를 담을 안전 영역 */
@@ -15633,14 +15641,15 @@ function tvKeys_(R){
 }
 function tvLerpK_(a,b,t){ return {tx:a.tx+(b.tx-a.tx)*t, ty:a.ty+(b.ty-a.ty)*t, dist:a.dist+(b.dist-a.dist)*t, elev:a.elev+(b.elev-a.elev)*t, yaw:(a.yaw||0)+((b.yaw||0)-(a.yaw||0))*t}; }
 function tvKPush_(R,i,f){ var k=R.K[i]; return {tx:k.tx, ty:k.ty, dist:k.dist*(1-(1-(R.push[i]||1))*f), elev:k.elev, yaw:k.yaw||0}; }
-function tvCamAt_(R, st){
+function tvCamK_(R, st){
   var k;
   if(st.k==='intro') k=tvLerpK_(R.Kov, R.K[0], tacSmooth_(tacClamp_((st.u-0.3)/0.7,0,1)));
   else if(st.k==='outro') k=tvLerpK_(tvKPush_(R,st.i,1), R.Kov, tacSmooth_(tacClamp_(st.u/0.75,0,1)));
   else if(st.k==='move') k=tvLerpK_(tvKPush_(R,st.i-1,1), R.K[st.i], tacSmooth_(tacClamp_(st.p/0.9,0,1)));
   else k=tvKPush_(R, st.i, tacClamp_(st.lt/st.seg.d,0,1));
-  return tvCam_(k, R);
+  return k;
 }
+function tvCamAt_(R, st){ return tvCam_(tvCamK_(R, st), R); }
 /* 사진 · 엠블럼 미리 불러오기 */
 function tvAssets_(doc){
   var imgs={}, jobs=[tacLoadSprites_()];
@@ -15661,7 +15670,7 @@ function tvNoise_(){
   x.putImageData(d,0,0); _tvNoise=c; return c;
 }
 function tvPitch3_(ctx, c, R){
-  var W=R.W, H=R.H, u=R.u, i, hx=TV_PW/2, hy=TV_PL/2;
+  var W=R.W, H=R.H, u=R.u, i, hx=TV_PW/2, hy=TV_PL/2, gk3=R._p3on?Math.max(1, R._p3on*0.8):1;
   var sky=ctx.createLinearGradient(0,0,0,H); sky.addColorStop(0,'#05070a'); sky.addColorStop(0.5,'#0a1210'); sky.addColorStop(1,'#0c1712');
   ctx.fillStyle=sky; ctx.fillRect(0,0,W,H);
   /* 관중석 (뒤 · 좌우) */
@@ -15690,14 +15699,14 @@ function tvPitch3_(ctx, c, R){
     stroke(tvArc_(0,pc,9.15,mid-an,mid+an,20), 0, pc-s*7);
     [-1,1].forEach(function(sx){ var cxn=sx*hx, ac=Math.atan2(-s,-sx); stroke(tvArc_(cxn,gy,1,ac-Math.PI/4,ac+Math.PI/4,8), cxn, gy); });
     /* 골대 */
-    var gp=tvP_(c,0,gy,0), glw=tacClamp_((gp?gp.s:6)*0.14, 1.2*u, 4.5*u), dep=s*2.2;
+    var gp=tvP_(c,0,gy,0), glw=tacClamp_((gp?gp.s:6)*0.14, 1.2*u, 4.5*u), dep=s*2.2*gk3, gh=2.44*gk3, gb=1.6*gk3;      /* 3D 선수는 실제보다 크게 그리므로 골대 높이도 맞춘다 */
     ctx.strokeStyle='rgba(255,255,255,.95)'; ctx.lineWidth=glw;
-    if(tvLine_(ctx,c,[[-3.66,gy,0],[-3.66,gy,2.44],[3.66,gy,2.44],[3.66,gy,0]])) ctx.stroke();
+    if(tvLine_(ctx,c,[[-3.66,gy,0],[-3.66,gy,gh],[3.66,gy,gh],[3.66,gy,0]])) ctx.stroke();
     ctx.strokeStyle='rgba(255,255,255,.38)'; ctx.lineWidth=glw*0.55;
-    if(tvLine_(ctx,c,[[-3.66,gy,2.44],[-3.66,gy+dep,1.6],[-3.66,gy+dep,0]])) ctx.stroke();
-    if(tvLine_(ctx,c,[[3.66,gy,2.44],[3.66,gy+dep,1.6],[3.66,gy+dep,0]])) ctx.stroke();
-    if(tvLine_(ctx,c,[[-3.66,gy+dep,1.6],[3.66,gy+dep,1.6]])) ctx.stroke();
-    for(var nx=-3;nx<=3;nx+=1.5){ if(tvLine_(ctx,c,[[nx,gy,2.44],[nx,gy+dep,1.6],[nx,gy+dep,0]])) ctx.stroke(); }
+    if(tvLine_(ctx,c,[[-3.66,gy,gh],[-3.66,gy+dep,gb],[-3.66,gy+dep,0]])) ctx.stroke();
+    if(tvLine_(ctx,c,[[3.66,gy,gh],[3.66,gy+dep,gb],[3.66,gy+dep,0]])) ctx.stroke();
+    if(tvLine_(ctx,c,[[-3.66,gy+dep,gb],[3.66,gy+dep,gb]])) ctx.stroke();
+    for(var nx=-3;nx<=3;nx+=1.5){ if(tvLine_(ctx,c,[[nx,gy,gh],[nx,gy+dep,gb],[nx,gy+dep,0]])) ctx.stroke(); }
   });
   [[0,0],[0,hy-11],[0,-hy+11]].forEach(function(sp){ if(tvPoly_(ctx,c,tvCircle_(sp[0],sp[1],0.28,10))){ ctx.fillStyle='rgba(255,255,255,.9)'; ctx.fill(); } });
   /* LED 광고판: 팀 이름 */
@@ -15845,8 +15854,9 @@ function tvBall_(ctx, c, R, X, Y, Z){
 function tvScene_(ctx, R, st, still, t){
   var doc=R.doc, A=st.A, B=st.B, p=still?1:st.p, u=R.u, k3;
   var c=still ? tvCam_(R.K[st.i], R) : tvCamAt_(R, st);
+  var use3=p3Use_(R); R._p3on=use3?p3ScaleK_(R, still?R.K[st.i]:tvCamK_(R, st)):0;      /* 3D 선수(동작 데이터가 준비됐을 때) · 아니면 유니폼 마커 */
   tvPitch3_(ctx, c, R);
-  var P=tacPose_(doc, A, B, p), foc=(doc.focus&&doc.focus.keys&&doc.focus.keys.length)?doc.focus:null, fset={};
+  var P=tacPose_(doc, A, B, p, !!R.run3), foc=(doc.focus&&doc.focus.keys&&doc.focus.keys.length)?doc.focus:null, fset={};
   if(foc) foc.keys.forEach(function(k){ fset[k]=1; });
   function vis(k){ if(!foc) return 1; if(tacIsOpp_(k)) return foc.opp===false?0:0.55; return fset[k]?1:(foc.hide?0:0.22); }
   /* 구역 · 연결선 */
@@ -15873,11 +15883,13 @@ function tvScene_(ctx, R, st, still, t){
       var la=still?1:(P.bt>=1?Math.max(0,1-(st.hold||0)/0.5):Math.min(1,P.arr*1.4));
       if(la>0){ ctx.save(); ctx.globalAlpha*=la*(still?1:0.75); tvDashes_(ctx, c, line, 0.2, 1.7, 1.25, '#E8BD50', [2.2,0.85]); ctx.restore(); }
       if(!still && P.bt<1 && P.bt>0){
+        if(!use3){      /* 3D 일 때는 공의 실제 궤적을 따라 p3Trail_ 이 그린다 */
         var tr=[], fl=tacMeters_(m.a,m.b), hm=(fl>24)?Math.min(9,fl*0.17):fl*0.025, e=tacSmooth_(P.bt), e0=Math.max(0,e-0.5);
         for(var j=0;j<=16;j++){ var s=e0+(e-e0)*j/16, q=[fr[0]+(to[0]-fr[0])*s, fr[1]+(to[1]-fr[1])*s], bt=s; tr.push([q[0],q[1], 0.24+4*hm*bt*(1-bt)]); }
         ctx.save(); ctx.lineCap='round';
         if(tvLine_(ctx,c,tr)){ ctx.strokeStyle='rgba(232,189,80,.28)'; ctx.lineWidth=12*u; ctx.stroke(); ctx.strokeStyle='rgba(246,226,160,.95)'; ctx.lineWidth=3.2*u; ctx.stroke(); }
         ctx.restore();
+        }
         var rp=(P.bt*2)%1; if(tvPoly_(ctx,c,tvCircle_(to[0],to[1],1.0+rp*2.2,26))){ ctx.lineWidth=2.4*u; ctx.strokeStyle='rgba(232,189,80,'+(1-rp)+')'; ctx.stroke(); }
       }
       return;
@@ -15902,6 +15914,7 @@ function tvScene_(ctx, R, st, still, t){
     var w=tvW_(q), cs=tvCS_(c,w[0],w[1],0); list.push({tk:tk, w:w, z:cs[2], a:a});
   });
   list.sort(function(x,y){ return y.z-x.z; });
+  if(use3 && p3Scene_(ctx, c, R, st, still, t, P, list, hi, hiA)){ tvLight_(ctx, R); return c; }
   var bpos=P.owner && P.pos[P.owner] ? tvW_(P.pos[P.owner]) : tvW_(P.ball), own=!!(P.owner && P.pos[P.owner]);
   var bX=bpos[0]+(own?0.75:0), bY=bpos[1]+(own?-0.55:0), bz=tvCS_(c,bX,bY,0)[2], ballDone=false;
   list.forEach(function(it){
@@ -16108,6 +16121,653 @@ function tacVideoMime_(){
   for(var i=0;i<c.length;i++){ try{ if(MediaRecorder.isTypeSupported(c[i])) return c[i]; }catch(e){} }
   return '';
 }
+/* P3D-BEGIN */
+/* ================= 3D 선수 (중계 화면) =================
+ * 믹사모 동작을 입힌 스킨드 메시를 WebGL 로 그려서 2D 중계 캔버스 위에 얹는다.
+ * 메시 · 뼈대 · 동작 데이터는 tac-player.js (window.KT_P3D) — 중계 화면을 처음 열 때 한 번만 불러온다.
+ * 좌표: 모델은 y 가 위 · z 가 정면 · +x 가 선수의 왼쪽(m). 경기장은 X 오른쪽 · Y 상대 골문 쪽 · Z 위(m). */
+var P3={st:0, A:null, gl:null, cv:null, fail:0, cbs:[]};
+var P3_SRC='tac-player.js?v=177';
+var P3_CLIP={
+  /* tc: 공을 차는(맞히는) 순간(초) · a,b: 쓰는 구간(초) · fi,fo: 섞어 들어가고 나오는 시간 */
+  pass:{tc:0.455, a:0.06, b:1.25, fi:0.20, fo:0.32},
+  kick:{tc:0.155, a:0, b:0.56, fi:0.10, fo:0.20, left:1},
+  strike:{tc:0.40, a:0.05, b:1.05, fi:0.18, fo:0.30},
+  shot:{tc:0.735, a:0.30, b:1.45, fi:0.18, fo:0.30},
+  header:{tc:0.705, a:0, b:1.45, fi:0.18, fo:0.25},
+  tackle:{tc:0.52, a:0.03, b:1.76, fi:0.12, fo:0.25},
+  spin:{tc:0.62, a:0.04, b:1.24, fi:0.14, fo:0.18},
+  gkkick:{tc:1.075, a:0.10, b:2.20, fi:0.25, fo:0.35},
+  jog:{loop:52, speed:2.5, touch:[12.5/52, 42/52]},
+  gkside:{loop:15, lat:1.40}
+};
+function p3Ok_(){ return P3.st===2 && !P3.fail; }
+/* 데이터 불러오기 (한 번) */
+function p3Load_(cb){
+  if(cb) P3.cbs.push(cb);
+  if(P3.st===2 || P3.st===-1){ var q=P3.cbs; P3.cbs=[]; q.forEach(function(f){ try{ f(P3.st===2); }catch(e){} }); return; }
+  if(P3.st===1) return;
+  P3.st=1;
+  function done(ok){ P3.st=ok?2:-1; var q=P3.cbs; P3.cbs=[]; q.forEach(function(f){ try{ f(ok); }catch(e){} }); }
+  function go(){ try{ P3.A=p3Decode_(window.KT_P3D); window.KT_P3D=null; done(!!P3.A); }catch(e){ done(false); } }
+  if(window.KT_P3D){ go(); return; }
+  var s=document.createElement('script'); s.src=P3_SRC; s.async=true;
+  s.onload=function(){ if(window.KT_P3D) go(); else done(false); }; s.onerror=function(){ done(false); };
+  document.head.appendChild(s);
+}
+function p3Decode_(b64){
+  var s=atob(b64), n=s.length, u=new Uint8Array(n), i; for(i=0;i<n;i++) u[i]=s.charCodeAt(i);
+  if(s.slice(0,4)!=='KTP1') return null;
+  var jl=new DataView(u.buffer).getUint32(4,true), H=JSON.parse(s.slice(8,8+jl)), base=8+jl, buf=u.buffer;
+  if(H.v!==1) return null;      /* 앱과 맞지 않는 (캐시에 남은) 예전 데이터면 쓰지 않는다 */
+  function sec(name, T){ var e=H.sec[name]; return new T(buf.slice(base+e[0], base+e[0]+e[1]*T.BYTES_PER_ELEMENT)); }
+  var nb=H.bones.length, A={nv:H.nv, nt:H.nt, ps:H.ps, fps:H.fps, nb:nb, par:[], bix:{}, bp:new Float32Array(nb*3), bq:new Float32Array(nb*4), clips:{}};
+  A.pos=sec('pos',Int16Array); A.nrm=sec('nrm',Int8Array); A.col=sec('col',Uint8Array); A.part=sec('part',Uint8Array); A.bi=sec('bi',Uint8Array); A.bw=sec('bw',Uint8Array); A.idx=sec('idx',Uint16Array); A.inv=sec('inv',Float32Array);
+  H.bones.forEach(function(b,k){ A.bix[b[0]]=k; A.par.push(b[1]); A.bp.set([b[2],b[3],b[4]],k*3); A.bq.set([b[5],b[6],b[7],b[8]],k*4); });
+  Object.keys(H.clips).forEach(function(k){
+    var c=H.clips[k], q16=sec('q_'+k,Int16Array), q=new Float32Array(q16.length); for(var j=0;j<q.length;j++) q[j]=q16[j]/32767;
+    A.clips[k]={n:c.n, q:q, h:sec('h_'+k,Float32Array), tv:c.tv};
+  });
+  /* 좌우 뒤집은 동작 (왼발 · 오른발, 골키퍼 반대쪽 옆걸음) */
+  A.mir=[]; H.bones.forEach(function(b,k){ var nm=b[0], o=nm.indexOf('Left')===0?'Right'+nm.slice(4):(nm.indexOf('Right')===0?'Left'+nm.slice(5):nm); A.mir.push(A.bix[o]); });
+  ['pass','kick','strike','shot','gkside','tackle'].forEach(function(k){ if(A.clips[k]) A.clips[k+'_m']=p3Mirror_(A, A.clips[k]); });
+  A.B={hips:A.bix.Hips, spine:A.bix.Spine, spine1:A.bix.Spine1, spine2:A.bix.Spine2, neck:A.bix.Neck, head:A.bix.Head, lh:A.bix.LeftHand, rh:A.bix.RightHand, lt:A.bix.LeftToeBase, rt:A.bix.RightToeBase, la:A.bix.LeftArm, ra:A.bix.RightArm, lfa:A.bix.LeftForeArm, rfa:A.bix.RightForeArm, ls:A.bix.LeftShoulder, rs:A.bix.RightShoulder};
+  /* 작업 버퍼 */
+  A.q0=new Float32Array(nb*4); A.q1=new Float32Array(nb*4); A.q2=new Float32Array(nb*4); A.h0=new Float32Array(3); A.h1=new Float32Array(3); A.h2=new Float32Array(3);
+  A.W=new Float32Array(nb*12); A.pal=new Float32Array(nb*12);
+  return A;
+}
+/* ---- 쿼터니언 (x,y,z,w) ---- */
+function p3Qmul_(a,ao,b,bo,o,oo){ var ax=a[ao],ay=a[ao+1],az=a[ao+2],aw=a[ao+3],bx=b[bo],by=b[bo+1],bz=b[bo+2],bw=b[bo+3];
+  o[oo]=aw*bx+ax*bw+ay*bz-az*by; o[oo+1]=aw*by-ax*bz+ay*bw+az*bx; o[oo+2]=aw*bz+ax*by-ay*bx+az*bw; o[oo+3]=aw*bw-ax*bx-ay*by-az*bz; }
+function p3Mirror_(A, c){
+  var nb=A.nb, n=c.n, q=new Float32Array(c.q.length), h=new Float32Array(c.h.length), W0=new Float32Array(nb*4), W=new Float32Array(nb*4), W2=new Float32Array(nb*4), t=[0,0,0,0], d=[0,0,0,0], b, f, p;
+  for(b=0;b<nb;b++){ p=A.par[b]; if(p<0){ W0[b*4]=A.bq[b*4]; W0[b*4+1]=A.bq[b*4+1]; W0[b*4+2]=A.bq[b*4+2]; W0[b*4+3]=A.bq[b*4+3]; } else p3Qmul_(W0,p*4,A.bq,b*4,W0,b*4); }
+  for(f=0;f<n;f++){
+    var o=f*nb*4;
+    for(b=0;b<nb;b++){ p=A.par[b]; if(p<0){ W[b*4]=c.q[o+b*4]; W[b*4+1]=c.q[o+b*4+1]; W[b*4+2]=c.q[o+b*4+2]; W[b*4+3]=c.q[o+b*4+3]; } else p3Qmul_(W,p*4,c.q,o+b*4,W,b*4); }
+    for(b=0;b<nb;b++){ var m=A.mir[b];
+      t[0]=-W0[b*4]; t[1]=-W0[b*4+1]; t[2]=-W0[b*4+2]; t[3]=W0[b*4+3]; p3Qmul_(W,b*4,t,0,d,0);      /* 기준 자세에서 벗어난 만큼 (월드) */
+      d[1]=-d[1]; d[2]=-d[2]; p3Qmul_(d,0,W0,m*4,W2,m*4); }
+    for(b=0;b<nb;b++){ p=A.par[b]; if(p<0){ q[o+b*4]=W2[b*4]; q[o+b*4+1]=W2[b*4+1]; q[o+b*4+2]=W2[b*4+2]; q[o+b*4+3]=W2[b*4+3]; }
+      else { t[0]=-W2[p*4]; t[1]=-W2[p*4+1]; t[2]=-W2[p*4+2]; t[3]=W2[p*4+3]; p3Qmul_(t,0,W2,b*4,q,o+b*4); }
+      if(f>0){ var o1=o-nb*4+b*4, o2=o+b*4; if(q[o1]*q[o2]+q[o1+1]*q[o2+1]+q[o1+2]*q[o2+2]+q[o1+3]*q[o2+3]<0){ q[o2]=-q[o2]; q[o2+1]=-q[o2+1]; q[o2+2]=-q[o2+2]; q[o2+3]=-q[o2+3]; } } }
+    h[f*3]=-c.h[f*3]; h[f*3+1]=c.h[f*3+1]; h[f*3+2]=c.h[f*3+2];
+  }
+  return {n:n, q:q, h:h, tv:[-c.tv[0], c.tv[1]]};
+}
+/* 동작의 한 순간: tf=프레임 위치(소수), loop=반복 길이(프레임 · 0 이면 한 번) → oq(뼈 로컬 회전) · oh(엉덩이 위치) */
+function p3Sample_(c, tf, loop, oq, oh){
+  var A=P3.A, nb=A.nb, f0, f1, a, i, n=c.n;
+  if(loop){ tf=((tf%loop)+loop)%loop; f0=Math.floor(tf); f1=(f0+1)%loop; a=tf-f0; }
+  else { tf=Math.max(0, Math.min(n-1, tf)); f0=Math.floor(tf); f1=Math.min(n-1,f0+1); a=tf-f0; }
+  var o0=f0*nb*4, o1=f1*nb*4, q=c.q, N=nb*4;
+  for(i=0;i<N;i+=4){
+    var x0=q[o0+i],y0=q[o0+i+1],z0=q[o0+i+2],w0=q[o0+i+3],x1=q[o1+i],y1=q[o1+i+1],z1=q[o1+i+2],w1=q[o1+i+3], s=(x0*x1+y0*y1+z0*z1+w0*w1<0)?-a:a, k=1-a;
+    oq[i]=x0*k+x1*s; oq[i+1]=y0*k+y1*s; oq[i+2]=z0*k+z1*s; oq[i+3]=w0*k+w1*s;
+  }
+  var h=c.h; oh[0]=h[f0*3]*(1-a)+h[f1*3]*a; oh[1]=h[f0*3+1]*(1-a)+h[f1*3+1]*a; oh[2]=h[f0*3+2]*(1-a)+h[f1*3+2]*a;
+}
+/* (qa,ha) ← (qa,ha)·(1-w) + (qb,hb)·w */
+function p3Mix_(qa, ha, qb, hb, w){
+  if(w<=0) return; var N=qa.length, i, k=1-w;
+  if(w>=1){ qa.set(qb); ha[0]=hb[0]; ha[1]=hb[1]; ha[2]=hb[2]; return; }
+  for(i=0;i<N;i+=4){ var s=(qa[i]*qb[i]+qa[i+1]*qb[i+1]+qa[i+2]*qb[i+2]+qa[i+3]*qb[i+3]<0)?-w:w; qa[i]=qa[i]*k+qb[i]*s; qa[i+1]=qa[i+1]*k+qb[i+1]*s; qa[i+2]=qa[i+2]*k+qb[i+2]*s; qa[i+3]=qa[i+3]*k+qb[i+3]*s; }
+  ha[0]=ha[0]*k+hb[0]*w; ha[1]=ha[1]*k+hb[1]*w; ha[2]=ha[2]*k+hb[2]*w;
+}
+/* 뼈 하나를 부모 기준 축(ax: 0=x 1=y 2=z)으로 ang 만큼 더 돌린다 */
+function p3Turn_(q, b, ax, ang){
+  if(!ang) return; var s=Math.sin(ang/2), c=Math.cos(ang/2), o=b*4, x=q[o], y=q[o+1], z=q[o+2], w=q[o+3], rx=ax===0?s:0, ry=ax===1?s:0, rz=ax===2?s:0;
+  q[o]=c*x+rx*w+ry*z-rz*y; q[o+1]=c*y-rx*z+ry*w+rz*x; q[o+2]=c*z+rx*y-ry*x+rz*w; q[o+3]=c*w-rx*x-ry*y-rz*z;
+}
+/* 로컬 자세 → 뼈 월드 행렬(3x4 행 우선) → 스키닝 팔레트 */
+function p3FK_(q, h){
+  var A=P3.A, nb=A.nb, W=A.W, pal=A.pal, inv=A.inv, b, o, p;
+  for(b=0;b<nb;b++){
+    o=b*4; var x=q[o], y=q[o+1], z=q[o+2], w=q[o+3], l=Math.sqrt(x*x+y*y+z*z+w*w)||1; x/=l; y/=l; z/=l; w/=l;
+    var xx=x*x, yy=y*y, zz=z*z, xy=x*y, xz=x*z, yz=y*z, wx=w*x, wy=w*y, wz=w*z;
+    var r0=1-2*(yy+zz), r1=2*(xy-wz), r2=2*(xz+wy), r3=2*(xy+wz), r4=1-2*(xx+zz), r5=2*(yz-wx), r6=2*(xz-wy), r7=2*(yz+wx), r8=1-2*(xx+yy);
+    var tx, ty, tz; if(b===0){ tx=h[0]; ty=h[1]; tz=h[2]; } else { tx=A.bp[b*3]; ty=A.bp[b*3+1]; tz=A.bp[b*3+2]; }
+    p=A.par[b]; o=b*12;
+    if(p<0){ W[o]=r0; W[o+1]=r1; W[o+2]=r2; W[o+3]=tx; W[o+4]=r3; W[o+5]=r4; W[o+6]=r5; W[o+7]=ty; W[o+8]=r6; W[o+9]=r7; W[o+10]=r8; W[o+11]=tz; }
+    else { var P=p*12, a0=W[P],a1=W[P+1],a2=W[P+2],a3=W[P+3],a4=W[P+4],a5=W[P+5],a6=W[P+6],a7=W[P+7],a8=W[P+8],a9=W[P+9],a10=W[P+10],a11=W[P+11];
+      W[o]=a0*r0+a1*r3+a2*r6; W[o+1]=a0*r1+a1*r4+a2*r7; W[o+2]=a0*r2+a1*r5+a2*r8; W[o+3]=a0*tx+a1*ty+a2*tz+a3;
+      W[o+4]=a4*r0+a5*r3+a6*r6; W[o+5]=a4*r1+a5*r4+a6*r7; W[o+6]=a4*r2+a5*r5+a6*r8; W[o+7]=a4*tx+a5*ty+a6*tz+a7;
+      W[o+8]=a8*r0+a9*r3+a10*r6; W[o+9]=a8*r1+a9*r4+a10*r7; W[o+10]=a8*r2+a9*r5+a10*r8; W[o+11]=a8*tx+a9*ty+a10*tz+a11; }
+  }
+  for(b=0;b<nb;b++){ o=b*12;
+    var m0=W[o],m1=W[o+1],m2=W[o+2],m3=W[o+3],m4=W[o+4],m5=W[o+5],m6=W[o+6],m7=W[o+7],m8=W[o+8],m9=W[o+9],m10=W[o+10],m11=W[o+11];
+    var i0=inv[o],i1=inv[o+1],i2=inv[o+2],i3=inv[o+3],i4=inv[o+4],i5=inv[o+5],i6=inv[o+6],i7=inv[o+7],i8=inv[o+8],i9=inv[o+9],i10=inv[o+10],i11=inv[o+11];
+    pal[o]=m0*i0+m1*i4+m2*i8; pal[o+1]=m0*i1+m1*i5+m2*i9; pal[o+2]=m0*i2+m1*i6+m2*i10; pal[o+3]=m0*i3+m1*i7+m2*i11+m3;
+    pal[o+4]=m4*i0+m5*i4+m6*i8; pal[o+5]=m4*i1+m5*i5+m6*i9; pal[o+6]=m4*i2+m5*i6+m6*i10; pal[o+7]=m4*i3+m5*i7+m6*i11+m7;
+    pal[o+8]=m8*i0+m9*i4+m10*i8; pal[o+9]=m8*i1+m9*i5+m10*i9; pal[o+10]=m8*i2+m9*i6+m10*i10; pal[o+11]=m8*i3+m9*i7+m10*i11+m11;
+  }
+}
+/* 뼈 b 의 관절 위치(모델 공간) — p3FK_ 뒤에 */
+function p3Joint_(b){ var W=P3.A.W, o=b*12; return [W[o+3], W[o+7], W[o+11]]; }
+/* 모델 공간 점 → 경기장 좌표 (X,Y,Z) */
+function p3ToWorld_(m, X, Y, hd, S){ var c=Math.cos(hd), s=Math.sin(hd); return [X+S*(-m[0]*c+m[2]*s), Y+S*(m[0]*s+m[2]*c), S*m[1]]; }
+
+/* ---------- WebGL ---------- */
+var P3_VS=[
+ 'attribute vec3 aP; attribute vec3 aN; attribute vec4 aC; attribute vec2 aK; attribute vec4 aI; attribute vec4 aW;',
+ 'uniform vec4 uB[66]; uniform mat4 uVP; uniform mat4 uM; uniform float uPS; uniform vec3 uKit[7]; uniform vec3 uLs; uniform mediump float uShadow;',
+ 'varying vec3 vN; varying vec3 vC; varying vec4 vR; varying vec3 vT;',
+ 'void sk(float w, float fi, vec4 P, inout vec3 sp, inout vec3 sn){ int j=int(fi+0.5)*3; vec4 r0=uB[j], r1=uB[j+1], r2=uB[j+2];',
+ '  sp+=w*vec3(dot(r0,P),dot(r1,P),dot(r2,P)); sn+=w*vec3(dot(r0.xyz,aN),dot(r1.xyz,aN),dot(r2.xyz,aN)); }',
+ 'void main(){',
+ '  vec4 P=vec4(aP*uPS,1.0); vec3 sp=vec3(0.0), sn=vec3(0.0);',
+ '  sk(aW.x,aI.x,P,sp,sn); sk(aW.y,aI.y,P,sp,sn); sk(aW.z,aI.z,P,sp,sn); sk(aW.w,aI.w,P,sp,sn);',
+ '  vec4 wp=uM*vec4(sp,1.0);',
+ '  if(uShadow>0.0){ wp.xy-=wp.z*uLs.xy; wp.z=0.015; }',
+ '  vN=mat3(uM[0].xyz,uM[1].xyz,uM[2].xyz)*sn;',
+ '  int k=int(aK.x+0.5); vC=uKit[k]*aC.rgb; vT=vec3(aC.a, aK.y/127.5, -aN.z); vR=vec4(P.xyz, (k==1)?1.0:((k==4)?2.0:((k==6)?-1.0:0.0)));',
+ '  gl_Position=uVP*wp;',
+ '}'].join('\n');
+var P3_FS=[
+ 'precision mediump float;',
+ 'uniform vec3 uL; uniform vec4 uStripe; uniform float uShadow; uniform vec3 uAmb; uniform vec3 uDif; uniform vec3 uTrim; uniform vec3 uSkin; uniform sampler2D uNumT; uniform vec4 uNum;',
+ 'varying vec3 vN; varying vec3 vC; varying vec4 vR; varying vec3 vT;',
+ 'void main(){',
+ '  if(uShadow>0.0){ gl_FragColor=vec4(0.0,0.0,0.0,uShadow); return; }',
+ '  vec3 base=vC; float ao=vT.x, t=vT.y;',
+ '  if(vR.w>1.5){ base=mix(base, uTrim, smoothstep(0.455,0.485,t)); }',
+ '  else if(vR.w>0.5){',
+ '    if(uStripe.a>0.0){ float f=fract(vR.x*uStripe.a+0.5), e=0.06; base=mix(base, uStripe.rgb, smoothstep(0.25-e,0.25+e,f)-smoothstep(0.75-e,0.75+e,f)); }',
+ '    if(uNum.z>0.0 && vT.z>0.2){ vec2 uv=vec2(0.5-vR.x/0.27, (1.385-vR.y)/0.27);',      /* 등번호: 기준 자세의 등 한가운데 27cm 칸 */
+ '      if(uv.x>0.0 && uv.x<1.0 && uv.y>0.0 && uv.y<1.0){ vec4 tn=texture2D(uNumT, uNum.xy+uv*uNum.zw); base=mix(base, tn.rgb, tn.a*smoothstep(0.2,0.45,vT.z)); } }',
+ '    base=mix(base, uTrim, smoothstep(0.455,0.485,t)); base=mix(base, uSkin, smoothstep(0.585,0.615,t));',
+ '  }',
+ '  if(vR.w<-0.5){ vec3 n=normalize(vR.xyz), a=abs(n); float m=max(max(a.y*0.5257+a.z*0.8507, a.x*0.5257+a.y*0.8507), a.x*0.8507+a.z*0.5257); base=mix(vec3(0.96), vec3(0.10,0.11,0.13), smoothstep(0.915,0.935,m)); ao=1.0; }',
+ '  vec3 n=normalize(vN); float d=max(dot(n,uL),0.0), hemi=0.5+0.5*n.z;',
+ '  vec3 col=base*(uAmb*mix(0.62,1.0,hemi)+uDif*d)*mix(0.56,1.0,ao);',
+ '  col+=vec3(0.10)*pow(1.0-abs(n.z),3.0)*max(dot(n,vec3(-uL.x,-uL.y,0.3)),0.0);',
+ '  gl_FragColor=vec4(col,1.0);',
+ '}'].join('\n');
+function p3GL_(){
+  if(P3.gl) return P3.gl; if(P3.fail) return null;
+  try{
+    var cv=document.createElement('canvas'); cv.width=16; cv.height=16;
+    var o={alpha:true, antialias:true, depth:true, stencil:true, premultipliedAlpha:true, preserveDrawingBuffer:false, powerPreference:'high-performance'};
+    var gl=cv.getContext('webgl',o)||cv.getContext('experimental-webgl',o); if(!gl){ P3.fail=1; return null; }
+    if(gl.getParameter(gl.MAX_VERTEX_UNIFORM_VECTORS)<96){ P3.fail=1; return null; }
+    cv.addEventListener('webglcontextlost', function(e){ e.preventDefault(); P3.gl=null; P3.lost=1; }, false);
+    cv.addEventListener('webglcontextrestored', function(){ P3.lost=0; }, false);
+    function sh(t,src){ var s=gl.createShader(t); gl.shaderSource(s,src); gl.compileShader(s); if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; }
+    var pr=gl.createProgram(); gl.attachShader(pr,sh(gl.VERTEX_SHADER,P3_VS)); gl.attachShader(pr,sh(gl.FRAGMENT_SHADER,P3_FS));
+    ['aP','aN','aC','aK','aI','aW'].forEach(function(n,i){ gl.bindAttribLocation(pr,i,n); });
+    gl.linkProgram(pr); if(!gl.getProgramParameter(pr,gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(pr));
+    var U={}; ['uB','uVP','uM','uPS','uKit','uLs','uShadow','uL','uStripe','uAmb','uDif','uTrim','uSkin','uNumT','uNum'].forEach(function(n){ U[n]=gl.getUniformLocation(pr,n); });
+    var A=P3.A;
+    function mesh(pos,nrm,col,part,bi,bw,idx){
+      function vb(d){ var b=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,b); gl.bufferData(gl.ARRAY_BUFFER,d,gl.STATIC_DRAW); return b; }
+      var m={pos:vb(pos), nrm:vb(nrm), col:vb(col), part:vb(part), bi:vb(bi), bw:vb(bw), n:idx.length};
+      m.idx=gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,m.idx); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,idx,gl.STATIC_DRAW); return m;
+    }
+    P3.mesh=mesh(A.pos,A.nrm,A.col,A.part,A.bi,A.bw,A.idx);
+    /* 공: 정이십면체를 두 번 쪼갠 구 */
+    var t=(1+Math.sqrt(5))/2, V=[[-1,t,0],[1,t,0],[-1,-t,0],[1,-t,0],[0,-1,t],[0,1,t],[0,-1,-t],[0,1,-t],[t,0,-1],[t,0,1],[-t,0,-1],[-t,0,1]].map(function(v){ var l=Math.hypot(v[0],v[1],v[2]); return [v[0]/l,v[1]/l,v[2]/l]; });
+    var F=[[0,11,5],[0,5,1],[0,1,7],[0,7,10],[0,10,11],[1,5,9],[5,11,4],[11,10,2],[10,7,6],[7,1,8],[3,9,4],[3,4,2],[3,2,6],[3,6,8],[3,8,9],[4,9,5],[2,4,11],[6,2,10],[8,6,7],[9,8,1]];
+    for(var it=0;it<2;it++){ var F2=[], mid={}; var mp=function(a,b){ var k=a<b?a+'_'+b:b+'_'+a; if(mid[k]==null){ var v=[V[a][0]+V[b][0],V[a][1]+V[b][1],V[a][2]+V[b][2]], l=Math.hypot(v[0],v[1],v[2]); V.push([v[0]/l,v[1]/l,v[2]/l]); mid[k]=V.length-1; } return mid[k]; };
+      F.forEach(function(f){ var a=mp(f[0],f[1]), b=mp(f[1],f[2]), c=mp(f[2],f[0]); F2.push([f[0],a,c],[f[1],b,a],[f[2],c,b],[a,b,c]); }); F=F2; }
+    var bn=V.length, bp=new Int16Array(bn*3), bnr=new Int8Array(bn*3), bc=new Uint8Array(bn*4), bk=new Uint8Array(bn*2), bbi=new Uint8Array(bn*4), bbw=new Uint8Array(bn*4), bix=new Uint16Array(F.length*3);
+    V.forEach(function(v,i){ for(var k=0;k<3;k++){ bp[i*3+k]=Math.round(v[k]*32767); bnr[i*3+k]=Math.round(v[k]*127); } bc[i*4]=bc[i*4+1]=bc[i*4+2]=bc[i*4+3]=255; bk[i*2]=6; bbw[i*4]=255; });
+    F.forEach(function(f,i){ bix[i*3]=f[0]; bix[i*3+1]=f[1]; bix[i*3+2]=f[2]; });
+    P3.ball=mesh(bp,bnr,bc,bk,bbi,bbw,bix);
+    P3.numT=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,P3.numT); gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array(4));
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+    P3._numOf=null;
+    P3.gl=gl; P3.cv=cv; P3.pr=pr; P3.U=U; P3.vp=new Float32Array(16); P3.mm=new Float32Array(16); P3.kit=new Float32Array(21); P3.idp=new Float32Array(264);
+    return gl;
+  }catch(e){ P3.fail=1; P3.err=String(e&&e.message||e); return null; }
+}
+function p3Bind_(m){
+  var gl=P3.gl;
+  gl.bindBuffer(gl.ARRAY_BUFFER,m.pos); gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0,3,gl.SHORT,true,0,0);
+  gl.bindBuffer(gl.ARRAY_BUFFER,m.nrm); gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1,3,gl.BYTE,true,0,0);
+  gl.bindBuffer(gl.ARRAY_BUFFER,m.col); gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2,4,gl.UNSIGNED_BYTE,true,0,0);
+  gl.bindBuffer(gl.ARRAY_BUFFER,m.part); gl.enableVertexAttribArray(3); gl.vertexAttribPointer(3,2,gl.UNSIGNED_BYTE,false,0,0);
+  gl.bindBuffer(gl.ARRAY_BUFFER,m.bi); gl.enableVertexAttribArray(4); gl.vertexAttribPointer(4,4,gl.UNSIGNED_BYTE,false,0,0);
+  gl.bindBuffer(gl.ARRAY_BUFFER,m.bw); gl.enableVertexAttribArray(5); gl.vertexAttribPointer(5,4,gl.UNSIGNED_BYTE,true,0,0);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,m.idx);
+}
+function p3Hex_(h){ var m=/^#?([0-9a-f]{6})$/i.exec(String(h||'')), n=m?parseInt(m[1],16):0x888888; return [((n>>16)&255)/255, ((n>>8)&255)/255, (n&255)/255]; }
+/* 유니폼: {shirt, stripe(없으면 ''), trim, shorts, socks, boots} */
+function p3SetKit_(kit){
+  var gl=P3.gl, K=P3.kit, set=function(i,c){ K[i*3]=c[0]; K[i*3+1]=c[1]; K[i*3+2]=c[2]; };
+  set(0,[1,1,1]); set(1,p3Hex_(kit.shirt)); set(2,[1,1,1]); set(3,p3Hex_(kit.shorts)); set(4,p3Hex_(kit.socks)); set(5,kit.boots?p3Hex_(kit.boots):[1,1,1]); set(6,[1,1,1]);
+  gl.uniform3fv(P3.U.uKit,K); var tr=p3Hex_(kit.trim); gl.uniform3f(P3.U.uTrim,tr[0],tr[1],tr[2]); gl.uniform3f(P3.U.uSkin,0.80,0.60,0.48);
+  var s=kit.stripe?p3Hex_(kit.stripe):[0,0,0]; gl.uniform4f(P3.U.uStripe, s[0], s[1], s[2], kit.stripe?(kit.stripeN||7.2):0);
+}
+/* 중계 카메라(tvCam_) → 뷰 · 투영 행렬. 2D 쪽 tvCS_/tvPS_ 와 같은 식이라 바닥 그래픽과 정확히 겹친다 */
+function p3VP_(c, W, H){
+  var m=P3.vp, fx=c.foc/(W/2), fy=c.foc/(H/2), n=0.5, f=600, a=(f+n)/(f-n), b=-2*f*n/(f-n), C=c.C;
+  var r0=[c.yc, -c.ys, 0], r1=[c.ys*c.se, c.yc*c.se, c.ce], r2=[c.ys*c.ce, c.yc*c.ce, -c.se];
+  var t0=-(r0[0]*C[0]+r0[1]*C[1]+r0[2]*C[2]), t1=-(r1[0]*C[0]+r1[1]*C[1]+r1[2]*C[2]), t2=-(r2[0]*C[0]+r2[1]*C[1]+r2[2]*C[2]);
+  m[0]=fx*r0[0]; m[4]=fx*r0[1]; m[8]=fx*r0[2]; m[12]=fx*t0;
+  m[1]=fy*r1[0]; m[5]=fy*r1[1]; m[9]=fy*r1[2]; m[13]=fy*t1;
+  m[2]=a*r2[0]; m[6]=a*r2[1]; m[10]=a*r2[2]; m[14]=a*t2+b;
+  m[3]=r2[0]; m[7]=r2[1]; m[11]=r2[2]; m[15]=t2;
+  return m;
+}
+function p3Model_(X, Y, Z, hd, S, wd){
+  var m=P3.mm, c=Math.cos(hd), s=Math.sin(hd), W=S*(wd||1);      /* wd: 체격(좌우 폭) */
+  m[0]=-W*c; m[1]=W*s; m[2]=0; m[3]=0;  m[4]=0; m[5]=0; m[6]=S; m[7]=0;  m[8]=S*s; m[9]=S*c; m[10]=0; m[11]=0;  m[12]=X; m[13]=Y; m[14]=Z; m[15]=1;
+  return m;
+}
+var P3_LIGHT=[0.30,-0.42,0.86];
+/* 한 프레임 시작: 크기 맞추고 지우기 */
+function p3Begin_(c, W, H, pw, ph){
+  var gl=p3GL_(); if(!gl) return false;
+  var cv=P3.cv; if(cv.width!==pw || cv.height!==ph){ cv.width=pw; cv.height=ph; }
+  gl.viewport(0,0,pw,ph); gl.clearColor(0,0,0,0); gl.clearStencil(0); gl.clearDepth(1); gl.depthMask(true); gl.stencilMask(255);
+  gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT|gl.STENCIL_BUFFER_BIT);
+  gl.useProgram(P3.pr); gl.uniformMatrix4fv(P3.U.uVP,false,p3VP_(c,W,H));
+  var L=P3_LIGHT, ll=Math.hypot(L[0],L[1],L[2]); gl.uniform3f(P3.U.uL,L[0]/ll,L[1]/ll,L[2]/ll); gl.uniform3f(P3.U.uLs,L[0]/L[2],L[1]/L[2],0);
+  gl.uniform3f(P3.U.uAmb,0.66,0.68,0.72); gl.uniform3f(P3.U.uDif,0.62,0.60,0.56);
+  return true;
+}
+/* 그림자 단계 ↔ 색 단계 */
+function p3Pass_(shadow){
+  var gl=P3.gl;
+  if(shadow){ gl.uniform1f(P3.U.uShadow,shadow); gl.disable(gl.DEPTH_TEST); gl.depthMask(false); gl.disable(gl.CULL_FACE); gl.enable(gl.BLEND); gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA);
+    gl.enable(gl.STENCIL_TEST); gl.stencilFunc(gl.NOTEQUAL,1,255); gl.stencilOp(gl.KEEP,gl.KEEP,gl.REPLACE); }
+  else { gl.uniform1f(P3.U.uShadow,0); gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LEQUAL); gl.depthMask(true); gl.enable(gl.CULL_FACE); gl.cullFace(gl.BACK); gl.frontFace(gl.CCW); gl.disable(gl.BLEND); gl.disable(gl.STENCIL_TEST); }
+}
+/* 선수 한 명 (팔레트는 pal, 없으면 방금 p3FK_ 한 것) */
+function p3DrawBody_(X, Y, hd, S, pal, wd){
+  var gl=P3.gl, A=P3.A;
+  if(P3._bound!==P3.mesh){ p3Bind_(P3.mesh); P3._bound=P3.mesh; }
+  gl.uniform1f(P3.U.uPS,A.ps); gl.uniform4fv(P3.U.uB, pal||A.pal); gl.uniformMatrix4fv(P3.U.uM,false,p3Model_(X,Y,0,hd,S,wd));
+  gl.drawElements(gl.TRIANGLES,P3.mesh.n,gl.UNSIGNED_SHORT,0);
+}
+/* 공: 위치 · 반지름 · 굴러간 방향(rx,ry: 축) · 각도 */
+function p3DrawBall_(X, Y, Z, r, ax, ay, ang){
+  var gl=P3.gl, p=P3.idp, l=Math.hypot(ax,ay)||1, ux=ax/l, uy=ay/l, c=Math.cos(ang), s=Math.sin(ang), k=1-c;
+  /* 축 (ux,uy,0) 둘레 회전 (공의 모델 공간 = 경기장 축과 나란히) */
+  p[0]=c+ux*ux*k; p[1]=ux*uy*k; p[2]=uy*s; p[3]=0;  p[4]=ux*uy*k; p[5]=c+uy*uy*k; p[6]=-ux*s; p[7]=0;  p[8]=-uy*s; p[9]=ux*s; p[10]=c; p[11]=0;
+  if(P3._bound!==P3.ball){ p3Bind_(P3.ball); P3._bound=P3.ball; }
+  var m=P3.mm; m[0]=1; m[1]=0; m[2]=0; m[3]=0; m[4]=0; m[5]=1; m[6]=0; m[7]=0; m[8]=0; m[9]=0; m[10]=1; m[11]=0; m[12]=X; m[13]=Y; m[14]=Z; m[15]=1;
+  gl.uniform1f(P3.U.uPS,r); gl.uniform4fv(P3.U.uB,p); gl.uniformMatrix4fv(P3.U.uM,false,m);
+  gl.drawElements(gl.TRIANGLES,P3.ball.n,gl.UNSIGNED_SHORT,0);
+}
+/* 등번호 그림(캔버스 한 장에 8x4 칸)을 텍스처로 올린다 — 같은 그림이면 다시 올리지 않는다 */
+function p3NumTex_(cv){
+  var gl=P3.gl; gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,P3.numT);
+  if(P3._numOf!==cv){ try{ gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,cv); P3._numOf=cv; }catch(e){ P3._numOf=null; } }
+  gl.uniform1i(P3.U.uNumT,0);
+}
+function p3SetNum_(cell){ var gl=P3.gl; if(cell==null || cell<0 || !P3._numOf) gl.uniform4f(P3.U.uNum,0,0,0,0); else gl.uniform4f(P3.U.uNum,(cell%8)/8,Math.floor(cell/8)/4,1/8,1/4); }
+function p3End_(){ var gl=P3.gl; P3._bound=null; gl.flush(); }
+/* ---------- 전술 타임라인 → 선수별 동작 (시간 t 만으로 정해지는 함수: 되감기 · 영상 내보내기에서도 같은 그림) ---------- */
+var P3_REST=[0.13, 0.42];            /* 공을 가진 선수의 발밑: 오른쪽 · 앞 (모델 m) */
+/* 동작별 임팩트 지점(오른쪽 · 앞 · 높이, 모델 m) */
+var P3_CP={pass:[0.09,0.42,0.11], kick:[-0.20,0.50,0.11], strike:[0.14,0.53,0.11], shot:[0.48,0.64,0.11], gkkick:[1.03,0.74,0.30], header:[0,0.27,1.88]};
+function p3Pref_(){ if(P3.pref==null){ try{ P3.pref=(localStorage.getItem('kt_tac_p3')!=='0'); }catch(e){ P3.pref=true; } } return P3.pref; }
+function p3PrefSet_(on){ P3.pref=!!on; try{ localStorage.setItem('kt_tac_p3', on?'1':'0'); }catch(e){} }
+/* 이 화면을 3D 선수로 그리려는가 (설정 + 기기 지원). 데이터가 아직 오는 중이어도 true — 장면 길이는 미리 3D 기준으로 잡는다 */
+function p3Want_(o){ return o.overlay!=='thumb' && o.p3!==false && p3Pref_() && P3.st!==-1 && p3Probe_(); }
+function p3Use_(R){ return p3Want_(R.o) && p3Ok_() && !!p3GL_(); }
+/* WebGL 을 쓸 수 있는 기기인지 한 번만 확인 */
+function p3Probe_(){
+  if(P3.fail) return false; if(P3.probe) return true;
+  try{ var cv=document.createElement('canvas'), gl=cv.getContext('webgl',{stencil:true})||cv.getContext('experimental-webgl',{stencil:true});
+    if(!gl || gl.getParameter(gl.MAX_VERTEX_UNIFORM_VECTORS)<96){ P3.fail=1; return false; }
+    var ex=gl.getExtension('WEBGL_lose_context'); if(ex) ex.loseContext();
+    P3.probe=1; return true;
+  }catch(e){ P3.fail=1; return false; }
+}
+function p3Hash_(s){ var h=2166136261; s=String(s); for(var i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619)>>>0; } return h/4294967296; }
+function p3Wrap_(a){ a=(a+Math.PI)%(2*Math.PI); if(a<0) a+=2*Math.PI; return a-Math.PI; }
+function p3E_(u){ return u*(1.6-0.6*u); }          /* 찬 공: 빠르게 떠나서 느려지며 도착 */
+function p3Sm_(t){ t=t<0?0:(t>1?1:t); return t*t*(3-2*t); }
+/* 선수 크기 배율: 실제 비율이면 화면에서 너무 작아서 카메라 거리에 맞춰 1.6~3배로 키운다.
+   카메라가 물러나면 그만큼 더 키워서 화면에서의 선수 크기를 비슷하게 지킨다 (유니폼 마커와 같은 원리) */
+function p3ScaleK_(R, k){ return tacClamp_(0.105*Math.min(R.W,R.H)*k.dist/(1.8*R.foc), 1.6, P3.smax||3.4); }
+function p3Scale_(R){      /* 영상 전체의 평균 배율 (장면 길이 계산용) */
+  if(R._p3S) return R._p3S;
+  var d=0, n=0; (R.K||[]).forEach(function(k){ d+=k.dist; n++; }); d=n?d/n:60;
+  return (R._p3S=p3ScaleK_(R, {dist:d}));
+}
+function p3S_(M, t){ return p3Lerp_(M.Sn, t/M.dt); }
+/* 선수마다 조금씩 다르게: 키 · 체격 · 서 있는 자세 */
+function p3Vary_(T){ var s=T.seed; T.sc=0.955+0.09*((s*13)%1); T.wd=0.96+0.09*((s*29)%1); T.jit=((s*53)%1)-0.5; T.st=((s*71)%1)-0.5; return T; }
+function p3Lerp_(a, f){ var i=Math.floor(f), u=f-i, n=a.length; if(i<0) return a[0]; if(i>=n-1) return a[n-1]; return a[i]*(1-u)+a[i+1]*u; }
+function p3LerpA_(a, f){ var i=Math.floor(f), u=f-i, n=a.length; if(i<0) return a[0]; if(i>=n-1) return a[n-1]; return a[i]+p3Wrap_(a[i+1]-a[i])*u; }
+/* 발밑 공 자리(경기장 좌표): 선수 위치 · 방향 · 오른쪽/앞 (모델 m) */
+function p3Off_(x, y, hd, S, right, fwd){ var c=Math.cos(hd), s=Math.sin(hd); return [x+S*(right*c+fwd*s), y+S*(-right*s+fwd*c)]; }
+
+function p3Plan_(R){
+  if(R._m3) return R._m3;
+  var doc=R.doc, plan=R.plan, TL=R.TL, dt=1/30, N=Math.max(4, Math.ceil(TL.total/dt)+2), S=p3Scale_(R), toks=doc.our.concat(doc.opp), n;
+  var M={dt:dt, N:N, S:S, Sn:new Float32Array(N), tr:{}, pass:{}, bx:new Float32Array(N), by:new Float32Array(N), own:new Array(N)};
+  toks.forEach(function(tk){
+    M.tr[tk.k]={k:tk.k, gk:(tk.pos==='GK'), opp:tacIsOpp_(tk.k), x:new Float32Array(N), y:new Float32Array(N), on:new Uint8Array(N), hd:new Float32Array(N), ph:new Float32Array(N), mv:new Float32Array(N),
+      sp:new Float32Array(N), ln:new Float32Array(N), rl:new Float32Array(N), sd:new Float32Array(N), sph:new Float32Array(N), al:new Float32Array(N), ev:[], seed:p3Hash_(tk.k+'|'+(tk.num==null?'':tk.num)+'|'+(tk.n||''))};
+    var T0=M.tr[tk.k]; T0.left=((T0.seed*7)%1)<((!T0.opp && /^l/.test(tk.k))?0.62:0.1);      /* 왼쪽 자리 선수는 왼발잡이가 많다 */
+    p3Vary_(T0);
+  });
+  for(n=0;n<N;n++){
+    var t=Math.min(TL.total, n*dt), st=tacTLAt_(TL, plan, t), P=tacPose_(doc, st.A, st.B, st.p, !!R.run3);
+    for(var j=0;j<toks.length;j++){ var T=M.tr[toks[j].k], q=P.pos[toks[j].k]; if(q){ T.x[n]=(q[0]-0.5)*TV_PW; T.y[n]=(0.5-q[1])*TV_PL; T.on[n]=1; } else if(n>0){ T.x[n]=T.x[n-1]; T.y[n]=T.y[n-1]; } }
+    var b=(P.owner && P.pos[P.owner]) ? P.pos[P.owner] : (P.ball||[.5,.5]); M.bx[n]=(b[0]-0.5)*TV_PW; M.by[n]=(0.5-b[1])*TV_PL; M.own[n]=P.owner||'';
+    M.Sn[n]=p3ScaleK_(R, tvCamK_(R, st));
+  }
+  p3Events_(R, M);
+  toks.forEach(function(tk){ p3Track_(M, M.tr[tk.k]); });
+  p3Flights_(R, M);
+  return (R._m3=M);
+}
+function p3Ev_(T, e){
+  var c=P3_CLIP[e.clip]; e.ts=e.tc-(c.tc-c.a); e.te=e.tc+(c.b-c.tc); e.fi=c.fi; e.fo=c.fo; T.ev.push(e); return e;
+}
+/* 장면 전환마다: 패스 · 슈팅 · 헤더 · 태클 · 턴 같은 사건을 뽑는다 */
+function p3Events_(R, M){
+  var doc=R.doc, plan=R.plan, S=M.S, dt=M.dt, prevTo='', prevHold=0;
+  function at(k, t){ var T=M.tr[k]; return T?[p3Lerp_(T.x,t/dt), p3Lerp_(T.y,t/dt)]:null; }
+  R.TL.segs.forEach(function(sg){
+    if(sg.k==='hold'){ prevHold=sg.t0; return; }
+    if(sg.k!=='move') return;
+    var A=plan.steps[sg.i-1], B=plan.steps[sg.i], mv=tacMotion_(doc, A, B), pm=null, drib=null;
+    mv.forEach(function(m){ if(m.kind==='pass') pm=m; else if(m.kind==='drib') drib=m; });
+    if(pm){
+      var tc=sg.t0+TAC_PH.bp0*sg.d, ta=sg.t0+TAC_PH.bp1*sg.d, K=(A.own && M.tr[A.own] && A.pos[A.own])?A.own:'', Rk=(B.own && M.tr[B.own] && B.pos[B.own])?B.own:'';
+      var fr=K?at(K,tc):tvW_(A.ball||[.5,.5]), to=Rk?at(Rk,ta):tvW_(B.ball||[.5,.5]), dx=to[0]-fr[0], dy=to[1]-fr[1], wd=Math.hypot(dx,dy), dir=Math.atan2(dx,dy);
+      var shot=!Rk && B.ball && (B.ball[1]<=0.02 || B.ball[1]>=0.98), ps={tc:tc, ta:ta, K:K, Rk:Rk, wd:wd, dir:dir, shot:shot, hm:(wd>24)?Math.min(9,wd*0.17):wd*0.008, i:sg.i};
+      var steal=K && Rk && (M.tr[K].opp!==M.tr[Rk].opp) && wd<7*S/1.6;
+      if(steal){ ps.steal=1; ps.hm=0; p3Ev_(M.tr[Rk], {clip:'tackle', tc:tc+0.45*(ta-tc), dir:Math.atan2(-dx,-dy), type:'tackle'}); }
+      else if(K){
+        var TK=M.tr[K], clip=shot?'shot':(wd>24?((TK.gk && prevTo!==K)?'gkkick':'strike'):(wd<8?'kick':'pass')), cdef=P3_CLIP[clip], natL=!!cdef.left, mir=(clip!=='gkkick' && TK.left!==natL);
+        ps.ev=p3Ev_(TK, {clip:clip, mir:mir, tc:tc, dir:dir, type:'kick', ps:ps});
+        if(clip==='gkkick'){ ps.ev.hold=1; ps.ev.h0=(sg.i<=1)?-1:Math.max(0, prevHold); }   /* 길게 차기 전에는 공을 손에 들고 있다 */
+      }
+      if(Rk && !steal){
+        /* 높이 뜬 공을 상대(또는 우리) 골문 앞에서 받으면 헤더 */
+        var TR=M.tr[Rk], goalY=TR.opp?-TV_PL/2:TV_PL/2;
+        if(wd>24 && Math.abs(to[0])<17 && Math.abs(goalY-to[1])<19 && !TR.gk){ ps.head=1; p3Ev_(TR, {clip:'header', tc:ta, dir:Math.atan2(-dx,-dy), type:'head', ps:ps}); }
+      }
+      /* 서서 받는 선수는 발을 내밀어 공을 잡는다 (첫 터치) */
+      if(Rk && !steal && !ps.head){ var TT=M.tr[Rk], v0=at(Rk,ta-0.12), v1=at(Rk,ta+0.02), sv=Math.hypot(v1[0]-v0[0], v1[1]-v0[1])/0.14/p3S_(M,ta);
+        if(sv<1.6 && !TT.gk) p3Ev_(TT, {clip:'kick', mir:!TT.left, tc:ta, dir:Math.atan2(-dx,-dy), type:'trap', w:0.62}); }
+      M.pass[sg.i]=ps; prevTo=Rk;
+    } else if(A.own!==B.own) prevTo='';
+    if(drib && M.tr[drib.k]){
+      /* 드리블 중 상대와 가장 가까워지는 순간: 가까우면 턴으로 벗겨 내고, 상대는 태클을 건다 */
+      var TD=M.tr[drib.k], best=1e9, bt=0, bk='', len=tacMeters_(drib.a, drib.b);
+      for(var u=0.25;u<=0.8;u+=0.05){ var tt=sg.t0+u*sg.d, p=at(drib.k,tt);
+        Object.keys(M.tr).forEach(function(k){ var o=M.tr[k]; if(o.opp===TD.opp || o.gk) return; var q=at(k,tt), d=Math.hypot(q[0]-p[0], q[1]-p[1]); if(d<best){ best=d; bt=tt; bk=k; } }); }
+      if(len>=7 && best<3.0){
+        var p0=at(drib.k,bt-0.1), p1=at(drib.k,bt+0.1), dd=Math.atan2(p1[0]-p0[0], p1[1]-p0[1]);
+        p3Ev_(TD, {clip:'spin', tc:bt, dir:dd, type:'spin'});
+        if(best<2.6 && best>1.0){ var qo=at(bk,bt), pd=at(drib.k,bt); p3Ev_(M.tr[bk], {clip:'tackle', mir:(M.tr[bk].seed<0.5), tc:bt+0.05, dir:Math.atan2(pd[0]-qo[0], pd[1]-qo[1]), type:'tackle', miss:1}); }
+      }
+    }
+  });
+  Object.keys(M.tr).forEach(function(k){ M.tr[k].ev.sort(function(a,b){ return a.ts-b.ts; }); });
+}
+/* 선수 한 명의 트랙: 속도 → 바라보는 방향 · 달리기 위상 · 기울기 (앞에서부터 차례로 걸러서 저장) */
+function p3Track_(M, T){
+  var N=M.N, dt=M.dt, S=M.S, x=T.x, y=T.y, n, hd=0, mv=0, ln=0, rl=0, ph=T.seed, sd=0, sph=0, al=0, prevSp=0, CY=P3_CLIP.jog.loop/30;
+  function vel(i){ var a=Math.max(0,i-2), b=Math.min(N-1,i+2), d=(b-a)*dt||dt; return [(x[b]-x[a])/d, (y[b]-y[a])/d]; }
+  function evAt(t){ for(var i=0;i<T.ev.length;i++){ var e=T.ev[i]; if(t>=e.ts-0.25 && t<=e.tc+0.3) return e; } return null; }
+  function nextKick(t){ for(var i=0;i<T.ev.length;i++){ var e=T.ev[i]; if(e.type==='kick' && e.tc>t && e.tc-t<4) return e; } return null; }
+  for(n=0;n<N;n++){
+    S=M.Sn[n]*T.sc;
+    var t=n*dt, v=vel(n), sp=Math.hypot(v[0],v[1]), va=vel(Math.min(N-1,n+3)), spa=Math.hypot(va[0],va[1]), sm=sp/S;
+    var bdx=M.bx[n]-x[n], bdy=M.by[n]-y[n], bd=Math.hypot(bdx,bdy), own=(M.own[n]===T.k);
+    var face=(bd>0.9 && !own) ? Math.atan2(bdx,bdy)+0.3*T.jit : (T.opp?Math.PI:0), nk=own?nextKick(t):null; if(nk) face=nk.dir;
+    var run=(spa>0.4) ? Math.atan2(va[0],va[1]) : face, w=p3Sm_((spa/S-0.45)/0.7), want=face+p3Wrap_(run-face)*w, side=0;
+    if(T.gk && !own){
+      /* 골키퍼: 천천히 옆으로 움직일 때는 공을 보면서 옆걸음 */
+      var rel=p3Wrap_(Math.atan2(v[0],v[1])-face), lat=Math.abs(Math.sin(rel));
+      if(sm>0.2 && sm<2.6 && lat>0.7){ side=(Math.sin(rel)>0?1:-1)*p3Sm_((sm-0.2)/0.5); want=face; }
+    }
+    var e=evAt(t); if(e) want=e.dir;
+    if(n===0) hd=want;
+    else { var quick=(sm>0.8 || e), k=1-Math.exp(-dt/(quick?0.11:0.32)), d=p3Wrap_(want-hd)*k, mx=(quick?9:3.4)*dt; hd+=Math.max(-mx, Math.min(mx, d)); }      /* 서 있을 때 몸은 느긋하게, 시선이 먼저 공을 따라간다 */
+    var prevHd=n?T.hd[n-1]:hd, om=p3Wrap_(hd-prevHd)/dt;
+    var mvT=side?0:p3Sm_((sm-0.3)/1.15), acc=(sp-prevSp)/dt/S; prevSp=sp;
+    mv+=(mvT-mv)*(1-Math.exp(-dt/0.11)); sd+=(Math.abs(side)-sd)*(1-Math.exp(-dt/0.12)); if(side) T.sdir=side>0?1:-1;
+    ph+=tacClamp_(sm/P3_CLIP.jog.speed, 0.72, 1.75)*dt/CY; sph+=tacClamp_(sm/2.8, 0.45, 1.5)*dt/0.5;
+    var lnT=tacClamp_(0.03*acc, -0.10, 0.20)+tacClamp_((sm-2.6)*0.05, 0, 0.15), rlT=tacClamp_(om*sm*0.02, -0.16, 0.16);
+    ln+=(lnT-ln)*(1-Math.exp(-dt/0.16)); rl+=(rlT-rl)*(1-Math.exp(-dt/0.18));
+    var alT=T.gk ? (0.25+0.75*p3Sm_((48-bd)/30)) : 0.35+0.4*p3Sm_((14-bd)/9); al+=(alT-al)*(n?(1-Math.exp(-dt/0.4)):1);
+    T.hd[n]=hd; T.mv[n]=mv; T.ph[n]=ph; T.sp[n]=sm; T.ln[n]=ln; T.rl[n]=rl; T.sd[n]=sd; T.sph[n]=sph; T.al[n]=al;
+  }
+}
+/* 패스 하나하나의 공 궤적 끝점 (차는 발 → 받는 발 · 머리 · 골문) */
+function p3Flights_(R, M){
+  var dt=M.dt;
+  Object.keys(M.pass).forEach(function(i){
+    var ps=M.pass[i], S0=p3S_(M,ps.tc), S1=p3S_(M,ps.ta), fr, to, T, w, f;
+    if(ps.K){ T=M.tr[ps.K];
+      if(ps.ev && ps.ev.clip==='gkkick'){ var cp=P3_CP.gkkick, o=p3Off_(p3Lerp_(T.x,ps.tc/dt), p3Lerp_(T.y,ps.tc/dt), p3LerpA_(T.hd,ps.tc/dt), S0*T.sc, cp[0], cp[1]); fr=[o[0], o[1], cp[2]*S0*T.sc]; }
+      else { f=p3Feet_(M, T, ps.tc); fr=[f[0], f[1], p3BallR_(S0)]; } }
+    else { w=tvW_(R.plan.steps[ps.i-1].ball||[.5,.5]); fr=[w[0], w[1], p3BallR_(S0)]; }
+    if(ps.Rk){ T=M.tr[ps.Rk];
+      if(ps.head){ var h=p3Off_(p3Lerp_(T.x,ps.ta/dt), p3Lerp_(T.y,ps.ta/dt), p3LerpA_(T.hd,ps.ta/dt), S1*T.sc, 0, P3_CP.header[1]); to=[h[0], h[1], P3_CP.header[2]*S1*T.sc]; }
+      else { f=p3Feet_(M, T, ps.ta); to=[f[0], f[1], p3BallR_(S1)]; } }
+    else { w=tvW_(R.plan.steps[ps.i].ball||[.5,.5]); to=[w[0], w[1], ps.shot?(0.5+1.1*p3Hash_('sh'+ps.i))*Math.max(1,S1*0.8):p3BallR_(S1)]; }
+    ps.from=fr; ps.to=to;
+  });
+}
+function p3BallR_(S){ return 0.11*S*1.18; }
+/* 공을 가진 선수의 발밑 자리 (달릴 때는 툭툭 치고 나가는 만큼 앞으로) */
+function p3Feet_(M, T, t){
+  var S=p3S_(M,t)*(T.sc||1), f=t/M.dt, hd=p3LerpA_(T.hd,f), mv=p3Lerp_(T.mv,f), ph=p3Lerp_(T.ph,f), x=p3Lerp_(T.x,f), y=p3Lerp_(T.y,f), sd=T.left?-1:1, fw=P3_REST[1];
+  if(mv>0.01){ var tc=P3_CLIP.jog.touch, p=ph-Math.floor(ph), a=tc[0], b=tc[1], u; if(p>=a && p<b) u=(p-a)/(b-a); else u=((p<a?p+1:p)-b)/(1-b+a);
+    fw+=mv*(0.10+0.52*Math.sin(Math.PI*Math.pow(u,0.75))); }
+  return p3Off_(x, y, hd, S, P3_REST[0]*sd*(1-0.5*mv), fw);
+}
+/* 지금 진행 중인 사건(가장 센 것) */
+function p3Act_(T, t){
+  var best=null, bw=0;
+  for(var i=0;i<T.ev.length;i++){ var e=T.ev[i], w;
+    if(e.hold && t<e.ts+e.fi && t>=e.h0){ w=(e.h0<0)?1:p3Sm_((t-e.h0)/0.4); }
+    else { if(t<e.ts || t>e.te) continue; w=Math.min(p3Sm_((t-e.ts)/e.fi), p3Sm_((e.te-t)/e.fo))*(e.w||1); }
+    if(w>bw){ bw=w; best=e; } }
+  return best?{e:best, w:bw}:null;
+}
+/* 서 있는 자세: 차렷(패스 첫 프레임)과 살짝 숙인 준비 자세를 섞고, 골키퍼는 공이 가까울수록 낮게 */
+function p3Idle_(T, t, al, q, h){
+  var A=P3.A, s=T?T.seed:0.3;
+  p3Sample_(A.clips.pass, 0, 0, q, h); p3Sample_(A.clips.kick, 0, 0, A.q2, A.h2); p3Mix_(q, h, A.q2, A.h2, tacClamp_(0.45+0.35*al+0.3*(T?T.st||0:0), 0, 1));
+  if(T && T.gk){ p3Sample_(A.clips.gkside, 0, 0, A.q2, A.h2); p3Mix_(q, h, A.q2, A.h2, tacClamp_((al-0.25)/0.75,0,1)*0.9); }
+  /* 숨 · 무게 중심 이동 */
+  var w1=Math.sin(t*1.7+s*40), w2=Math.sin(t*1.15+s*17);
+  p3Turn_(q, A.B.spine1, 0, 0.014*w1); p3Turn_(q, A.B.spine2, 0, 0.010*w1); p3Turn_(q, A.B.hips, 2, 0.016*w2); p3Turn_(q, A.B.spine, 2, -0.016*w2);
+  h[0]+=0.012*w2; h[1]-=0.004*(1+w1);
+  if(T && T.jit){ p3Turn_(q, A.B.la, 0, 0.07*T.jit); p3Turn_(q, A.B.ra, 0, -0.06*T.jit); p3Turn_(q, A.B.spine2, 1, 0.08*T.st); }
+}
+/* 선수 한 명의 자세를 만든다 → P3.A.pal. 돌려주는 값: 그릴 위치 · 방향 */
+function p3Pose_(M, T, t, X, Y, ball){
+  var A=P3.A, q=A.q0, h=A.h0, f=t/M.dt, S=p3S_(M,t)*T.sc, hd=p3LerpA_(T.hd,f), mv=p3Lerp_(T.mv,f), sd=p3Lerp_(T.sd,f), al=p3Lerp_(T.al,f), act=p3Act_(T,t), aw=act?act.w:0, ox=0, oy=0;
+  p3Idle_(T, t, al, q, h);
+  if(mv>0.002){ p3Sample_(A.clips.jog, p3Lerp_(T.ph,f)*P3_CLIP.jog.loop, P3_CLIP.jog.loop, A.q1, A.h1); p3Mix_(q, h, A.q1, A.h1, mv); }
+  if(sd>0.002){ p3Sample_(A.clips[(T.sdir||1)>0?'gkside':'gkside_m'], p3Lerp_(T.sph,f)*P3_CLIP.gkside.loop, P3_CLIP.gkside.loop, A.q1, A.h1); p3Mix_(q, h, A.q1, A.h1, sd); }
+  if(act){
+    var e=act.e, c=P3_CLIP[e.clip], ct=Math.max(c.a, c.tc+(t-e.tc));
+    p3Sample_(A.clips[e.clip+(e.mir?'_m':'')], ct*A.fps, 0, A.q1, A.h1); p3Mix_(q, h, A.q1, A.h1, aw);
+    /* 발이 공에 정확히 닿도록 몸을 옮긴다 (공은 발밑 자리에 그대로) */
+    var cp=P3_CP[e.clip];
+    if(e.type==='kick' && cp && e.clip!=='gkkick'){ var sgn=e.mir?-1:1, rs=T.left?-1:1, o=p3Off_(0,0,hd,S,(P3_REST[0]*rs-cp[0]*sgn)*aw,(P3_REST[1]-cp[1])*aw); ox=o[0]; oy=o[1]; }
+  }
+  /* 가속 · 방향 전환에 따른 기울기 */
+  var ln=p3Lerp_(T.ln,f)*(1-aw), rl=p3Lerp_(T.rl,f)*(1-aw);
+  if(ln){ p3Turn_(q, A.B.hips, 0, ln*0.55); p3Turn_(q, A.B.spine1, 0, ln*0.45); }
+  if(rl) p3Turn_(q, A.B.hips, 2, rl);
+  /* 시선: 공을 본다 */
+  if(ball){
+    var dx=ball[0]-(X+ox), dy=ball[1]-(Y+oy), d=Math.hypot(dx,dy);
+    if(d>0.6*S){ var yaw=tacClamp_(-p3Wrap_(Math.atan2(dx,dy)-hd), -1.15, 1.15)*(1-0.75*aw)*(1-0.45*mv), pit=tacClamp_(Math.atan2(1.6*S-(ball[2]||0), d)*0.55-0.08, -0.25, 0.45)*(1-aw)*(1-0.6*mv);
+      p3Turn_(q, A.B.spine2, 1, yaw*0.18); p3Turn_(q, A.B.neck, 1, yaw*0.34); p3Turn_(q, A.B.head, 1, yaw*0.48); p3Turn_(q, A.B.neck, 0, pit*0.5); p3Turn_(q, A.B.head, 0, pit*0.5); }
+  }
+  p3FK_(q, h);
+  return {x:X+ox, y:Y+oy, hd:hd, act:act, sc:T.sc, wd:T.wd};
+}
+/* 정지 화면(카드 · 장면 미리보기)용 자세: 이번 장면에서 뛴 선수는 달리는 모습, 패스한 선수는 찬 직후 */
+function p3StillPose_(R, tk, X, Y, P, A0, B0, ball, t){
+  var A=P3.A, q=A.q0, h=A.h0, k=tk.k, seed=p3Hash_(k+'|'+(tk.num==null?'':tk.num)+'|'+(tk.n||'')), opp=tacIsOpp_(k), gk=(tk.pos==='GK'), hd, mvr=null, pm=null, T=p3Vary_({seed:seed, gk:gk});
+  (P.moves||[]).forEach(function(m){ if(m.k===k) mvr=m; if(m.kind==='pass') pm=m; });
+  var bdx=ball[0]-X, bdy=ball[1]-Y, bd=Math.hypot(bdx,bdy), own=(P.owner===k);
+  hd=(bd>1 && !own)?Math.atan2(bdx,bdy)+0.3*T.jit:(opp?Math.PI:0);
+  var al=gk?(0.25+0.75*p3Sm_((48-bd)/30)):0.35+0.4*p3Sm_((14-bd)/9);
+  p3Idle_(T, 0.6+seed*5, al, q, h);
+  if(mvr && mvr.kind!=='pass'){
+    var e0=tvW_(mvr.f(0.93)), e1=tvW_(mvr.f(1)); hd=Math.atan2(e1[0]-e0[0], e1[1]-e0[1]);
+    p3Sample_(A.clips.jog, seed*P3_CLIP.jog.loop, P3_CLIP.jog.loop, A.q1, A.h1); p3Mix_(q, h, A.q1, A.h1, own?0.7:0.92);
+    p3Turn_(q, A.B.hips, 0, 0.06); p3Turn_(q, A.B.spine1, 0, 0.05);
+  } else if(pm && A0 && A0.own===k && !own){
+    var to=(B0.own && P.pos[B0.own])?tvW_(P.pos[B0.own]):tvW_(pm.b), wd=Math.hypot(to[0]-X,to[1]-Y), cl=(wd>24)?'strike':'pass', c=P3_CLIP[cl];
+    hd=Math.atan2(to[0]-X, to[1]-Y); p3Sample_(A.clips[cl], (c.tc+0.07)*A.fps, 0, q, h);
+  }
+  if(bd>1.2){ var yaw=tacClamp_(-p3Wrap_(Math.atan2(bdx,bdy)-hd), -1.1, 1.1)*0.8; p3Turn_(q, A.B.spine2, 1, yaw*0.18); p3Turn_(q, A.B.neck, 1, yaw*0.34); p3Turn_(q, A.B.head, 1, yaw*0.48); }
+  p3FK_(q, h);
+  return {x:X, y:Y, hd:hd, act:null, sc:T.sc, wd:T.wd};
+}
+/* 공의 위치 (경기장 좌표 · 높이 포함). held: 골키퍼가 손에 든 상태면 그 선수 키 */
+function p3Ball_(R, M, st, P, t){
+  var S=p3S_(M,t), r=p3BallR_(S), ps=(st.k==='move')?M.pass[st.i]:null, T, i;
+  if(ps && t>ps.tc && t<ps.ta){ var u=(t-ps.tc)/(ps.ta-ps.tc), e=ps.steal?p3Sm_(u):p3E_(u), a=ps.from, b=ps.to; return {p:[a[0]+(b[0]-a[0])*e, a[1]+(b[1]-a[1])*e, a[2]+(b[2]-a[2])*e+4*ps.hm*e*(1-e)], fly:1, ps:ps, e:e}; }
+  if(P.owner && M.tr[P.owner]){
+    T=M.tr[P.owner]; var f=p3Feet_(M, T, t), out={p:[f[0], f[1], r], own:P.owner};
+    for(i=0;i<T.ev.length;i++){ var ev=T.ev[i];
+      if(ev.type==='head' && ev.ps && t>=ev.tc && t<ev.tc+0.55){ var u2=(t-ev.tc)/0.55, a2=ev.ps.to; out.p=[a2[0]+(f[0]-a2[0])*u2, a2[1]+(f[1]-a2[1])*u2, a2[2]+(r-a2[2])*u2*u2+0.5*S*Math.sin(Math.PI*u2)*(1-u2)]; }
+      if(ev.hold && t<ev.tc && t>=ev.h0){ out.held=T.k; out.hev=ev; }
+    }
+    return out;
+  }
+  var b0=P.ball||[.5,.5]; return {p:[(b0[0]-0.5)*TV_PW, (0.5-b0[1])*TV_PL, r]};
+}
+
+/* ---------- 중계 화면에 그리기 ---------- */
+function p3Kit_(R, tk, ours){
+  var gk=(tk.pos==='GK'), acc=R.accent;
+  if(ours) return gk ? {id:'gk', shirt:'#F2A81C', trim:'#1B1B1F', shorts:'#1B1B1F', socks:'#F2A81C'} : {id:'home', shirt:acc, stripe:'#F6F2EC', trim:'#17181C', shorts:'#17181C', socks:acc};
+  if(gk) return R.oppLight ? {id:'ogk', shirt:'#8296B0', trim:'#2A2F38', shorts:'#2A2F38', socks:'#8296B0'} : {id:'ogk', shirt:'#4B525C', trim:'#16181c', shorts:'#16181c', socks:'#4B525C'};
+  return R.oppLight ? {id:'away', shirt:'#EEF1F4', trim:'#4A5058', shorts:'#EEF1F4', socks:'#EEF1F4'} : {id:'away', shirt:'#333945', trim:'#9AA1AB', shorts:'#2B3039', socks:'#333945'};
+}
+/* 등번호: 선수 22명의 번호를 한 장(512x256 · 8x4 칸)에 그려 둔다 */
+function p3Nums_(R){
+  if(R._p3num) return R._p3num;
+  var cv=document.createElement('canvas'); cv.width=512; cv.height=256; var x=cv.getContext('2d'), map={}, i=0;
+  x.textAlign='center'; x.textBaseline='middle'; x.lineJoin='round';
+  R.doc.our.concat(R.doc.opp).forEach(function(tk){
+    var lab=String(tk.num==null?'':tk.num); if(!lab || lab.length>2 || i>=32) return;
+    var ours=!tacIsOpp_(tk.k), gk=(tk.pos==='GK'), cx=(i%8)*64+32, cy=Math.floor(i/8)*64+34, fs=lab.length>1?44:50;
+    x.font='700 '+fs+'px Anton, Pretendard, sans-serif';
+    if(ours && !gk){ x.strokeStyle='#30111b'; x.lineWidth=7; x.strokeText(lab,cx,cy); x.fillStyle='#fff'; }
+    else x.fillStyle=ours?'#1b1503':(gk?'#fff':(R.oppLight?'#1a1d22':'#fff'));
+    x.fillText(lab,cx,cy); map[tk.k]=i; i++;
+  });
+  return (R._p3num={cv:cv, map:map});
+}
+function p3Glow_(ctx, c, R, X, Y, hi, t){
+  var g=tvP_(c,X,Y,0); if(!g) return; var u=R.u;
+  var rg=ctx.createRadialGradient(g.x,g.y,0,g.x,g.y,g.s*4.2); rg.addColorStop(0,'rgba(255,214,90,'+(0.42*hi)+')'); rg.addColorStop(1,'rgba(255,214,90,0)');
+  ctx.fillStyle=rg; if(tvPoly_(ctx,c,tvCircle_(X,Y,4.2,28))) ctx.fill();
+  for(var w=0;w<2;w++){ var ph=((t*0.7+w*0.5)%1); if(tvPoly_(ctx,c,tvCircle_(X,Y,1.1+ph*3.4,30))){ ctx.lineWidth=tacClamp_(0.2*g.s,1.5*u,5*u); ctx.strokeStyle='rgba(255,220,110,'+((1-ph)*0.85*hi)+')'; ctx.stroke(); } }
+}
+/* 머리 위 표시: 등번호(+이름) */
+function p3Tag_(ctx, c, R, it, S, o){
+  var p=tvP_(c, it.px, it.py, it.top); if(!p) return;
+  var u=R.u, tk=it.tk, ours=it.ours, hi=o.hi||0, gk=(tk.pos==='GK'), lab=String(tk.num==null||tk.num===''?(tk.pos||''):tk.num);
+  var nm=(ours && tk.n && (o.names || hi>0)) ? String(tk.n).slice(0,5) : ''; if(nm && hi>=2 && o.meTag) nm='나 · '+nm;
+  var fs=Math.round(tacClamp_(p.s*S*0.36, ours?17*u:14*u, 30*u)*(hi>0?1.12:1)), th=fs*1.5, y=p.y-th-6*u;
+  ctx.save(); ctx.globalAlpha*=(o.alpha==null?1:o.alpha)*(ours?1:0.82);
+  ctx.font='700 '+fs+'px Anton, Pretendard, sans-serif'; var nw=Math.max(th, ctx.measureText(lab).width+fs*0.7), tw=nw, mw=0;
+  if(nm){ ctx.font='800 '+Math.round(fs*0.92)+'px Pretendard, sans-serif'; mw=ctx.measureText(nm).width+fs*0.75; tw+=mw; }
+  var x=p.x-tw/2;
+  ctx.save(); ctx.shadowColor='rgba(0,0,0,.45)'; ctx.shadowBlur=7*u; rr_(ctx, x, y, tw, th, th/2); ctx.fillStyle=hi>0?'#FFD84D':(ours?'rgba(10,12,15,.84)':'rgba(10,12,15,.62)'); ctx.fill(); ctx.restore();
+  var col=ours?(gk?'#F2C94C':R.accent):(R.oppLight?'#EEF1F4':'#3a4049');
+  rr_(ctx, x+2*u, y+2*u, nw-4*u, th-4*u, (th-4*u)/2); ctx.fillStyle=col; ctx.fill();
+  ctx.font='700 '+fs+'px Anton, Pretendard, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle=(tacLum_(col)>0.62)?'#15171b':'#fff'; ctx.fillText(lab, x+nw/2, y+th/2+fs*0.05);
+  if(nm){ ctx.font='800 '+Math.round(fs*0.92)+'px Pretendard, sans-serif'; ctx.fillStyle=hi>0?'#15130a':'#fff'; ctx.fillText(nm, x+nw+mw/2-fs*0.12, y+th/2+1); }
+  ctx.restore();
+}
+/* 공이 날아가는 자취 (3D 공 궤적과 같은 곡선) */
+function p3Trail_(ctx, c, R, bl){
+  if(!bl || !bl.fly) return; var ps=bl.ps, a=ps.from, b=ps.to, e=bl.e, e0=Math.max(0,e-0.5), tr=[], u=R.u;
+  for(var j=0;j<=16;j++){ var s=e0+(e-e0)*j/16; tr.push([a[0]+(b[0]-a[0])*s, a[1]+(b[1]-a[1])*s, a[2]+(b[2]-a[2])*s+4*ps.hm*s*(1-s)]); }
+  ctx.save(); ctx.lineCap='round';
+  if(tvLine_(ctx,c,tr)){ ctx.strokeStyle='rgba(232,189,80,.28)'; ctx.lineWidth=12*u; ctx.stroke(); ctx.strokeStyle='rgba(246,226,160,.95)'; ctx.lineWidth=3.2*u; ctx.stroke(); }
+  ctx.restore();
+}
+/* 붙어 선 선수끼리 몸이 겹치지 않게 살짝 벌린다 (크게 그리는 만큼 생기는 겹침 · 공을 가진/차는/받는 선수는 제자리) */
+function p3Sep_(list, S, fixed){
+  var n=list.length, D=0.56*S, i, j;
+  for(i=0;i<n;i++){ list[i].sx=list[i].w[0]; list[i].sy=list[i].w[1]; }
+  for(i=0;i<n;i++) for(j=i+1;j<n;j++){
+    var a=list[i], b=list[j], dx=b.w[0]-a.w[0], dy=b.w[1]-a.w[1], d=Math.hypot(dx,dy); if(d>=D) continue;
+    var fa=fixed[a.tk.k]?0:1, fb=fixed[b.tk.k]?0:1; if(!fa && !fb) continue;
+    if(d<0.05){ var an=p3Hash_(a.tk.k+'~'+b.tk.k)*6.2832; dx=Math.cos(an); dy=Math.sin(an); } else { dx/=d; dy/=d; }
+    var push=(D-d)*0.92/(fa+fb);
+    a.sx-=dx*push*fa; a.sy-=dy*push*fa; b.sx+=dx*push*fb; b.sy+=dy*push*fb;
+  }
+}
+/* 선수 · 공을 3D 로 그린다. list: [{tk,w:[X,Y],z,a}] · 실패하면 false (마커로 대신 그림) */
+function p3Scene_(ctx, c, R, st, still, t, P, list, hi, hiA){
+  var A=P3.A, M=still?null:p3Plan_(R), S=M?p3S_(M,t):p3ScaleK_(R, R.K[st.i]), i, it, r=p3BallR_(S);
+  var m=ctx.getTransform?ctx.getTransform():{a:1,b:0}, sx=Math.sqrt(m.a*m.a+m.b*m.b)||1, pw=Math.round(R.W*sx), ph=Math.round(R.H*sx), cap=Math.sqrt(2600000/(pw*ph)); if(cap<1){ pw=Math.round(pw*cap); ph=Math.round(ph*cap); }
+  /* 공 (정지 화면은 가진 선수 발밑) */
+  var bl, bq;
+  if(M) bl=p3Ball_(R, M, st, P, t);
+  else { var bo=(P.owner && P.pos[P.owner])?tvW_(P.pos[P.owner]):tvW_(P.ball||[.5,.5]); bl={p:[bo[0],bo[1],r], own:P.owner||''}; }
+  /* 자세 */
+  var fixed={}; if(P.owner) fixed[P.owner]=1; if(bl.ps){ if(bl.ps.K) fixed[bl.ps.K]=1; if(bl.ps.Rk) fixed[bl.ps.Rk]=1; }
+  p3Sep_(list, S, fixed);
+  if(!P3.pool) P3.pool=[];
+  for(i=0;i<list.length;i++){
+    it=list[i]; var tk=it.tk, T=M?M.tr[tk.k]:null, o;
+    o=(M && T) ? p3Pose_(M, T, t, it.sx, it.sy, bl.p) : p3StillPose_(R, tk, it.sx, it.sy, P, st.A, st.B, bl.p, t);
+    if(!P3.pool[i]) P3.pool[i]=new Float32Array(A.nb*12); P3.pool[i].set(A.pal);
+    it.px=o.x; it.py=o.y; it.hd=o.hd; it.ours=!tacIsOpp_(tk.k); it.kit=p3Kit_(R, tk, it.ours); it.S=S*(o.sc||1); it.wd=o.wd||1;
+    var hj=p3Joint_(A.B.head); it.top=(hj[1]+0.30)*it.S; var hw=p3ToWorld_(hj, o.x, o.y, o.hd, it.S); it.tx=hw[0]; it.ty=hw[1];
+    if(bl.held===tk.k && o.act && o.act.e===bl.hev){
+      /* 골키퍼 손에 든 공: 두 손 사이 → 왼손 → 떨어뜨려 차는 자리 */
+      var l=p3ToWorld_(p3Joint_(A.B.lh), o.x, o.y, o.hd, it.S), rh=p3ToWorld_(p3Joint_(A.B.rh), o.x, o.y, o.hd, it.S), ev=bl.hev, ct=Math.max(P3_CLIP.gkkick.a, P3_CLIP.gkkick.tc+(t-ev.tc)), fw=p3Off_(0,0,o.hd,S,0,0.14), rel=0.55;
+      var two=[(l[0]+rh[0])/2+fw[0], (l[1]+rh[1])/2+fw[1], (l[2]+rh[2])/2], one=[l[0]+fw[0]*0.7, l[1]+fw[1]*0.7, l[2]-0.03*S], k1=p3Sm_((ct-0.12)/0.2), hp=[two[0]+(one[0]-two[0])*k1, two[1]+(one[1]-two[1])*k1, two[2]+(one[2]-two[2])*k1];
+      if(ct>rel && ev.ps){ var cpw=ev.ps.from, u=tacClamp_((ct-rel)/(P3_CLIP.gkkick.tc-rel),0,1); hp=[hp[0]+(cpw[0]-hp[0])*u, hp[1]+(cpw[1]-hp[1])*u, hp[2]+(cpw[2]-hp[2])*u*u]; }
+      var wv=o.act.w; bq=[bl.p[0]+(hp[0]-bl.p[0])*wv, bl.p[1]+(hp[1]-bl.p[1])*wv, bl.p[2]+(hp[2]-bl.p[2])*wv]; }
+    else if(!M && bl.own===tk.k){ var f=p3Off_(o.x, o.y, o.hd, S, P3_REST[0], P3_REST[1]+0.1); bq=[f[0], f[1], r]; }
+  }
+  if(!bq) bq=bl.p;
+  /* 바닥 그래픽: 강조 빛 · 공 자취 */
+  for(i=0;i<list.length;i++){ it=list[i]; var h=(hi[it.tk.k]||0)*(hi[it.tk.k]===2?1:hiA); it.hi=h; if(h>0){ ctx.save(); ctx.globalAlpha*=it.a; p3Glow_(ctx, c, R, it.px, it.py, h, t); ctx.restore(); } }
+  if(M) p3Trail_(ctx, c, R, bl);
+  /* 공 회전: 굴러간 거리만큼 */
+  var bd=M?p3BallSpin_(R, M, t):{ang:0.6, ax:1, ay:0.3};
+  var groups=[[],[]]; for(i=0;i<list.length;i++){ (list[i].a<0.99?groups[0]:groups[1]).push(i); }
+  for(var g=0;g<2;g++){
+    var G=groups[g]; if(!G.length && g===0) continue;
+    if(!p3Begin_(c, R.W, R.H, pw, ph)) return false;
+    p3Pass_(0.36);
+    for(i=0;i<G.length;i++){ it=list[G[i]]; p3DrawBody_(it.px, it.py, it.hd, it.S, P3.pool[G[i]], it.wd); }
+    if(g===1) p3DrawBall_(bq[0], bq[1], bq[2], r, 1, 0, 0);
+    p3Pass_(0);
+    var last='', nums=p3Nums_(R); p3NumTex_(nums.cv);
+    for(i=0;i<G.length;i++){ it=list[G[i]]; if(it.kit.id!==last){ p3SetKit_(it.kit); last=it.kit.id; } p3SetNum_(nums.map[it.tk.k]); p3DrawBody_(it.px, it.py, it.hd, it.S, P3.pool[G[i]], it.wd); }
+    p3SetNum_(-1);
+    if(g===1) p3DrawBall_(bq[0], bq[1], bq[2], r, bd.ax, bd.ay, bd.ang);
+    p3End_();
+    ctx.save(); if(g===0){ var am=0; G.forEach(function(k){ am=Math.max(am, list[k].a); }); ctx.globalAlpha*=am; }
+    ctx.drawImage(P3.cv, 0, 0, R.W, R.H); ctx.restore();
+  }
+  /* 공이 높이 떴을 때: 빛 번짐으로 눈에 띄게 */
+  if(bq[2]>1.2*S){ var bp=tvP_(c,bq[0],bq[1],bq[2]); if(bp){ var rr=Math.max(10*R.u, bp.s*r*2.4), gr=ctx.createRadialGradient(bp.x,bp.y,rr*0.3,bp.x,bp.y,rr); gr.addColorStop(0,'rgba(255,240,190,.38)'); gr.addColorStop(1,'rgba(255,240,190,0)'); ctx.fillStyle=gr; ctx.beginPath(); ctx.arc(bp.x,bp.y,rr,0,Math.PI*2); ctx.fill(); } }
+  /* 머리 위 표시 (먼 쪽부터) */
+  for(i=0;i<list.length;i++){ it=list[i]; if(!it.ours && R.o.overlay==='thumb') continue; p3Tag_(ctx, c, R, {tk:it.tk, ours:it.ours, px:it.tx, py:it.ty, top:it.top}, S, {hi:it.hi, alpha:it.a, names:R.o.names!==false, meTag:true}); }
+  return true;
+}
+/* 공이 굴러간 거리 → 회전각 (대략: 공 위치 표본의 누적 거리) */
+function p3BallSpin_(R, M, t){
+  if(!M.bd){ var N=M.N, d=new Float32Array(N), ax=new Float32Array(N), ay=new Float32Array(N), px=M.bx[0], py=M.by[0], s=0, lx=1, ly=0;
+    for(var n=0;n<N;n++){ var dx=M.bx[n]-px, dy=M.by[n]-py, l=Math.hypot(dx,dy); if(l>0.004){ lx=-dy/l; ly=dx/l; } s+=l; d[n]=s; ax[n]=lx; ay[n]=ly; px=M.bx[n]; py=M.by[n]; }
+    M.bd=d; M.bax=ax; M.bay=ay; }
+  var f=t/M.dt, i=Math.max(0, Math.min(M.N-1, Math.round(f)));
+  return {ang:p3Lerp_(M.bd,f)/p3BallR_(M.S), ax:M.bax[i], ay:M.bay[i]};
+}
+/* P3D-END */
 /* ================= 방송 그래픽 끝 ================= */
 /* ---------- 저장 · 불러오기 ---------- */
 function tacLoad_(force){
@@ -16260,6 +16920,7 @@ function tacOpenDoc_(doc, mode, o){
   tacUI_();
   var openedBoard=TAC;
   tvAssets_(TAC.doc).then(function(a){ if(TAC!==openedBoard) return; TAC.assets=a; TAC.R3=null; tacDrawNow_(); });
+  if(p3Pref_()) p3Load_(function(ok){ if(ok && TAC===openedBoard && !TAC.playing) tacDrawNow_(); });
   if(TAC.mode==='view' && TAC.doc.plans[0].steps.length>1) setTimeout(function(){ if(TAC===openedBoard && !TAC.playing && TAC.mode==='view') tacPlayToggle_(); }, 500);
 }
 function tacBack_(){
@@ -16531,7 +17192,9 @@ function tacPlayToggle_(){
   var loop=function(now){
     if(!TAC || !TAC.playing) return;
     var TL2=TAC.v3 ? tacR3_now_().TL : tacTLnow_();
-    var dt=Math.min(0.1,(now-TAC._last)/1000); TAC._last=now; TAC.clock+=dt*(TAC.v3?1:TAC.speed);
+    var raw=(now-TAC._last)/1000, dt=Math.min(0.1,raw); TAC._last=now; TAC.clock+=dt*(TAC.v3?1:TAC.speed);
+    /* 3D 선수가 이 기기에서 계속 버벅이면(초당 15장 아래로 몇 초 이상) 이번에는 유니폼 마커로 바꿔 준다 */
+    if(TAC.v3 && TAC.R3 && TAC.R3._p3on){ TAC._slow=Math.max(0, (TAC._slow||0)+(raw>0.066?1:-2)); if(TAC._slow>70){ TAC._slow=0; P3.pref=false; TAC.R3=null; try{ toast('3D 선수가 느려서 유니폼 마커로 바꿨어요 · 보기에서 다시 켤 수 있어요'); }catch(e){} } }
     if(TAC.clock>=TL2.total){
       if(TAC.loop && TAC.mode==='view'){ TAC.clock=0; }
       else { TAC.playing=false; TAC.stepIdx=n-1; tacSyncStep_(true); tacDrawNow_(); return; }
@@ -16563,6 +17226,9 @@ function tacStepGo_(i){
 function tacStepRel_(dir){ if(!TAC) return; var n=tacPlan_().steps.length; tacStop_(); TAC.stepIdx=tacClamp_(TAC.stepIdx+dir,0,n-1); tacSyncStep_(true); tacDrawNow_(); }
 function tacSpeed_(){ if(!TAC) return; TAC.speed=(TAC.speed===1?0.5:(TAC.speed===0.5?1.5:1)); TAC.R3=null; tacStop_(); tacUI_(); }
 function tacNames_(){ if(!TAC) return; TAC.names=!TAC.names; TAC.R3=null; tacUI_(); }
+/* 중계 화면 선수: 3D 선수 ↔ 유니폼 마커 (기기에 저장) */
+function tacP3_(on){ p3PrefSet_(on); if(on) p3Load_(function(ok){ if(ok && TAC && !TAC.playing) tacDrawNow_(); }); if(TAC){ TAC.R3=null; tacDrawNow_(); } }
+function p3Ready_(cb){ if(!p3Pref_()){ cb(); return; } p3Load_(function(){ cb(); }); }
 function tacView_(v){
   if(!TAC) return;
   if(TAC.mode==='edit'){ if(TAC.doc.view!==v){ tacSnap_(); TAC.doc.view=v; tacTouch_(); } } else TAC.doc.view=v;
@@ -16587,6 +17253,7 @@ function tacViewSheet_(){
        + (d.zoom?'<div class="field"><label>좌우 위치</label><input type="range" min="0.31" max="0.69" step="0.01" value="'+tacCamX_(d, tacPlan_())+'" oninput="tacPan_(this.value)" style="width:100%;accent-color:var(--red);"></div>':''):'')
    +   '<div class="eyebrow">표시</div>'
    +   '<button class="btn-ghost" style="margin-top:0;" onclick="tacNames_();tacViewSheet_()">선수 이름 '+(TAC.names?'끄기':'켜기')+'</button>'
+   +   '<button class="btn-ghost" onclick="tacP3_(!p3Pref_());tacViewSheet_()">중계 선수 · '+(p3Pref_()?'3D 선수':'유니폼 마커')+' <span style="font-weight:600;color:var(--steel-soft);">눌러서 '+(p3Pref_()?'유니폼 마커로':'3D 선수로')+'</span></button>'
    +   '<button class="btn-ghost" onclick="TAC.lanes=!TAC.lanes;tacDrawNow_();tacViewSheet_()">5레인 · 3분할 가이드 '+(TAC.lanes?'끄기':'켜기')+' <span style="font-weight:600;color:var(--steel-soft);">2D 보드</span></button>'
    +   '<button class="btn-ghost" onclick="tacFocusSheet_()">부분 보기'+(f?' · 켜짐':'')+' — 일부 선수만 강조</button>'
    + '</div>');
@@ -17116,8 +17783,9 @@ function tacStudioUI_(){
     +     '<div class="st-lab">화면 비율</div><div class="st-row">'+Object.keys(TV_RATIOS).map(function(r){ return chip('ratio', r, TV_RATIOS[r][2], TV_RATIOS[r][3]); }).join('')+'</div>'
     +     '<div class="st-lab">카메라</div><div class="st-row">'+chip('cam','auto','따라가기','공 · 움직임 중심')+chip('cam','wide','전체 보기','고정 · 넓게')+'</div>'
     +     '<div class="st-lab">구성</div><div class="st-row">'+chip('intro',true,'인트로 · 엔딩')+chip('intro',false,'본편만')+chip('names',true,'이름 표시')+chip('names',false,'번호만')+'</div>'
+    +     '<div class="st-lab">선수</div><div class="st-row"><button class="st-chip '+(p3Pref_()?'on':'')+'" onclick="tacP3_(true);tacStudioUI_()">3D 선수<i>달리기 · 패스 · 슈팅 동작</i></button><button class="st-chip '+(p3Pref_()?'':'on')+'" onclick="tacP3_(false);tacStudioUI_()">유니폼 마커<i>번호가 크게</i></button></div>'
     +     '<div class="st-lab">속도</div><div class="st-row">'+chip('speed',0.75,'느리게')+chip('speed',1,'보통')+chip('speed',1.3,'빠르게')+'</div>'
-    +     '<button class="st-go" onclick="tacMakeVideo_()">'+TAC_SVG.film+'영상 만들기 <i>약 '+secs+'초 · '+wh[0]+'×'+wh[1]+'</i></button>'
+    +     '<button class="st-go" onclick="tacMakeVideo_()">'+TAC_SVG.film+'영상 만들기 <i id="tvSecs">약 '+secs+'초 · '+wh[0]+'×'+wh[1]+'</i></button>'
     +     '<button class="st-go2" onclick="tacMakeCards_()">장면별 이미지 '+n+'장</button>'
     +     '<div class="st-lab" style="margin-top:16px;">재생 링크 <span>팀원이 앱에서 직접 재생 · 내 위치 강조</span></div>'
     +     '<div class="st-row2"><button class="st-go2 kakao" onclick="tacShareKakao_()"><svg class="kt-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#kti-Share2"/></svg> 카톡방에 링크 공유</button><button class="st-go2" onclick="tacCopyLink_()">링크 복사</button></div>'
@@ -17128,6 +17796,7 @@ function tacStudioUI_(){
   cv.style.width=cw+'px'; cv.style.height=ch+'px'; cv.width=Math.round(cw*dpr); cv.height=Math.round(ch*dpr);
   var R=tvStudioR_(cw, ch, o), ctx=cv.getContext('2d'), t0=performance.now(), tok={};
   TAC.studio={R:R, tok:tok};
+  var se=document.getElementById('tvSecs'); if(se) se.textContent='약 '+Math.round(R.TL.total)+'초 · '+wh[0]+'×'+wh[1];      /* 3D 선수는 달리는 거리에 맞춰 길이가 조금 늘어난다 */
   fontsReady_(function(){
     (function loop(now){
       if(!TAC || !TAC.studio || TAC.studio.tok!==tok || !document.getElementById('tvPrev')) return;
@@ -17153,7 +17822,7 @@ function tacMakeVideo_(){
   var wh=TV_RATIOS[o.ratio], base=tacFileBase_();
   if(TAC.studio) TAC.studio.tok={};
   tacBusy_('영상 만드는 중', 0);
-  fontsReady_(function(){
+  fontsReady_(function(){ p3Ready_(function(){
     var R=tvStudioR_(wh[0], wh[1], o);
     tvExport_(R, function(p){ tacBusy_('영상 만드는 중', p); }).then(function(res){
       tacBusy_(null);
@@ -17162,7 +17831,7 @@ function tacMakeVideo_(){
       try{ logEvent_('share','전술 영상 만들기', TAC.doc.title); }catch(e){}
       tacVideoSheet_();
     }).catch(function(e){ tacBusy_(null); toast('영상을 만들지 못했어요'); try{ console.warn(e); }catch(_){} tacStudioUI_(); });
-  });
+  }); });
 }
 function tacVideoSheet_(){
   var v=state._tacVid, s=document.getElementById('tacStudio'); if(!v || !s) return;
@@ -17188,7 +17857,7 @@ function tacMakeCards_(){
   var o=tvOpt_(), wh=TV_RATIOS[o.ratio], plan=tacPlan_(), base=tacFileBase_(), n=plan.steps.length;
   if(TAC.studio) TAC.studio.tok={};
   tacBusy_('이미지 만드는 중', 0.05);
-  fontsReady_(function(){
+  fontsReady_(function(){ p3Ready_(function(){
     var R=tvStudioR_(wh[0], wh[1], o), cards=[], i=0;
     R.o.overlay='card';
     (function next(){
@@ -17198,7 +17867,7 @@ function tacMakeCards_(){
       var cd={c:c, name:base+'_'+(i+1)+'.jpg', label:(i+1)+'/'+n, blob:null}; cards.push(cd);
       c.toBlob(function(b){ cd.blob=b; i++; tacBusy_('이미지 만드는 중', i/n); setTimeout(next, 0); }, 'image/jpeg', 0.92);
     })();
-  });
+  }); });
 }
 function tacCardsSheet_(){
   var cs=state._tacCards||[], s=document.getElementById('tacStudio'); if(!s) return;
