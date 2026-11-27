@@ -1986,6 +1986,22 @@ body{letter-spacing:-.01em;}
 .ex-nav{display:flex;gap:8px;margin-top:14px;}
 .ex-nav button{flex:1;margin-top:0;}
 .ex-nav button[disabled]{opacity:.38;pointer-events:none;}
+/* 라인업 카드 고르기 (스쿼드 탭) */
+.lu-hint{font-size:12.5px;color:var(--steel-soft);margin:0 0 10px;line-height:1.55;}
+.lu-tools{display:flex;gap:6px;margin:0 0 8px;}
+.lu-tools button{flex:1;min-width:0;height:34px;padding:0 6px;border-radius:17px;border:1px solid var(--line-strong);background:var(--card);color:var(--ink);font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.lu-cnt{text-align:right;font-size:12.5px;color:var(--steel-soft);margin:0 2px 6px;}
+.lu-cnt b{color:var(--ink);font-family:'Oswald',sans-serif;font-size:16px;margin-right:1px;}
+.lu-tools button:active{transform:scale(.97);}
+.lu-pos{flex:0 0 auto;min-width:34px;height:22px;padding:0 7px;border-radius:11px;border:1.5px solid var(--pc,#6B6E76);color:var(--pc,#6B6E76);font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:.5px;display:inline-flex;align-items:center;justify-content:center;}
+.lu-lab{font-size:13px;font-weight:800;color:var(--ink);margin:2px 2px 8px;}
+.lu-lab span{font-weight:500;font-size:11.5px;color:var(--steel-soft);margin-left:6px;}
+.lu-style{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin:0 0 14px;}
+.lu-style button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;height:62px;min-width:0;padding:0 2px;border-radius:12px;border:1.5px solid var(--line-strong);background:var(--card);color:var(--steel-soft);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.lu-style button svg{width:24px;height:24px;fill:currentColor;}
+.lu-style button.on{border-color:var(--red);color:var(--red);background:var(--red-tint);}
+.lu-star{display:flex;align-items:center;gap:10px;margin:-4px 0 14px;font-size:12.5px;font-weight:700;color:var(--ink);}
+.lu-star select{flex:1;min-width:0;height:36px;border-radius:10px;border:1px solid var(--line-strong);background:var(--card);color:var(--ink);font-size:13px;padding:0 8px;}
 /* CREST-END */
 </style>
 </head>
@@ -2205,7 +2221,7 @@ var APP_SUB = 'FOOTBALL CLUB';
 var APP_REGION = '';   /* 새 팀 설치 시 헤더 지역 표기 (팀 정보에서 변경 가능) */
 var APP_NOTE = '';     /* 새 팀 설치 시 헤더 소개 문구 */
 /* 현재 앱 버전 (version.json과 비교해 최신 아니면 자동 업데이트) */
-var APP_VERSION = '17.4.0';
+var APP_VERSION = '17.5.2';
 /* 동축_아이콘: 로그인/팀탭 대표 이미지 (256x256 남색 PNG, 여백 없음) */
 var APP_LOGO = 'logo.png';
 /* 동축_배경: 헤더 배경 이미지 (1000x545 JPEG). 비우면 다크 그라디언트로 fallback */
@@ -3144,6 +3160,7 @@ function viewFormSquad_(){
     +   '<div class="fc-actions"><div class="section">'
     +     '<div class="act-row">'
     +       '<button class="btn-ghost" onclick="shareSquadCard_()"><svg class="kt-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#kti-Images"/></svg> 스쿼드 카드 만들기</button>'
+    +       '<button class="btn-ghost" onclick="openLineupPick_()"><svg class="kt-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#kti-UsersRound"/></svg> 라인업 카드 만들기</button>'
     +       (isAdmin()?'<button class="btn-ghost" onclick="openMomVote_(\''+sid+'\')"><svg class="kt-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#kti-Vote"/></svg> MOM 투표</button>':'')
     +       (isAdmin()?'<button class="btn-ghost" onclick="openAttLink_(\''+sid+'\')"><svg class="kt-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#kti-ClipboardCheck"/></svg> 출석 체크</button>':'')
     +     '</div>'
@@ -6365,6 +6382,424 @@ function shareSquadCard_(){
       drawLineupCard_({date:attToday_(), time:'', opponent:'', venue:''}, d, starters, subs, imgs[0], null, imgs.slice(1), {mode:'squad'});
     }).catch(function(){ toast('카드를 만들지 못했습니다'); });
   });
+}
+/* ── 라인업 카드 (스쿼드 탭): 편성 명단에서 고른 선수들을 큰 사진으로 — 모양 4가지(그리드 · 1열 · 2열 · 매치데이), 한 장 안의 선수 칸은 모두 같은 크기 ── */
+function luPos_(m){
+  if(m && m.position) return posNorm_(m.position);
+  var p=(m && !m.guest && m.playerId) ? (pIndex_()[m.playerId]||{}) : {};
+  return posNormArr_(p.positions||[])[0]||'';
+}
+function luLine_(pos){
+  var p=String(pos||'').toUpperCase(); if(!p) return 4; if(p==='GK') return 0;
+  if(/^(DF|CB|LB|RB|LWB|RWB)$/.test(p)) return 1;
+  if(/^(MF|CDM|DM|CM|CAM|AM|LM|RM)$/.test(p)) return 2;
+  if(/^(FW|ST|CF|LW|RW|SS)$/.test(p)) return 3;
+  return 4;
+}
+/* 카드 순서: 골키퍼 → 수비 → 미드필더 → 공격 → 포지션 없음, 같은 줄은 등번호 순 */
+function luMembers_(d){
+  var nOf=function(m){ var n=parseInt(m.num,10); return isNaN(n)?999:n; };
+  return ((d && d.members) || []).slice().sort(function(a,b){
+    var la=luLine_(luPos_(a)), lb=luLine_(luPos_(b)); if(la!==lb) return la-lb;
+    var na=nOf(a), nb=nOf(b); if(na!==nb) return na-nb;
+    return String(a.name||'').localeCompare(String(b.name||''));
+  });
+}
+/* 카드 모양: 이 기기에서 기억 */
+var LU_STYLES=[['grid','그리드'],['row','1열'],['zig','사선'],['col2','2열'],['md','매치데이']];
+function luStyleGet_(){
+  if(state._luStyle) return state._luStyle;
+  var v=''; try{ v=localStorage.getItem('kt_lu_style')||''; }catch(e){}
+  state._luStyle=LU_STYLES.some(function(s){ return s[0]===v; }) ? v : 'grid';
+  return state._luStyle;
+}
+function luStyle_(s){
+  state._luStyle=s; try{ localStorage.setItem('kt_lu_style', s); }catch(e){}
+  Array.prototype.forEach.call(document.querySelectorAll('.lu-style button'), function(b){ b.classList.toggle('on', b.getAttribute('data-s')===s); });
+  var w=document.getElementById('lu_star_w'); if(w) w.style.display=(s==='md')?'':'none';
+}
+function luStyleIc_(s){
+  var r=function(x,y,w,h){ return '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="1.6"/>'; };
+  var b={grid:r(2,3,9,8)+r(13,3,9,8)+r(2,13,9,8)+r(13,13,9,8),
+         row:r(2,3,20,5)+r(2,9.5,20,5)+r(2,16,20,5),
+         col2:r(2,3,9,5)+r(13,3,9,5)+r(2,9.5,9,5)+r(13,9.5,9,5)+r(2,16,9,5)+r(13,16,9,5),
+         zig:'<path d="M2 3h20v4L2 9.5z"/><path d="M2 11L22 8.5v7.5L2 13.5z"/><path d="M2 15.2l20 2.3V21H2z"/>',
+         md:r(2,4,8,2.6)+r(2,8.6,8,2.6)+r(2,13.2,8,2.6)+r(2,17.8,8,2.6)+'<path d="M15.5 3H22v18h-9z"/>'}[s]||'';
+  return '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">'+b+'</svg>';
+}
+function luStarSet_(v){ var d=state.squadDetail; if(!d || !d.squad) return; state._luStar=state._luStar||{}; state._luStar[d.squad.id]=v||''; }
+/* 고르기 시트: 기본은 전원 선택, 스쿼드마다 이 기기에서 기억 */
+function openLineupPick_(){
+  var d=state.squadDetail; if(!d || !d.squad){ toast('스쿼드를 선택하세요'); return; }
+  var list=luMembers_(d); if(!list.length){ toast('편성 명단에 인원이 없어요'); return; }
+  var sid=d.squad.id, S, ids={}; state._luSel=state._luSel||{}; S=state._luSel[sid];
+  list.forEach(function(m){ ids[m.playerId]=1; });
+  if(!S){ S={}; list.forEach(function(m){ S[m.playerId]=true; }); }
+  else { Object.keys(S).forEach(function(k){ if(!ids[k]) delete S[k]; }); list.forEach(function(m){ if(S[m.playerId]===undefined) S[m.playerId]=true; }); }
+  state._luSel[sid]=S;
+  luPickRender_();
+}
+function luSel_(){ var d=state.squadDetail; return (d && d.squad && state._luSel) ? (state._luSel[d.squad.id]||null) : null; }
+function luPickN_(){ var d=state.squadDetail, S=luSel_()||{}; return luMembers_(d).filter(function(m){ return S[m.playerId]; }).length; }
+function luPickRender_(){
+  var d=state.squadDetail, S=luSel_(); if(!d || !S) return;
+  var sid=d.squad.id, list=luMembers_(d), n=luPickN_(), placed=list.some(function(m){ return m.position; }), st=luStyleGet_(), star=((state._luStar||{})[sid])||'';
+  var ic=function(nm){ return '<svg class="kt-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#kti-'+nm+'"/></svg>'; };
+  var rows=list.map(function(m){
+    var on=!!S[m.playerId], pos=luPos_(m);
+    return '<div class="vt-pick'+(on?' on':'')+'" id="lu_'+m.playerId+'" onclick="luToggle_(\''+m.playerId+'\')">'
+      + (m.photo?'<img class="vt-ava" src="'+m.photo+'" alt="">':'<div class="vt-ava vt-ava-e">'+esc(String(m.name||'?').trim().slice(-2))+'</div>')
+      + '<span class="vt-num oswald">'+(m.guest?esc(m.num||''):numDisp(m.num))+'</span>'
+      + '<span class="vt-nm">'+esc(m.name)+(m.guest?' <span class="rst-g">게스트</span>':'')+'</span>'
+      + (pos?'<span class="lu-pos" style="--pc:'+(POS_COLORS[pos]||'#6B6E76')+'">'+esc(pos)+'</span>':'')
+      + '<span class="vt-ck">'+(on?'✓':'')+'</span></div>';
+  }).join('');
+  showSheet('<div class="grabber"></div>'
+   + '<div class="sheet-head"><h3>라인업 카드 만들기</h3><button class="x" onclick="closeSheet()" aria-label="닫기">'+ic('X')+'</button></div>'
+   + '<div class="sheet-body">'
+   +   '<div class="lu-lab">카드 모양</div>'
+   +   '<div class="lu-style">'+LU_STYLES.map(function(s){ return '<button type="button" data-s="'+s[0]+'" class="'+(s[0]===st?'on':'')+'" onclick="luStyle_(\''+s[0]+'\')">'+luStyleIc_(s[0])+'<span>'+s[1]+'</span></button>'; }).join('')+'</div>'
+   +   '<div class="lu-star" id="lu_star_w"'+(st==='md'?'':' style="display:none"')+'><span>대표 사진</span><select id="lu_star" onchange="luStarSet_(this.value)"><option value="">자동 · 큰 사진이 있는 첫 선수</option>'
+   +     list.map(function(m){ return '<option value="'+esc(m.playerId)+'"'+(star===m.playerId?' selected':'')+'>'+esc(((m.num!=null && m.num!=='')?m.num+'  ':'')+(m.name||''))+'</option>'; }).join('')+'</select></div>'
+   +   '<div class="lu-lab">넣을 선수 <span>인원이 바뀌어도 모든 선수가 같은 크기로 들어가요</span></div>'
+   +   '<div class="lu-tools"><button type="button" onclick="luAll_(1)">전체 선택</button><button type="button" onclick="luAll_(0)">전체 해제</button>'
+   +     (placed?'<button type="button" onclick="luAll_(2)">스쿼드판만</button>':'')
+   +   '</div>'
+   +   '<div class="lu-cnt"><b id="lu_n">'+n+'</b> / '+list.length+'명 선택</div>'
+   +   '<div class="vt-list">'+rows+'</div>'
+   +   '<button class="btn-primary" id="lu_go" style="margin-top:14px;" onclick="luGo_()"'+(n?'':' disabled')+'>'+ic('UsersRound')+' <span id="lu_go_t">'+n+'명으로 카드 만들기</span></button>'
+   + '</div>');
+}
+function luPaint_(pid){
+  var S=luSel_()||{}, row=document.getElementById('lu_'+pid); if(!row) return false;
+  var on=!!S[pid]; row.classList.toggle('on', on); var ck=row.querySelector('.vt-ck'); if(ck) ck.textContent=on?'✓':'';
+  return true;
+}
+function luCount_(){
+  var n=luPickN_(), a=document.getElementById('lu_n'), b=document.getElementById('lu_go_t'), g=document.getElementById('lu_go');
+  if(a) a.textContent=n; if(b) b.textContent=n+'명으로 카드 만들기'; if(g) g.disabled=!n;
+}
+function luToggle_(pid){
+  var S=luSel_(); if(!S) return; S[pid]=!S[pid];
+  if(!luPaint_(pid)){ luPickRender_(); return; }
+  luCount_();
+}
+/* 1 전체 선택 · 0 전체 해제 · 2 스쿼드판에 배치된 선수만 */
+function luAll_(mode){
+  var d=state.squadDetail, S=luSel_(); if(!S) return;
+  luMembers_(d).forEach(function(m){ S[m.playerId]=(mode===1)?true:(mode===2?!!m.position:false); luPaint_(m.playerId); });
+  luCount_();
+}
+function luGo_(){
+  var d=state.squadDetail; if(!d || !d.squad) return;
+  if(!luPickN_()){ toast('선수를 한 명 이상 고르세요'); return; }
+  closeSheet(); shareRosterCard_(d.squad.id);
+}
+/* ── 배치: 한 장 안의 칸은 모두 같은 크기, 마지막 줄이 덜 차면 가운데로 ── */
+/* 그리드: 카드가 너무 길어지지 않는 안에서 칸이 가장 크게 나오는 열 수 (마지막 줄에 한두 명만 남는 배치는 덜 고른다)
+ * 예) 2명 2, 3명 2+1, 4명 2×2, 5명 3+2, 7명 4+3, 8명 3+3+2, 9명 3×3, 11명 4+4+3, 16명 4×4, 20명 5×4 */
+function luGridLayout_(N, cw){
+  var ratio=function(k){ return k<=1?1.0:(k===2?1.28:(k===3?1.45:(k===4?1.5:1.55))); }, HMAX=1460, best=null;
+  for(var k=1;k<=Math.min(8,N);k++){
+    var rows=Math.ceil(N/k), g=k>=5?14:18, w=(cw-(k-1)*g)/k, h=Math.round(w*ratio(k)), tot=rows*h+(rows-1)*g, last=N-(rows-1)*k;
+    var c={k:k, rows:rows, w:w, h:h, g:g, tot:tot, sc:w*((last<k && last<=k/2)?0.7:1), fit:tot<=HMAX};
+    if(!best || (c.fit && (!best.fit || c.sc>best.sc+0.5)) || (!c.fit && !best.fit && c.tot<best.tot)) best=c;
+  }
+  return best;
+}
+/* 1열: 한 줄에 한 명 (가로 띠) · 2열: 한 줄에 두 명 (가로 띠) — 인원이 많으면 띠가 낮아진다 */
+function luRowLayout_(N, cw){ var h=Math.max(150, Math.min(300, Math.round(1560/N))), g=h>=200?18:14; return {k:1, rows:N, w:cw, h:h, g:g, tot:N*h+(N-1)*g}; }
+function luCol2Layout_(N, cw){ var rows=Math.ceil(N/2), h=Math.max(150, Math.min(280, Math.round(1500/rows))), g=16; return {k:2, rows:rows, w:(cw-g)/2, h:h, g:g, tot:rows*h+(rows-1)*g}; }
+/* 사선: 한 줄에 한 명 — 띠의 위 · 아래 가장자리를 비스듬히 엇갈리게 쌓아, 넓은 쪽엔 사진 · 좁은 쪽엔 번호와 이름 (띠는 모두 같은 크기) */
+function luZigLayout_(N, cw){ var h=Math.max(170, Math.min(330, Math.round(1700/N))), amp=Math.round(h*0.16), g=12; return {h:h, amp:amp, g:g, rows:N, tot:N*h+(N-1)*g+2*amp}; }
+function shareRosterCard_(sid){
+  var d=state.squadDetail; if(!d || !d.squad || d.squad.id!==sid){ window._cardRedoing=false; toast('스쿼드를 선택하세요'); return; }
+  var S=(state._luSel||{})[sid]||{}, list=luMembers_(d).filter(function(m){ return S[m.playerId]; });
+  if(!list.length){ window._cardRedoing=false; toast('선수를 한 명 이상 고르세요'); return; }
+  cardBusy_();
+  var jobs=list.map(function(m){
+    var p=(!m.guest && m.playerId) ? (pIndex_()[m.playerId]||{}) : {};
+    var big=(m.guest || !m.playerId) ? Promise.resolve('') : loadPlayerPhotoL_(m.playerId).catch(function(){ return ''; });
+    return big.then(function(src){ return loadImg_(src || m.photo || p.photo || '').then(function(im){ return im ? {img:im, big:!!src, rect:(src && p.photoRect) || null} : null; }); });
+  });
+  Promise.all([loadImg_(teamEmblemSrc_()), Promise.all(jobs)]).then(function(rs){
+    fontsReady_(function(){
+      try{ drawRosterCard_(d, list, rs[1], rs[0]); }catch(e){ window._cardRedoing=false; try{ console.error('lineup card', e); }catch(_){} toast('카드를 만들지 못했습니다'); }
+    }, list.map(function(m){ return m.name||''; }).join('')+' LINE-UP');
+  }).catch(function(){ window._cardRedoing=false; toast('카드를 만들지 못했습니다'); });
+}
+function luDateLine_(N){ var td=attToday_(), dw=dowOf(td); return {td:td, txt:fmtDateDot(td)+(dw?' ('+dw+')':'')+'  ·  '+N+'명'}; }
+/* 가운데 머리: 엠블럼 · 팀 · LINE-UP · 스쿼드 이름 · 날짜와 인원 (그리드 · 1열 · 2열) */
+function luHead_(ctx, W, d, N, emblem){
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  if(emblem){ cardRing_(ctx,W/2,94,40,5); ctx.beginPath(); ctx.arc(W/2,94,40,0,Math.PI*2); ctx.fillStyle='#F6F5F2'; ctx.fill(); circImg_(ctx,emblem,W/2,94,34); }
+  ctx.fillStyle='#C9CDD6'; ctx.font='500 20px Oswald, sans-serif'; ctx.letterSpacing='6px';
+  ctx.fillText(ourTeamName_().toUpperCase()+' · MATCH DAY SQUAD', W/2+3, 162); ctx.letterSpacing='0px';
+  ctx.save(); ctx.shadowColor='rgba(199,162,75,.5)'; ctx.shadowBlur=30;
+  ctx.font='900 82px '+CARD_SERIF; ctx.letterSpacing='4px'; ctx.fillStyle=cardMetal_(ctx,186,266);
+  ctx.fillText('LINE-UP', W/2+2, 226); ctx.restore(); ctx.letterSpacing='0px';
+  ctx.font='700 25px Pretendard, sans-serif';
+  var sq=cardEllipsis_(ctx, String(d.squad.name||'MATCH DAY'), W-380), sw=ctx.measureText(sq).width+80;
+  rr_(ctx, W/2-sw/2, 272, sw, 50, 25); ctx.fillStyle='rgba(199,162,75,.16)'; ctx.fill();
+  rr_(ctx, W/2-sw/2, 272, sw, 50, 25); ctx.strokeStyle='rgba(199,162,75,.6)'; ctx.lineWidth=1.5; ctx.stroke();
+  ctx.fillStyle=CARD_GOLD; ctx.fillText(sq, W/2, 298);
+  ctx.fillStyle='rgba(255,255,255,.5)'; ctx.font='500 22px Pretendard, sans-serif';
+  ctx.fillText(luDateLine_(N).txt, W/2, 348);
+}
+function drawRosterCard_(d, list, faces, emblem){
+  var st=luStyleGet_();
+  if(st==='md') return luDrawMd_(d, list, faces, emblem);
+  var N=list.length, W=1080, pad=54, top=378, cw=W-pad*2;
+  var L=(st==='zig') ? luZigLayout_(N, cw) : ((st==='row') ? luRowLayout_(N, cw) : (st==='col2' ? luCol2Layout_(N, cw) : luGridLayout_(N, cw))), H=top+L.tot+150;
+  var c=document.createElement('canvas'); c.width=W; c.height=H;
+  var ctx=c.getContext('2d'), any=false, adj=[];
+  darkBase_(ctx,W,H);
+  cardWatermark_(ctx, W, H, emblem, 0.05);
+  luHead_(ctx, W, d, N, emblem);
+  var y=top, idx=0;
+  if(st==='zig') for(var zi=0; zi<N; zi++){ if(luZig_(ctx, zi, pad, cw, top, L, list[zi], faces[zi], emblem, adj)) any=true; }
+  else for(var r=0;r<L.rows;r++){
+    var cnt=(r<L.rows-1) ? L.k : (N-(L.rows-1)*L.k), rowW=cnt*L.w+(cnt-1)*L.g, x0=pad+(cw-rowW)/2;
+    for(var j=0;j<cnt;j++){
+      var x=x0+j*(L.w+L.g), hero=(st==='grid') ? luTile_(ctx, x, y, L.w, L.h, L.k, list[idx], faces[idx], emblem, adj)
+                                               : luBand_(ctx, x, y, L.w, L.h, list[idx], faces[idx], emblem, adj, st==='row'?'lu1:':'lu2:');
+      if(hero) any=true; idx++;
+    }
+    y+=L.h+L.g;
+  }
+  cardFooterW_(ctx,W,H);
+  cardAdjSetup_(adj, function(){ shareRosterCard_(d.squad.id); });
+  showCardPreview_(c, 'FCJEMIRO_LINEUP_'+luDateLine_(N).td.replace(/-/g,'')+(any?'.jpg':'.png'));
+}
+/* 이름 글자 크기: 너비에 맞춰 줄인다 (최소 mn) */
+function luNameFs_(ctx, name, size, maxW, mn){ ctx.save(); ctx.font='900 '+size+'px '+CARD_SERIF; var tw=ctx.measureText(String(name||'')).width||1; ctx.restore(); return Math.max(mn||20, Math.min(size, Math.floor(size*maxW/tw))); }
+/* 금색 등번호 (왼쪽 정렬) — 너비를 돌려준다 */
+function luNum_(ctx, num, x, yb, size){
+  ctx.save(); ctx.font='700 '+size+'px Oswald, sans-serif'; ctx.textAlign='left'; ctx.textBaseline='alphabetic'; ctx.letterSpacing='-1px';
+  var w=ctx.measureText(num).width;
+  ctx.shadowColor='rgba(0,0,0,.7)'; ctx.shadowBlur=14; ctx.shadowOffsetY=4;
+  var gg=ctx.createLinearGradient(0,yb-size*0.74,0,yb); gg.addColorStop(0,'#F7E7B4'); gg.addColorStop(0.55,'#C7A24B'); gg.addColorStop(1,'#8a6d1f');
+  ctx.fillStyle=gg; ctx.fillText(num, x, yb); ctx.letterSpacing='0px'; ctx.restore();
+  return w;
+}
+/* 포지션 칩 + 게스트 표시 */
+function luTags_(ctx, x, yTop, pos, guest, chipO){
+  var cx=x;
+  if(pos) cx+=heroChip_(ctx, cx, yTop, pos, Object.assign({}, chipO, {bg:'rgba(12,10,16,.72)', line:POS_COLORS[pos]||'rgba(255,255,255,.3)', color:'#F4F3F6'}))+8;
+  if(guest){ ctx.save(); ctx.font=chipO.font; ctx.letterSpacing='2px'; ctx.fillStyle='rgba(255,255,255,.62)'; ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.fillText('GUEST', cx+2, yTop+chipO.h/2+1); ctx.letterSpacing='0px'; ctx.restore(); }
+}
+function luEdgeGrad_(ctx, B){ var g=ctx.createLinearGradient(B.x,B.y,B.x+B.w,B.y+B.h); g.addColorStop(0,'rgba(255,255,255,.62)'); g.addColorStop(0.5,'rgba(201,205,214,.22)'); g.addColorStop(1,'rgba(255,255,255,.45)'); return g; }
+/* 그리드 한 칸: 오른쪽 위를 비스듬히 잘라 낸 세로 사진 — 위에 포지션 칩, 아래에 이름 · 등번호 (얼굴은 글자를 피한다) */
+function luTile_(ctx, x, y, w, h, k, m, f, emblem, adj){
+  var u=Math.max(0.42, Math.min(2.4, w/312)), cut=Math.round(Math.max(14, Math.min(46, w*0.14)));
+  var P=[[x,y],[x+w-cut,y],[x+w,y+cut],[x+w,y+h],[x,y+h]], B=polyBox_(P);
+  var pos=luPos_(m), num=String(m.num==null?'':m.num).trim(), name=String(m.name||''), pc=POS_COLORS[pos]||'';
+  if(num==='미정') num='';
+  var ip=Math.round(Math.max(10, Math.min(44, 20*u)));
+  ctx.save(); ctx.shadowColor='rgba(0,0,0,.6)'; ctx.shadowBlur=Math.round(22*u); ctx.shadowOffsetY=Math.round(10*u);
+  poly_(ctx,P); ctx.fillStyle='#121016'; ctx.fill(); ctx.restore();
+  var chipO={font:'700 '+Math.round(Math.max(14, Math.min(34, 22*u)))+'px Oswald, sans-serif', ls:Math.round(Math.max(1, 2*u))+'px', h:Math.round(Math.max(26, Math.min(64, 42*u))), padX:Math.round(Math.max(9, Math.min(26, 15*u)))};
+  var nfs0=Math.round(Math.max(26, Math.min(k===1?120:100, 54*u))), sfs=Math.round(Math.max(15, Math.min(44, 30*u))), maxW=w-ip*2;
+  var nfs=luNameFs_(ctx, name, nfs0, maxW, 20); ctx.save(); ctx.font='900 '+nfs+'px '+CARD_SERIF; var nw=Math.min(maxW, ctx.measureText(name).width); ctx.restore();
+  var yb=y+h-ip, nb=yb-sfs*1.32;
+  /* 글자 자리 — 얼굴이 피한다 */
+  var Z=[];
+  if(pos) Z.push({x:x+ip*0.7-6, y:y+ip*0.7-6, w:heroChip_(ctx,0,0,pos,Object.assign({measure:1},chipO))+12, h:chipO.h+12});
+  Z.push({x:x+ip-8, y:nb-nfs*0.84-8, w:Math.max(nw, w*0.42)+16, h:yb-(nb-nfs*0.84-8)+4});
+  var hero=!!(f && f.img && f.big && photoOk_(f.img)), key='lu:'+m.playerId;
+  if(hero){
+    heroPhoto_(ctx, f.img, f.rect, P, {top:Math.round(Math.min(260, 150*u)), fade:0.44, lines:w>=280, tint:0.72, zones:Z, faceH:(k===1?0.3:0.27), px:0.5, py:0.38, margin:Math.round(Math.max(8, 12*u)), adj:cardAdjGet_(key)});
+    adj.push({key:key, name:name});
+  } else {
+    heroEmpty_(ctx, P, emblem);
+    if(f && f.img){ var rr2=Math.min(B.w,B.h)*0.29, cy2=B.y+B.h*0.42; cardRing_(ctx,B.x+B.w/2,cy2,rr2,Math.max(4,rr2*0.06),'rgba(0,0,0,.7)'); circImg_(ctx,f.img,B.x+B.w/2,cy2,rr2,null); }
+    else if(num){ ctx.save(); poly_(ctx,P); ctx.clip(); heroNum_(ctx, num, B.x+B.w*0.54, B.y+B.h*0.6, Math.round(B.h*0.46), {align:'center', fa:0.24, lw:Math.max(2, 3*u)}); ctx.restore(); }
+  }
+  poly_(ctx,P); ctx.lineWidth=Math.max(1.5, 2*u); ctx.strokeStyle=luEdgeGrad_(ctx,B); ctx.stroke();
+  if(pos) heroChip_(ctx, x+ip*0.7, y+ip*0.7, pos, Object.assign({}, chipO, {bg:'rgba(12,10,16,.72)', line:pc||'rgba(255,255,255,.3)', color:'#F4F3F6'}));
+  heroName_(ctx, name, x+ip, nb, nfs, maxW);
+  var sub=(num?'NO.'+num:'')+(m.guest?((num?'  ·  ':'')+'GUEST'):'');
+  if(sub){ ctx.save(); ctx.shadowColor='rgba(0,0,0,.85)'; ctx.shadowBlur=8; ctx.textAlign='left'; ctx.textBaseline='middle';
+    ctx.fillStyle=CARD_GOLD; ctx.font='700 '+sfs+'px Oswald, sans-serif'; ctx.letterSpacing=Math.round(Math.max(1, 2*u))+'px';
+    ctx.fillText(cardEllipsis_(ctx, sub, maxW), x+ip, yb-sfs*0.42); ctx.letterSpacing='0px'; ctx.restore(); }
+  return hero;
+}
+/* 사선 띠 한 칸: i 가 짝수면 왼쪽이 넓다(사진 왼쪽 · 글자 오른쪽), 홀수면 반대 — 이웃한 띠와 가장자리가 나란히 맞물린다 */
+function luZig_(ctx, i, x0, cw, top, Z, m, f, emblem, adj){
+  var h=Z.h, a=Z.amp, x1=x0+cw, Yt=top+a+i*(h+Z.g), Yb=Yt+h, Lw=(i%2===0);
+  var P=Lw ? [[x0,Yt-a],[x1,Yt+a],[x1,Yb-a],[x0,Yb+a]] : [[x0,Yt+a],[x1,Yt-a],[x1,Yb+a],[x0,Yb-a]], B=polyBox_(P);
+  var pos=luPos_(m), num=String(m.num==null?'':m.num).trim(), name=String(m.name||''), guest=!!m.guest;
+  if(num==='미정') num='';
+  var ip=Math.round(Math.max(24, h*0.12)), ym=(Yt+Yb)/2, narrow=h-2*a;
+  /* 글자 크기 · 너비 */
+  var ns=Math.round(Math.min(150, Math.max(56, narrow*0.78))), numW=0;
+  if(num){ ctx.save(); ctx.font='700 '+ns+'px Oswald, sans-serif'; ctx.letterSpacing='-1px'; numW=ctx.measureText(num).width; ctx.letterSpacing='0px'; ctx.restore(); }
+  var gap=num ? Math.round(Math.max(16, h*0.08)) : 0, textW=cw*0.44, nameMax=Math.max(80, textW-numW-gap-ip);
+  var nfs=luNameFs_(ctx, name, Math.round(Math.min(84, Math.max(34, h*0.27))), nameMax, 22);
+  ctx.save(); ctx.font='900 '+nfs+'px '+CARD_SERIF; var nw=Math.min(nameMax, ctx.measureText(name).width); ctx.restore();
+  var chipO={font:'700 '+Math.round(Math.max(15, Math.min(26, h*0.1)))+'px Oswald, sans-serif', ls:'2px', h:Math.round(Math.max(28, Math.min(44, h*0.16))), padX:Math.round(Math.max(10, Math.min(18, h*0.065)))};
+  var tagW=(pos ? heroChip_(ctx,0,0,pos,Object.assign({measure:1},chipO)) : 0);
+  if(guest){ ctx.save(); ctx.font=chipO.font; ctx.letterSpacing='2px'; tagW+=(pos?8:0)+ctx.measureText('GUEST').width+4; ctx.letterSpacing='0px'; ctx.restore(); }
+  var hasTag=!!(pos || guest), blockH=nfs*0.84+(hasTag ? h*0.05+chipO.h : 0), nTop=ym-blockH/2, nBase=nTop+nfs*0.84, tagY=nBase+h*0.05;
+  var colW=Math.max(nw, tagW), blockW=numW+gap+colW, bx=Lw ? (x1-ip-blockW) : (x0+ip);
+  var zone={x:bx-14, y:Math.min(ym-ns*0.42, nTop)-12, w:blockW+28, h:Math.max(ns*0.84, blockH)+24};
+  /* 사진: 띠 전체에 크게 — 얼굴은 넓은 쪽, 글자 자리는 피한다 */
+  var hero=!!(f && f.img && f.big && photoOk_(f.img)), key='luz:'+m.playerId;
+  if(hero){ heroPhoto_(ctx, f.img, f.rect, P, {top:0, fade:0.66, lines:true, slope:Lw?0.14:-0.14, tint:0.85, zones:[zone], faceH:0.5, px:Lw?0.27:0.73, py:0.46, margin:10, adj:cardAdjGet_(key)}); adj.push({key:key, name:name}); }
+  else { heroEmpty_(ctx, P, emblem); if(f && f.img){ var rr2=Math.min(B.h*0.36, 150), cx2=Lw ? x0+cw*0.25 : x1-cw*0.25; cardRing_(ctx,cx2,ym,rr2,Math.max(4,rr2*0.07),'rgba(0,0,0,.7)'); circImg_(ctx,f.img,cx2,ym,rr2,null); } }
+  /* 좁은 쪽(글자 쪽)을 어둡게 */
+  ctx.save(); poly_(ctx,P); ctx.clip();
+  var gx0=Lw ? x0+cw*0.4 : x1-cw*0.4, gx1=Lw ? x1 : x0, gr=ctx.createLinearGradient(gx0,0,gx1,0);
+  gr.addColorStop(0,'rgba(9,8,12,0)'); gr.addColorStop(0.45,'rgba(9,8,12,.74)'); gr.addColorStop(1,'rgba(9,8,12,.92)');
+  ctx.fillStyle=gr; ctx.fillRect(B.x,B.y,B.w,B.h); ctx.restore();
+  /* 테두리: 금색 (시상 카드 MVP 처럼) */
+  var g=ctx.createLinearGradient(B.x,B.y,B.x+B.w,B.y+B.h); g.addColorStop(0,'#F3DFA0'); g.addColorStop(0.5,'rgba(199,162,75,.8)'); g.addColorStop(1,'rgba(138,109,31,.95)');
+  poly_(ctx,P); ctx.lineWidth=2.5; ctx.strokeStyle=g; ctx.stroke();
+  /* 글자: 넓은 쪽이 왼쪽이면 [이름 · 포지션][번호] 오른쪽 정렬, 반대면 [번호][이름 · 포지션] */
+  var nb=ym+ns*0.36;
+  if(Lw){
+    var numX=x1-ip-numW, cr=numX-gap;
+    if(num) luNum_(ctx, num, numX, nb, ns);
+    heroName_(ctx, name, cr, nBase, nfs, nameMax, {align:'right'});
+    if(hasTag) luTags_(ctx, cr-tagW, tagY, pos, guest, chipO);
+  } else {
+    if(num) luNum_(ctx, num, x0+ip, nb, ns);
+    var cl=x0+ip+numW+gap;
+    heroName_(ctx, name, cl, nBase, nfs, nameMax);
+    if(hasTag) luTags_(ctx, cl, tagY, pos, guest, chipO);
+  }
+  return hero;
+}
+/* 가로 띠 한 칸 (1열 · 2열): 왼쪽에 금색 등번호 · 이름 · 포지션, 오른쪽에 비스듬한 사진 */
+function luBand_(ctx, x, y, w, h, m, f, emblem, adj, kp){
+  var wide=w>700, cut=Math.round(Math.min(34, h*0.16)), P=[[x,y],[x+w-cut,y],[x+w,y+cut],[x+w,y+h],[x,y+h]], B=polyBox_(P);
+  var pos=luPos_(m), num=String(m.num==null?'':m.num).trim(), name=String(m.name||'');
+  if(num==='미정') num='';
+  ctx.save(); ctx.shadowColor='rgba(0,0,0,.55)'; ctx.shadowBlur=20; ctx.shadowOffsetY=8; poly_(ctx,P); ctx.fillStyle='#121016'; ctx.fill(); ctx.restore();
+  /* 왼쪽 바탕: 크림슨 빛 + 가는 사선 결 */
+  ctx.save(); poly_(ctx,P); ctx.clip();
+  var lg=ctx.createLinearGradient(x, y+h, x+w*0.62, y); lg.addColorStop(0,'rgba(200,16,46,.32)'); lg.addColorStop(1,'rgba(200,16,46,0)'); ctx.fillStyle=lg; ctx.fillRect(x,y,w,h);
+  ctx.globalAlpha=0.05; ctx.strokeStyle='#fff'; ctx.lineWidth=1;
+  for(var dd=-h; dd<w*0.62; dd+=10){ ctx.beginPath(); ctx.moveTo(x+dd, y+h); ctx.lineTo(x+dd+h*0.5, y); ctx.stroke(); }
+  ctx.restore();
+  /* 오른쪽 사진: 왼쪽 가장자리를 비스듬히 */
+  var sl=Math.round(h*0.22), px0=x+w*0.6, PP=[[px0,y],[x+w-cut,y],[x+w,y+cut],[x+w,y+h],[px0-sl,y+h]], BB=polyBox_(PP);
+  var hero=!!(f && f.img && f.big && photoOk_(f.img)), key=kp+m.playerId;
+  if(hero){ heroPhoto_(ctx, f.img, f.rect, PP, {top:0, fade:0.7, lines:false, tint:0.55, zones:[], faceH:wide?0.56:0.5, px:0.56, py:0.44, margin:6, adj:cardAdjGet_(key)}); adj.push({key:key, name:name}); }
+  else { heroEmpty_(ctx, PP, emblem); if(f && f.img){ var rr2=h*0.32, cx2=BB.x+BB.w*0.56, cy2=y+h*0.5; cardRing_(ctx,cx2,cy2,rr2,Math.max(4,rr2*0.07),'rgba(0,0,0,.7)'); circImg_(ctx,f.img,cx2,cy2,rr2,null); } }
+  /* 사진 가장자리: 크림슨 띠 + 금색 실선 */
+  var e2=Math.max(7, h*0.04);
+  ctx.save(); ctx.strokeStyle='rgba(200,16,46,.95)'; ctx.lineWidth=Math.max(3, h*0.022); ctx.beginPath(); ctx.moveTo(px0,y); ctx.lineTo(px0-sl,y+h); ctx.stroke();
+  ctx.strokeStyle='rgba(243,223,160,.75)'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(px0-e2,y); ctx.lineTo(px0-sl-e2,y+h); ctx.stroke(); ctx.restore();
+  poly_(ctx,P); ctx.lineWidth=2; ctx.strokeStyle=luEdgeGrad_(ctx,B); ctx.stroke();
+  /* 글자 */
+  var tx=x+Math.round(Math.max(22, h*0.13)), tr=px0-sl-e2-Math.max(12, h*0.07);
+  var chipO={font:'700 '+Math.round(Math.max(14, Math.min(26, h*0.1)))+'px Oswald, sans-serif', ls:'2px', h:Math.round(Math.max(26, Math.min(44, h*0.17))), padX:Math.round(Math.max(9, Math.min(18, h*0.065)))};
+  if(wide){
+    /* 1열: [등번호] [이름 / 포지션] */
+    var ns=Math.round(Math.min(150, h*0.6)), nbase=y+h*0.5+ns*0.37, nw=num ? Math.max(luNum_(ctx, num, tx, nbase, ns), ns*0.5) : 0;
+    var nx=tx+(num ? nw+Math.max(18, h*0.12) : 0), mw=tr-nx, fs=luNameFs_(ctx, name, Math.round(Math.min(84, h*0.3)), mw, 22);
+    var blockH=fs*0.84+(pos||m.guest ? chipO.h+h*0.06 : 0), top0=y+(h-blockH)/2;
+    heroName_(ctx, name, nx, top0+fs*0.84, fs, mw);
+    if(pos || m.guest) luTags_(ctx, nx, top0+fs*0.84+h*0.06, pos, !!m.guest, chipO);
+  } else {
+    /* 2열: 위에 등번호와 포지션, 아래에 이름 */
+    var ns2=Math.round(Math.min(110, h*0.36)), nb2=y+Math.max(14, h*0.1)+ns2*0.74, nw2=num ? luNum_(ctx, num, tx, nb2, ns2) : 0;
+    if(pos || m.guest) luTags_(ctx, tx+(num ? nw2+Math.max(10, h*0.05) : 0), nb2-ns2*0.37-chipO.h/2, pos, !!m.guest, chipO);
+    var mw2=tr-tx, fs2=luNameFs_(ctx, name, Math.round(Math.min(62, h*0.21)), mw2, 20);
+    heroName_(ctx, name, tx, y+h-Math.max(16, h*0.12), fs2, mw2);
+  }
+  return hero;
+}
+/* 매치데이: 프로 구단 SNS 라인업처럼 — 왼쪽은 번호 · 이름 · 포지션 명단(선발 / 교체), 오른쪽은 대표 선수 큰 사진 */
+function luDrawMd_(d, list, faces, emblem){
+  var N=list.length, W=1080, sid=d.squad.id;
+  var want=((state._luStar||{})[sid])||'', fi=-1;
+  if(want) list.forEach(function(m,i){ if(m.playerId===want) fi=i; });
+  if(fi<0) list.forEach(function(m,i){ if(fi<0 && faces[i] && faces[i].big && photoOk_(faces[i].img)) fi=i; });
+  if(fi<0) fi=0;
+  var fm=list[fi], ff=faces[fi];
+  /* 선발 · 교체: 스쿼드판에 놓인 선수와 아닌 선수가 섞여 있을 때만 나눈다 */
+  var A=list.filter(function(m){ return m.position; }), Bn=list.filter(function(m){ return !m.position; });
+  var secs=(A.length && Bn.length) ? [['STARTING', A], ['SUBSTITUTES', Bn]] : [['SQUAD', list]];
+  var rh=N<=11?66:(N<=16?58:(N<=22?50:44)), sh=48, sg=22, listTop=392, secH=secs.length*sh+(secs.length-1)*sg;
+  var H=Math.max(1350, listTop+secH+N*rh+150);
+  if(H===1350) rh=Math.max(rh, Math.min(84, Math.floor((H-150-listTop-secH-10)/N)));   /* 인원이 적으면 줄을 키워 빈자리를 줄인다 */
+  var c=document.createElement('canvas'); c.width=W; c.height=H;
+  var ctx=c.getContext('2d'), adj=[];
+  darkBase_(ctx,W,H);
+  /* 오른쪽 큰 사진 — 왼쪽 가장자리가 비스듬하다 */
+  var Y0=28, Y1=H-122, X0=572, X1=476, ex=function(yy){ return X0+(X1-X0)*(yy-Y0)/(Y1-Y0); };
+  var PP=[[X0,Y0],[W-28,Y0],[W-28,Y1],[X1,Y1]];
+  var fname=String(fm.name||''), fnum=String(fm.num==null?'':fm.num).trim(), fpos=luPos_(fm); if(fnum==='미정') fnum='';
+  var hx0=X1+46, hw=W-28-hx0-40, nfs=luNameFs_(ctx, fname, 92, hw, 40), nbY=Y1-86;
+  ctx.save(); ctx.font='900 '+nfs+'px '+CARD_SERIF; var fnw=Math.min(hw, ctx.measureText(fname).width); ctx.restore();
+  var Z=[{x:hx0-12, y:nbY-nfs*0.84-12, w:Math.max(fnw, 240)+24, h:(Y1-14)-(nbY-nfs*0.84-12)}];
+  var nz=fnum ? heroNumZone_(ctx, fnum, W-64, Y0+360, 380) : null; if(nz) Z.push(nz);
+  var hero=!!(ff && ff.img && ff.big && photoOk_(ff.img)), fit=null;
+  ctx.save(); rr_(ctx,28,28,W-56,H-56,19); ctx.clip();
+  if(hero){ fit=heroPhoto_(ctx, ff.img, ff.rect, PP, {top:220, fade:0.55, lines:true, tint:0.85, zones:Z, faceH:0.2, px:0.56, py:0.34, margin:26, adj:cardAdjGet_('lum:'+fm.playerId)}); adj.push({key:'lum:'+fm.playerId, name:fname}); }
+  else { heroEmpty_(ctx, PP, emblem); if(ff && ff.img){ var B2=polyBox_(PP), rr3=B2.w*0.3; cardRing_(ctx,B2.x+B2.w*0.56,B2.y+B2.h*0.38,rr3,8,'rgba(0,0,0,.7)'); circImg_(ctx,ff.img,B2.x+B2.w*0.56,B2.y+B2.h*0.38,rr3,null); } }
+  if(fnum && (!hero || heroNumOk_(fit, nz))){ ctx.save(); poly_(ctx,PP); ctx.clip(); heroNum_(ctx, fnum, W-64, Y0+360, 380, {fa:hero?0.14:0.22}); ctx.restore(); }
+  /* 왼쪽 바탕을 조금 어둡게 — 사진과 명단을 가른다 */
+  var sg2=ctx.createLinearGradient(0,0,X0,0); sg2.addColorStop(0,'rgba(8,7,10,.35)'); sg2.addColorStop(1,'rgba(8,7,10,0)'); ctx.fillStyle=sg2; ctx.fillRect(0,0,X0,H);
+  ctx.restore();
+  /* 사진 가장자리: 크림슨 띠 + 금색 실선 */
+  ctx.save(); ctx.strokeStyle='rgba(200,16,46,.95)'; ctx.lineWidth=6; ctx.beginPath(); ctx.moveTo(X0,Y0); ctx.lineTo(X1,Y1); ctx.stroke();
+  ctx.strokeStyle='rgba(243,223,160,.8)'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(X0-14,Y0); ctx.lineTo(X1-14,Y1); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(28,Y1); ctx.lineTo(W-28,Y1); ctx.strokeStyle='rgba(199,162,75,.45)'; ctx.lineWidth=1.5; ctx.stroke(); ctx.restore();
+  /* 대표 선수 이름 · 번호 (사진 아래쪽) */
+  heroName_(ctx, fname, hx0, nbY, nfs, hw);
+  var fsub=(fnum?'NO.'+fnum:'')+(fpos?((fnum?'  ·  ':'')+fpos):'');
+  if(fsub){ ctx.save(); ctx.shadowColor='rgba(0,0,0,.85)'; ctx.shadowBlur=8; ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.fillStyle=CARD_GOLD; ctx.font='700 34px Oswald, sans-serif'; ctx.letterSpacing='3px'; ctx.fillText(fsub, hx0, nbY+44); ctx.letterSpacing='0px'; ctx.restore(); }
+  /* 왼쪽 머리: 엠블럼 · 팀 · LINE-UP · 스쿼드 이름 · 날짜 */
+  if(emblem){ cardRing_(ctx,96,96,38,5); ctx.beginPath(); ctx.arc(96,96,38,0,Math.PI*2); ctx.fillStyle='#F6F5F2'; ctx.fill(); circImg_(ctx,emblem,96,96,32); }
+  ctx.textAlign='left'; ctx.textBaseline='middle';
+  ctx.fillStyle='#E6E8EE'; ctx.font='600 26px Oswald, sans-serif'; ctx.letterSpacing='5px'; ctx.fillText(cardEllipsis_(ctx, ourTeamName_().toUpperCase(), ex(80)-170), 156, 84);
+  ctx.fillStyle=CARD_GOLD; ctx.font='500 17px Oswald, sans-serif'; ctx.fillText('MATCH DAY SQUAD', 157, 116); ctx.letterSpacing='0px';
+  ctx.save(); ctx.shadowColor='rgba(199,162,75,.45)'; ctx.shadowBlur=26; ctx.textBaseline='alphabetic';
+  ctx.font='900 98px '+CARD_SERIF; ctx.letterSpacing='3px'; ctx.fillStyle=cardMetal_(ctx,170,252);
+  ctx.fillText('LINE-UP', 48, 250); ctx.restore(); ctx.letterSpacing='0px';
+  ctx.font='700 24px Pretendard, sans-serif';
+  var sq=cardEllipsis_(ctx, String(d.squad.name||'MATCH DAY'), ex(300)-54-70), sw=ctx.measureText(sq).width+56;
+  rr_(ctx, 54, 276, sw, 48, 24); ctx.fillStyle='rgba(199,162,75,.16)'; ctx.fill();
+  rr_(ctx, 54, 276, sw, 48, 24); ctx.strokeStyle='rgba(199,162,75,.6)'; ctx.lineWidth=1.5; ctx.stroke();
+  ctx.fillStyle=CARD_GOLD; ctx.textBaseline='middle'; ctx.fillText(sq, 82, 301);
+  ctx.fillStyle='rgba(255,255,255,.55)'; ctx.font='500 22px Pretendard, sans-serif'; ctx.fillText(luDateLine_(N).txt, 56, 350);
+  /* 명단 */
+  var yy=listTop, ns=Math.round(rh*0.42), bw=Math.round(rh*1.02);
+  secs.forEach(function(S, si){
+    if(si) yy+=sg;
+    var r0=ex(yy+sh/2)-30;
+    ctx.save(); ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.fillStyle=CARD_GOLD; ctx.font='600 21px Oswald, sans-serif'; ctx.letterSpacing='5px';
+    var lab=S[0]+'  '+S[1].length; ctx.fillText(lab, 56, yy+sh/2); var lw2=ctx.measureText(lab).width; ctx.letterSpacing='0px';
+    var lgr=ctx.createLinearGradient(56+lw2+16,0,r0,0); lgr.addColorStop(0,'rgba(199,162,75,.7)'); lgr.addColorStop(1,'rgba(199,162,75,0)');
+    ctx.fillStyle=lgr; ctx.fillRect(56+lw2+16, yy+sh/2, Math.max(0, r0-(56+lw2+16)), 1.5); ctx.restore();
+    yy+=sh;
+    S[1].forEach(function(m){
+      var on=(m===fm), r=ex(yy+rh/2)-30, num=String(m.num==null?'':m.num).trim(), pos=luPos_(m), cy=yy+rh/2;
+      if(num==='미정') num='';
+      if(on){ var hg=ctx.createLinearGradient(46,0,r+12,0); hg.addColorStop(0,'rgba(199,162,75,.30)'); hg.addColorStop(1,'rgba(199,162,75,0)'); ctx.fillStyle=hg; ctx.fillRect(46, yy+3, r+12-46, rh-6); ctx.fillStyle=CARD_GOLD; ctx.fillRect(46, yy+3, 4, rh-6); }
+      /* 번호 판 */
+      var by=yy+(rh-rh*0.7)/2; rr_(ctx, 58, by, bw, rh*0.7, 9);
+      var eg=ctx.createLinearGradient(0,by,0,by+rh*0.7); eg.addColorStop(0, on?'#E8C877':'#E0283F'); eg.addColorStop(1, on?'#9C7A2B':'#8E0B21'); ctx.fillStyle=eg; ctx.fill();
+      ctx.save(); ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle=on?'#1A1408':'#fff'; ctx.font='700 '+ns+'px Oswald, sans-serif';
+      ctx.fillText(num||(m.guest?'G':'–'), 58+bw/2, cy+1); ctx.restore();
+      /* 포지션 (오른쪽) · 이름 */
+      var pw=0;
+      ctx.save(); ctx.textAlign='right'; ctx.textBaseline='middle'; ctx.font='600 '+Math.round(rh*0.3)+'px Oswald, sans-serif'; ctx.letterSpacing='2px';
+      var ptxt=(pos||'')+(m.guest?(pos?'  ·  ':'')+'GUEST':''); if(ptxt){ ctx.fillStyle=m.guest&&!pos?'rgba(255,255,255,.5)':(POS_COLORS[pos]?shade_(POS_COLORS[pos],0.25):'rgba(255,255,255,.6)'); ctx.fillText(ptxt, r, cy+1); pw=ctx.measureText(ptxt).width+18; }
+      ctx.letterSpacing='0px'; ctx.restore();
+      var nx=58+bw+18;
+      ctx.save(); ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.fillStyle=on?'#FFF3CF':'#F4F3F6'; ctx.font='800 '+Math.round(rh*0.42)+'px Pretendard, sans-serif';
+      ctx.fillText(cardEllipsis_(ctx, String(m.name||''), Math.max(40, r-pw-nx)), nx, cy+1); ctx.restore();
+      ctx.fillStyle='rgba(255,255,255,.07)'; ctx.fillRect(58, yy+rh-1, Math.max(0, r-58), 1);
+      yy+=rh;
+    });
+  });
+  cardFooterW_(ctx,W,H);
+  cardAdjSetup_(adj, function(){ shareRosterCard_(sid); });
+  showCardPreview_(c, 'FCJEMIRO_LINEUP_'+luDateLine_(N).td.replace(/-/g,'')+(hero?'.jpg':'.png'));
 }
 function shareSeasonCard_(year){
   var s=(state._season && String(state._season.year)===String(year)) ? state._season : seasonData_(year);
